@@ -5,9 +5,7 @@ from typing import Any, Dict
 import torch
 from accelerate import Accelerator
 
-from tali_wit.callbacks import Interval
-from tali_wit.data_plus import *
-from tali_wit.models import extract_all_possible_pairs
+from gate.boilerplate.callbacks import Interval
 
 from .decorators import collect_metrics
 from .utils import get_logger
@@ -74,11 +72,7 @@ class ClassificationTrainer(Trainer):
             output_dict = model.forward(batch, return_loss=True)
             loss = torch.mean(
                 torch.stack(
-                    [
-                        value
-                        for key, value in output_dict.items()
-                        if "_loss" in key
-                    ]
+                    [value for key, value in output_dict.items() if "_loss" in key]
                 )
             )
             accuracy = torch.mean(
@@ -194,9 +188,7 @@ class ClassificationTrainer(Trainer):
         if len(overall_loss) > 0:
             metrics = {
                 "accuracy": torch.mean(torch.stack(overall_accuracy)),
-                "accuracy_top_5": torch.mean(
-                    torch.stack(overall_accuracy_top_5)
-                ),
+                "accuracy_top_5": torch.mean(torch.stack(overall_accuracy_top_5)),
                 "loss": torch.mean(torch.stack(overall_loss)),
             }
             metrics |= overall_output_dict
