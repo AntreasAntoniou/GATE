@@ -1,12 +1,12 @@
 import pytest
 import torch
+import torch.nn as nn
+
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
     TargetModalityConfig,
 )
-
-import torch.nn as nn
 
 
 def test_gate_model_unsupported_transformation():
