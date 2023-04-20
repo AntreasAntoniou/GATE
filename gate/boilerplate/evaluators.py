@@ -1,6 +1,6 @@
 from ast import Dict
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Optional
 
 import torch
 from accelerate import Accelerator
@@ -37,55 +37,47 @@ class EvaluatorOutput:
 
 
 class ClassificationEvaluator(Evaluator):
-    def __init__(self, experiment_tracker: Any):
+    def __init__(self, experiment_tracker: Optional[Any] = None):
         super().__init__()
         self.state_dict = {}
         self.experiment_tracker = experiment_tracker
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        try:
-            output_dict = model.forward(batch, return_loss=True)
-            loss = torch.mean(
-                torch.stack(
-                    [
-                        value
-                        for key, value in output_dict.items()
-                        if "_loss" in key
-                    ]
-                )
+        output_dict = model.forward(batch)
+        loss = torch.mean(
+            torch.stack(
+                [value for key, value in output_dict.items() if "_loss" in key]
             )
-            accuracy = torch.mean(
-                torch.stack(
-                    [
-                        value.cpu()
-                        for key, value in output_dict.items()
-                        if "_accuracy" in key
-                    ]
-                )
+        )
+        accuracy = torch.mean(
+            torch.stack(
+                [
+                    value.cpu()
+                    for key, value in output_dict.items()
+                    if "_accuracy" in key
+                ]
             )
-            accuracy_top_5 = torch.mean(
-                torch.stack(
-                    [
-                        value.cpu()
-                        for key, value in output_dict.items()
-                        if "_accuracy_top_5" in key
-                    ]
-                )
+        )
+        accuracy_top_5 = torch.mean(
+            torch.stack(
+                [
+                    value.cpu()
+                    for key, value in output_dict.items()
+                    if "_accuracy_top_5" in key
+                ]
             )
-            keys = list(output_dict.keys())
-            for key in keys:
-                if "_loss" not in key and "_accuracy" not in key:
-                    del output_dict[key]
+        )
+        keys = list(output_dict.keys())
+        for key in keys:
+            if "_loss" not in key and "_accuracy" not in key:
+                del output_dict[key]
 
-            return StepOutput(
-                output_dict=output_dict,
-                loss=loss,
-                accuracy=accuracy,
-                accuracy_top_5=accuracy_top_5,
-            )
-        except Exception as e:
-            logger.warning(f"Exception: {e}")
-            return None
+        return StepOutput(
+            output_dict=output_dict,
+            loss=loss,
+            accuracy=accuracy,
+            accuracy_top_5=accuracy_top_5,
+        )
 
     @torch.inference_mode()
     def validation_step(
@@ -96,45 +88,30 @@ class ClassificationEvaluator(Evaluator):
         accelerator: Accelerator,
     ):
         model.eval()
-        batch = generate_hierarchical_data_dict(batch)
 
         with torch.no_grad():
             overall_loss = []
             overall_accuracy = []
             overall_accuracy_top_5 = []
             overall_output_dict = {}
-            for (
-                modality_a,
-                sub_modality_a,
-                modality_b,
-                sub_modality_b,
-            ) in extract_all_possible_pairs(batch):
-                sample = {
-                    modality_a: {
-                        sub_modality_a: batch[modality_a][sub_modality_a]
-                    },
-                    modality_b: {
-                        sub_modality_b: batch[modality_b][sub_modality_b]
-                    },
-                }
 
-                step_output: StepOutput = self.step(
-                    model=model,
-                    batch=sample,
-                    global_step=global_step,
-                    accelerator=accelerator,
-                )
+            step_output: StepOutput = self.step(
+                model=model,
+                batch=batch,
+                global_step=global_step,
+                accelerator=accelerator,
+            )
 
-                keys = list(step_output.output_dict.keys())
-                for key in keys:
-                    if "_loss" not in key and "_accuracy" not in key:
-                        del step_output.output_dict[key]
+            keys = list(step_output.output_dict.keys())
+            for key in keys:
+                if "_loss" not in key and "_accuracy" not in key:
+                    del step_output.output_dict[key]
 
-                if step_output is not None:
-                    overall_output_dict |= step_output.output_dict
-                    overall_loss.append(step_output.loss)
-                    overall_accuracy.append(step_output.accuracy)
-                    overall_accuracy_top_5.append(step_output.accuracy_top_5)
+            if step_output is not None:
+                overall_output_dict |= step_output.output_dict
+                overall_loss.append(step_output.loss)
+                overall_accuracy.append(step_output.accuracy)
+                overall_accuracy_top_5.append(step_output.accuracy_top_5)
 
             if len(overall_loss) > 0:
                 metrics = {
@@ -167,44 +144,30 @@ class ClassificationEvaluator(Evaluator):
         accelerator: Accelerator,
     ):
         model.eval()
-        batch = generate_hierarchical_data_dict(batch)
 
         with torch.no_grad():
             overall_loss = []
             overall_accuracy = []
             overall_accuracy_top_5 = []
             overall_output_dict = {}
-            for (
-                modality_a,
-                sub_modality_a,
-                modality_b,
-                sub_modality_b,
-            ) in extract_all_possible_pairs(batch):
-                sample = {
-                    modality_a: {
-                        sub_modality_a: batch[modality_a][sub_modality_a]
-                    },
-                    modality_b: {
-                        sub_modality_b: batch[modality_b][sub_modality_b]
-                    },
-                }
-                step_output: StepOutput = self.step(
-                    model=model,
-                    batch=sample,
-                    global_step=global_step,
-                    accelerator=accelerator,
-                )
 
-                keys = list(step_output.output_dict.keys())
-                for key in keys:
-                    if "_loss" not in key and "_accuracy" not in key:
-                        del step_output.output_dict[key]
+            step_output: StepOutput = self.step(
+                model=model,
+                batch=batch,
+                global_step=global_step,
+                accelerator=accelerator,
+            )
 
-                if step_output is not None:
-                    overall_output_dict |= step_output.output_dict
-                    overall_loss.append(step_output.loss)
-                    overall_accuracy.append(step_output.accuracy)
-                    overall_accuracy_top_5.append(step_output.accuracy_top_5)
+            keys = list(step_output.output_dict.keys())
+            for key in keys:
+                if "_loss" not in key and "_accuracy" not in key:
+                    del step_output.output_dict[key]
+
+            if step_output is not None:
+                overall_output_dict |= step_output.output_dict
+                overall_loss.append(step_output.loss)
+                overall_accuracy.append(step_output.accuracy)
+                overall_accuracy_top_5.append(step_output.accuracy_top_5)
 
             if len(overall_loss) > 0:
                 metrics = {
@@ -259,15 +222,15 @@ class ClassificationEvaluator(Evaluator):
         self,
         global_step: int,
     ):
-        epoch_metrics = {}
+        phase_metrics = {}
         for key, value in self.state_dict.items():
-            epoch_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
-            epoch_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
+            phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
+            phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",
-            metrics=epoch_metrics,
+            metrics=phase_metrics,
             experiment_tracker=self.experiment_tracker,
         )
 
@@ -276,14 +239,14 @@ class ClassificationEvaluator(Evaluator):
         self,
         global_step: int,
     ):
-        epoch_metrics = {}
+        phase_metrics = {}
         for key, value in self.state_dict.items():
-            epoch_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
-            epoch_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
+            phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
+            phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="testing",
-            metrics=epoch_metrics,
+            metrics=phase_metrics,
             experiment_tracker=self.experiment_tracker,
         )

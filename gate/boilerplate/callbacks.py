@@ -1,3 +1,4 @@
+from abc import ABC
 import logging
 import threading
 from dataclasses import dataclass
@@ -14,13 +15,7 @@ logger = get_logger(__name__)
 hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
 
 
-@dataclass
-class Interval:
-    EPOCH: str = "epoch"
-    STEP: str = "step"
-
-
-class Callback(object):
+class Callback(ABC):
     def __init__(self) -> None:
         pass
 
@@ -28,9 +23,9 @@ class Callback(object):
         self,
         experiment: Any,
         model: nn.Module,
-        train_dataloaders: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        train_dataloader: DataLoader = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         pass
 
@@ -38,29 +33,29 @@ class Callback(object):
         self,
         experiment: Any,
         model: nn.Module,
-        train_dataloaders: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        train_dataloader: DataLoader = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         pass
 
-    def on_epoch_start(
+    def on_phase_start(
         self,
         experiment: Any,
         model: nn.Module,
-        train_dataloaders: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        train_dataloader: DataLoader = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         pass
 
-    def on_epoch_end(
+    def on_phase_end(
         self,
         experiment: Any,
         model: nn.Module,
-        train_dataloaders: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        train_dataloader: DataLoader = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         pass
 
@@ -158,68 +153,68 @@ class CallbackHandler(Callback):
         self,
         experiment: Any,
         model: nn.Module,
-        train_dataloaders: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        train_dataloader: DataLoader = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         for callback in self.callbacks:
             callback.on_init_start(
                 experiment,
                 model,
-                train_dataloaders,
-                val_dataloaders,
-                test_dataloaders,
+                train_dataloader,
+                val_dataloader,
+                test_dataloader,
             )
 
     def on_init_end(
         self,
         experiment: Any,
         model: nn.Module,
-        train_dataloaders: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        train_dataloader: DataLoader = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         for callback in self.callbacks:
             callback.on_init_end(
                 experiment,
                 model,
-                train_dataloaders,
-                val_dataloaders,
-                test_dataloaders,
+                train_dataloader,
+                val_dataloader,
+                test_dataloader,
             )
 
-    def on_epoch_start(
+    def on_phase_start(
         self,
         experiment: Any,
         model: nn.Module,
         train_dataloader: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         for callback in self.callbacks:
-            callback.on_epoch_start(
+            callback.on_phase_start(
                 experiment,
                 model,
                 train_dataloader,
-                val_dataloaders,
-                test_dataloaders,
+                val_dataloader,
+                test_dataloader,
             )
 
-    def on_epoch_end(
+    def on_phase_end(
         self,
         experiment: Any,
         model: nn.Module,
         train_dataloader: DataLoader = None,
-        val_dataloaders: Union[List[DataLoader], DataLoader] = None,
-        test_dataloaders: Union[List[DataLoader], DataLoader] = None,
+        val_dataloader: Union[List[DataLoader], DataLoader] = None,
+        test_dataloader: Union[List[DataLoader], DataLoader] = None,
     ) -> None:
         for callback in self.callbacks:
-            callback.on_epoch_end(
+            callback.on_phase_end(
                 experiment,
                 model,
                 train_dataloader,
-                val_dataloaders,
-                test_dataloaders,
+                val_dataloader,
+                test_dataloader,
             )
 
     def on_batch_start(self, model: nn.Module, batch: Dict) -> None:
