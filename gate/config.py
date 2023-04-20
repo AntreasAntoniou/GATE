@@ -1,22 +1,25 @@
+from dataclasses import dataclass
 import os
 from typing import Any, Optional
+import hydra
+import hydra_zen
 
 import torch
+from hydra.core.config_store import ConfigStore
 from hydra_zen import (
+    MISSING,
+    ZenField,
     builds,
+    make_config,
 )
 from timm.scheduler import CosineLRScheduler
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.core import Learner
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
-from gate.boilerplate.utils import get_logger
+from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.data.data import build_dataset
-from gate.models.models import build_model
-
-import fire
-
-logger = get_logger(set_rich=True)
+from gate.models.clip import build_model
 
 
 def get_env_var(key: str, default: Any) -> Any:
@@ -51,160 +54,199 @@ DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
 GPU_MEMORY = 24  # in GB
 
 
+hydra_logger = get_logger("hydra")
+
+
+@dataclass
 class BaseConfig:
-    def __init__(
-        self,
-        exp_name: str = EXPERIMENT_NAME,
-        model: Any = "default",
-        dataset: Any = "default",
-        dataloader: Any = "default",
-        optimizer: Any = "default",
-        scheduler: Any = "default",
-        learner: Any = "default",
-        callbacks: Any = "default",
-        hf_username: str = HF_USERNAME,
-        seed: int = SEED,
-        resume: bool = RESUME,
-        resume_from_checkpoint: Optional[int] = None,
-        print_config: bool = True,
-        num_workers: int = NUM_WORKERS,
-        prefetch_factor: int = PREFETCH_FACTOR,
-        persistent_workers: bool = PERSISTENT_WORKERS,
-        pin_memory: bool = PIN_MEMORY,
-        train: bool = True,
-        test: bool = False,
-        dummy_batch_mode: bool = DUMMY_BATCH_MODE,
-        logger_level: str = LOGGER_LEVEL,
-        experiments_root_dir: str = EXPERIMENTS_ROOT_DIR,
-        dataset_dir: str = DATASET_DIR,
-        current_experiment_dir: str = CURRENT_EXPERIMENT_DIR,
-        hf_repo_path: str = f"{HF_USERNAME}/${EXPERIMENT_NAME}",
-        hf_cache_dir: str = HF_CACHE_DIR,
-        code_dir: str = CODE_DIR,
-    ):
-        self.config_store = self.collect_config_store()
-        self.model = self.config_store["model"][model]
-        self.dataset = self.config_store["dataset"][dataset]
-        self.dataloader = self.config_store["dataloader"][dataloader]
-        self.optimizer = self.config_store["optimizer"][optimizer]
-        self.scheduler = self.config_store["scheduler"][scheduler]
-        self.learner = self.config_store["learner"][learner]
-        self.callbacks = self.config_store["callbacks"][callbacks]
+    # Must be passed at command line -- neccesary arguments
 
-        self.exp_name = exp_name
-        self.hf_username = hf_username
-        self.seed = seed
-        self.resume = resume
-        self.resume_from_checkpoint = resume_from_checkpoint
-        self.print_config = print_config
-        self.num_workers = num_workers
-        self.prefetch_factor = prefetch_factor
-        self.persistent_workers = persistent_workers
-        self.pin_memory = pin_memory
-        self.train = train
-        self.test = test
-        self.dummy_batch_mode = dummy_batch_mode
-        self.logger_level = logger_level
-        self.experiments_root_dir = experiments_root_dir
-        self.dataset_dir = dataset_dir
-        self.current_experiment_dir = current_experiment_dir
-        self.hf_repo_path = hf_repo_path
-        self.hf_cache_dir = hf_cache_dir
-        self.code_dir = code_dir
+    exp_name: str = MISSING
 
-    def collect_config_store():
-        config_store = {
-            "model": {},
-            "dataset": {},
-            "dataloader": {},
-            "optimizer": {},
-            "scheduler": {},
-            "learner": {},
-            "callbacks": {},
-        }
-        ##########################################################################
-        # Model configs
-        model_config = build_model()
+    # Defaults for these are provided in the collect_config_store method,
+    # but will be often overridden at command line
 
-        config_store["model"]["default"] = model_config
+    model: Any = MISSING
+    dataset: Any = MISSING
+    dataloader: Any = MISSING
+    optimizer: Any = MISSING
+    scheduler: Any = MISSING
+    learner: Any = MISSING
+    callbacks: Any = MISSING
 
-        data_config: Any = build_dataset
+    hf_username: str = HF_USERNAME
+    seed: int = SEED
+    resume: bool = RESUME
+    resume_from_checkpoint: Optional[int] = None
+    print_config: bool = True
+    num_workers: int = NUM_WORKERS
+    prefetch_factor: int = PREFETCH_FACTOR
+    persistent_workers: bool = PERSISTENT_WORKERS
+    pin_memory: bool = PIN_MEMORY
+    train: bool = True
+    test: bool = False
+    dummy_batch_mode: bool = DUMMY_BATCH_MODE
+    logger_level: str = LOGGER_LEVEL
+    experiments_root_dir: str = EXPERIMENTS_ROOT_DIR
+    dataset_dir: str = DATASET_DIR
+    current_experiment_dir: str = CURRENT_EXPERIMENT_DIR
+    hf_repo_path: str = f"{HF_USERNAME}/${EXPERIMENT_NAME}"
+    hf_cache_dir: str = HF_CACHE_DIR
+    code_dir: str = CODE_DIR
 
-        food101_config = data_config(
-            dataset_name="food101", data_dir=DATASET_DIR
+
+# Using hydra might look a bit more verbose but it saves having
+# to manually define
+# future args, and makes it a lot easier to add whatever we need
+# from the command line
+
+
+def collect_config_store():
+    config_store = ConfigStore.instance()
+    ##########################################################################
+    # Model configs
+
+    model_config = build_model.__config__(populate_full_signature=True)
+
+    config_store.store(group="model", name="default", node=model_config)
+
+    data_config: Any = build_dataset.__config__(populate_full_signature=True)
+
+    food101_config = data_config(dataset_name="food101", data_dir=DATASET_DIR)
+
+    config_store.store(group="dataset", name="food101", node=food101_config)
+
+    dataloader_config = builds(
+        DataLoader, dataset=None, populate_full_signature=True
+    )
+
+    config_store.store(
+        group="dataloader",
+        name="default",
+        node=dataloader_config(
+            batch_size=1,
+            num_workers=NUM_WORKERS,
+            pin_memory=PIN_MEMORY,
+            shuffle=True,
+            prefetch_factor=PREFETCH_FACTOR,
+            persistent_workers=PERSISTENT_WORKERS,
+        ),
+    )
+    ##########################################################################
+    # Optimizer configs
+    adamw_optimizer_config = builds(
+        torch.optim.AdamW,
+        populate_full_signature=True,
+        zen_partial=True,
+    )
+
+    cosine_learning_rate_scheduler_config = builds(
+        CosineLRScheduler,
+        populate_full_signature=True,
+        zen_partial=True,
+    )
+
+    cosine_learning_rate_scheduler_config = (
+        cosine_learning_rate_scheduler_config()
+    )
+
+    config_store.store(
+        group="optimizer",
+        name="adamw",
+        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
+    )
+
+    config_store.store(
+        group="scheduler",
+        name="cosine-annealing",
+        node=cosine_learning_rate_scheduler_config,
+    )
+
+    ##########################################################################
+    learner_config = builds(Learner, populate_full_signature=True)
+
+    learner_config = learner_config(
+        model=None,
+        experiment_name=EXPERIMENT_NAME,
+        experiment_dir=CURRENT_EXPERIMENT_DIR,
+        resume=RESUME,
+        evaluate_every_n_steps=1000,
+        checkpoint_after_validation=True,
+        checkpoint_every_n_steps=500,
+        train_iters=100000,
+        limit_val_iters=250,
+        dummy_batch_mode=DUMMY_BATCH_MODE,
+        print_model_parameters=False,
+    )
+    config_store.store(
+        group="learner",
+        name="default",
+        node=learner_config,
+    )
+
+    ##########################################################################
+    HFModelUploadConfig = builds(
+        UploadCheckpointsToHuggingFace, populate_full_signature=True
+    )
+
+    hf_upload = HFModelUploadConfig(
+        repo_name=EXPERIMENT_NAME, repo_owner=HF_USERNAME
+    )
+
+    default_callbacks = dict(hf_uploader=hf_upload)
+
+    config_store.store(
+        group="callbacks", name="default", node=default_callbacks
+    )
+
+    ###########################################################################
+    config_store.store(
+        group="hydra",
+        name="default",
+        node=get_hydra_config(logger_level=LOGGER_LEVEL),
+    )
+
+    zen_config = []
+
+    for value in BaseConfig.__dataclass_fields__.values():
+        item = (
+            ZenField(name=value.name, hint=value.type, default=value.default)
+            if value.default is not MISSING
+            else ZenField(name=value.name, hint=value.type)
         )
+        zen_config.append(item)
 
-        config_store["dataset"]["default"] = food101_config
-        config_store["dataset"]["food101"] = food101_config
+    config = make_config(
+        *zen_config,
+        hydra_defaults=[
+            "_self_",
+            dict(learner="default"),
+            dict(optimizer="adamw"),
+            dict(scheduler="cosine-annealing"),
+            dict(model="default"),
+            dict(dataset="food101"),
+            dict(dataloader="default"),
+            dict(hydra="default"),
+            dict(callbacks="default"),
+        ],
+    )
+    # Config
+    config_store.store(name="config", node=config)
 
-        dataloader_config = builds(
-            DataLoader, dataset=None, populate_full_signature=True
-        )
+    return config_store
 
-        config_store["dataloader"]["default"] = (
-            dataloader_config(
-                batch_size=1,
-                num_workers=NUM_WORKERS,
-                pin_memory=PIN_MEMORY,
-                shuffle=True,
-                prefetch_factor=PREFETCH_FACTOR,
-                persistent_workers=PERSISTENT_WORKERS,
-            ),
-        )
-        ##########################################################################
-        # Optimizer configs
-        adamw_optimizer_config = builds(
-            torch.optim.AdamW,
-            populate_full_signature=True,
-            zen_partial=True,
-        )
 
-        config_store["optimizer"]["adamw"] = adamw_optimizer_config(
-            lr=1e-5, weight_decay=0.0
-        )
+def main():
+    from rich import print
 
-        cosine_learning_rate_scheduler_config = builds(
-            CosineLRScheduler,
-            populate_full_signature=True,
-            zen_partial=True,
-        )
+    config = collect_config_store()
 
-        config_store["scheduler"][
-            "cosine-annealing"
-        ] = cosine_learning_rate_scheduler_config()
+    @hydra.main(config_path=None, config_name="config", version_base=None)
+    def test(cfg: BaseConfig):
+        print(pretty_config(cfg, resolve=True))
 
-        ##########################################################################
-        learner_config = builds(Learner, populate_full_signature=True)
-
-        config_store["learner"]["default"] = learner_config(
-            model=None,
-            experiment_name=EXPERIMENT_NAME,
-            experiment_dir=CURRENT_EXPERIMENT_DIR,
-            resume=RESUME,
-            evaluate_every_n_steps=1000,
-            checkpoint_after_validation=True,
-            checkpoint_every_n_steps=500,
-            train_iters=100000,
-            limit_val_iters=250,
-            dummy_batch_mode=DUMMY_BATCH_MODE,
-            print_model_parameters=False,
-        )
-
-        ##########################################################################
-        HFModelUploadConfig = builds(
-            UploadCheckpointsToHuggingFace, populate_full_signature=True
-        )
-
-        hf_upload = HFModelUploadConfig(
-            repo_name=EXPERIMENT_NAME, repo_owner=HF_USERNAME
-        )
-
-        default_callbacks = dict(hf_uploader=hf_upload)
-
-        config_store["callbacks"]["default"] = default_callbacks
-
-        return config_store
+    test()
 
 
 if __name__ == "__main__":
-    fire.Fire(BaseConfig)
+    main()
