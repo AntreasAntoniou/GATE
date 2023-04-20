@@ -1,21 +1,18 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Any, Optional
 
+import fire
 import torch
-from hydra_zen import (
-    builds,
-)
+from hydra_zen import builds
 from timm.scheduler import CosineLRScheduler
 from torch.utils.data import DataLoader
 
-from gate.boilerplate.core import Learner
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
+from gate.boilerplate.core import Learner
 from gate.boilerplate.utils import get_logger
 from gate.data.data import build_dataset
 from gate.models.models import build_model
-
-import fire
 
 logger = get_logger(set_rich=True)
 

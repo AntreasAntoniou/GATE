@@ -1,7 +1,8 @@
+import accelerate
 import torch
 import torch.nn.functional as F
-import accelerate
 from transformers import CLIPModel, CLIPProcessor
+
 from gate.models import build_model
 
 

@@ -5,9 +5,8 @@ from typing import Any, List
 import torch
 from accelerate import Accelerator
 
-from .trainers import StepOutput
-
 from .decorators import collect_metrics
+from .trainers import StepOutput
 from .utils import get_logger
 
 logger = get_logger(__name__)

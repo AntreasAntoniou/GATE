@@ -1,7 +1,9 @@
 from typing import Any, Dict, Optional
+
+import accelerate
 import torch
 import torch.nn as nn
-import accelerate
+
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
@@ -19,7 +21,9 @@ def set_batch_size(batch: Dict[str, Any], batch_size: int) -> Dict[str, Any]:
         Dict[str, Any]: The input batch with the specified batch size.
     """
     return {
-        key: value[0].unsqueeze(0).repeat([batch_size, *[1] * (value.dim() - 1)])
+        key: value[0]
+        .unsqueeze(0)
+        .repeat([batch_size, *[1] * (value.dim() - 1)])
         if isinstance(value, torch.Tensor)
         else [value[0]] * batch_size
         for key, value in batch.items()
@@ -74,7 +78,9 @@ def get_max_supported_batch_size(
                     with torch.no_grad():
                         dummy_fprop_bprop(model, cur_batch, accelerator)
                 else:
-                    dummy_fprop_bprop(model, cur_batch, accelerator, do_bprop=True)
+                    dummy_fprop_bprop(
+                        model, cur_batch, accelerator, do_bprop=True
+                    )
         except Exception as e:
             crashed = True
             batch_size = batch_size // 2
