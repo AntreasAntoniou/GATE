@@ -1,8 +1,8 @@
 import copy
 from dataclasses import dataclass
 from typing import Any, Dict
-import torch
 
+import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
@@ -63,9 +63,9 @@ def build_model(
 
 
 if __name__ == "__main__":
-    from rich import print
     import accelerate
     import torch.nn.functional as F
+    from rich import print
 
     model_and_transform = build_model()
 

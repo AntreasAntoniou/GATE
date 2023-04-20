@@ -2,17 +2,14 @@ import os
 import pathlib
 
 import neptune
+import wandb
 from rich import print
 from rich.traceback import install
-import wandb
+from tali_wit.ctools import get_max_supported_batch_size
 from tali_wit.data import dataclass_collate
 from tali_wit.data_plus import CustomConcatDataset
-
 from tali_wit.models import TALIModel
-from tali_wit.utils import (
-    create_hf_model_repo_and_download_maybe,
-)
-from tali_wit.ctools import get_max_supported_batch_size
+from tali_wit.utils import create_hf_model_repo_and_download_maybe
 
 os.environ[
     "HYDRA_FULL_ERROR"
@@ -33,14 +30,13 @@ import hydra
 import torch
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
-from torch.utils.data import Dataset, Subset
-
 from tali_wit.boilerplate import Learner
 from tali_wit.callbacks import Callback
 from tali_wit.config import BaseConfig, collect_config_store
 from tali_wit.evaluators import ClassificationEvaluator
 from tali_wit.trainers import ClassificationTrainer
 from tali_wit.utils import get_logger, pretty_config, set_seed
+from torch.utils.data import Dataset, Subset
 
 config_store = collect_config_store()
 
@@ -77,10 +73,14 @@ def run(cfg: BaseConfig) -> None:
     model: TALIModel = instantiate(cfg.model)
 
     if ckpt_path is not None and cfg.resume is True:
-        trainer_state = torch.load(pathlib.Path(ckpt_path) / "trainer_state.pt")
+        trainer_state = torch.load(
+            pathlib.Path(ckpt_path) / "trainer_state.pt"
+        )
         global_step = trainer_state["global_step"]
         neptune_id = (
-            trainer_state["neptune_id"] if "neptune_id" in trainer_state else None
+            trainer_state["neptune_id"]
+            if "neptune_id" in trainer_state
+            else None
         )
         experiment_tracker = neptune.init_run(
             source_files=["tali_wit/*.py", "kubernetes/*.py"],
@@ -137,7 +137,9 @@ def run(cfg: BaseConfig) -> None:
     train_dataset = CustomConcatDataset(train_datasets)
 
     if global_step > 0:
-        train_dataset = Subset(train_dataset, range(global_step, len(train_dataset)))
+        train_dataset = Subset(
+            train_dataset, range(global_step, len(train_dataset))
+        )
 
     train_dataloader = instantiate(
         cfg.dataloader,
@@ -192,7 +194,9 @@ def run(cfg: BaseConfig) -> None:
                 experiment_tracker=experiment_tracker,
             )
         ],
-        evaluators=[ClassificationEvaluator(experiment_tracker=experiment_tracker)],
+        evaluators=[
+            ClassificationEvaluator(experiment_tracker=experiment_tracker)
+        ],
         train_dataloaders=[train_dataloader],
         val_dataloaders=[val_dataloader],
         callbacks=instantiate_callbacks(cfg.callbacks),

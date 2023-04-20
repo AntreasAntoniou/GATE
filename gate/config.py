@@ -1,22 +1,17 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Any, Optional
+
 import hydra
 import hydra_zen
-
 import torch
 from hydra.core.config_store import ConfigStore
-from hydra_zen import (
-    MISSING,
-    ZenField,
-    builds,
-    make_config,
-)
+from hydra_zen import MISSING, ZenField, builds, make_config
 from timm.scheduler import CosineLRScheduler
 from torch.utils.data import DataLoader
 
-from gate.boilerplate.core import Learner
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
+from gate.boilerplate.core import Learner
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.data.data import build_dataset
 from gate.models.clip import build_model
