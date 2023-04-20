@@ -8,6 +8,8 @@ notebooks/flagged_data_points/*
 outputs/*
 wandb/*
 .vscode/*
+data/*
+experiments/*
 
 # C extensions
 *.so
