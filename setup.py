@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name="gate",
-    version="2.0.0",
+    version="0.7.0",
     description="A minimal, stateless, machine learning research template for PyTorch",
     author="Antreas Antoniou",
     author_email="iam@antreas.io",

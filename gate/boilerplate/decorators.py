@@ -29,17 +29,20 @@ def collect_metrics(func: Callable) -> Callable:
         experiment_tracker: Any,
         global_step: int,
     ) -> None:
-        for metric_key, computed_value in metrics_dict.items():
-            if computed_value is not None:
-                value = (
-                    computed_value.detach().item()
-                    if isinstance(computed_value, torch.Tensor)
-                    else computed_value
-                )
-                experiment_tracker[f"{phase_name}/{metric_key}"].append(value)
-                wandb.log(
-                    {f"{phase_name}/{metric_key}": value}, step=global_step
-                )
+        if experiment_tracker is not None:
+            for metric_key, computed_value in metrics_dict.items():
+                if computed_value is not None:
+                    value = (
+                        computed_value.detach().item()
+                        if isinstance(computed_value, torch.Tensor)
+                        else computed_value
+                    )
+                    experiment_tracker[f"{phase_name}/{metric_key}"].append(
+                        value
+                    )
+                    wandb.log(
+                        {f"{phase_name}/{metric_key}": value}, step=global_step
+                    )
 
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
