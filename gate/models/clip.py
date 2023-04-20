@@ -31,7 +31,15 @@ def build_model(
     model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     num_classes: int = 100,
-):
+) -> ModelAndTransform:
+    """
+    🏗️ Build the model using the Hugging Face transformers library.
+
+    :param model_name: The name of the model to load.
+    :param pretrained: Whether to use a pretrained model.
+    :param num_classes: The number of classes for the linear layer.
+    :return: A ModelAndTransform instance containing the model and transform function.
+    """
     from transformers import CLIPModel, CLIPProcessor
 
     feature_extractor: CLIPProcessor = CLIPProcessor.from_pretrained(
@@ -41,9 +49,7 @@ def build_model(
         model_name, num_labels=num_classes
     )
     model = CLIPWithLinear(
-        feature_model.vision_model,
-        feature_model.vision_embed_dim,
-        num_classes,
+        feature_model.vision_model, feature_model.vision_embed_dim, num_classes
     )
 
     if not pretrained:

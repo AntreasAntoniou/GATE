@@ -1,10 +1,8 @@
 import pytest
-from gate.models.core import (
-    SourceModalityConfig,
-    TargetModalityConfig,
-)
 import torch
 import torch.nn as nn
+
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
 
 
 def test_modality_config_creation():

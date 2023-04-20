@@ -32,7 +32,8 @@ class GATEModel(nn.Module):
         """
         🏗️ Initialize the GATEModel with a configuration and a base model.
 
-        :param config: TargetModalityConfig object for setting up the transformations.
+        :param config: TargetModalityConfig object for setting up
+        the transformations.
         :param model: Base model to be used for the actual processing.
         """
         super().__init__()
@@ -59,9 +60,11 @@ class GATEModel(nn.Module):
         self, target_modality_name: str, **input_modalities: Dict[str, Any]
     ):
         """
-        🔄 Process the input modalities and generate the output in the specified target modality.
+        🔄 Process the input modalities and generate the output in the
+        specified target modality.
 
-        :param target_modality_name: Target modality name (e.g., 'image', 'text', 'audio', 'video')
+        :param target_modality_name: Target modality name (e.g., 'image',
+        'text', 'audio', 'video')
         :param input_modalities: Input modalities as keyword arguments.
         :raises ValueError: If the given transformation is unsupported.
         """
@@ -76,7 +79,8 @@ class GATEModel(nn.Module):
         """
         📋 Get the list of valid input and target modality combinations.
 
-        :return: A list of tuples containing input modalities and target modality names.
+        :return: A list of tuples containing input modalities and target
+        modality names.
         """
         return list(self.supported_transforms.keys())
 
@@ -88,7 +92,8 @@ class GATEModel(nn.Module):
 
         :param input_dict: Dictionary of input modalities.
         :return: A nested dictionary with target modalities as outer keys,
-                source modalities as inner keys, and the corresponding output as the value.
+                source modalities as inner keys, and the corresponding output
+                as the value.
         """
         output_dict = {}
 
@@ -113,7 +118,8 @@ class GATEModel(nn.Module):
                     supported_modalities
                 ] = output
             except NotImplementedError:
-                pass  # 🛑 Handle unsupported cases, or do nothing if no action is needed for unsupported cases
+                pass  # 🛑 Handle unsupported cases, or do nothing
+                # if no action is needed for unsupported cases
 
         return output_dict
 
