@@ -16,7 +16,8 @@ def build_dataset(
 
     :param dataset_name: The name of the dataset to load.
     :param data_dir: The directory where the dataset cache is stored.
-    :param sets_to_include: A list of dataset splits to include (default: ["train", "validation"]).
+    :param sets_to_include: A list of dataset splits to include
+    (default: ["train", "validation"]).
     :return: A dictionary containing the dataset splits.
     """
     if sets_to_include is None:

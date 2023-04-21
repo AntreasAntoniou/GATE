@@ -113,21 +113,18 @@ def run(cfg: BaseConfig) -> None:
             dataset,
             set_name="train",
             infinite_sampling=True,
-            num_samples_per_episode=batch_size,
         )
 
         val_dataset: Dataset = instantiate(
             dataset,
             set_name="val",
             infinite_sampling=False,
-            num_samples_per_episode=batch_size,
         )
 
         test_dataset: Dataset = instantiate(
             dataset,
             set_name="test",
             infinite_sampling=False,
-            num_samples_per_episode=batch_size,
         )
 
         train_datasets.append(train_dataset)
