@@ -98,17 +98,9 @@ class Learner(nn.Module):
 
         self.train_dataloader = train_dataloader
 
-        self.val_dataloader = (
-            [val_dataloader]
-            if isinstance(val_dataloader, DataLoader)
-            else val_dataloader
-        )
+        self.val_dataloader = val_dataloader
 
-        self.test_dataloader = (
-            [test_dataloader]
-            if isinstance(test_dataloader, DataLoader)
-            else test_dataloader
-        )
+        self.test_dataloader = test_dataloader
 
         for name, params in self.model.named_parameters():
             logger.info(f"{name}, {params.shape}")
@@ -233,7 +225,6 @@ class Learner(nn.Module):
     def validation_step(self, model, batch):
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_validation_step_start(model, batch)
-
         for evaluator in self.evaluators:
             evaluator.validation_step(
                 model=model,
@@ -353,7 +344,6 @@ class Learner(nn.Module):
         logger.info("Testing finished 🎉")
 
     def train(self, train_dataloader: DataLoader = None):
-        print(f"Training on {train_dataloader}")
         if train_dataloader is not None:
             train_dataloader = self.accelerator.prepare(train_dataloader)
             self.train_dataloader = train_dataloader
@@ -383,6 +373,63 @@ class Learner(nn.Module):
             test_dataloader=self.test_dataloader,
             model=model,
         )
+
+    def _training_loop(self, train_dataloader: DataLoader = None):
+        if train_dataloader is None:
+            train_dataloader = self.train_dataloader
+
+        if train_dataloader is not None:
+            self.start_training()
+
+            if self.train_iters is None:
+                self.train_iters = len(train_dataloader)
+
+            with tqdm(
+                initial=self.step_idx, total=self.train_iters
+            ) as pbar_steps:
+                while self.step_idx < self.train_iters:
+                    if self.limit_train_iters is not None:
+                        if self.step_idx >= self.limit_train_iters:
+                            return self.end_training()
+
+                    for batch_idx, batch in enumerate(train_dataloader):
+                        output_list = self.training_step(
+                            model=self.model,
+                            batch=batch,
+                        )
+
+                        if self.step_idx % self.evaluate_every_n_steps == 0:
+                            self._validation_loop()
+                            self.check_manage_background_threads()
+
+                        if (
+                            self.step_idx % self.checkpoint_every_n_steps == 0
+                            and self.step_idx > 0
+                        ):
+                            self.save_checkpoint(
+                                checkpoint_name=f"ckpt_{self.global_step}"
+                            )
+
+                        if self.step_idx >= self.train_iters:
+                            return self.end_training()
+
+                        self.step_idx += 1
+
+                        loss = torch.mean(
+                            torch.stack(
+                                [
+                                    value
+                                    for item in output_list
+                                    for key, value in item.__dict__.items()
+                                    if "opt_loss" in key
+                                ]
+                            )
+                        )
+
+                        pbar_steps.update(1)
+                        pbar_steps.set_description(f"Loss: {loss:.4f}")
+
+            return self.end_training()
 
     def _validation_loop(
         self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
@@ -432,50 +479,6 @@ class Learner(nn.Module):
                     pbar_dataloaders.update(1)
 
             self.end_testing()
-
-    def _training_loop(self, train_dataloader: DataLoader = None):
-        if train_dataloader is None:
-            train_dataloader = self.train_dataloader
-
-        if train_dataloader is not None:
-            self.start_training()
-
-            if self.train_iters is None:
-                self.train_iters = len(train_dataloader)
-
-            with tqdm(
-                initial=self.step_idx, total=self.train_iters
-            ) as pbar_steps:
-                while self.step_idx < self.train_iters:
-                    if self.limit_train_iters is not None:
-                        if self.step_idx >= self.limit_train_iters:
-                            return self.end_training()
-
-                    for batch_idx, batch in enumerate(train_dataloader):
-                        self.training_step(
-                            model=self.model,
-                            batch=batch,
-                        )
-
-                        if self.step_idx % self.evaluate_every_n_steps == 0:
-                            self._validation_loop()
-                            self.check_manage_background_threads()
-
-                        if (
-                            self.step_idx % self.checkpoint_every_n_steps == 0
-                            and self.step_idx > 0
-                        ):
-                            self.save_checkpoint(
-                                checkpoint_name=f"ckpt_{self.global_step}"
-                            )
-
-                        if self.step_idx >= self.train_iters:
-                            return self.end_training()
-
-                        self.step_idx += 1
-                        pbar_steps.update(1)
-
-            return self.end_training()
 
     def save_checkpoint(
         self,
@@ -564,23 +567,23 @@ if __name__ == "__main__":
     from torch.nn import CrossEntropyLoss
     from torch.optim import Adam
     from torch.utils.data import DataLoader
-    from torchvision.transforms import ColorJitter, Compose, Resize, ToTensor
+    from torchvision.transforms import Compose, Resize, ToTensor
 
     train_dataset = load_dataset("beans", split="train")
     val_dataset = load_dataset("beans", split="validation")
     test_dataset = load_dataset("beans", split="test")
 
-    jitter = Compose(
+    augs = Compose(
         [
             Resize(size=(96, 96)),
-            ColorJitter(brightness=0.5, hue=0.5),
+            # ColorJitter(brightness=0.5, hue=0.5),
             ToTensor(),
         ]
     )
 
     def transforms(examples):
         examples["image"] = [
-            jitter(image.convert("RGB")) for image in examples["image"]
+            augs(image.convert("RGB")) for image in examples["image"]
         ]
         return examples
 
@@ -604,37 +607,45 @@ if __name__ == "__main__":
         collate_fn=collate_fn,
         batch_size=256,
         shuffle=True,
-        num_workers=4,
+        num_workers=8,
     )
     val_dataloader = DataLoader(
-        val_dataset, collate_fn=collate_fn, batch_size=256, num_workers=4
+        val_dataset, collate_fn=collate_fn, batch_size=256, num_workers=8
     )
     test_dataloader = DataLoader(
-        test_dataset, collate_fn=collate_fn, batch_size=256, num_workers=4
+        test_dataset, collate_fn=collate_fn, batch_size=256, num_workers=8
     )
 
-    model = torch.hub.load(
-        "pytorch/vision:v0.9.0", "resnet18", pretrained=False
-    )
-    model.fc = torch.nn.Linear(512, 4)
+    class BeanResNet(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.model = torch.hub.load(
+                "pytorch/vision:v0.9.0", "resnet18", pretrained=True
+            )
+            self.model.fc = torch.nn.Linear(512, 5)
 
-    optimizer = Adam(model.parameters(), lr=1e-3)
+        def forward(self, input_dict):
+            return {"logits": self.model(input_dict["image"])}
+
+    bean_resnet = BeanResNet()
+
+    optimizer = Adam(bean_resnet.parameters(), lr=1e-3, weight_decay=1e-5)
 
     criterion = CrossEntropyLoss()
 
     experiment = Learner(
         experiment_name="debug_checkpointing",
         experiment_dir="experiments/debug_checkpointing",
-        model=model,
+        model=bean_resnet,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
         test_dataloader=test_dataloader,
         trainers=[ClassificationTrainer(optimizer=optimizer)],
         evaluators=[ClassificationEvaluator()],
-        evaluate_every_n_steps=5,
-        checkpoint_every_n_steps=5,
+        evaluate_every_n_steps=100,
+        checkpoint_every_n_steps=100,
         checkpoint_after_validation=True,
-        train_iters=1000,
+        train_iters=100000,
         resume=True,
     )
 
