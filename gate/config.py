@@ -25,7 +25,6 @@ HF_CACHE_DIR = get_env_var(
     "HF_CACHE_DIR", os.path.expanduser("~/.cache/huggingface")
 )
 HF_USERNAME = get_env_var("HF_USERNAME", None)
-
 CODE_DIR = get_env_var("CODE_DIR", "")
 DATASET_DIR = get_env_var("DATASET_DIR", "data/")
 EXPERIMENT_NAME = get_env_var("EXPERIMENT_NAME", "exp_0")
@@ -33,7 +32,6 @@ EXPERIMENTS_ROOT_DIR = get_env_var("EXPERIMENTS_ROOT_DIR", "experiments/")
 CURRENT_EXPERIMENT_DIR = get_env_var(
     "CURRENT_EXPERIMENT_DIR", f"{EXPERIMENTS_ROOT_DIR}/{EXPERIMENT_NAME}"
 )
-
 TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
 EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
 NUM_WORKERS = get_env_var("NUM_WORKERS", 2)
@@ -54,13 +52,17 @@ hydra_logger = get_logger("hydra")
 
 @dataclass
 class BaseConfig:
-    # Must be passed at command line -- neccesary arguments
+    """
+    A dataclass for storing the base configuration for the application.
+    🛠 Contains all necessary configurations for model, dataset, dataloader,
+    optimizer, scheduler, learner, and callbacks.
+    """
 
+    # Must be passed at command line -- necessary arguments
     exp_name: str = MISSING
 
     # Defaults for these are provided in the collect_config_store method,
     # but will be often overridden at command line
-
     model: Any = MISSING
     dataset: Any = MISSING
     dataloader: Any = MISSING
@@ -69,6 +71,7 @@ class BaseConfig:
     learner: Any = MISSING
     callbacks: Any = MISSING
 
+    # 🌐 Other configurations with default values or environment variables
     hf_username: str = HF_USERNAME
     seed: int = SEED
     resume: bool = RESUME
@@ -97,7 +100,14 @@ class BaseConfig:
 
 
 def collect_config_store():
+    """
+    Collects configurations and stores them in the config store.
+    🎛 Includes model, dataset, dataloader, optimizer, scheduler, learner,
+    and callbacks configurations.
+    """
+
     config_store = ConfigStore.instance()
+
     ##########################################################################
     # Model configs
 
