@@ -5,6 +5,8 @@ from typing import Any, List, Optional
 import torch
 from accelerate import Accelerator
 
+from gate.boilerplate.metrics import accuracy_top_k
+
 from .decorators import collect_metrics
 from .trainers import StepOutput
 from .utils import get_logger
@@ -36,6 +38,9 @@ class EvaluatorOutput:
     experiment_tracker: Any = None
 
 
+import torch.nn.functional as F
+
+
 class ClassificationEvaluator(Evaluator):
     def __init__(self, experiment_tracker: Optional[Any] = None):
         super().__init__()
@@ -44,36 +49,24 @@ class ClassificationEvaluator(Evaluator):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         output_dict = model.forward(batch)
-        loss = torch.mean(
-            torch.stack(
-                [value for key, value in output_dict.items() if "_loss" in key]
-            )
+        loss = F.cross_entropy(output_dict["logits"], batch["labels"])
+        accuracy = accuracy_top_k(output_dict["logits"], batch["labels"], k=1)
+        accuracy_top_5 = accuracy_top_k(
+            output_dict["logits"], batch["labels"], k=5
         )
-        accuracy = torch.mean(
-            torch.stack(
-                [
-                    value.cpu()
-                    for key, value in output_dict.items()
-                    if "_accuracy" in key
-                ]
-            )
-        )
-        accuracy_top_5 = torch.mean(
-            torch.stack(
-                [
-                    value.cpu()
-                    for key, value in output_dict.items()
-                    if "_accuracy_top_5" in key
-                ]
-            )
-        )
-        keys = list(output_dict.keys())
+        output_metrics_dict = {
+            "loss": loss,
+            "accuracy_top_1": accuracy,
+            "accuracy_top_5": accuracy_top_5,
+        }
+        keys = list(output_metrics_dict.keys())
+
         for key in keys:
-            if "_loss" not in key and "_accuracy" not in key:
+            if "loss" not in key and "accuracy" not in key:
                 del output_dict[key]
 
         return StepOutput(
-            output_dict=output_dict,
+            output_metrics_dict=output_metrics_dict,
             loss=loss,
             accuracy=accuracy,
             accuracy_top_5=accuracy_top_5,
@@ -102,20 +95,22 @@ class ClassificationEvaluator(Evaluator):
                 accelerator=accelerator,
             )
 
-            keys = list(step_output.output_dict.keys())
+            keys = list(step_output.output_metrics_dict.keys())
             for key in keys:
-                if "_loss" not in key and "_accuracy" not in key:
-                    del step_output.output_dict[key]
+                if "loss" not in key and "accuracy" not in key:
+                    del step_output.output_metrics_dict[key]
 
             if step_output is not None:
-                overall_output_dict |= step_output.output_dict
+                overall_output_dict |= step_output.output_metrics_dict
                 overall_loss.append(step_output.loss)
                 overall_accuracy.append(step_output.accuracy)
                 overall_accuracy_top_5.append(step_output.accuracy_top_5)
 
             if len(overall_loss) > 0:
                 metrics = {
-                    "accuracy": torch.mean(torch.stack(overall_accuracy)),
+                    "accuracy_top_1": torch.mean(
+                        torch.stack(overall_accuracy)
+                    ),
                     "accuracy_top_5": torch.mean(
                         torch.stack(overall_accuracy_top_5)
                     ),
@@ -158,20 +153,22 @@ class ClassificationEvaluator(Evaluator):
                 accelerator=accelerator,
             )
 
-            keys = list(step_output.output_dict.keys())
+            keys = list(step_output.output_metrics_dict.keys())
             for key in keys:
-                if "_loss" not in key and "_accuracy" not in key:
-                    del step_output.output_dict[key]
+                if "loss" not in key and "accuracy" not in key:
+                    del step_output.output_metrics_dict[key]
 
             if step_output is not None:
-                overall_output_dict |= step_output.output_dict
+                overall_output_dict |= step_output.output_metrics_dict
                 overall_loss.append(step_output.loss)
                 overall_accuracy.append(step_output.accuracy)
                 overall_accuracy_top_5.append(step_output.accuracy_top_5)
 
             if len(overall_loss) > 0:
                 metrics = {
-                    "accuracy": torch.mean(torch.stack(overall_accuracy)),
+                    "accuracy_top_1": torch.mean(
+                        torch.stack(overall_accuracy)
+                    ),
                     "accuracy_top_5": torch.mean(
                         torch.stack(overall_accuracy_top_5)
                     ),

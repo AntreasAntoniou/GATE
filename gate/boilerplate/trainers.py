@@ -3,7 +3,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
+import torch.nn.functional as F
 from accelerate import Accelerator
+
+from gate.boilerplate.metrics import accuracy_top_k
 
 from .decorators import collect_metrics
 from .utils import get_logger
@@ -37,7 +40,7 @@ class TrainerOutput:
 
 @dataclass
 class StepOutput:
-    output_dict: Dict
+    output_metrics_dict: Dict
     loss: torch.Tensor
     accuracy: torch.Tensor
     accuracy_top_5: torch.Tensor
@@ -66,41 +69,27 @@ class ClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        print(batch)
         output_dict = model.forward(batch)
-        loss = torch.mean(
-            torch.stack(
-                [value for key, value in output_dict.items() if "_loss" in key]
-            )
+        loss = F.cross_entropy(output_dict["logits"], batch["labels"])
+        accuracy = accuracy_top_k(output_dict["logits"], batch["labels"], k=1)
+        accuracy_top_5 = accuracy_top_k(
+            output_dict["logits"], batch["labels"], k=5
         )
-        accuracy = torch.mean(
-            torch.stack(
-                [
-                    value.cpu()
-                    for key, value in output_dict.items()
-                    if "_accuracy" in key
-                ]
-            )
-        )
-        accuracy_top_5 = torch.mean(
-            torch.stack(
-                [
-                    value.cpu()
-                    for key, value in output_dict.items()
-                    if "_accuracy_top_5" in key
-                ]
-            )
-        )
-        keys = list(output_dict.keys())
+        output_metrics_dict = {
+            "loss": loss,
+            "accuracy_top_1": accuracy,
+            "accuracy_top_5": accuracy_top_5,
+        }
+        keys = list(output_metrics_dict.keys())
 
         for key in keys:
-            if "_loss" not in key and "_accuracy" not in key:
+            if "loss" not in key and "accuracy" not in key:
                 del output_dict[key]
 
         accelerator.backward(loss)
 
         return StepOutput(
-            output_dict=output_dict,
+            output_metrics_dict=output_dict,
             loss=loss,
             accuracy=accuracy,
             accuracy_top_5=accuracy_top_5,
@@ -131,7 +120,7 @@ class ClassificationTrainer(Trainer):
         )
 
         if step_output is not None:
-            overall_output_dict |= step_output.output_dict
+            overall_output_dict |= step_output.output_metrics_dict
             overall_loss.append(step_output.loss)
             overall_accuracy.append(step_output.accuracy)
             overall_accuracy_top_5.append(step_output.accuracy_top_5)
@@ -140,7 +129,7 @@ class ClassificationTrainer(Trainer):
 
         if len(overall_loss) > 0:
             metrics = {
-                "accuracy": torch.mean(torch.stack(overall_accuracy)),
+                "accuracy_top_1": torch.mean(torch.stack(overall_accuracy)),
                 "accuracy_top_5": torch.mean(
                     torch.stack(overall_accuracy_top_5)
                 ),
