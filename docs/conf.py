@@ -7,8 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
-
 import sphinx_rtd_theme
+
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -37,6 +37,12 @@ extensions = ["sphinx.ext.autodoc", "sphinx_rtd_theme"]
 extensions.append("sphinx.ext.autosummary")
 extensions.append("sphinx.ext.viewcode")
 extensions.append("sphinx.ext.intersphinx")
+extensions.append("sphinx.ext.napoleon")
+extensions.append("sphinx.ext.coverage")
+extensions.append("sphinx.ext.todo")
+
+# Set to True to show TODOs in the generated documentation
+todo_include_todos = True
 
 # Configure the intersphinx_mapping to link to other projects' documentation
 intersphinx_mapping = {
