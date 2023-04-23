@@ -30,6 +30,7 @@ class TargetModalityConfig:
     video: Optional[List[SourceModalityConfig]] = None
 
 
+@dataclass
 class GATEModel(nn.Module, ABC):
     """🚪 GATEModel class for handling different input and output modalities."""
 

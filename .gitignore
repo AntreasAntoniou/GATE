@@ -10,6 +10,7 @@ wandb/*
 .vscode/*
 data/*
 experiments/*
+path/*
 
 # C extensions
 *.so

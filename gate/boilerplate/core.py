@@ -576,7 +576,6 @@ if __name__ == "__main__":
     augs = Compose(
         [
             Resize(size=(96, 96)),
-            # ColorJitter(brightness=0.5, hue=0.5),
             ToTensor(),
         ]
     )
