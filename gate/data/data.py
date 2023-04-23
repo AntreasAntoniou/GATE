@@ -10,7 +10,6 @@ def build_dataset(
     dataset_name: str,
     data_dir: str,
     set_name: str,
-    infinite_sampling: bool = False,
 ) -> dict:
     """
     🏗️ Build a dataset using the Hugging Face datasets library.
@@ -22,11 +21,11 @@ def build_dataset(
     :return: A dictionary containing the dataset splits.
     """
 
-    if set_name == "val":
-        set_name = "validation"
+    # if set_name == "val":
+    #     set_name = "validation"
 
-    if set_name == "test":
-        set_name = "validation"
+    # if set_name == "test":
+    #     set_name = "validation"
 
     data = load_dataset(
         path=dataset_name,
