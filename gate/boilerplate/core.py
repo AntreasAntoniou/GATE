@@ -609,9 +609,11 @@ if __name__ == "__main__":
         shuffle=True,
         num_workers=8,
     )
+
     val_dataloader = DataLoader(
         val_dataset, collate_fn=collate_fn, batch_size=256, num_workers=8
     )
+
     test_dataloader = DataLoader(
         test_dataset, collate_fn=collate_fn, batch_size=256, num_workers=8
     )

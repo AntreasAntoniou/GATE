@@ -74,6 +74,8 @@ class BaseConfig:
     # 🌐 Other configurations with default values or environment variables
     hf_username: str = HF_USERNAME
     seed: int = SEED
+    train_batch_size: int = TRAIN_BATCH_SIZE
+    eval_batch_size: int = EVAL_BATCH_SIZE
     resume: bool = RESUME
     resume_from_checkpoint: Optional[int] = None
     print_config: bool = True
@@ -88,7 +90,7 @@ class BaseConfig:
     experiments_root_dir: str = EXPERIMENTS_ROOT_DIR
     dataset_dir: str = DATASET_DIR
     current_experiment_dir: str = CURRENT_EXPERIMENT_DIR
-    hf_repo_path: str = f"{HF_USERNAME}/${EXPERIMENT_NAME}"
+    hf_repo_path: str = f"{HF_USERNAME}/{EXPERIMENT_NAME}"
     hf_cache_dir: str = HF_CACHE_DIR
     code_dir: str = CODE_DIR
 
@@ -117,7 +119,11 @@ def collect_config_store():
 
     data_config: Any = build_dataset.__config__(populate_full_signature=True)
 
-    food101_config = data_config(dataset_name="food101", data_dir=DATASET_DIR)
+    food101_config = {
+        "food101": data_config(
+            dataset_name="food101", set_name="train", data_dir=DATASET_DIR
+        )
+    }
 
     config_store.store(group="dataset", name="food101", node=food101_config)
 

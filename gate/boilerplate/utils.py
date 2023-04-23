@@ -387,18 +387,14 @@ def create_hf_model_repo_and_download_maybe(cfg: Any):
     import yaml
     from huggingface_hub import HfApi
 
-    if (
-        cfg.download_checkpoint_with_name is not None
-        and cfg.download_latest is True
-    ):
-        raise ValueError(
-            "Cannot use both continue_from_checkpoint_with_name and continue_from_latest"
-        )
+    if cfg.resume_from_checkpoint is not None and cfg.resume is True:
+        raise ValueError("Cannot use both resume_from_checkpoint and resume")
 
     hf_repo_path = cfg.hf_repo_path
     login(token=os.environ["HF_TOKEN"], add_to_git_credential=True)
     print(
-        f"Logged in to huggingface with token {os.environ['HF_TOKEN']}, creating repo {hf_repo_path}"
+        f"Logged in to huggingface with token {os.environ['HF_TOKEN']},"
+        f"creating repo {hf_repo_path}"
     )
     repo_url = create_repo(hf_repo_path, repo_type="model", exist_ok=True)
 
@@ -438,27 +434,26 @@ def create_hf_model_repo_and_download_maybe(cfg: Any):
 
     try:
         if cfg.resume == False and not (
-            cfg.download_checkpoint_with_name is not None
-            or cfg.download_latest
+            cfg.resume_from_checkpoint is not None or cfg.resume
         ):
             return None, repo_url
 
-        if cfg.download_checkpoint_with_name is not None:
+        if cfg.resume_from_checkpoint is not None:
             logger.info(
-                f"Download {cfg.download_checkpoint_with_name} checkpoint, if it exists, from the huggingface hub 👨🏻‍💻"
+                f"Download {cfg.resume_from_checkpoint} checkpoint, if it exists, from the huggingface hub 👨🏻‍💻"
             )
 
             path_dict = download_model_with_name(
                 hf_repo_path=hf_repo_path,
                 hf_cache_dir=cfg.hf_cache_dir,
-                model_name=cfg.download_checkpoint_with_name,
+                model_name=cfg.resume_from_checkpoint,
             )
             logger.info(
                 f"Downloaded checkpoint from huggingface hub to {cfg.hf_cache_dir}"
             )
             return path_dict["root_filepath"], repo_url
 
-        elif cfg.download_latest:
+        elif cfg.resume:
             files = hf_api.list_repo_files(
                 repo_id=hf_repo_path,
             )

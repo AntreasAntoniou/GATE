@@ -9,7 +9,8 @@ from gate.boilerplate.decorators import configurable
 def build_dataset(
     dataset_name: str,
     data_dir: str,
-    sets_to_include: Optional[List[str]] = None,
+    set_name: str,
+    infinite_sampling: bool = False,
 ) -> dict:
     """
     🏗️ Build a dataset using the Hugging Face datasets library.
@@ -20,17 +21,18 @@ def build_dataset(
     (default: ["train", "validation"]).
     :return: A dictionary containing the dataset splits.
     """
-    if sets_to_include is None:
-        sets_to_include = ["train", "validation"]
 
-    dataset = {}
-    for set_name in sets_to_include:
-        data = load_dataset(
-            path=dataset_name,
-            split=set_name,
-            cache_dir=data_dir,
-            task="image-classification",
-        )
-        dataset[set_name] = data
+    if set_name == "val":
+        set_name = "validation"
 
-    return dataset
+    if set_name == "test":
+        set_name = "validation"
+
+    data = load_dataset(
+        path=dataset_name,
+        split=set_name,
+        cache_dir=data_dir,
+        task="image-classification",
+    )
+
+    return data

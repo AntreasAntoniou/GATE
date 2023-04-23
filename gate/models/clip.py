@@ -20,7 +20,7 @@ class CLIPWithLinear(nn.Module):
         self.model = model
         self.linear = nn.Linear(num_clip_features, num_classes)
 
-    def forward(self, input_dict: Dict):
+    def forward(self, **input_dict: Dict):
         x = self.model(**input_dict).pooler_output
         x = self.linear(x)
         return x
@@ -61,7 +61,7 @@ def build_model(
 
     def transform_wrapper(input_dict: Dict):
         return {
-            "input_images": transform(input_dict["image"])["pixel_values"],
+            "pixel_values": transform(input_dict["image"])["pixel_values"],
             "labels": input_dict["labels"],
         }
 

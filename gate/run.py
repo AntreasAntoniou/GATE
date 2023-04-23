@@ -5,11 +5,23 @@ import neptune
 import wandb
 from rich import print
 from rich.traceback import install
-from tali_wit.ctools import get_max_supported_batch_size
-from tali_wit.data import dataclass_collate
-from tali_wit.data_plus import CustomConcatDataset
-from tali_wit.models import TALIModel
-from tali_wit.utils import create_hf_model_repo_and_download_maybe
+from typing import Callable, List, Optional
+import hydra
+from hydra_zen import instantiate
+from omegaconf import OmegaConf
+from gate.boilerplate.callbacks import Callback, instantiate_callbacks
+from gate.boilerplate.core import Learner
+from gate.boilerplate.evaluators import ClassificationEvaluator
+from gate.boilerplate.trainers import ClassificationTrainer
+from gate.boilerplate.utils import (
+    create_hf_model_repo_and_download_maybe,
+    get_logger,
+    pretty_config,
+    set_seed,
+)
+from torch.utils.data import Dataset, Subset
+from gate.config import BaseConfig, collect_config_store
+from gate.data.core import CustomConcatDataset, dataclass_collate
 
 os.environ[
     "HYDRA_FULL_ERROR"
@@ -23,55 +35,15 @@ os.environ[
 
 install()  # beautiful and clean tracebacks for debugging
 
-
-from typing import List, Optional
-
-import hydra
 import torch
-from hydra_zen import instantiate
-from omegaconf import OmegaConf
-from tali_wit.boilerplate import Learner
-from tali_wit.callbacks import Callback
-from tali_wit.config import BaseConfig, collect_config_store
-from tali_wit.evaluators import ClassificationEvaluator
-from tali_wit.trainers import ClassificationTrainer
-from tali_wit.utils import get_logger, pretty_config, set_seed
-from torch.utils.data import Dataset, Subset
+
 
 config_store = collect_config_store()
 
 logger = get_logger(name=__name__)
 
 
-def instantiate_callbacks(callback_dict: dict) -> List[Callback]:
-    callbacks = []
-    for cb_conf in callback_dict.values():
-        callbacks.append(instantiate(cb_conf))
-
-    return callbacks
-
-
-@hydra.main(config_path=None, config_name="config", version_base=None)
-def run(cfg: BaseConfig) -> None:
-    ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
-
-    if ckpt_path is not None:
-        logger.info(
-            f"ckpt_path: {ckpt_path}, exists: {ckpt_path.exists()}, resume: {cfg.resume}, not resume: {not cfg.resume}"
-        )
-    else:
-        logger.info(
-            f"ckpt_path: {ckpt_path}, resume: {cfg.resume}, not resume: {not cfg.resume}"
-        )
-
-    logger.info(f"Using checkpoint: {ckpt_path}")
-
-    print(pretty_config(cfg, resolve=True))
-
-    set_seed(seed=cfg.seed)
-
-    model: TALIModel = instantiate(cfg.model)
-
+def setup(ckpt_path: str, cfg: BaseConfig):
     if ckpt_path is not None and cfg.resume is True:
         trainer_state = torch.load(
             pathlib.Path(ckpt_path) / "trainer_state.pt"
@@ -83,14 +55,44 @@ def run(cfg: BaseConfig) -> None:
             else None
         )
         experiment_tracker = neptune.init_run(
-            source_files=["tali_wit/*.py", "kubernetes/*.py"],
+            source_files=["gate/*.py", "kubernetes/*.py"],
             with_id=neptune_id,
         )
     else:
         global_step = 0
         experiment_tracker = neptune.init_run(
-            source_files=["tali_wit/*.py", "kubernetes/*.py"]
+            source_files=["gate/*.py", "kubernetes/*.py"]
         )
+
+    return global_step, experiment_tracker
+
+
+@hydra.main(config_path=None, config_name="config", version_base=None)
+def run(cfg: BaseConfig) -> None:
+    ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
+
+    if ckpt_path is not None:
+        logger.info(
+            f"ckpt_path: {ckpt_path}, exists: {ckpt_path.exists()}, "
+            f"resume: {cfg.resume}, not resume: {not cfg.resume}"
+        )
+    else:
+        logger.info(
+            f"ckpt_path: {ckpt_path}, resume: {cfg.resume}, "
+            f"not resume: {not cfg.resume}"
+        )
+
+    logger.info(f"Using checkpoint: {ckpt_path}")
+
+    print(pretty_config(cfg, resolve=True))
+    set_seed(seed=cfg.seed)
+
+    global_step, experiment_tracker = setup(ckpt_path, cfg)
+
+    model_and_transform = instantiate(cfg.model)
+
+    model = model_and_transform.model
+    transform: Optional[Callable] = model_and_transform.transform
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
@@ -106,7 +108,7 @@ def run(cfg: BaseConfig) -> None:
     val_datasets = []
     test_datasets = []
 
-    for dataset_name, (batch_size, dataset) in cfg.dataset.items():
+    for dataset_name, dataset in cfg.dataset.items():
         logger.info(f"Setting up {dataset_name} train dataset")
 
         train_dataset: Dataset = instantiate(
@@ -126,6 +128,10 @@ def run(cfg: BaseConfig) -> None:
             set_name="test",
             infinite_sampling=False,
         )
+
+        train_dataset.with_transform(transform)
+        val_dataset.with_transform(transform)
+        test_dataset.with_transform(transform)
 
         train_datasets.append(train_dataset)
         val_datasets.append(val_dataset)
@@ -194,8 +200,8 @@ def run(cfg: BaseConfig) -> None:
         evaluators=[
             ClassificationEvaluator(experiment_tracker=experiment_tracker)
         ],
-        train_dataloaders=[train_dataloader],
-        val_dataloaders=[val_dataloader],
+        train_dataloader=train_dataloader,
+        val_dataloader=val_dataloader,
         callbacks=instantiate_callbacks(cfg.callbacks),
         resume=ckpt_path,
         experiment_tracker=experiment_tracker,
@@ -205,7 +211,7 @@ def run(cfg: BaseConfig) -> None:
         learner.train()
 
     if cfg.test:
-        learner.test(test_dataloaders=[test_dataloader])
+        learner.test(test_dataloader=test_dataloader)
 
 
 if __name__ == "__main__":

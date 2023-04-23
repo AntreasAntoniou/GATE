@@ -4,6 +4,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Union
+from hydra_zen import instantiate
 
 import torch
 import torch.nn as nn
@@ -142,6 +143,14 @@ class Callback(ABC):
         checkpoint_path: Path,
     ) -> None:
         pass
+
+
+def instantiate_callbacks(callback_dict: dict) -> List[Callback]:
+    callbacks = []
+    for cb_conf in callback_dict.values():
+        callbacks.append(instantiate(cb_conf))
+
+    return callbacks
 
 
 class CallbackHandler(Callback):
