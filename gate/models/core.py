@@ -1,8 +1,13 @@
+from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
+
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(__name__, set_rich=True)
 
 
 @dataclass
@@ -25,10 +30,15 @@ class TargetModalityConfig:
     video: Optional[List[SourceModalityConfig]] = None
 
 
-class GATEModel(nn.Module):
+class GATEModel(nn.Module, ABC):
     """🚪 GATEModel class for handling different input and output modalities."""
 
-    def __init__(self, config: Any, model: nn.Module):
+    def __init__(
+        self,
+        config: Any,
+        model: nn.Module,
+        key_remapper_dict: Optional[Dict] = None,
+    ):
         """
         🏗️ Initialize the GATEModel with a configuration and a base model.
 
@@ -39,8 +49,10 @@ class GATEModel(nn.Module):
         super().__init__()
         self.model = model
         self.config = config
+        self.key_remapper_dict = key_remapper_dict
+        logger.info(f"Initialized: {config}")
 
-        self.supported_transforms = {}
+        self.supported_input_modalities = {}
         for (
             target_modality_name,
             source_modality_dict_list,
@@ -52,12 +64,12 @@ class GATEModel(nn.Module):
                         for key, value in source_modality_dict.__dict__.items()
                         if value is True
                     )
-                    self.supported_transforms[
+                    self.supported_input_modalities[
                         (supported_modalities, target_modality_name)
                     ] = True
 
     def process_modalities(
-        self, target_modality_name: str, **input_modalities: Dict[str, Any]
+        self, target_modality_name: str, input_modalities: Dict[str, Any]
     ):
         """
         🔄 Process the input modalities and generate the output in the
@@ -69,9 +81,16 @@ class GATEModel(nn.Module):
         :raises ValueError: If the given transformation is unsupported.
         """
         key = (tuple(input_modalities.keys()), target_modality_name)
-        if key in self.supported_transforms:
+        if key in self.supported_input_modalities:
             # 🎛️ Define the transformation logic here
-            raise NotImplementedError
+            if self.key_remapper_dict is not None:
+                input_modalities: Dict = {
+                    self.key_remapper_dict[key]
+                    if key in self.key_remapper_dict
+                    else key: value
+                    for key, value in input_modalities.items()
+                }
+            return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported transformation: {key}")
 
@@ -82,7 +101,7 @@ class GATEModel(nn.Module):
         :return: A list of tuples containing input modalities and target
         modality names.
         """
-        return list(self.supported_transforms.keys())
+        return list(self.supported_input_modalities.keys())
 
     def forward(
         self, input_dict: Dict
@@ -96,7 +115,6 @@ class GATEModel(nn.Module):
                 as the value.
         """
         output_dict = {}
-
         for (
             supported_modalities,
             target_modality_name,
@@ -109,32 +127,16 @@ class GATEModel(nn.Module):
             # target_modality_name and input_modalities
             try:
                 output = self.process_modalities(
-                    target_modality_name, **input_modalities
+                    target_modality_name, input_modalities
                 )
                 # 💾 Store the output in the output_dict
                 if target_modality_name not in output_dict:
                     output_dict[target_modality_name] = {}
                 output_dict[target_modality_name][
-                    supported_modalities
+                    "_".join(supported_modalities)
                 ] = output
             except NotImplementedError:
                 pass  # 🛑 Handle unsupported cases, or do nothing
                 # if no action is needed for unsupported cases
 
         return output_dict
-
-
-if __name__ == "__main__":
-    from rich import print
-
-    gate_model_config = TargetModalityConfig(
-        image=[
-            SourceModalityConfig(text=True, image=True),
-            SourceModalityConfig(audio=True, image=True),
-            SourceModalityConfig(audio=True, text=True, image=True),
-        ]
-    )
-
-    model = GATEModel(gate_model_config, nn.Linear(10, 10))
-
-    print(model.__dict__)
