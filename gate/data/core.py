@@ -1,8 +1,11 @@
 from collections import defaultdict
 import json
-from typing import Dict
+import sys
+from typing import Any, Dict, Optional
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
+
+from gate.boilerplate.decorators import configurable
 
 
 class CustomConcatDataset(Dataset):
@@ -91,7 +94,7 @@ def dataclass_collate(batch):
                 key: default_collate(
                     [getattr(sample, key) for sample in batch]
                 )
-                if getattr(batch[0], key) != None
+                if getattr(batch[0], key) is not None
                 else None
                 for key in batch[0].__dict__.keys()
             }
@@ -99,6 +102,71 @@ def dataclass_collate(batch):
             return batch[0].__class__(**batched_dict)
     except Exception as e:
         print(
-            f"Current batch we fucked up on {json.dumps(dict_to_summary(batch), indent=4)}"
+            f"Current batch we botched up on "
+            f"{json.dumps(dict_to_summary(batch), indent=4)}"
         )
         raise e
+
+
+@configurable
+class GATEDataset(Dataset):
+    """
+    The GATEDataset class is a wrapper around another dataset, allowing for key
+    remapping and applying a task to the data items.
+
+    📚 Attributes:
+        - dataset: The input dataset to wrap around
+        - task: An optional task to apply to the data items
+        - key_remapper_dict: An optional dictionary for key remapping
+    """
+
+    def __init__(
+        self,
+        dataset: Any,
+        infinite_sampling: bool = False,
+        task: Optional[Any] = None,
+        key_remapper_dict: Optional[Dict] = None,
+        transforms: Optional[Any] = None,
+    ):
+        super().__init__()
+        self.dataset = dataset
+        self.task = task
+        self.key_remapper_dict = key_remapper_dict
+        self.infinite_sampling = infinite_sampling
+        self.transforms = transforms
+
+    def remap_keys(self, item: Dict) -> Dict:
+        class_type = None
+        if self.key_remapper_dict is not None:
+            if isinstance(item, Dict) or hasattr(item, "__dict__"):
+                if hasattr(item, "__dict__"):
+                    class_type = item.__class__
+                    item = item.__dict__
+
+                # 🔄 Remap keys based on the key_remapper_dict
+                for key, value in self.key_remapper_dict.items():
+                    if key in item:
+                        item[value] = item[key]
+                        del item[key]
+
+                if class_type is not None:
+                    item = class_type(**item)
+        return item
+
+    def __len__(self) -> int:
+        if self.infinite_sampling:
+            return sys.maxsize
+        return len(self.dataset)
+
+    def __getitem__(self, index) -> Any:
+        if self.infinite_sampling:
+            index = index % len(self.dataset)
+
+        item = self.dataset[index]
+
+        item = self.transforms(item) if self.transforms is not None else item
+
+        item: Any = self.remap_keys(item)
+
+        # Apply the task to the item if it exists
+        return self.task(item) if self.task is not None else item
