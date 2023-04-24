@@ -15,6 +15,7 @@ from gate.boilerplate.core import Learner
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.data.data import build_dataset
 from gate.models.clip import build_model
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
 
 
 def get_env_var(key: str, default: Any) -> Any:
@@ -63,13 +64,22 @@ class BaseConfig:
 
     # Defaults for these are provided in the collect_config_store method,
     # but will be often overridden at command line
-    model: Any = MISSING
-    dataset: Any = MISSING
+
     dataloader: Any = MISSING
     optimizer: Any = MISSING
     scheduler: Any = MISSING
     learner: Any = MISSING
     callbacks: Any = MISSING
+
+    model: Any = MISSING
+    dataset: Any = MISSING
+    task: Optional[Any] = None
+
+    model_modality_config: Any = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+    model_key_remapper_dict: Optional[Any] = None
+    dataset_key_remapper_dict: Optional[Any] = None
 
     # 🌐 Other configurations with default values or environment variables
     hf_username: str = HF_USERNAME
@@ -117,6 +127,24 @@ def collect_config_store():
 
     config_store.store(group="model", name="default", node=model_config)
 
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+
+    config_store.store(
+        group="model_modality_config",
+        name="image_classification",
+        node=model_modality_config_image_classification,
+    )
+
+    model_key_remapper_dict_config = {"image": "pixel_values"}
+
+    config_store.store(
+        group="model_key_remapper_dict",
+        name="clip",
+        node=model_key_remapper_dict_config,
+    )
+
     data_config: Any = build_dataset.__config__(populate_full_signature=True)
 
     food101_config = {
@@ -126,6 +154,14 @@ def collect_config_store():
     }
 
     config_store.store(group="dataset", name="food101", node=food101_config)
+
+    dataset_key_remapper_dict_config = {"image": "pixel_values"}
+
+    config_store.store(
+        group="dataset_key_remapper_dict",
+        name="clip",
+        node=dataset_key_remapper_dict_config,
+    )
 
     dataloader_config = builds(
         DataLoader, dataset=None, populate_full_signature=True

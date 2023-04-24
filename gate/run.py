@@ -21,7 +21,8 @@ from gate.boilerplate.utils import (
 )
 from torch.utils.data import Dataset, Subset
 from gate.config import BaseConfig, collect_config_store
-from gate.data.core import CustomConcatDataset, dataclass_collate
+from gate.data.core import CustomConcatDataset, GATEDataset, dataclass_collate
+from gate.models.core import GATEModel
 
 os.environ[
     "HYDRA_FULL_ERROR"
@@ -91,7 +92,11 @@ def run(cfg: BaseConfig) -> None:
 
     model_and_transform = instantiate(cfg.model)
 
-    model = model_and_transform.model
+    model = GATEModel(
+        model=model_and_transform.model,
+        config=cfg.model_modality_config,
+        key_remapper_dict=cfg.model_key_remapper_dict,
+    )
     transform: Optional[Callable] = model_and_transform.transform
 
     wandb.init()
@@ -104,6 +109,7 @@ def run(cfg: BaseConfig) -> None:
     wandb.config.update({"notes": repo_url})
     wandb.config.update({"init_global_step": global_step})
 
+    task = instantiate(cfg.task)
     train_datasets = []
     val_datasets = []
     test_datasets = []
@@ -138,6 +144,12 @@ def run(cfg: BaseConfig) -> None:
         test_datasets.append(test_dataset)
 
     train_dataset = CustomConcatDataset(train_datasets)
+    train_dataset = GATEDataset(
+        dataset=train_dataset,
+        infinite_sampling=True,
+        task=task,
+        key_remapper_dict=cfg.data_key_remapper_dict,
+    )
 
     if global_step > 0:
         train_dataset = Subset(
@@ -153,6 +165,12 @@ def run(cfg: BaseConfig) -> None:
     )
 
     val_dataset = CustomConcatDataset(val_datasets)
+    val_dataset = GATEDataset(
+        dataset=val_dataset,
+        infinite_sampling=False,
+        task=task,
+        key_remapper_dict=cfg.data_key_remapper_dict,
+    )
 
     val_dataloader = instantiate(
         cfg.dataloader,
@@ -162,7 +180,13 @@ def run(cfg: BaseConfig) -> None:
         collate_fn=dataclass_collate,
     )
 
-    test_dataset = CustomConcatDataset(val_datasets)
+    test_dataset = CustomConcatDataset(test_datasets)
+    test_dataset = GATEDataset(
+        dataset=test_dataset,
+        infinite_sampling=False,
+        task=task,
+        key_remapper_dict=cfg.data_key_remapper_dict,
+    )
 
     test_dataloader = instantiate(
         cfg.dataloader,
