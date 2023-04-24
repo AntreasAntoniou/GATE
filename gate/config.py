@@ -14,6 +14,7 @@ from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.data.data import build_dataset
+from gate.data.tasks import ClassificationTask
 from gate.models.clip import build_model
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 
@@ -75,9 +76,8 @@ class BaseConfig:
     dataset: Any = MISSING
     task: Optional[Any] = None
 
-    model_modality_config: Any = TargetModalityConfig(
-        image=[SourceModalityConfig(image=True)]
-    )
+    model_modality_config: Any = MISSING
+
     model_key_remapper_dict: Optional[Any] = None
     dataset_key_remapper_dict: Optional[Any] = None
 
@@ -125,7 +125,7 @@ def collect_config_store():
 
     model_config = build_model.__config__(populate_full_signature=True)
 
-    config_store.store(group="model", name="default", node=model_config)
+    config_store.store(group="model", name="clip-base16", node=model_config)
 
     model_modality_config_image_classification = TargetModalityConfig(
         image=[SourceModalityConfig(image=True)]
@@ -147,13 +147,19 @@ def collect_config_store():
 
     data_config: Any = build_dataset.__config__(populate_full_signature=True)
 
-    food101_config = {
-        "food101": data_config(
-            dataset_name="food101", set_name="train", data_dir=DATASET_DIR
+    beans_config = {
+        "beans": data_config(
+            dataset_name="beans", set_name="train", data_dir=DATASET_DIR
         )
     }
 
-    config_store.store(group="dataset", name="food101", node=food101_config)
+    config_store.store(group="dataset", name="beans", node=beans_config)
+
+    dummy_task_config = ClassificationTask.__config__(
+        populate_full_signature=True
+    )
+
+    config_store.store(group="task", name="dummy", node=dummy_task_config)
 
     dataset_key_remapper_dict_config = {"image": "pixel_values"}
 
@@ -270,8 +276,12 @@ def collect_config_store():
             dict(learner="default"),
             dict(optimizer="adamw"),
             dict(scheduler="cosine-annealing"),
-            dict(model="default"),
-            dict(dataset="food101"),
+            dict(model="clip-base16"),
+            dict(model_modality_config="image_classification"),
+            dict(model_key_remapper_dict="clip"),
+            dict(dataset="beans"),
+            dict(dataset_key_remapper_dict="clip"),
+            dict(task="dummy"),
             dict(dataloader="default"),
             dict(hydra="default"),
             dict(callbacks="default"),

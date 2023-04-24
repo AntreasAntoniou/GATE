@@ -24,10 +24,10 @@ class SourceModalityConfig:
 class TargetModalityConfig:
     """🎯 Class representing the target modalities configurations."""
 
-    image: Optional[List[Any]] = None
-    text: Optional[List[Any]] = None
-    audio: Optional[List[Any]] = None
-    video: Optional[List[Any]] = None
+    image: Optional[List[SourceModalityConfig]] = None
+    text: Optional[List[SourceModalityConfig]] = None
+    audio: Optional[List[SourceModalityConfig]] = None
+    video: Optional[List[SourceModalityConfig]] = None
 
 
 @dataclass
