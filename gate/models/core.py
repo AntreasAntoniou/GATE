@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
+from gate.boilerplate.decorators import configurable
 
 from gate.boilerplate.utils import get_logger
 
@@ -30,8 +31,8 @@ class TargetModalityConfig:
     video: Optional[List[SourceModalityConfig]] = None
 
 
-@dataclass
-class GATEModel(nn.Module, ABC):
+@configurable
+class GATEModel(nn.Module):
     """🚪 GATEModel class for handling different input and output modalities."""
 
     def __init__(
@@ -51,13 +52,16 @@ class GATEModel(nn.Module, ABC):
         self.model = model
         self.config = config
         self.key_remapper_dict = key_remapper_dict
-        logger.info(f"Initialized: {config}")
 
         self.supported_input_modalities = {}
         for (
             target_modality_name,
             source_modality_dict_list,
-        ) in self.config.__dict__.items():
+        ) in (
+            self.config.__dict__.items()
+            if isinstance(self.config, TargetModalityConfig)
+            else self.config.items()
+        ):
             if source_modality_dict_list is not None:
                 for source_modality_dict in source_modality_dict_list:
                     supported_modalities = tuple(

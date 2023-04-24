@@ -120,19 +120,16 @@ def run(cfg: BaseConfig) -> None:
         train_dataset: Dataset = instantiate(
             dataset,
             set_name="train",
-            infinite_sampling=True,
         )
 
         val_dataset: Dataset = instantiate(
             dataset,
-            set_name="val",
-            infinite_sampling=False,
+            set_name="validation",
         )
 
         test_dataset: Dataset = instantiate(
             dataset,
             set_name="test",
-            infinite_sampling=False,
         )
 
         train_dataset.with_transform(transform)
@@ -148,7 +145,8 @@ def run(cfg: BaseConfig) -> None:
         dataset=train_dataset,
         infinite_sampling=True,
         task=task,
-        key_remapper_dict=cfg.data_key_remapper_dict,
+        key_remapper_dict=cfg.dataset_key_remapper_dict,
+        transforms=transform,
     )
 
     if global_step > 0:
@@ -169,7 +167,8 @@ def run(cfg: BaseConfig) -> None:
         dataset=val_dataset,
         infinite_sampling=False,
         task=task,
-        key_remapper_dict=cfg.data_key_remapper_dict,
+        key_remapper_dict=cfg.dataset_key_remapper_dict,
+        transforms=transform,
     )
 
     val_dataloader = instantiate(
@@ -185,7 +184,8 @@ def run(cfg: BaseConfig) -> None:
         dataset=test_dataset,
         infinite_sampling=False,
         task=task,
-        key_remapper_dict=cfg.data_key_remapper_dict,
+        key_remapper_dict=cfg.dataset_key_remapper_dict,
+        transforms=transform,
     )
 
     test_dataloader = instantiate(
