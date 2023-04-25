@@ -155,7 +155,7 @@ class GATEDataset(Dataset):
 
     def __len__(self) -> int:
         if self.infinite_sampling:
-            return int(9 * 10**8)
+            return int(9 * 10**7)
         return len(self.dataset)
 
     def __getitem__(self, index) -> Any:
@@ -165,8 +165,7 @@ class GATEDataset(Dataset):
         item = self.dataset[index]
 
         item = self.transforms(item) if self.transforms is not None else item
-        print(list(item.keys()))
         item: Any = self.remap_keys(item)
-
+        # print(f"data {list(item.keys())}")
         # Apply the task to the item if it exists
         return self.task(item) if self.task is not None else item

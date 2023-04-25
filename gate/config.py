@@ -34,9 +34,9 @@ EXPERIMENTS_ROOT_DIR = get_env_var("EXPERIMENTS_ROOT_DIR", "experiments/")
 CURRENT_EXPERIMENT_DIR = get_env_var(
     "CURRENT_EXPERIMENT_DIR", f"{EXPERIMENTS_ROOT_DIR}/{EXPERIMENT_NAME}"
 )
-TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 32)
-EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 64)
-NUM_WORKERS = get_env_var("NUM_WORKERS", 8)
+TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 8)
+EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 16)
+NUM_WORKERS = get_env_var("NUM_WORKERS", 2)
 PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
 PIN_MEMORY = get_env_var("PIN_MEMORY", True)
@@ -125,7 +125,9 @@ def collect_config_store():
 
     model_config = build_model.__config__(populate_full_signature=True)
 
-    config_store.store(group="model", name="clip-base16", node=model_config)
+    config_store.store(
+        group="model", name="clip-base16", node=model_config(num_classes=1000)
+    )
 
     model_modality_config_image_classification = TargetModalityConfig(
         image=[SourceModalityConfig(image=True)]
@@ -147,13 +149,13 @@ def collect_config_store():
 
     data_config: Any = build_dataset.__config__(populate_full_signature=True)
 
-    beans_config = {
-        "beans": data_config(
-            dataset_name="beans", set_name="train", data_dir=DATASET_DIR
-        )
-    }
+    pokemon_config = data_config(
+        dataset_name="beans",
+        set_name="train",
+        data_dir=DATASET_DIR,
+    )
 
-    config_store.store(group="dataset", name="beans", node=beans_config)
+    config_store.store(group="dataset", name="pokemon", node=pokemon_config)
 
     dummy_task_config = ClassificationTask.__config__(
         populate_full_signature=True
@@ -161,7 +163,7 @@ def collect_config_store():
 
     config_store.store(group="task", name="dummy", node=dummy_task_config)
 
-    dataset_key_remapper_dict_config = {"image": "pixel_values"}
+    dataset_key_remapper_dict_config = {"pixel_values": "image"}
 
     config_store.store(
         group="dataset_key_remapper_dict",
@@ -279,7 +281,7 @@ def collect_config_store():
             dict(model="clip-base16"),
             dict(model_modality_config="image_classification"),
             dict(model_key_remapper_dict="clip"),
-            dict(dataset="beans"),
+            dict(dataset="pokemon"),
             dict(dataset_key_remapper_dict="clip"),
             dict(task="dummy"),
             dict(dataloader="default"),

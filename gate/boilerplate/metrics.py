@@ -22,11 +22,13 @@ def accuracy_top_k(
         # Get the top-k predictions for each example in the batch
         topk_values, topk_indices = logits.topk(k, dim=1)
 
-        # Convert the ground truth labels to one-hot format
-        labels_one_hot = F.one_hot(labels, num_classes=logits.shape[1])
-
         # Compute the number of correct predictions in the top-k predictions
-        correct_topk = (labels_one_hot[topk_indices] == 1).sum(dim=1)
+        correct_topk = torch.tensor(
+            [
+                1 if any(labels[i] == topk_indices[i]) else 0
+                for i in range(len(labels))
+            ]
+        )
 
         # Compute the top-k accuracy for each value of k
         top_k_accuracy = correct_topk.float().mean(dim=0)

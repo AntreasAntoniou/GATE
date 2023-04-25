@@ -61,7 +61,7 @@ def build_model(
 
     def transform_wrapper(input_dict: Dict):
         return {
-            "pixel_values": transform(input_dict["image"])["pixel_values"],
+            "pixel_values": transform(input_dict["image"])["pixel_values"][0],
             "labels": input_dict["labels"],
         }
 

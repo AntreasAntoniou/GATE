@@ -69,11 +69,14 @@ class ClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        # print({key: value.shape for key, value in batch.items()})
         output_dict = model.forward(batch)
-        loss = F.cross_entropy(output_dict["logits"], batch["labels"])
-        accuracy = accuracy_top_k(output_dict["logits"], batch["labels"], k=1)
+        loss = F.cross_entropy(output_dict["image"]["image"], batch["labels"])
+        accuracy = accuracy_top_k(
+            logits=output_dict["image"]["image"], labels=batch["labels"], k=1
+        )
         accuracy_top_5 = accuracy_top_k(
-            output_dict["logits"], batch["labels"], k=5
+            logits=output_dict["image"]["image"], labels=batch["labels"], k=5
         )
         output_metrics_dict = {
             "loss": loss,
