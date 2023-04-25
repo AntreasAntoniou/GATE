@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+FROM nvcr.io/nvidia/cuda:12.0.0-cudnn8-devel-ubuntu22.04
 
 SHELL ["/bin/bash", "-c"]
 
@@ -43,10 +43,8 @@ RUN git config --global credential.helper store
 RUN pip install wandb --upgrade
 
 RUN mkdir /app/
-ADD tali_wit/ /app/tali_wit
+ADD gate/ /app/gate
 ADD setup.py /app/
-
-RUN  /app/
 
 RUN echo y | pip install /app/
 

@@ -66,12 +66,19 @@ class GATEModel(nn.Module):
                 for source_modality_dict in source_modality_dict_list:
                     supported_modalities = tuple(
                         key
-                        for key, value in source_modality_dict.__dict__.items()
+                        for key, value in (
+                            source_modality_dict.__dict__.items()
+                            if isinstance(
+                                source_modality_dict, SourceModalityConfig
+                            )
+                            else source_modality_dict.items()
+                        )
                         if value is True
                     )
                     self.supported_input_modalities[
                         (supported_modalities, target_modality_name)
                     ] = True
+        # print(self.supported_input_modalities)
 
     def process_modalities(
         self, target_modality_name: str, input_modalities: Dict[str, Any]
@@ -86,6 +93,9 @@ class GATEModel(nn.Module):
         :raises ValueError: If the given transformation is unsupported.
         """
         key = (tuple(input_modalities.keys()), target_modality_name)
+        # print(
+        #     f"pre pre model {list(input_modalities.keys())}"
+        # )  # 📋 Print the input modalities
         if key in self.supported_input_modalities:
             # 🎛️ Define the transformation logic here
             if self.key_remapper_dict is not None:
@@ -95,6 +105,9 @@ class GATEModel(nn.Module):
                     else key: value
                     for key, value in input_modalities.items()
                 }
+            # print(
+            #     f"pre model {list(input_modalities.keys())}"
+            # )  # 📋 Print the input modalities
             return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported transformation: {key}")
@@ -130,6 +143,7 @@ class GATEModel(nn.Module):
             }
             # 📞 Call the process_modalities method with the
             # target_modality_name and input_modalities
+            # print(f"{supported_modalities} -> {target_modality_name}")
             try:
                 output = self.process_modalities(
                     target_modality_name, input_modalities

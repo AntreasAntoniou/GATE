@@ -110,37 +110,22 @@ def run(cfg: BaseConfig) -> None:
     wandb.config.update({"init_global_step": global_step})
 
     task = instantiate(cfg.task)
-    train_datasets = []
-    val_datasets = []
-    test_datasets = []
 
-    for dataset_name, dataset in cfg.dataset.items():
-        logger.info(f"Setting up {dataset_name} train dataset")
+    train_dataset: Dataset = instantiate(
+        cfg.dataset,
+        set_name="train",
+    )
 
-        train_dataset: Dataset = instantiate(
-            dataset,
-            set_name="train",
-        )
+    val_dataset: Dataset = instantiate(
+        cfg.dataset,
+        set_name="validation",
+    )
 
-        val_dataset: Dataset = instantiate(
-            dataset,
-            set_name="validation",
-        )
+    test_dataset: Dataset = instantiate(
+        cfg.dataset,
+        set_name="test",
+    )
 
-        test_dataset: Dataset = instantiate(
-            dataset,
-            set_name="test",
-        )
-
-        train_dataset.with_transform(transform)
-        val_dataset.with_transform(transform)
-        test_dataset.with_transform(transform)
-
-        train_datasets.append(train_dataset)
-        val_datasets.append(val_dataset)
-        test_datasets.append(test_dataset)
-
-    train_dataset = CustomConcatDataset(train_datasets)
     train_dataset = GATEDataset(
         dataset=train_dataset,
         infinite_sampling=True,
@@ -157,12 +142,14 @@ def run(cfg: BaseConfig) -> None:
     train_dataloader = instantiate(
         cfg.dataloader,
         dataset=train_dataset,
-        batch_size=1,
+        batch_size=16,
         shuffle=True,
-        collate_fn=dataclass_collate,
+        # collate_fn=dataclass_collate,
     )
 
-    val_dataset = CustomConcatDataset(val_datasets)
+    batch = next(iter(train_dataloader))
+    shape_dict = {k: v.shape for k, v in batch.items()}
+
     val_dataset = GATEDataset(
         dataset=val_dataset,
         infinite_sampling=False,
@@ -174,12 +161,11 @@ def run(cfg: BaseConfig) -> None:
     val_dataloader = instantiate(
         cfg.dataloader,
         dataset=val_dataset,
-        batch_size=1,
+        batch_size=cfg.eval_batch_size,
         shuffle=False,
-        collate_fn=dataclass_collate,
+        # collate_fn=dataclass_collate,
     )
 
-    test_dataset = CustomConcatDataset(test_datasets)
     test_dataset = GATEDataset(
         dataset=test_dataset,
         infinite_sampling=False,
@@ -191,9 +177,9 @@ def run(cfg: BaseConfig) -> None:
     test_dataloader = instantiate(
         cfg.dataloader,
         dataset=test_dataset,
-        batch_size=1,
+        batch_size=cfg.eval_batch_size,
         shuffle=False,
-        collate_fn=dataclass_collate,
+        # collate_fn=dataclass_collate,
     )
 
     experiment_tracker["num_parameters"] = sum(
