@@ -1,4 +1,4 @@
-# places365.py
+# cifar100.py
 from typing import Optional
 import os
 import numpy as np
@@ -25,15 +25,24 @@ def build_cifar100_dataset(
     """
     # Create a generator with the specified seed
     rng = torch.Generator().manual_seed(42)
-
-    data = torchvision.datasets.CIFAR100(
-        root=data_dir
-        if data_dir is not None
-        else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
-        split="train",
-        small=True,
-        download=True,
-    )
+    try:
+        data = torchvision.datasets.CIFAR100(
+            root=data_dir
+            if data_dir is not None
+            else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
+            split="train",
+            small=True,
+            download=True,
+        )
+    except RuntimeError:
+        data = torchvision.datasets.CIFAR100(
+            root=data_dir
+            if data_dir is not None
+            else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
+            split="train",
+            small=True,
+            download=False,
+        )
 
     dataset_length = len(data)
     val_split = 0.1  # Fraction for the validation set (e.g., 10%)
@@ -47,14 +56,24 @@ def build_cifar100_dataset(
         data, [train_length, val_length], generator=rng
     )
 
-    test_data = torchvision.datasets.CIFAR100(
-        root=data_dir
-        if data_dir is not None
-        else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
-        split="test",
-        small=True,
-        download=True,
-    )
+    try:
+        test_data = torchvision.datasets.CIFAR100(
+            root=data_dir
+            if data_dir is not None
+            else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
+            split="test",
+            small=True,
+            download=True,
+        )
+    except RuntimeError:
+        test_data = torchvision.datasets.CIFAR100(
+            root=data_dir
+            if data_dir is not None
+            else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
+            split="test",
+            small=True,
+            download=False,
+        )
 
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
 

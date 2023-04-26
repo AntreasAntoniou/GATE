@@ -1,6 +1,6 @@
-# test_food101_dataset.py
+# test_stl10.py
 import pytest
-from gate.data.image.stl10 import build_stl10_dataset
+from gate.data.image.classification.stl10 import build_stl10_dataset
 
 
 def test_build_svhn_dataset():
