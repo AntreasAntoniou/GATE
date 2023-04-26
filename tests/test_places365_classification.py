@@ -1,6 +1,6 @@
 # test_food101_dataset.py
 import pytest
-from gate.data.image.places365 import build_places365_dataset
+from gate.data.image.classification.places365 import build_places365_dataset
 
 
 def test_build_svhn_dataset():

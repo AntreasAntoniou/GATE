@@ -1,6 +1,6 @@
 # test_food101_dataset.py
 import pytest
-from gate.data.image.imagenet1k import build_imagenet1k_dataset
+from gate.data.image.classification.imagenet1k import build_imagenet1k_dataset
 
 
 def test_build_food101_dataset():
