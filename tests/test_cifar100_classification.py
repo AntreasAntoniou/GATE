@@ -1,6 +1,6 @@
 # test_food101_dataset.py
 import pytest
-from gate.data.image.cifar100 import build_cifar100_dataset
+from gate.data.image.classification.cifar100 import build_cifar100_dataset
 
 
 def test_build_svhn_dataset():
