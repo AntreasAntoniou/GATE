@@ -1,9 +1,11 @@
 # test_food101_dataset.py
+import os
+
 import pytest
+
 from gate.data.image.segmentation.nyu_depth_v2 import (
     build_nyu_depth_v2_dataset,
 )
-import os
 
 
 def test_build_ade20k_dataset():

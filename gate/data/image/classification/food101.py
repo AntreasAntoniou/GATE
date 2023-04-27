@@ -13,7 +13,8 @@ def build_food101_dataset(
 
     Args:
         data_dir: The directory where the dataset cache is stored.
-        set_name: The name of the dataset split to return ("train", "val", or "test").
+        set_name: The name of the dataset split to return
+        ("train", "val", or "test").
 
     Returns:
         A dictionary containing the dataset split.

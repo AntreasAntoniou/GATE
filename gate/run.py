@@ -15,8 +15,12 @@ from gate.boilerplate.callbacks import Callback, instantiate_callbacks
 from gate.boilerplate.core import Learner
 from gate.boilerplate.evaluators import ClassificationEvaluator
 from gate.boilerplate.trainers import ClassificationTrainer
-from gate.boilerplate.utils import (create_hf_model_repo_and_download_maybe,
-                                    get_logger, pretty_config, set_seed)
+from gate.boilerplate.utils import (
+    create_hf_model_repo_and_download_maybe,
+    get_logger,
+    pretty_config,
+    set_seed,
+)
 from gate.config import BaseConfig, collect_config_store
 from gate.data.core import CustomConcatDataset, GATEDataset, dataclass_collate
 from gate.models.core import GATEModel
