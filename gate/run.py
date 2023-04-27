@@ -1,25 +1,22 @@
 import os
 import pathlib
-
-import neptune
-import wandb
-from rich import print
-from rich.traceback import install
 from typing import Callable, List, Optional
+
 import hydra
+import neptune
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
+from rich import print
+from rich.traceback import install
+from torch.utils.data import Dataset, Subset
+
+import wandb
 from gate.boilerplate.callbacks import Callback, instantiate_callbacks
 from gate.boilerplate.core import Learner
 from gate.boilerplate.evaluators import ClassificationEvaluator
 from gate.boilerplate.trainers import ClassificationTrainer
-from gate.boilerplate.utils import (
-    create_hf_model_repo_and_download_maybe,
-    get_logger,
-    pretty_config,
-    set_seed,
-)
-from torch.utils.data import Dataset, Subset
+from gate.boilerplate.utils import (create_hf_model_repo_and_download_maybe,
+                                    get_logger, pretty_config, set_seed)
 from gate.config import BaseConfig, collect_config_store
 from gate.data.core import CustomConcatDataset, GATEDataset, dataclass_collate
 from gate.models.core import GATEModel
@@ -37,7 +34,6 @@ os.environ[
 install()  # beautiful and clean tracebacks for debugging
 
 import torch
-
 
 config_store = collect_config_store()
 

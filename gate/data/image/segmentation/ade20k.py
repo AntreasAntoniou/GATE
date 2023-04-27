@@ -1,5 +1,6 @@
 # ade20k.py
 from typing import Optional
+
 import numpy as np
 from datasets import load_dataset
 
@@ -21,20 +22,20 @@ def build_ade20k_dataset(
 
     train_data = load_dataset(
         "scene_parse_150",
-        "instance-segmentation",
+        "instance_segmentation",
         cache_dir=data_dir,
     )
 
     val_data = load_dataset(
         "scene_parse_150",
-        "instance-segmentation",
+        "instance_segmentation",
         split="validation",
         cache_dir=data_dir,
     )
 
     test_data = load_dataset(
         "scene_parse_150",
-        "instance-segmentation",
+        "instance_segmentation",
         split="test",
         cache_dir=data_dir,
     )

@@ -1,11 +1,12 @@
 import os
 from typing import Dict, Optional
-import pytest
-from gate.data.data import build_dataset
-from gate.data import GATEDataset
-from gate.models import CLIPWithLinear
-from torch.utils.data import Dataset, DataLoader
 
+import pytest
+from torch.utils.data import DataLoader, Dataset
+
+from gate.data import GATEDataset
+from gate.data.data import build_dataset
+from gate.models import CLIPWithLinear
 from gate.models.clip import build_model
 
 

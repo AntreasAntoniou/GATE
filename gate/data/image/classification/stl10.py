@@ -1,14 +1,13 @@
 # stl10.py
-from typing import Optional
 import os
-import numpy as np
-from py import test
-import torchvision
-from torch.utils.data import Subset
-import torch
-from torch.utils.data import random_split
+from typing import Optional
 
+import numpy as np
+import torch
+import torchvision
 from datasets import load_dataset
+from py import test
+from torch.utils.data import Subset, random_split
 
 
 def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -31,7 +30,6 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/stl10-train/"),
             split="train",
-            small=True,
             download=True,
         )
     except RuntimeError:
@@ -40,7 +38,6 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/stl10-train/"),
             split="train",
-            small=True,
             download=False,
         )
 
@@ -61,7 +58,6 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/stl10-test/"),
             split="test",
-            small=True,
             download=True,
         )
     except RuntimeError:
@@ -70,7 +66,6 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/stl10-test/"),
             split="test",
-            small=True,
             download=False,
         )
 

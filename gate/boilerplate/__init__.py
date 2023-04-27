@@ -1,5 +1,4 @@
 from .callbacks import *
-from .callbacks import *
 from .convenience import *
 from .core import *
 from .decorators import *
