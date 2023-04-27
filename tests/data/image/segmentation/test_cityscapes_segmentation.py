@@ -1,7 +1,9 @@
 # test_food101_dataset.py
-import pytest
-from gate.data.image.segmentation.cityscapes import build_cityscapes_dataset
 import os
+
+import pytest
+
+from gate.data.image.segmentation.cityscapes import build_cityscapes_dataset
 
 
 def test_build_cityscapes_dataset():

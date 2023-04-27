@@ -1,7 +1,9 @@
 # test_food101_dataset.py
-import pytest
-from gate.data.image.segmentation.ade20k import build_ade20k_dataset
 import os
+
+import pytest
+
+from gate.data.image.segmentation.ade20k import build_ade20k_dataset
 
 
 def test_build_ade20k_dataset():

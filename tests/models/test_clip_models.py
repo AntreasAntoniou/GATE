@@ -2,8 +2,11 @@ import torch
 import torch.nn.functional as F
 
 from gate.models.clip import ModelAndTransform, build_model
-from gate.models.core import (GATEModel, SourceModalityConfig,
-                              TargetModalityConfig)
+from gate.models.core import (
+    GATEModel,
+    SourceModalityConfig,
+    TargetModalityConfig,
+)
 
 
 def test_build_model():
