@@ -1,7 +1,8 @@
-from collections import defaultdict
 import json
 import sys
+from collections import defaultdict
 from typing import Any, Dict, Optional
+
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 

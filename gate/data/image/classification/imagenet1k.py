@@ -1,5 +1,6 @@
 # imagenet1k.py
 from typing import Optional
+
 import numpy as np
 from datasets import load_dataset
 

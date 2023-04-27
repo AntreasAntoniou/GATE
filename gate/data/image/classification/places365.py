@@ -1,13 +1,12 @@
 # places365.py
-from typing import Optional
 import os
-import numpy as np
-import torchvision
-from torch.utils.data import Subset
-import torch
-from torch.utils.data import random_split
+from typing import Optional
 
+import numpy as np
+import torch
+import torchvision
 from datasets import load_dataset
+from torch.utils.data import Subset, random_split
 
 
 def build_places365_dataset(

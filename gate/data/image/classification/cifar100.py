@@ -1,13 +1,12 @@
 # cifar100.py
-from typing import Optional
 import os
-import numpy as np
-import torchvision
-from torch.utils.data import Subset
-import torch
-from torch.utils.data import random_split
+from typing import Optional
 
+import numpy as np
+import torch
+import torchvision
 from datasets import load_dataset
+from torch.utils.data import Subset, random_split
 
 
 def build_cifar100_dataset(
@@ -30,8 +29,7 @@ def build_cifar100_dataset(
             root=data_dir
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
-            split="train",
-            small=True,
+            train=True,
             download=True,
         )
     except RuntimeError:
@@ -39,8 +37,7 @@ def build_cifar100_dataset(
             root=data_dir
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
-            split="train",
-            small=True,
+            train=True,
             download=False,
         )
 
@@ -61,8 +58,7 @@ def build_cifar100_dataset(
             root=data_dir
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
-            split="test",
-            small=True,
+            train=False,
             download=True,
         )
     except RuntimeError:
@@ -70,8 +66,7 @@ def build_cifar100_dataset(
             root=data_dir
             if data_dir is not None
             else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
-            split="test",
-            small=True,
+            train=False,
             download=False,
         )
 

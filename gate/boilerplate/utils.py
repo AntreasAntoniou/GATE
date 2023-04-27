@@ -5,12 +5,8 @@ from functools import wraps
 
 import accelerate
 import torch
-from huggingface_hub import (
-    create_repo,
-    hf_hub_download,
-    login,
-    snapshot_download,
-)
+from huggingface_hub import (create_repo, hf_hub_download, login,
+                             snapshot_download)
 from omegaconf import DictConfig, OmegaConf
 from rich.logging import RichHandler
 from rich.syntax import Syntax

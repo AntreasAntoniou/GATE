@@ -1,13 +1,13 @@
-from abc import ABC
 import logging
 import threading
+from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Union
-from hydra_zen import instantiate
 
 import torch
 import torch.nn as nn
+from hydra_zen import instantiate
 from torch.utils.data import DataLoader
 
 from .utils import get_logger
