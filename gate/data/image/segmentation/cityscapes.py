@@ -9,7 +9,7 @@ from datasets import load_dataset
 from torch.utils.data import Subset, random_split
 
 
-def build_cifar100_dataset(
+def build_cityscapes_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
     """
