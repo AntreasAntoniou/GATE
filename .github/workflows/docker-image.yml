@@ -31,7 +31,7 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/AntreasAntoniou/${{ env.REPO_NAME }}:$GITHUB_SHA
+          ghcr.io/AntreasAntoniou/${{ env.REPO_NAME }}:${{ env.GITHUB_SHA }}
           ghcr.io/AntreasAntoniou/${{ env.REPO_NAME }}:latest
         load: false
         no-cache: false
