@@ -20,8 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install sphinx  # Add any other required dependencies, e.g., sphinx_rtd_theme or sphinx_autodoc_typehints
-        pip install sphinx sphinx_rtd_theme  # Add the sphinx_rtd_theme package
+        bash install.sh 
     - name: Build Sphinx documentation
       run: |
         cd docs  # Replace 'docs' with the path to your Sphinx documentation directory
