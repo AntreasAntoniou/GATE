@@ -32,9 +32,9 @@ jobs:
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
         git checkout -b docs-pages
-        rm -rf ./*  # Remove all files except the .git directory
-        mv ./docs/_build/html/* ./  # Move the built documentation to the repository root
+        rm -rf *  # Remove all files except the .git directory
+        mv docs/_build/html/* .  # Move the built documentation to the repository root
         git add .
         git commit -m "Update documentation"
-        git remote set-url origin https://${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/AntreasAntoniou/GATE-private.git
+        git remote set-url origin https://${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/your-username/your-repo.git
         git push -u origin docs-pages --force
