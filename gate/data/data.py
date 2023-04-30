@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable

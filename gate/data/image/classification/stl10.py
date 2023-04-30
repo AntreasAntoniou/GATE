@@ -2,12 +2,9 @@
 import os
 from typing import Optional
 
-import numpy as np
 import torch
 import torchvision
-from datasets import load_dataset
-from py import test
-from torch.utils.data import Subset, random_split
+from torch.utils.data import random_split
 
 
 def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:

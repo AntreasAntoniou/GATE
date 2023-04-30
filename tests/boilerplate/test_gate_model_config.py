@@ -1,7 +1,3 @@
-import pytest
-import torch
-import torch.nn as nn
-
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 
 
