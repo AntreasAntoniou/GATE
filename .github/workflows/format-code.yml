@@ -31,7 +31,6 @@ jobs:
 
     - name: Apply formatting
       run: |
-        autoflake --recursive --remove-all-unused-imports --in-place .
         isort -l 79 .
         black -l 79 .
 
