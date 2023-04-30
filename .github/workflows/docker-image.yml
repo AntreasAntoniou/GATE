@@ -20,7 +20,7 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+        password: ${{ secrets.DOCKER_TOKEN }}
 
     - name: Process repository name
       id: repo-name
