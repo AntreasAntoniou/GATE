@@ -22,12 +22,16 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
 
+    - name: Process repository name
+      id: repo-name
+      run: |
+        echo "::set-output name=lowercase_repo::$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')"
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
       with:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]'):${{ github.sha }}
-          ghcr.io/${{ github.repository_owner }}/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]'):latest
-
+          ghcr.io/${{ github.repository_owner }}/$(echo ${{ steps.repo-name.outputs.lowercase_repo }}):${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/$(echo ${{ steps.repo-name.outputs.lowercase_repo }}):latest
