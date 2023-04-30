@@ -1,17 +1,17 @@
 import os
 import pathlib
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import hydra
 import neptune
+import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
 from torch.utils.data import Dataset, Subset
 
-import wandb
-from gate.boilerplate.callbacks import Callback, instantiate_callbacks
+from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.core import Learner
 from gate.boilerplate.evaluators import ClassificationEvaluator
 from gate.boilerplate.trainers import ClassificationTrainer
@@ -22,7 +22,7 @@ from gate.boilerplate.utils import (
     set_seed,
 )
 from gate.config import BaseConfig, collect_config_store
-from gate.data.core import CustomConcatDataset, GATEDataset, dataclass_collate
+from gate.data.core import GATEDataset
 from gate.models.core import GATEModel
 
 os.environ[

@@ -1,22 +1,43 @@
-name: Format code
+name: Python Code Formatting
 
-on: push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  format:
+  formatting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Format code with black and isort
-        run: |
-          pip install black isort
-          isort -l 79 .
-          black -l 79 .
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          committer_name: GitHub Actions
-          committer_email: actions@github.com
-          message: "Format code with black and isort :)"
-          add: "."
-          
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+        
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+
+    - name: Install formatting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort autoflake
+
+    - name: Apply formatting
+      run: |
+        autoflake --recursive --remove-all-unused-imports --in-place .
+        isort -l 79 .
+        black -l 79 .
+
+    - name: Commit changes
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add -A
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Apply black, isort, and autoflake formatting" && git push)

@@ -1,4 +1,5 @@
 import pytest
+
 from gate.data.image.segmentation.pascal_context import (
     build_pascal_context_dataset,
 )

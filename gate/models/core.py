@@ -1,8 +1,6 @@
-from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable

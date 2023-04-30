@@ -1,7 +1,6 @@
 import logging
 import threading
 from abc import ABC
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Union
 

@@ -1,20 +1,11 @@
 import pathlib
-import random
-from turtle import down
-import zipfile
-from pathlib import Path
 from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
-import requests
 import scipy.io as sio
-import torch
-
 from PIL import Image
-from torch.utils import data
-from torchvision.datasets import CocoDetection
-from torch.utils.data import Dataset, random_split
+from torch.utils.data import random_split
 
 from gate.data.image.segmentation.coco import (
     BaseDataset,
