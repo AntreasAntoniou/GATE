@@ -14,3 +14,6 @@ pytorchvideo
 torchtyping
 h5py
 wandb
+rich
+sphinx
+sphinx_rtd_theme
