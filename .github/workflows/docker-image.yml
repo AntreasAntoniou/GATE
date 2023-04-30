@@ -9,6 +9,10 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+    - name: Remove unnecessary files
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
     - name: Checkout repository
       uses: actions/checkout@v2
 
@@ -39,3 +43,4 @@ jobs:
         no-cache: false
         pull: false
         github-token: ${{ secrets.DOCKER_TOKEN }}
+        
