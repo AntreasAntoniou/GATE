@@ -1,11 +1,9 @@
 # pascal_context.py
-import os
 from typing import Optional
 
 import torch
 from torch.utils.data import Dataset, random_split
 from torchvision.datasets import VOCSegmentation
-from torch.utils.data import Dataset, random_split
 
 
 def build_pascal_context_dataset(

@@ -1,8 +1,6 @@
-import itertools
 import pathlib
-import time
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn

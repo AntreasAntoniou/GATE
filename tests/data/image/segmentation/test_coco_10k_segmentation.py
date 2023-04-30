@@ -1,6 +1,8 @@
 # test_mscoco_10k.py
-import pytest
 import os
+
+import pytest
+
 from gate.data.image.segmentation.coco_10k import build_cocostuff10k_dataset
 
 
