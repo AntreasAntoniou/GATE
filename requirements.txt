@@ -1,0 +1,16 @@
+jupyterlab
+black
+timm
+accelerate
+datasets
+transformers
+orjson
+gh
+tabulate
+nvitop
+hydra-zen
+neptune
+pytorchvideo
+torchtyping
+h5py
+wandb
