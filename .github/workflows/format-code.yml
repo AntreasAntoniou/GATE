@@ -40,5 +40,5 @@ jobs:
         git config --global user.name "GitHub Actions"
         git add .
         git diff --quiet && git diff --staged --quiet || git commit -m "Apply isort, black, and flake8"
-        git remote set-url origin https://${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/your-username/your-repo.git
+        git remote set-url origin https://${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/AntreasAntoniou/GATE-private.git
         git push
