@@ -23,7 +23,9 @@ jobs:
         password: ${{ secrets.DOCKER_TOKEN }}
 
     - name: Set repository name as lowercase
-      run: echo "REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      run: |
+        echo "REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        echo "GITHUB_SHA=${{ github.sha }}" >> $GITHUB_ENV
     
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
