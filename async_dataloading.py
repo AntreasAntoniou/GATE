@@ -1,6 +1,4 @@
 import asyncio
-import queue
-import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 

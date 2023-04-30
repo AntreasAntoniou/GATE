@@ -2,11 +2,8 @@
 import os
 from typing import Optional
 
-import numpy as np
 import torch
 import torchvision
-from datasets import load_dataset
-from torch.utils.data import Subset, random_split
 
 
 def build_cityscapes_dataset(

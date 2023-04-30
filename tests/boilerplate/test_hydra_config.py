@@ -1,8 +1,7 @@
-import pytest
 from hydra.experimental import compose, initialize
 
 from gate.boilerplate.utils import pretty_config
-from gate.config import BaseConfig, collect_config_store
+from gate.config import collect_config_store
 
 
 def test_collect_config_store():

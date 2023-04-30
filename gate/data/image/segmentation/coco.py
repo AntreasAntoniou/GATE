@@ -1,20 +1,13 @@
-import zipfile
-from pathlib import Path
-import subprocess
 import random
+import subprocess
 import zipfile
 from pathlib import Path
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union
 
 import cv2
 import numpy as np
-import requests
-import scipy.io as sio
-import torch
-
 from PIL import Image
 from torch.utils import data
-from torchvision.datasets import CocoDetection
 
 
 def download_file(url: str, destination: Path) -> None:

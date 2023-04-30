@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import hydra
-import hydra_zen
 import torch
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config

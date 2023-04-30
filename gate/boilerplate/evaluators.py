@@ -1,6 +1,6 @@
 from ast import Dict
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import torch
 from accelerate import Accelerator
