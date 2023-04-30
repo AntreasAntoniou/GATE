@@ -35,5 +35,5 @@ jobs:
         mv docs/_build/html/* .  # Move the built documentation to the repository root
         git add .
         git commit -m "Update documentation"
-        git remote set-url origin https://${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/your-username/your-repo.git
+        git remote set-url origin https://${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}@github.com/antreasantoniou/gate-private.git
         git push -u origin docs-pages --force
