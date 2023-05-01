@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 from PIL import Image
 from torch.utils.data import random_split
-from gate.boilerplate.utils import get_logger
 
+from gate.boilerplate.utils import get_logger
 from gate.data.image.segmentation.coco import (
     BaseDataset,
     download_and_extract_coco_stuff164k,
