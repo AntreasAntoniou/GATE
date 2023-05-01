@@ -10,15 +10,17 @@ def test_build_food101_dataset():
     # Test if the function returns the correct dataset split
 
     train_set = build_food101_dataset(
-        "train", data_dir=os.environ.get("TEST_DIR")
+        "train", data_dir=os.environ.get("PYTEST_DIR")
     )
     assert train_set is not None, "Train set should not be None"
 
-    val_set = build_food101_dataset("val", data_dir=os.environ.get("TEST_DIR"))
+    val_set = build_food101_dataset(
+        "val", data_dir=os.environ.get("PYTEST_DIR")
+    )
     assert val_set is not None, "Validation set should not be None"
 
     test_set = build_food101_dataset(
-        "test", data_dir=os.environ.get("TEST_DIR")
+        "test", data_dir=os.environ.get("PYTEST_DIR")
     )
     assert test_set is not None, "Test set should not be None"
 
