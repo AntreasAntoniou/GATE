@@ -1,33 +1,40 @@
-import os
-import json
-import pathlib
-from opendatalab.__version__ import __url__
-from opendatalab.cli.get import implement_get
-from opendatalab.cli.info import implement_info
-from opendatalab.cli.login import implement_login
-from opendatalab.cli.ls import implement_ls
-from opendatalab.cli.search import implement_search
-from opendatalab.cli.utility import ContextInfo
-from unittest.mock import patch
-import multiprocessing as mp
+# food101.py
+from typing import Optional
 
-if __name__ == "__main__":
-    ctx = ContextInfo(__url__, "")
-    client = ctx.get_client()
-    odl_api = client.get_api()
-    implement_login(
-        obj=ctx,
-        username=os.environ.get("ODL_USERNAME"),
-        password=os.environ.get("ODL_PASSWORD"),
-    )
+import numpy as np
+from datasets import load_dataset
 
-    def always_true(*args, **kwargs):
-        return True
 
-    with patch("click.confirm", side_effect=always_true):
-        implement_get(
-            ctx,
-            "OK-VQA",
-            pathlib.Path(os.environ.get("PYTEST_DIR")) / "ok_vqa",
-            min(mp.cpu_count(), 8),
-        )
+def build_ok_vqa_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
+    """
+    Build a OK VQA dataset using the Hugging Face datasets library.
+
+    Args:
+        data_dir: The directory where the dataset cache is stored.
+        set_name: The name of the dataset split to return
+        ("train", "val", or "test").
+
+    Returns:
+        A dictionary containing the dataset split.
+    """
+    rng = np.random.RandomState(42)
+
+    train_val_data = load_dataset(
+        path="Multimodal-Fatima/OK-VQA_train",
+        cache_dir=data_dir,
+    )["train"]
+
+    test_data = load_dataset(
+        path="Multimodal-Fatima/OK-VQA_test",
+        cache_dir=data_dir,
+    )["test"]
+
+    train_val_data = train_val_data.train_test_split(test_size=0.1)
+    train_set = train_val_data["train"]
+    val_set = train_val_data["test"]
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_data}
+
+    return dataset_dict[set_name]
