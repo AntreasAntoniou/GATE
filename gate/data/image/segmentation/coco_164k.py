@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import random_split
 
-from gate.boilerplate.utils import get_logger
+from gate.boilerplate.utils import count_files_recursive, get_logger
 from gate.data.image.segmentation.coco import (
     BaseDataset,
     download_and_extract_coco_stuff164k,
@@ -65,7 +65,7 @@ class COCOStuff164K(BaseDataset):
         root = pathlib.Path(root)
         logger.info(f"Loading COCO-Stuff 164K dataset from {root}...")
         if download:
-            if (root / "stuffthingmaps_trainval2017.zip").exists():
+            if count_files_recursive(root) == 317204:
                 logger.info("Dataset already downloaded. Skipping download.")
             else:
                 logger.info("Downloading dataset...")
@@ -88,12 +88,8 @@ class COCOStuff164K(BaseDataset):
         Set the list of files for the dataset split. 🔍
         """
         if self.split in ["train2017", "val2017"]:
-            file_list = sorted(
-                (self.root / "images" / self.split).glob("*.jpg")
-            )
-            assert (
-                len(file_list) > 0
-            ), f"{self.root / 'images' / self.split} has no image"
+            file_list = sorted((self.root / self.split).glob("*.jpg"))
+            assert len(file_list) > 0, f"{self.root / self.split} has no image"
             file_list = [f.name.replace(".jpg", "") for f in file_list]
             self.files = file_list
         else:
@@ -105,8 +101,8 @@ class COCOStuff164K(BaseDataset):
         """
         # Set paths
         image_id = self.files[index]
-        image_path = self.root / "images" / self.split / f"{image_id}.jpg"
-        label_path = self.root / "annotations" / self.split / f"{image_id}.png"
+        image_path = self.root / self.split / f"{image_id}.jpg"
+        label_path = self.root / self.split / f"{image_id}.png"
 
         # Load an image and label
         image = cv2.imread(str(image_path), cv2.IMREAD_COLOR).astype(
@@ -173,7 +169,7 @@ def build_cocostuff164k_dataset(
 
     test_data = COCOStuff164K(
         root=data_dir,
-        split="test",
+        split="val",
         ignore_label=ignore_label,
         mean_bgr=mean_bgr,
         augment=False,

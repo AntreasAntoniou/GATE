@@ -4,12 +4,15 @@ import os
 import pytest
 
 from gate.data.image.segmentation.coco_10k import build_cocostuff10k_dataset
+import pathlib
+
+DATA_DIR = pathlib.Path(os.environ.get("PYTEST_DIR")) / "coco_10k"
 
 
 def test_invalid_set_name():
     with pytest.raises(ValueError):
         build_cocostuff10k_dataset(
-            data_dir=os.environ.get("PYTEST_DIR") + "/coco_10k",
+            data_dir=DATA_DIR,
             split="invalid",
         )
 
@@ -19,7 +22,7 @@ def test_invalid_set_name():
 def test_download(set_name):
     dataset = build_cocostuff10k_dataset(
         split=set_name,
-        data_dir=os.environ.get("PYTEST_DIR") + "/coco_10k",
+        data_dir=DATA_DIR,
         download=True,
     )
     assert len(dataset) > 0, f"{set_name} dataset should not be empty"
@@ -28,7 +31,8 @@ def test_download(set_name):
 @pytest.mark.parametrize("set_name", ["train", "val", "test"])
 def test_set_name(set_name):
     dataset = build_cocostuff10k_dataset(
-        split=set_name, data_dir=os.environ.get("PYTEST_DIR") + "/coco_10k"
+        split=set_name,
+        data_dir=DATA_DIR,
     )
     assert len(dataset) > 0, f"{set_name} dataset should not be empty"
 
