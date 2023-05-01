@@ -34,7 +34,7 @@ dev_requirements = [
 ]
 
 print(f"Installing {find_packages()}")
-
+# TODO: Automate pip install for pytorch deps depending on platform and GPU availability --extra-index-url https://download.pytorch.org/whl/cu118
 setup(
     name="gate",
     version="0.8.0",
