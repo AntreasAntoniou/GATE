@@ -16,7 +16,7 @@ mamba install -c conda-forge git-lfs -y
 git lfs install
 git config --global credential.helper store
 
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+python3 install_pytorch.py
 pip3 install -r requirements.txt
 
 source ~/miniconda/envs/main/bin/activate
