@@ -9,14 +9,25 @@ from gate.data.image.segmentation.coco_10k import build_cocostuff10k_dataset
 def test_invalid_set_name():
     with pytest.raises(ValueError):
         build_cocostuff10k_dataset(
-            data_dir=os.environ.get("TEST_DIR"), split="invalid"
+            data_dir=os.environ.get("TEST_DIR") + "/coco_10k", split="invalid"
         )
+
+
+# Note: This test requires internet connection and may take a while to complete
+@pytest.mark.parametrize("set_name", ["train", "test"])
+def test_download(set_name):
+    dataset = build_cocostuff10k_dataset(
+        split=set_name,
+        data_dir=os.environ.get("TEST_DIR") + "/coco_10k",
+        download=True,
+    )
+    assert len(dataset) > 0, f"{set_name} dataset should not be empty"
 
 
 @pytest.mark.parametrize("set_name", ["train", "val", "test"])
 def test_set_name(set_name):
     dataset = build_cocostuff10k_dataset(
-        split=set_name, data_dir=os.environ.get("TEST_DIR")
+        split=set_name, data_dir=os.environ.get("TEST_DIR") + "/coco_10k"
     )
     assert len(dataset) > 0, f"{set_name} dataset should not be empty"
 
@@ -28,10 +39,7 @@ def test_set_name(set_name):
     ), f"{set_name} dataset should have non-empty annotations"
 
 
-# Note: This test requires internet connection and may take a while to complete
-@pytest.mark.parametrize("set_name", ["train", "test"])
-def test_download(set_name):
-    dataset = build_cocostuff10k_dataset(
-        split=set_name, data_dir=os.environ.get("TEST_DIR"), download=True
-    )
-    assert len(dataset) > 0, f"{set_name} dataset should not be empty"
+if __name__ == "__main__":
+    test_invalid_set_name()
+    test_download("train")
+    test_set_name("train")

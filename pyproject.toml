@@ -26,6 +26,7 @@ wandb = "^0.15.0"
 torch = {version="*", source="torch"}
 torchvision = {version="*", source="torch"}
 torchaudio = {version="*", source="torch"}
+segmentation-models-pytorch = "^0.3.2"
 
 
 [[tool.poetry.source]]

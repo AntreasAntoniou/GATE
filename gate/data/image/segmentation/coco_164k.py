@@ -1,30 +1,33 @@
+import logging
 import pathlib
 from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
-import scipy.io as sio
 from PIL import Image
 from torch.utils.data import random_split
+from gate.boilerplate.utils import get_logger
 
 from gate.data.image.segmentation.coco import (
     BaseDataset,
-    download_and_extract_coco_stuff10k,
+    download_and_extract_coco_stuff164k,
 )
+
+logger = get_logger(__name__, set_rich=True)
 
 DEFAULT_SPLIT = "train"
 DEFAULT_IGNORE_LABEL = 255
 DEFAULT_MEAN_BGR = (104.008, 116.669, 122.675)
 DEFAULT_AUGMENT = True
 DEFAULT_BASE_SIZE = None
-DEFAULT_CROP_SIZE = 321
+DEFAULT_CROP_SIZE = 321  # 513
 DEFAULT_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5]
 DEFAULT_FLIP = True
 DEFAULT_WARP_IMAGE = True
 
 
 class COCOStuff164K(BaseDataset):
-    """COCO-Stuff 164K dataset"""
+    """COCO-Stuff 164K dataset 📚"""
 
     def __init__(
         self,
@@ -41,7 +44,7 @@ class COCOStuff164K(BaseDataset):
         download: bool = False,
     ):
         """
-        Initialize the CocoStuff10k dataset class.
+        Initialize the CocoStuff164K dataset class. 🚀
 
         Args:
             root: The root path of the dataset (default: DEFAULT_ROOT).
@@ -60,16 +63,17 @@ class COCOStuff164K(BaseDataset):
         """
         self.warp_image = warp_image
         root = pathlib.Path(root)
-
+        logger.info(f"Loading COCO-Stuff 164K dataset from {root}...")
         if download:
-            if pathlib.Path(root / "cocostuff-10k-v1.1.zip").exists():
-                print("Dataset already downloaded. Skipping download.")
+            if (root / "stuffthingmaps_trainval2017.zip").exists():
+                logger.info("Dataset already downloaded. Skipping download.")
             else:
-                download_and_extract_coco_stuff10k(root)
+                logger.info("Downloading dataset...")
+                download_and_extract_coco_stuff164k(root)
 
-        super(COCOStuff10K, self).__init__(
+        super(COCOStuff164K, self).__init__(
             root=root,
-            split=split,
+            split=split + "2017",
             ignore_label=ignore_label,
             mean_bgr=mean_bgr,
             augment=augment,
@@ -81,55 +85,39 @@ class COCOStuff164K(BaseDataset):
 
     def _set_files(self):
         """
-        Create a file path/image id list based on the dataset split.
+        Set the list of files for the dataset split. 🔍
         """
-        # Create data list via {train, test, all}.txt
-        if self.split in ["train", "test", "all"]:
-            file_list = self.root / "imageLists" / f"{self.split}.txt"
-            file_list = tuple(open(file_list, "r"))
-            file_list = [id_.rstrip() for id_ in file_list]
+        if self.split in ["train2017", "val2017"]:
+            file_list = sorted(
+                (self.root / "images" / self.split).glob("*.jpg")
+            )
+            assert (
+                len(file_list) > 0
+            ), f"{self.root / 'images' / self.split} has no image"
+            file_list = [f.name.replace(".jpg", "") for f in file_list]
             self.files = file_list
         else:
             raise ValueError(f"Invalid split name: {self.split}")
 
     def _load_data(self, index):
         """
-        Load the image and label at the given index.
-
-        Args:
-            index: The index of the image and label to load.
-
-        Returns:
-            A tuple containing the image ID, image, and label.
+        Load an image and its corresponding label based on the index. 🖼️
         """
         # Set paths
         image_id = self.files[index]
-        image_path = self.root / "images" / f"{image_id}.jpg"
-        label_path = self.root / "annotations" / f"{image_id}.mat"
+        image_path = self.root / "images" / self.split / f"{image_id}.jpg"
+        label_path = self.root / "annotations" / self.split / f"{image_id}.png"
 
         # Load an image and label
         image = cv2.imread(str(image_path), cv2.IMREAD_COLOR).astype(
             np.float32
         )
-        label = sio.loadmat(str(label_path))["S"]
-        label -= 1  # unlabeled (0 -> -1)
-        label[label == -1] = self.ignore_label
+        label = cv2.imread(str(label_path), cv2.IMREAD_GRAYSCALE)
 
-        # Warping: this is just for reproducing the official scores on GitHub
-        if self.warp_image:
-            image = cv2.resize(
-                image,
-                (self.crop_size, self.crop_size),
-                interpolation=cv2.INTER_LINEAR,
-            )
-            label = Image.fromarray(label).resize(
-                (self.crop_size, self.crop_size), resample=Image.NEAREST
-            )
-            label = np.asarray(label)
         return image_id, image, label
 
 
-def build_cocostuff10k_dataset(
+def build_cocostuff164k_dataset(
     data_dir: str,
     split: Optional[str] = None,
     ignore_label: int = 255,
@@ -140,7 +128,7 @@ def build_cocostuff10k_dataset(
     flip: bool = True,
     warp_image: bool = True,
     download: bool = False,
-) -> Tuple[COCOStuff10K, COCOStuff10K, COCOStuff10K]:
+) -> Tuple[COCOStuff164K, COCOStuff164K, COCOStuff164K]:
     """
     Build a CocoStuff10k dataset using the custom CocoStuff10k class.
 
@@ -163,7 +151,7 @@ def build_cocostuff10k_dataset(
     if split not in ["train", "val", "test"]:
         raise ValueError(f"Invalid split name: {split}")
 
-    train_data = COCOStuff10K(
+    train_data = COCOStuff164K(
         root=data_dir,
         split="train",
         ignore_label=ignore_label,
@@ -183,7 +171,7 @@ def build_cocostuff10k_dataset(
 
     train_data, val_data = random_split(train_data, [train_len, val_len])
 
-    test_data = COCOStuff10K(
+    test_data = COCOStuff164K(
         root=data_dir,
         split="test",
         ignore_label=ignore_label,
