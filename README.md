@@ -11,7 +11,7 @@
 Run 
 
 ```bash
-pip install --extra-index-url https://download.pytorch.org/whl/cu118 torch torchvision torchaudio
+python install_pytorch.py
 pip install .  # Install main dependencies
 ```
 
