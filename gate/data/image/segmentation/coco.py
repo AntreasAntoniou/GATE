@@ -209,7 +209,11 @@ class BaseDataset(data.Dataset):
         image -= self.mean_bgr
         # HWC -> CHW
         image = image.transpose(2, 0, 1)
-        return image_id, image.astype(np.float32), label.astype(np.int64)
+        return dict(
+            id=image_id,
+            image=image.astype(np.float32),
+            labels=label.astype(np.int64),
+        )
 
     def __len__(self):
         """

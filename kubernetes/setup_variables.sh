@@ -7,6 +7,10 @@ export WANDB_API_KEY="821661c6ee1657a2717093701ab76574ae1a9be0"
 export WANDB_ENTITY=machinelearningbrewery
 export WANDB_PROJECT=tali-exp-1
 
+export ODL_USERNAME="a.antoniou@ed.ac.uk"
+export ODL_PASSWORD="At7^K9w*BjDHTW\$MnXkR"
+export PYTEST_DIR="/data-fast1/dev/"
+
 export EXPERIMENT_NAME=tali-exp-2
 export HF_USERNAME="Antreas"
 export HF_TOKEN=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
