@@ -24,6 +24,7 @@ jobs:
         pip3 install -r requirements.txt
     - name: Build Sphinx documentation
       run: |
+        sphinx-apidoc -o docs/source gate
         cd docs  # Replace 'docs' with the path to your Sphinx documentation directory
         make html
 
