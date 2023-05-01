@@ -14,6 +14,4 @@
 
 ## Setting up the relevant environment variables
 
-
 ## Running experiments locally
-
