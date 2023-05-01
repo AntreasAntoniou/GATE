@@ -10,6 +10,22 @@ Welcome to GATE - Generalization After Transfer Evaluation Engine - An any-modal
    :maxdepth: 2
    :caption: Contents:
 
+   boilerplate
+   config
+   data
+   data.image
+   gate.boilerplate
+   gate.data.image.classification
+   gate.data.image
+   gate.data.image.segmentation
+   gate.data.image.visual_question_answering
+   gate.data
+   gate.models
+   gate
+   models
+   modules
+   run
+   setup
 
 
 Indices and tables
