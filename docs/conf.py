@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 
-project = "GATE - Generalization After Transfer Evaluation Engine - An any-modal Model evaluation framework"
+project = "GATE - Your GATEway to thorough ML evaluation"
 copyright = "2023, Antreas Antoniou"
 author = "Antreas Antoniou"
 release = "0.7.0"
