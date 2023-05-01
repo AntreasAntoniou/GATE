@@ -15,4 +15,5 @@ wandb
 rich
 segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git
 opencv-python
+scipy
 

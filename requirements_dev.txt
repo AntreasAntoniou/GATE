@@ -1,22 +1,3 @@
-rich
-timm
-accelerate
-datasets
-transformers
-orjson
-tabulate
-nvitop
-hydra-zen
-neptune
-pytorchvideo
-torchtyping
-h5py
-wandb
-sphinx
-sphinx_rtd_theme
-segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git
-opencv-python
-gh
 pytest
 isort
 jupyterlab
