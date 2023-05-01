@@ -5,9 +5,7 @@ import numpy as np
 from datasets import load_dataset
 
 
-def build_ptb_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_ptb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a PTB dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/ptb_text_only
