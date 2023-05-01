@@ -17,4 +17,6 @@ wandb
 rich
 sphinx
 sphinx_rtd_theme
-segmentation-models-pytorch
+segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git
+opencv-python
+

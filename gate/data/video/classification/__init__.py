@@ -1,1 +1,1 @@
-from kinetics400 import *
+from .kinetics400 import *
