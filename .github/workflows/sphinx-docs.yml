@@ -23,10 +23,9 @@ jobs:
         pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
         pip3 install -r requirements.txt
         pip3 install .
-    - name: Build Sphinx documentation
+    - name: Build Sphinx documentation # use "sphinx-apidoc -o docs/source gate" when new modules are added prior to pushing
       run: |
-        sphinx-apidoc -o docs/source gate
-        cd docs  # Replace 'docs' with the path to your Sphinx documentation directory
+        cd docs  # Replace 'docs' with the path to your Sphinx documentation directory 
         make html
 
     - name: Deploy to docs branch
