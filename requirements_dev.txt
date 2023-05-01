@@ -1,9 +1,9 @@
+rich
 timm
 accelerate
 datasets
 transformers
 orjson
-gh
 tabulate
 nvitop
 hydra-zen
@@ -12,7 +12,14 @@ pytorchvideo
 torchtyping
 h5py
 wandb
-rich
+sphinx
+sphinx_rtd_theme
 segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git
 opencv-python
+gh
+pytest
+isort
+jupyterlab
+black
+
 

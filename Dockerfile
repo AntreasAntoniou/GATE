@@ -42,7 +42,7 @@ RUN git lfs install
 RUN git config --global credential.helper store
 RUN echo y | pip install wandb --upgrade
 RUN echo y | pip install h5py --upgrade
-RUN echo y | pip install -U segmentation-models-pytorch
+RUN echo y | pip install git+https://github.com/qubvel/segmentation_models@master
 
 RUN mkdir /app/
 ADD gate/ /app/gate
