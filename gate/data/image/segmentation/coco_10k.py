@@ -6,6 +6,7 @@ import numpy as np
 import scipy.io as sio
 from PIL import Image
 from torch.utils.data import random_split
+from gate.boilerplate.utils import count_files_recursive
 
 from gate.data.image.segmentation.coco import (
     BaseDataset,
@@ -62,7 +63,7 @@ class COCOStuff10K(BaseDataset):
         root = pathlib.Path(root)
 
         if download:
-            if pathlib.Path(root / "cocostuff-10k-v1.1.zip").exists():
+            if count_files_recursive(root) == 20004:
                 print("Dataset already downloaded. Skipping download.")
             else:
                 download_and_extract_coco_stuff10k(root)

@@ -1,15 +1,18 @@
 # test_mscoco_10k.py
 import os
+import pathlib
 
 import pytest
 
 from gate.data.image.segmentation.coco_164k import build_cocostuff164k_dataset
 
+DATA_DIR = pathlib.Path(os.environ.get("PYTEST_DIR")) / "coco_164k"
+
 
 def test_invalid_set_name():
     with pytest.raises(ValueError):
         build_cocostuff164k_dataset(
-            data_dir=os.environ.get("PYTEST_DIR") + "/coco_164k",
+            data_dir=DATA_DIR,
             split="invalid",
         )
 
@@ -19,7 +22,7 @@ def test_invalid_set_name():
 def test_download(set_name):
     dataset = build_cocostuff164k_dataset(
         split=set_name,
-        data_dir=os.environ.get("PYTEST_DIR") + "/coco_164k",
+        data_dir=DATA_DIR,
         download=True,
     )
     assert len(dataset) > 0, f"{set_name} dataset should not be empty"
@@ -29,7 +32,7 @@ def test_download(set_name):
 def test_set_name(set_name):
     dataset = build_cocostuff164k_dataset(
         split=set_name,
-        data_dir=os.environ.get("PYTEST_DIR") + "/coco_164k",
+        data_dir=DATA_DIR,
         download=True,
     )
     assert len(dataset) > 0, f"{set_name} dataset should not be empty"

@@ -520,3 +520,15 @@ def create_hf_model_repo_and_download_maybe(cfg: Any):
 
     except Exception as e:
         return None, repo_url
+
+
+import os
+
+
+def count_files_recursive(directory: str) -> int:
+    file_count = 0
+
+    for root, _, files in os.walk(directory):
+        file_count += len(files)
+
+    return file_count
