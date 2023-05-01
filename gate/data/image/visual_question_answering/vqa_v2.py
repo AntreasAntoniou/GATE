@@ -9,7 +9,7 @@ def build_vqa_v2_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
     """
-    Build a Food-101 dataset using the Hugging Face datasets library.
+    Build a VQA V2 dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
