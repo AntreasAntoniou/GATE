@@ -8,6 +8,19 @@
 
 ### Installation
 
+Run 
+
+```bash
+pip install --extra-index-url https://download.pytorch.org/whl/cu118 torch torchvision torchaudio
+pip install .  # Install main dependencies
+```
+
+To also install dev dependencies run:
+
+```bash
+pip install .[dev]  # Install development dependencies
+```
+
 ## Install via conda
 
 ## Install via docker
