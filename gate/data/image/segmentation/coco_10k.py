@@ -6,8 +6,8 @@ import numpy as np
 import scipy.io as sio
 from PIL import Image
 from torch.utils.data import random_split
-from gate.boilerplate.utils import count_files_recursive
 
+from gate.boilerplate.utils import count_files_recursive
 from gate.data.image.segmentation.coco import (
     BaseDataset,
     download_and_extract_coco_stuff10k,
