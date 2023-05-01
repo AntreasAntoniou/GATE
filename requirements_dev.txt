@@ -1,6 +1,0 @@
-pytest
-isort
-jupyterlab
-black
-
-

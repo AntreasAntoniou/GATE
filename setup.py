@@ -1,6 +1,39 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
+
+main_requirements = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "timm",
+    "accelerate",
+    "datasets",
+    "transformers",
+    "orjson",
+    "gh",
+    "tabulate",
+    "nvitop",
+    "hydra-zen",
+    "neptune",
+    "pytorchvideo",
+    "torchtyping",
+    "h5py",
+    "wandb",
+    "rich",
+    "opencv-python",
+    "scipy",
+    "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
+]
+
+dev_requirements = [
+    "pytest",
+    "isort",
+    "jupyterlab",
+    "black",
+]
+
+print(f"Installing {find_packages()}")
 
 setup(
     name="gate",
@@ -8,5 +41,9 @@ setup(
     description="A minimal, stateless, machine learning research template for PyTorch",
     author="Antreas Antoniou",
     author_email="iam@antreas.io",
-    packages=["gate"],
+    packages=find_packages(),
+    install_requires=main_requirements,
+    extras_require={
+        "dev": dev_requirements,
+    },
 )
