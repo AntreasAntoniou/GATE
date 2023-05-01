@@ -40,8 +40,9 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
-RUN pip install wandb --upgrade
-RUN pip install h5py --upgrade
+RUN echo y | pip install wandb --upgrade
+RUN echo y | pip install h5py --upgrade
+RUN echo y | pip install -U segmentation-models-pytorch
 
 RUN mkdir /app/
 ADD gate/ /app/gate

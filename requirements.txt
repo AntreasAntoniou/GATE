@@ -17,3 +17,4 @@ wandb
 rich
 sphinx
 sphinx_rtd_theme
+segmentation-models-pytorch

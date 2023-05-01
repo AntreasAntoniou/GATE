@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
-from gate.data.data import build_dataset
 from gate.data.tasks import ClassificationTask
 from gate.models.clip import build_model
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
