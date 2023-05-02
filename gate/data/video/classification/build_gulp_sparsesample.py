@@ -96,14 +96,17 @@ def build_gulp_dataset(
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
             if set_name == "train":
+                gulp_dir_path = gulp_dir_path / "train"
                 mode = "train"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train.csv"
+                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial90.csv"
             elif set_name == "val":
+                gulp_dir_path = gulp_dir_path / "train"
+                mode = "test"
+                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial10.csv"
+            elif set_name == "test":
+                gulp_dir_path = gulp_dir_path / "val"
                 mode = "test"
                 csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "val.csv"
-            elif set_name == "test":
-                mode = "test"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "test.csv"
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         else:
@@ -215,11 +218,15 @@ def build_squeezed_gulp_dataset(
             if set_name == "train":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / "train.csv"
+                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial90.csv"
             elif set_name == "val":
+                gulp_dir_path = gulp_dir_path / "train"
+                mode = "test"
+                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial10.csv"
+            elif set_name == "test":
                 gulp_dir_path = gulp_dir_path / "val"
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / "val.csv"
+                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "val.csv"
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         else:

@@ -14,12 +14,14 @@ def test_build_epic_kitchens_100_dataset():
     datasets = build_gulp_dataset(
         dataset_name="epic-kitchens-100-gulprgb",
         data_dir=os.environ.get("PYTEST_DIR"),
-        sets_to_include=["train", "val"],
+        sets_to_include=["train", "val", "test"],
     )
     train_set = datasets["train"]
     val_set = datasets["val"]
+    test_set = datasets["test"]
     assert train_set is not None, "Train set should not be None"
     assert val_set is not None, "Test set should not be None"
+    assert test_set is not None, "Test set should not be None"
 
     # Test if the function raises an error when an invalid set_name is given
     with pytest.raises(ValueError):
@@ -37,13 +39,15 @@ def test_build_epic_kitchens_100_squeezed_dataset():
         datasets = build_squeezed_gulp_dataset(
             dataset_name="epic-kitchens-100-gulprgb",
             data_dir=os.environ.get("PYTEST_DIR"),
-            sets_to_include=["train", "val"],
+            sets_to_include=["train", "val", "test"],
             data_format=data_format,
         )
         train_set = datasets["train"]
         val_set = datasets["val"]
+        test_set = datasets["test"]
         assert train_set is not None, "Train set should not be None"
         assert val_set is not None, "Val set should not be None"
+        assert test_set is not None, "Test set should not be None"
 
     # Test if the function raises an error when an invalid set_name is given
     with pytest.raises(ValueError):
