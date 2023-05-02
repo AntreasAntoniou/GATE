@@ -43,7 +43,11 @@ def build_gulp_dataset(
     ensure_installed=True,
     accelerator: Accelerator | None = None,
 ):
-    assert dataset_name in ["hmdb51-gulprgb", "epic-kitchens-100-gulprgb"]
+    assert dataset_name in [
+        "hmdb51-gulprgb",
+        "ucf-101-gulprgb",
+        "epic-kitchens-100-gulprgb",
+    ]
     cache_dir = os.environ.get("HF_CACHE_DIR", None)
     assert cache_dir is not None
 
@@ -53,6 +57,12 @@ def build_gulp_dataset(
         assert split_num in [1, 2, 3]
         if data_dir.name != "hmdb51":
             data_dir = data_dir / "hmdb51"
+        if sets_to_include is None:
+            sets_to_include = ["train", "test"]
+    elif dataset_name == "ucf-101-gulprgb":
+        assert split_num in [1, 2, 3]
+        if data_dir.name != "ucf101":
+            data_dir = data_dir / "ucf101"
         if sets_to_include is None:
             sets_to_include = ["train", "test"]
     elif dataset_name == "epic-kitchens-100-gulprgb":
@@ -92,6 +102,17 @@ def build_gulp_dataset(
             elif set_name == "test":
                 mode = "test"
                 csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+            else:
+                raise ValueError(f"Unknown set_name: {set_name}")
+        elif dataset_name == "ucf-101-gulprgb":
+            if set_name == "train":
+                mode = "train"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
+                )
+            elif set_name == "test":
+                mode = "test"
+                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
@@ -162,7 +183,11 @@ def build_squeezed_gulp_dataset(
     ensure_installed=True,
     accelerator: Accelerator | None = None,
 ):
-    assert dataset_name in ["hmdb51-gulprgb", "epic-kitchens-100-gulprgb"]
+    assert dataset_name in [
+        "hmdb51-gulprgb",
+        "ucf-101-gulprgb",
+        "epic-kitchens-100-gulprgb",
+    ]
     cache_dir = os.environ.get("HF_CACHE_DIR", None)
     assert cache_dir is not None
     assert data_format in ["BTCHW", "BCTHW"]
@@ -175,7 +200,12 @@ def build_squeezed_gulp_dataset(
             data_dir = data_dir / "hmdb51"
         if sets_to_include is None:
             sets_to_include = ["train", "test"]
-
+    elif dataset_name == "ucf-101-gulprgb":
+        assert split_num in [1, 2, 3]
+        if data_dir.name != "ucf101":
+            data_dir = data_dir / "ucf101"
+        if sets_to_include is None:
+            sets_to_include = ["train", "test"]
     elif dataset_name == "epic-kitchens-100-gulprgb":
         assert split_num == 1
         if data_dir.name != "epic-kitchens-100":
@@ -212,6 +242,17 @@ def build_squeezed_gulp_dataset(
             elif set_name == "test":
                 mode = "test"
                 csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+            else:
+                raise ValueError(f"Unknown set_name: {set_name}")
+        elif dataset_name == "ucf-101-gulprgb":
+            if set_name == "train":
+                mode = "train"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
+                )
+            elif set_name == "test":
+                mode = "test"
+                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
