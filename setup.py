@@ -24,6 +24,8 @@ main_requirements = [
     "opencv-python",
     "scipy",
     "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
+    "monai",
+    "nibabel",
 ]
 
 dev_requirements = [
