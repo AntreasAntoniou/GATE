@@ -21,29 +21,7 @@ from .transforms import (
     IdentityTransform,
 )
 
-#!/usr/bin/env python3
-
-
 logger = logging.getLogger(__name__)
-
-
-def count_class_frequency(csv_file):
-    assert os.path.exists(csv_file), "{} not found".format(csv_file)
-
-    labels = []
-    with open(csv_file, "r") as f:
-        num_classes = int(f.readline())
-        for clip_idx, path_label in enumerate(f.read().splitlines()):
-            assert len(path_label.split()) == 5
-            path, video_id, label, start_frame, end_frame = path_label.split()
-            label = int(label)
-            labels.append(label)
-
-    labels = np.array(labels)
-    assert labels.min() == 0, "class label has to start with 0"
-
-    class_frequency = np.bincount(labels, minlength=labels.max())
-    return class_frequency
 
 
 class GulpSparsesampleDataset(torch.utils.data.Dataset):
@@ -235,7 +213,7 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         logger.info(f"Constructing gulp video dataset {mode=}...")
         self._construct_loader()
 
-    def _construct_loader(self):  # {{{
+    def _construct_loader(self):
         """
         Construct the video loader.
         """
@@ -314,7 +292,6 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         logger.info(
             f"Constructing gulp video dataloader (size: {len(self)}) from {self._csv_file}"
         )
-        # }}}
 
     def filter_samples(self, video_ids: list):
         """Given a video_ids list, filter the samples.
