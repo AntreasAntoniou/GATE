@@ -1,12 +1,13 @@
 import os
 import pathlib
 import zipfile
+from typing import Dict, List, Optional, Tuple, Union
+
+import nibabel as nib
 import requests
 import torch
-import nibabel as nib
-from tqdm import tqdm
-from typing import Dict, List, Optional, Tuple, Union
 from torch.utils.data import Dataset, random_split
+from tqdm import tqdm
 
 
 def download_and_extract_file(extract_to: str) -> pathlib.Path:
