@@ -48,18 +48,6 @@ def build_model(
     if not pretrained:
         model.init_weights()
 
-    model_modality_config_image_classification = TargetModalityConfig(
-        image=[SourceModalityConfig(image=True)]
-    )
-
-    model_key_remapper_dict_config = {"image": "pixel_values"}
-
-    gate_model = GATEModel.__config__(
-        config=model_modality_config_image_classification,
-        model=model,
-        key_remapper_dict=model_key_remapper_dict_config,
-    )
-
     transform = lambda image: feature_extractor(
         images=image, return_tensors="pt"
     )
@@ -70,10 +58,37 @@ def build_model(
             "labels": input_dict["labels"],
         }
 
-    return ModelAndTransform(model=gate_model, transform=transform_wrapper)
+    return ModelAndTransform(model=model, transform=transform_wrapper)
+
+
+@configurable
+def build_gate_model(
+    model_name: str = "openai/clip-vit-large-patch14",
+    pretrained: bool = True,
+    num_classes: int = 100,
+):
+    model_and_transform = build_model(
+        model_name=model_name, pretrained=pretrained, num_classes=num_classes
+    )
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+
+    model_key_remapper_dict_config = {"image": "pixel_values"}
+
+    gate_model = GATEModel(
+        config=model_modality_config_image_classification,
+        model=model_and_transform.model,
+        key_remapper_dict=model_key_remapper_dict_config,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
 
 
 if __name__ == "__main__":
+    # Example usage
     import accelerate
     import torch.nn.functional as F
     from rich import print
