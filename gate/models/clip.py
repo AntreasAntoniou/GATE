@@ -5,24 +5,18 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
+from gate.models.core import (
+    GATEModel,
+    SourceModalityConfig,
+    TargetModalityConfig,
+)
+from gate.models.task_adapters.classification import CLIPWithLinear
 
 
 @dataclass
 class ModelAndTransform:
     model: nn.Module
     transform: Any
-
-
-class CLIPWithLinear(nn.Module):
-    def __init__(self, model: nn.Module, num_clip_features, num_classes: int):
-        super().__init__()
-        self.model = model
-        self.linear = nn.Linear(num_clip_features, num_classes)
-
-    def forward(self, **input_dict: Dict):
-        x = self.model(**input_dict).pooler_output
-        x = self.linear(x)
-        return x
 
 
 @configurable
@@ -54,6 +48,18 @@ def build_model(
     if not pretrained:
         model.init_weights()
 
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+
+    model_key_remapper_dict_config = {"image": "pixel_values"}
+
+    gate_model = GATEModel.__config__(
+        config=model_modality_config_image_classification,
+        model=model,
+        key_remapper_dict=model_key_remapper_dict_config,
+    )
+
     transform = lambda image: feature_extractor(
         images=image, return_tensors="pt"
     )
@@ -64,7 +70,7 @@ def build_model(
             "labels": input_dict["labels"],
         }
 
-    return ModelAndTransform(model=model, transform=transform_wrapper)
+    return ModelAndTransform(model=gate_model, transform=transform_wrapper)
 
 
 if __name__ == "__main__":

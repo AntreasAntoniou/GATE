@@ -7,9 +7,9 @@ from accelerate import Accelerator
 
 from gate.boilerplate.metrics import accuracy_top_k
 
-from .decorators import collect_metrics
-from .trainers import StepOutput
-from .utils import get_logger
+from ..decorators import collect_metrics, configurable
+from ..trainers.classification import StepOutput
+from ..utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -41,6 +41,7 @@ class EvaluatorOutput:
 import torch.nn.functional as F
 
 
+@configurable
 class ClassificationEvaluator(Evaluator):
     def __init__(self, experiment_tracker: Optional[Any] = None):
         super().__init__()
