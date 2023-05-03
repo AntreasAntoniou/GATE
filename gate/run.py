@@ -13,8 +13,8 @@ from torch.utils.data import Dataset, Subset
 
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.core import Learner
-from gate.boilerplate.evaluators import ClassificationEvaluator
-from gate.boilerplate.trainers import ClassificationTrainer
+from gate.boilerplate.evaluators.classification import ClassificationEvaluator
+from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import (
     create_hf_model_repo_and_download_maybe,
     get_logger,
@@ -22,7 +22,7 @@ from gate.boilerplate.utils import (
     set_seed,
 )
 from gate.config import BaseConfig, collect_config_store
-from gate.data.core import GATEDataset
+from gate.data.core import CustomConcatDataset, GATEDataset
 from gate.models.core import GATEModel
 
 os.environ[
@@ -109,53 +109,32 @@ def run(cfg: BaseConfig) -> None:
     wandb.config.update({"notes": repo_url})
     wandb.config.update({"init_global_step": global_step})
 
-    task = instantiate(cfg.task)
+    dataset_dict = {"train": [], "val": [], "test": []}
 
-    train_dataset: Dataset = instantiate(
-        cfg.dataset,
-        set_name="train",
-    )
-
-    val_dataset: Dataset = instantiate(
-        cfg.dataset,
-        set_name="validation",
-    )
-
-    test_dataset: Dataset = instantiate(
-        cfg.dataset,
-        set_name="test",
-    )
-
-    train_dataset = GATEDataset(
-        dataset=train_dataset,
-        infinite_sampling=True,
-        task=task,
-        key_remapper_dict=cfg.dataset_key_remapper_dict,
-        transforms=transform,
-    )
-
-    if global_step > 0:
-        train_dataset = Subset(
-            train_dataset, range(global_step, len(train_dataset))
+    for dataset_name, dataset_config in cfg.dataset.items():
+        dataset: GATEDataset = instantiate(
+            dataset_config,
         )
+
+        dataset_dict["train"].append(dataset["train"])
+        dataset_dict["val"].append(dataset["val"])
+        dataset_dict["test"].append(dataset["test"])
+
+        if global_step > 0:
+            dataset_dict["train"][-1] = Subset(
+                dataset_dict["train"][-1],
+                range(global_step, len(dataset_dict["train"][-1])),
+            )
+
+    train_dataset = CustomConcatDataset(dataset_dict["train"])
+    val_dataset = CustomConcatDataset(dataset_dict["val"])
+    test_dataset = CustomConcatDataset(dataset_dict["test"])
 
     train_dataloader = instantiate(
         cfg.dataloader,
         dataset=train_dataset,
         batch_size=16,
         shuffle=True,
-        # collate_fn=dataclass_collate,
-    )
-
-    batch = next(iter(train_dataloader))
-    shape_dict = {k: v.shape for k, v in batch.items()}
-
-    val_dataset = GATEDataset(
-        dataset=val_dataset,
-        infinite_sampling=False,
-        task=task,
-        key_remapper_dict=cfg.dataset_key_remapper_dict,
-        transforms=transform,
     )
 
     val_dataloader = instantiate(
@@ -163,15 +142,6 @@ def run(cfg: BaseConfig) -> None:
         dataset=val_dataset,
         batch_size=cfg.eval_batch_size,
         shuffle=False,
-        # collate_fn=dataclass_collate,
-    )
-
-    test_dataset = GATEDataset(
-        dataset=test_dataset,
-        infinite_sampling=False,
-        task=task,
-        key_remapper_dict=cfg.dataset_key_remapper_dict,
-        transforms=transform,
     )
 
     test_dataloader = instantiate(
@@ -179,7 +149,6 @@ def run(cfg: BaseConfig) -> None:
         dataset=test_dataset,
         batch_size=cfg.eval_batch_size,
         shuffle=False,
-        # collate_fn=dataclass_collate,
     )
 
     experiment_tracker["num_parameters"] = sum(
@@ -197,18 +166,24 @@ def run(cfg: BaseConfig) -> None:
         _partial_=False,
     )
 
+    trainer = instantiate(
+        cfg.trainer,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        experiment_tracker=experiment_tracker,
+    )
+
+    evaluator = instantiate(
+        cfg.evaluator,
+        experiment_tracker=experiment_tracker,
+    )
+
     learner: Learner = instantiate(
         cfg.learner,
         model=model,
-        trainers=[
-            ClassificationTrainer(
-                optimizer=optimizer,
-                scheduler=scheduler,
-                experiment_tracker=experiment_tracker,
-            )
-        ],
+        trainers=[trainer],
         evaluators=[
-            ClassificationEvaluator(experiment_tracker=experiment_tracker)
+            evaluator,
         ],
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
