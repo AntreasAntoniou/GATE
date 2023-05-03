@@ -14,8 +14,11 @@ from gate.boilerplate.core import Learner
 from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
-from gate.data.image.classification.food101 import build_food101_dataset
-from gate.models.clip import build_model
+from gate.data.image.classification.food101 import (
+    build_food101_dataset,
+    build_gate_food_101_dataset,
+)
+from gate.models.clip import build_gate_model, build_model
 
 
 def get_env_var(key: str, default: Any) -> Any:
@@ -33,9 +36,9 @@ EXPERIMENTS_ROOT_DIR = get_env_var("EXPERIMENTS_ROOT_DIR", "experiments/")
 CURRENT_EXPERIMENT_DIR = get_env_var(
     "CURRENT_EXPERIMENT_DIR", f"{EXPERIMENTS_ROOT_DIR}/{EXPERIMENT_NAME}"
 )
-TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 8)
-EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 16)
-NUM_WORKERS = get_env_var("NUM_WORKERS", 2)
+TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
+EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
+NUM_WORKERS = get_env_var("NUM_WORKERS", 8)
 PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
 PIN_MEMORY = get_env_var("PIN_MEMORY", True)
@@ -89,14 +92,14 @@ class BaseConfig:
     persistent_workers: bool = PERSISTENT_WORKERS
     pin_memory: bool = PIN_MEMORY
     train: bool = True
-    test: bool = False
+    test: bool = True
     dummy_batch_mode: bool = DUMMY_BATCH_MODE
     logger_level: str = LOGGER_LEVEL
     experiments_root_dir: str = EXPERIMENTS_ROOT_DIR
     dataset_dir: str = DATASET_DIR
-    current_experiment_dir: str = CURRENT_EXPERIMENT_DIR
-    hf_repo_path: str = f"{HF_USERNAME}/{EXPERIMENT_NAME}"
-    hf_cache_dir: str = HF_CACHE_DIR
+    current_experiment_dir: str = "${experiments_root_dir}/${exp_name}"
+    hf_repo_path: str = "${hf_username}/${exp_name}"
+    hf_cache_dir: str = "${current_experiment_dir}/hf_cache"
     code_dir: str = CODE_DIR
 
 
@@ -118,23 +121,23 @@ def collect_config_store():
     ##########################################################################
     # Model configs
 
-    model_config = build_model.__config__(populate_full_signature=True)
+    model_config = build_gate_model.__config__(populate_full_signature=True)
 
     config_store.store(
-        group="model", name="clip-base16", node=model_config(num_classes=1000)
+        group="model", name="clip-base16", node=model_config(num_classes=101)
     )
 
     ##########################################################################
     # Dataset configs
 
-    food101_config: Any = build_food101_dataset.__config__(
+    food101_config: Any = build_gate_food_101_dataset.__config__(
         populate_full_signature=True
     )
 
     config_store.store(
         group="dataset",
         name="food101",
-        node=food101_config(data_dir=DATASET_DIR),
+        node={"food101": food101_config(data_dir=DATASET_DIR)},
     )
     ##########################################################################
     # Trainer configs
@@ -146,7 +149,7 @@ def collect_config_store():
     config_store.store(
         group="trainer",
         name="classification",
-        node=classification_trainer_config(),
+        node=classification_trainer_config(optimizer=None),
     )
 
     ##########################################################################
@@ -226,8 +229,8 @@ def collect_config_store():
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
         checkpoint_every_n_steps=500,
-        train_iters=100000,
-        limit_val_iters=250,
+        train_iters=TRAIN_ITERS,
+        limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
     )

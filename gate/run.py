@@ -50,14 +50,14 @@ def setup(ckpt_path: str, cfg: BaseConfig):
             pathlib.Path(ckpt_path) / "trainer_state.pt"
         )
         global_step = trainer_state["global_step"]
-        neptune_id = (
-            trainer_state["neptune_id"]
-            if "neptune_id" in trainer_state
-            else None
-        )
+        # neptune_id = (
+        #     trainer_state["neptune_id"]
+        #     if "neptune_id" in trainer_state
+        #     else None
+        # )
         experiment_tracker = neptune.init_run(
             source_files=["gate/*.py", "kubernetes/*.py"],
-            with_id=neptune_id,
+            # with_id=neptune_id,
         )
     else:
         global_step = 0
@@ -92,11 +92,7 @@ def run(cfg: BaseConfig) -> None:
 
     model_and_transform = instantiate(cfg.model)
 
-    model = GATEModel(
-        model=model_and_transform.model,
-        config=cfg.model_modality_config,
-        key_remapper_dict=cfg.model_key_remapper_dict,
-    )
+    model: GATEModel = model_and_transform.model
     transform: Optional[Callable] = model_and_transform.transform
 
     wandb.init()
@@ -113,7 +109,7 @@ def run(cfg: BaseConfig) -> None:
 
     for dataset_name, dataset_config in cfg.dataset.items():
         dataset: GATEDataset = instantiate(
-            dataset_config,
+            dataset_config, transforms=transform
         )
 
         dataset_dict["train"].append(dataset["train"])
