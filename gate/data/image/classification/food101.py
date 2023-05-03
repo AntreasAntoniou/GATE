@@ -3,8 +3,8 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
-from gate.boilerplate.decorators import configurable
 
+from gate.boilerplate.decorators import configurable
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
