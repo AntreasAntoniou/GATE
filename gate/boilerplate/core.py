@@ -562,6 +562,35 @@ class Learner(nn.Module):
             checkpoint_path=checkpoint_path,
         )
 
+    def load_best_model(self, metric_name: str, higher_is_better: bool):
+        best_checkpoint = None
+        best_metric_value = float("-inf") if higher_is_better else float("inf")
+
+        for checkpoint_path in self.checkpoints_dir.glob("*"):
+            if not (checkpoint_path / "trainer_state.pt").exists():
+                continue
+
+            trainer_state = torch.load(checkpoint_path / "trainer_state.pt")
+            state_dict = trainer_state["state_dict"]
+
+            # Assuming the evaluator state_dict contains the validation metrics
+            for evaluator in state_dict["eval"]:
+                metric_value = evaluator.get(metric_name, None)
+                if metric_value is None:
+                    continue
+
+                if (higher_is_better and metric_value > best_metric_value) or (
+                    not higher_is_better and metric_value < best_metric_value
+                ):
+                    best_metric_value = metric_value
+                    best_checkpoint = checkpoint_path
+
+        if best_checkpoint is not None:
+            self.load_checkpoint(best_checkpoint)
+            logger.info(f"Loaded best model from checkpoint {best_checkpoint}")
+        else:
+            logger.warning("No suitable checkpoint found for the given metric")
+
 
 if __name__ == "__main__":
     # a minimal example of how to use the Learner class

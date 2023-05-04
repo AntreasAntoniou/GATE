@@ -1,1 +1,2 @@
-from .kinetics400 import build_kinetics400_dataset
+# Importing the module will store dataset to hydra_zen.store
+from . import build_gulp_sparsesample as _

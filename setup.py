@@ -25,6 +25,7 @@ main_requirements = [
     "scipy",
     "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
     "soundfile",
+    "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
     "nibabel",
 ]
@@ -34,6 +35,9 @@ dev_requirements = [
     "isort",
     "jupyterlab",
     "black",
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-autodoc-typehints",
 ]
 
 print(f"Installing {find_packages()}")
