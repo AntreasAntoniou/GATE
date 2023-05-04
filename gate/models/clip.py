@@ -5,24 +5,18 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
+from gate.models.core import (
+    GATEModel,
+    SourceModalityConfig,
+    TargetModalityConfig,
+)
+from gate.models.task_adapters.classification import CLIPWithLinear
 
 
 @dataclass
 class ModelAndTransform:
     model: nn.Module
     transform: Any
-
-
-class CLIPWithLinear(nn.Module):
-    def __init__(self, model: nn.Module, num_clip_features, num_classes: int):
-        super().__init__()
-        self.model = model
-        self.linear = nn.Linear(num_clip_features, num_classes)
-
-    def forward(self, **input_dict: Dict):
-        x = self.model(**input_dict).pooler_output
-        x = self.linear(x)
-        return x
 
 
 @configurable
@@ -67,7 +61,34 @@ def build_model(
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
 
+@configurable
+def build_gate_model(
+    model_name: str = "openai/clip-vit-large-patch14",
+    pretrained: bool = True,
+    num_classes: int = 100,
+):
+    model_and_transform = build_model(
+        model_name=model_name, pretrained=pretrained, num_classes=num_classes
+    )
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+
+    model_key_remapper_dict_config = {"image": "pixel_values"}
+
+    gate_model = GATEModel(
+        config=model_modality_config_image_classification,
+        model=model_and_transform.model,
+        key_remapper_dict=model_key_remapper_dict_config,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
+
+
 if __name__ == "__main__":
+    # Example usage
     import accelerate
     import torch.nn.functional as F
     from rich import print

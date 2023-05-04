@@ -11,10 +11,14 @@ from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
+from gate.boilerplate.evaluators.classification import ClassificationEvaluator
+from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
-from gate.data.tasks import ClassificationTask
-from gate.models.clip import build_model
-from gate.models.core import SourceModalityConfig, TargetModalityConfig
+from gate.data.image.classification.food101 import (
+    build_food101_dataset,
+    build_gate_food_101_dataset,
+)
+from gate.models.clip import build_gate_model, build_model
 
 
 def get_env_var(key: str, default: Any) -> Any:
@@ -32,9 +36,9 @@ EXPERIMENTS_ROOT_DIR = get_env_var("EXPERIMENTS_ROOT_DIR", "experiments/")
 CURRENT_EXPERIMENT_DIR = get_env_var(
     "CURRENT_EXPERIMENT_DIR", f"{EXPERIMENTS_ROOT_DIR}/{EXPERIMENT_NAME}"
 )
-TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 8)
-EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 16)
-NUM_WORKERS = get_env_var("NUM_WORKERS", 2)
+TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
+EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
+NUM_WORKERS = get_env_var("NUM_WORKERS", 8)
 PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
 PIN_MEMORY = get_env_var("PIN_MEMORY", True)
@@ -64,20 +68,16 @@ class BaseConfig:
     # Defaults for these are provided in the collect_config_store method,
     # but will be often overridden at command line
 
+    model: Any = MISSING
+    dataset: Any = MISSING
+    trainer: Any = MISSING
+    evaluator: Any = MISSING
+
     dataloader: Any = MISSING
     optimizer: Any = MISSING
     scheduler: Any = MISSING
     learner: Any = MISSING
     callbacks: Any = MISSING
-
-    model: Any = MISSING
-    dataset: Any = MISSING
-    task: Optional[Any] = None
-
-    model_modality_config: Any = MISSING
-
-    model_key_remapper_dict: Optional[Any] = None
-    dataset_key_remapper_dict: Optional[Any] = None
 
     # 🌐 Other configurations with default values or environment variables
     hf_username: str = HF_USERNAME
@@ -92,14 +92,14 @@ class BaseConfig:
     persistent_workers: bool = PERSISTENT_WORKERS
     pin_memory: bool = PIN_MEMORY
     train: bool = True
-    test: bool = False
+    test: bool = True
     dummy_batch_mode: bool = DUMMY_BATCH_MODE
     logger_level: str = LOGGER_LEVEL
     experiments_root_dir: str = EXPERIMENTS_ROOT_DIR
     dataset_dir: str = DATASET_DIR
-    current_experiment_dir: str = CURRENT_EXPERIMENT_DIR
-    hf_repo_path: str = f"{HF_USERNAME}/{EXPERIMENT_NAME}"
-    hf_cache_dir: str = HF_CACHE_DIR
+    current_experiment_dir: str = "${experiments_root_dir}/${exp_name}"
+    hf_repo_path: str = "${hf_username}/${exp_name}"
+    hf_cache_dir: str = "${current_experiment_dir}/hf_cache"
     code_dir: str = CODE_DIR
 
 
@@ -121,53 +121,52 @@ def collect_config_store():
     ##########################################################################
     # Model configs
 
-    model_config = build_model.__config__(populate_full_signature=True)
+    model_config = build_gate_model.__config__(populate_full_signature=True)
 
     config_store.store(
-        group="model", name="clip-base16", node=model_config(num_classes=1000)
+        group="model", name="clip-base16", node=model_config(num_classes=101)
     )
 
-    model_modality_config_image_classification = TargetModalityConfig(
-        image=[SourceModalityConfig(image=True)]
-    )
+    ##########################################################################
+    # Dataset configs
 
-    config_store.store(
-        group="model_modality_config",
-        name="image_classification",
-        node=model_modality_config_image_classification,
-    )
-
-    model_key_remapper_dict_config = {"image": "pixel_values"}
-
-    config_store.store(
-        group="model_key_remapper_dict",
-        name="clip",
-        node=model_key_remapper_dict_config,
-    )
-
-    data_config: Any = build_dataset.__config__(populate_full_signature=True)
-
-    pokemon_config = data_config(
-        dataset_name="beans",
-        set_name="train",
-        data_dir=DATASET_DIR,
-    )
-
-    config_store.store(group="dataset", name="pokemon", node=pokemon_config)
-
-    dummy_task_config = ClassificationTask.__config__(
+    food101_config: Any = build_gate_food_101_dataset.__config__(
         populate_full_signature=True
     )
 
-    config_store.store(group="task", name="dummy", node=dummy_task_config)
+    config_store.store(
+        group="dataset",
+        name="food101",
+        node={"food101": food101_config(data_dir=DATASET_DIR)},
+    )
+    ##########################################################################
+    # Trainer configs
 
-    dataset_key_remapper_dict_config = {"pixel_values": "image"}
+    classification_trainer_config = ClassificationTrainer.__config__(
+        populate_full_signature=True
+    )
 
     config_store.store(
-        group="dataset_key_remapper_dict",
-        name="clip",
-        node=dataset_key_remapper_dict_config,
+        group="trainer",
+        name="classification",
+        node=classification_trainer_config(optimizer=None),
     )
+
+    ##########################################################################
+    # Evaluator configs
+
+    classification_evaluator_config = ClassificationEvaluator.__config__(
+        populate_full_signature=True
+    )
+
+    config_store.store(
+        group="evaluator",
+        name="classification",
+        node=classification_evaluator_config(),
+    )
+
+    ##########################################################################
+    # Dataloader configs
 
     dataloader_config = builds(
         DataLoader, dataset=None, populate_full_signature=True
@@ -187,11 +186,21 @@ def collect_config_store():
     )
     ##########################################################################
     # Optimizer configs
+
     adamw_optimizer_config = builds(
         torch.optim.AdamW,
         populate_full_signature=True,
         zen_partial=True,
     )
+
+    config_store.store(
+        group="optimizer",
+        name="adamw",
+        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
+    )
+
+    ##########################################################################
+    # Scheduler configs
 
     cosine_learning_rate_scheduler_config = builds(
         CosineLRScheduler,
@@ -201,12 +210,6 @@ def collect_config_store():
 
     cosine_learning_rate_scheduler_config = (
         cosine_learning_rate_scheduler_config()
-    )
-
-    config_store.store(
-        group="optimizer",
-        name="adamw",
-        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
     )
 
     config_store.store(
@@ -226,8 +229,8 @@ def collect_config_store():
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
         checkpoint_every_n_steps=500,
-        train_iters=100000,
-        limit_val_iters=250,
+        train_iters=TRAIN_ITERS,
+        limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
     )
@@ -238,6 +241,8 @@ def collect_config_store():
     )
 
     ##########################################################################
+    # Callback configs
+
     HFModelUploadConfig = builds(
         UploadCheckpointsToHuggingFace, populate_full_signature=True
     )
@@ -253,12 +258,15 @@ def collect_config_store():
     )
 
     ###########################################################################
+    # 🌐 Hydra configs
     config_store.store(
         group="hydra",
         name="default",
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
 
+    ###########################################################################
+    # 🌐 Hydra Zen global configs
     zen_config = []
 
     for value in BaseConfig.__dataclass_fields__.values():
@@ -269,6 +277,9 @@ def collect_config_store():
         )
         zen_config.append(item)
 
+    ###########################################################################
+    # 🌐 Hydra Zen defaults
+
     config = make_config(
         *zen_config,
         hydra_defaults=[
@@ -277,17 +288,14 @@ def collect_config_store():
             dict(optimizer="adamw"),
             dict(scheduler="cosine-annealing"),
             dict(model="clip-base16"),
-            dict(model_modality_config="image_classification"),
-            dict(model_key_remapper_dict="clip"),
-            dict(dataset="pokemon"),
-            dict(dataset_key_remapper_dict="clip"),
-            dict(task="dummy"),
+            dict(dataset="food101"),
+            dict(trainer="classification"),
+            dict(evaluator="classification"),
             dict(dataloader="default"),
             dict(hydra="default"),
             dict(callbacks="default"),
         ],
     )
-    # Config
     config_store.store(name="config", node=config)
 
     return config_store
