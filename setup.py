@@ -33,6 +33,9 @@ dev_requirements = [
     "isort",
     "jupyterlab",
     "black",
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-autodoc-typehints",
 ]
 
 print(f"Installing {find_packages()}")
