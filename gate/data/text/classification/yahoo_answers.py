@@ -8,7 +8,7 @@ from datasets import load_dataset
 def build_yahoo_answers_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a yahoo_answers dataset using the Hugging Face datasets library.
-    https://huggingface.co/datasets/yahoo_answers
+    https://huggingface.co/datasets/yahoo_answers_topics
 
     Args:
         data_dir: The directory where the dataset cache is stored.
