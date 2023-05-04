@@ -114,7 +114,9 @@ class GroupOneOfFiveCrops:
                 *img.size, *self.size, self.spatial_idx
             )
             ret.append(
-                img.crop((offset_w, offset_h, offset_w + crop_w, offset_h + crop_h))
+                img.crop(
+                    (offset_w, offset_h, offset_w + crop_w, offset_h + crop_h)
+                )
             )
 
         if self.spatial_idx >= 5:
@@ -233,7 +235,9 @@ class GroupSqueezeScale:
     interpolation: Default: PIL.Image.BILINEAR
     """
 
-    def __init__(self, size: int | tuple[int, int], interpolation=Image.BILINEAR):
+    def __init__(
+        self, size: int | tuple[int, int], interpolation=Image.BILINEAR
+    ):
         if isinstance(size, int):
             self.size = (size, size)
         elif isinstance(size, tuple):
@@ -244,19 +248,29 @@ class GroupSqueezeScale:
         self.interpolation = interpolation
 
     def __call__(self, img_group):
-        return [img.resize(self.size, resample=self.interpolation) for img in img_group]
+        return [
+            img.resize(self.size, resample=self.interpolation)
+            for img in img_group
+        ]
 
 
 class GroupMultiScaleCrop:
     def __init__(
-        self, input_size, scales=None, max_distort=1, fix_crop=True, more_fix_crop=True
+        self,
+        input_size,
+        scales=None,
+        max_distort=1,
+        fix_crop=True,
+        more_fix_crop=True,
     ):
         self.scales = scales if scales is not None else [1, 0.875, 0.75, 0.66]
         self.max_distort = max_distort
         self.fix_crop = fix_crop
         self.more_fix_crop = more_fix_crop
         self.input_size = (
-            input_size if not isinstance(input_size, int) else [input_size, input_size]
+            input_size
+            if not isinstance(input_size, int)
+            else [input_size, input_size]
         )
         self.interpolation = Image.BILINEAR
 
@@ -266,11 +280,15 @@ class GroupMultiScaleCrop:
 
         crop_w, crop_h, offset_w, offset_h = self._sample_crop_size(im_size)
         crop_img_group = [
-            img.crop((offset_w, offset_h, offset_w + crop_w, offset_h + crop_h))
+            img.crop(
+                (offset_w, offset_h, offset_w + crop_w, offset_h + crop_h)
+            )
             for img in img_group
         ]
         ret_img_group = [
-            img.resize((self.input_size[0], self.input_size[1]), self.interpolation)
+            img.resize(
+                (self.input_size[0], self.input_size[1]), self.interpolation
+            )
             for img in crop_img_group
         ]
         return ret_img_group
@@ -379,7 +397,9 @@ class GroupRandomSizedCrop:
             for img in img_group:
                 img = img.crop((x1, y1, x1 + w, y1 + h))
                 assert img.size == (w, h)
-                out_group.append(img.resize((self.size, self.size), self.interpolation))
+                out_group.append(
+                    img.resize((self.size, self.size), self.interpolation)
+                )
             return out_group
         else:
             # Fallback

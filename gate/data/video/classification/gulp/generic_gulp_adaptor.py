@@ -73,8 +73,10 @@ class GenericJpegDatasetAdapter(AbstractDatasetAdapter):
         self.video_segment_dir = video_segment_dir
         self.frame_size = int(frame_size)
         self.class_folder = class_folder
-        self.segment_ids = GenericJpegDatasetAdapter._iterate_and_generate_keys(
-            video_segment_dir, class_folder
+        self.segment_ids = (
+            GenericJpegDatasetAdapter._iterate_and_generate_keys(
+                video_segment_dir, class_folder
+            )
         )
 
     def iter_data(self, slice_element=None) -> Iterator[Result]:
@@ -98,7 +100,9 @@ class GenericJpegDatasetAdapter(AbstractDatasetAdapter):
             meta = {}
             folder = Path(self.video_segment_dir) / segment_id
             # Without glob.escape, it gives error when filename contains [ or ].
-            paths = natsorted(glob.glob(str(Path(glob.escape(folder)) / "*.jpg")))
+            paths = natsorted(
+                glob.glob(str(Path(glob.escape(folder)) / "*.jpg"))
+            )
             if self.frame_size > 0:
                 frames = list(resize_images(map(str, paths), self.frame_size))
                 meta["frame_size"] = frames[0].shape
@@ -134,7 +138,9 @@ class GenericJpegDatasetAdapter(AbstractDatasetAdapter):
                 for segment_dirname in segment_dirs:
                     segment_dirpath = os.path.join(dirpath, segment_dirname)
                     if not os.path.isdir(segment_dirpath):
-                        logger.warning(f"Skipping non-directory {segment_dirpath}")
+                        logger.warning(
+                            f"Skipping non-directory {segment_dirpath}"
+                        )
                         continue
 
                     data.append(os.path.join(dirname, segment_dirname))
@@ -215,7 +221,8 @@ class GenericGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
             }
 
             assert (
-                basenames[self.flow_direction_x] == basenames[self.flow_direction_y]
+                basenames[self.flow_direction_x]
+                == basenames[self.flow_direction_y]
             ), f"{folder} does not contain the same frames for {self.flow_direction_x} and {self.flow_direction_y}."
 
             frames = {}
@@ -242,7 +249,8 @@ class GenericGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
                 "meta": meta,
                 "frames": list(
                     _intersperse(
-                        frames[self.flow_direction_x], frames[self.flow_direction_y]
+                        frames[self.flow_direction_x],
+                        frames[self.flow_direction_y],
                     )
                 ),
                 "id": segment_id,
@@ -306,12 +314,18 @@ class GlobPatternGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
                 # Without glob.escape, it gives error when filename contains [ or ].
                 "x": natsorted(
                     glob.glob(
-                        str(Path(glob.escape(folder)) / self.flow_x_filename_pattern)
+                        str(
+                            Path(glob.escape(folder))
+                            / self.flow_x_filename_pattern
+                        )
                     )
                 ),
                 "y": natsorted(
                     glob.glob(
-                        str(Path(glob.escape(folder)) / self.flow_y_filename_pattern)
+                        str(
+                            Path(glob.escape(folder))
+                            / self.flow_y_filename_pattern
+                        )
                     )
                 ),
             }

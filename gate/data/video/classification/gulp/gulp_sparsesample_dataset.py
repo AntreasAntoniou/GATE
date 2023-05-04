@@ -217,7 +217,9 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
+        assert os.path.exists(self._csv_file), "{} not found".format(
+            self._csv_file
+        )
 
         self._gulp_keys = []
         self._video_ids = []
@@ -238,7 +240,13 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
 
             for clip_idx, key_label in enumerate(f.read().splitlines()):
                 assert len(key_label.split()) == 5
-                gulp_key, video_id, label, start_frame, end_frame = key_label.split()
+                (
+                    gulp_key,
+                    video_id,
+                    label,
+                    start_frame,
+                    end_frame,
+                ) = key_label.split()
 
                 if self.video_id_to_label is None:
                     labels = label.split(";")
@@ -247,7 +255,9 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
                     for label in labels:
                         if self.num_classes > 0:
                             label_list = label.split(",")
-                            label = np.zeros(self.num_classes, dtype=np.float32)
+                            label = np.zeros(
+                                self.num_classes, dtype=np.float32
+                            )
                             for label_idx in label_list:
                                 label[int(label_idx)] = 1.0  # one hot encoding
                         else:
@@ -304,7 +314,9 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         self._gulp_keys = [self._gulp_keys[x] for x in indices_of_video_ids]
         self._video_ids = [self._video_ids[x] for x in indices_of_video_ids]
         self._labels = [self._labels[x] for x in indices_of_video_ids]
-        self._start_frames = [self._start_frames[x] for x in indices_of_video_ids]
+        self._start_frames = [
+            self._start_frames[x] for x in indices_of_video_ids
+        ]
         self._end_frames = [self._end_frames[x] for x in indices_of_video_ids]
         self._spatial_temporal_idx = [
             self._spatial_temporal_idx[x] for x in indices_of_video_ids
@@ -351,11 +363,15 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
             assert len({min_scale, max_scale}) == 1
             sample_uniform = True
         else:
-            raise NotImplementedError("Does not support {} mode".format(self.mode))
+            raise NotImplementedError(
+                "Does not support {} mode".format(self.mode)
+            )
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
+        num_video_frames = (
+            self._end_frames[index] - self._start_frames[index] + 1
+        )
         if self.sample_index_code == "pyvideoai":
             frame_indices = utils.sparse_frame_indices(
                 num_video_frames,
@@ -376,7 +392,10 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
             )
         elif self.sample_index_code == "tdn_greyst":
             frame_indices = utils.TDN_sample_indices(
-                num_video_frames, self.num_frames, mode=self.mode, new_length=15
+                num_video_frames,
+                self.num_frames,
+                mode=self.mode,
+                new_length=15,
             )
         else:
             raise ValueError(
@@ -398,7 +417,9 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
                     self.gulp_dir[self._gulp_keys[index], frame_indices][0]
                 )  # (T*2, H, W)
                 TC, H, W = frames.shape
-                frames = np.reshape(frames, (TC // 2, 2, H, W))  # (T, C=2, H, W)
+                frames = np.reshape(
+                    frames, (TC // 2, 2, H, W)
+                )  # (T, C=2, H, W)
                 frames = np.transpose(frames, (0, 2, 3, 1))  # (T, H, W, C=2)
             else:
                 frames = np.stack(
@@ -498,10 +519,14 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
 
                 frames = pil_transform(frames)
                 TC, H, W = frames.shape
-                frames = np.reshape(frames, (TC // 2, 2, H, W))  # (T, C=2, H, W)
+                frames = np.reshape(
+                    frames, (TC // 2, 2, H, W)
+                )  # (T, C=2, H, W)
                 frames = np.transpose(frames, (0, 2, 3, 1))  # (T, H, W, C=2)
             else:
-                frames = self.gulp_dir[self._gulp_keys[index], frame_indices][0]
+                frames = self.gulp_dir[self._gulp_keys[index], frame_indices][
+                    0
+                ]
 
                 frames = pil_transform(
                     frames
