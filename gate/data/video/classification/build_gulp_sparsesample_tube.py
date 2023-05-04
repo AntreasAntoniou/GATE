@@ -34,10 +34,10 @@ def build_gulp_tube_dataset(
 
     data_dir = Path(data_dir)
 
-    if dataset_name == "hmdb-51":
+    if dataset_name == "jhmdb":
         assert split_num in [1, 2, 3]
-        if data_dir.name != "hmdb51":
-            data_dir = data_dir / "hmdb51"
+        if data_dir.name != "jhmdb":
+            data_dir = data_dir / "jhmdb"
         if sets_to_include is None:
             sets_to_include = ["train", "test"]
     elif dataset_name == "ucf-101-24":
@@ -53,19 +53,12 @@ def build_gulp_tube_dataset(
 
     if ensure_installed:
         if accelerator is None or accelerator.is_local_main_process:
-            if dataset_name == "hmdb-51":
+            if dataset_name == "jhmdb":
                 snapshot_download(
-                    repo_id="kiyoonkim/hmdb51-gulprgb",
+                    repo_id="kiyoonkim/jhmdb-gulprgb",
                     repo_type="dataset",
                     resume_download=True,
                     local_dir=data_dir,
-                    cache_dir=cache_dir,
-                )
-                snapshot_download(
-                    repo_id="kiyoonkim/hmdb-51-posec3d",
-                    repo_type="dataset",
-                    resume_download=True,
-                    local_dir=data_dir / "posec3d",
                     cache_dir=cache_dir,
                 )
             elif dataset_name == "ucf-101-24":
@@ -85,28 +78,21 @@ def build_gulp_tube_dataset(
         input_frame_length = 8
         gulp_dir_path = data_dir / "gulp_rgb"
 
-        if dataset_name == "hmdb-51":
-            tube_pkl_path = data_dir / "posec3d" / "hmdb51_2d.pkl"
-            if set_name == "train":
-                mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
-            elif set_name == "test":
-                mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
-            else:
-                raise ValueError(f"Unknown set_name: {set_name}")
+        if dataset_name == "jhmdb":
+            tube_pkl_path = data_dir / "JHMDB-GT.pkl"
         elif dataset_name == "ucf-101-24":
             tube_pkl_path = data_dir / "UCF101v2-GT.pkl"
-            if set_name == "train":
-                mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / "train.csv"
-            elif set_name == "test":
-                mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / "test.csv"
-            else:
-                raise ValueError(f"Unknown set_name: {set_name}")
         else:
             raise ValueError(f"Unknown dataset_name: {dataset_name}")
+
+        if set_name == "train":
+            mode = "train"
+            csv_path = data_dir / "splits_gulp_rgb" / "train.csv"
+        elif set_name == "test":
+            mode = "test"
+            csv_path = data_dir / "splits_gulp_rgb" / "test.csv"
+        else:
+            raise ValueError(f"Unknown set_name: {set_name}")
 
         data = GulpSparsesampleTubeDataset(
             csv_path,
