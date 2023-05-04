@@ -1,13 +1,33 @@
 gate.data package
 =================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   gate.data.audio
+   gate.data.image
+   gate.data.tasks
+   gate.data.text
+   gate.data.video
+
 Submodules
 ----------
 
-gate.data.data module
+gate.data.core module
 ---------------------
 
-.. automodule:: gate.data.data
+.. automodule:: gate.data.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+gate.data.tasks module
+----------------------
+
+.. automodule:: gate.data.tasks
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,7 +1,7 @@
-GATE-private
-============
+gate
+====
 
 .. toctree::
    :maxdepth: 4
 
-   setup
+   gate

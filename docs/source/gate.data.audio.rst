@@ -1,10 +1,10 @@
-data.image package
-==================
+gate.data.audio package
+=======================
 
 Module contents
 ---------------
 
-.. automodule:: data.image
+.. automodule:: gate.data.audio
    :members:
    :undoc-members:
    :show-inheritance:
