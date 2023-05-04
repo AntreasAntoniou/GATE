@@ -25,6 +25,8 @@ main_requirements = [
     "scipy",
     "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
+    "monai",
+    "nibabel",
 ]
 
 dev_requirements = [

@@ -11,8 +11,14 @@ from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.evaluators import ClassificationEvaluator, Evaluator
-from gate.boilerplate.trainers import ClassificationTrainer, Trainer
+from gate.boilerplate.evaluators.classification import (
+    ClassificationEvaluator,
+    Evaluator,
+)
+from gate.boilerplate.trainers.classification import (
+    ClassificationTrainer,
+    Trainer,
+)
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)

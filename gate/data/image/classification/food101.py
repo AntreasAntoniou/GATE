@@ -1,10 +1,15 @@
 # food101.py
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
 
+from gate.boilerplate.decorators import configurable
+from gate.data.core import GATEDataset
+from gate.data.tasks.classification import ClassificationTask
 
+
+@configurable
 def build_food101_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
@@ -28,7 +33,7 @@ def build_food101_dataset(
         task="image-classification",
     )
 
-    test_data = load_dataset(
+    test_set = load_dataset(
         path="food101",
         split="validation",
         cache_dir=data_dir,
@@ -39,6 +44,38 @@ def build_food101_dataset(
     train_set = train_val_data["train"]
     val_set = train_val_data["test"]
 
-    dataset_dict = {"train": train_set, "val": val_set, "test": test_data}
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
     return dataset_dict[set_name]
+
+
+@configurable
+def build_gate_food_101_dataset(
+    data_dir: Optional[str] = None, transforms: Optional[Any] = None
+) -> dict:
+    train_set = GATEDataset(
+        dataset=build_food101_dataset("train", data_dir=data_dir),
+        infinite_sampling=True,
+        task=ClassificationTask(),
+        key_remapper_dict={"pixel_values": "image"},
+        transforms=transforms,
+    )
+
+    val_set = GATEDataset(
+        dataset=build_food101_dataset("val", data_dir=data_dir),
+        infinite_sampling=False,
+        task=ClassificationTask(),
+        key_remapper_dict={"pixel_values": "image"},
+        transforms=transforms,
+    )
+
+    test_set = GATEDataset(
+        dataset=build_food101_dataset("test", data_dir=data_dir),
+        infinite_sampling=True,
+        task=ClassificationTask(),
+        key_remapper_dict={"pixel_values": "image"},
+        transforms=transforms,
+    )
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict
