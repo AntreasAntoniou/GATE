@@ -14,9 +14,7 @@ from gate.boilerplate.core import Learner
 from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
-from gate.data.image.classification.food101 import (
-    Food101Dataset,
-)
+from gate.data.image.classification.food101 import Food101Dataset
 from gate.models.clip import build_gate_model, build_model
 
 
