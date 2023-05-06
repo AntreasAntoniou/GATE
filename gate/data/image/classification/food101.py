@@ -60,7 +60,7 @@ class Food101Dataset:
     @configurable
     @staticmethod
     def build_gate_food_101_dataset(
-        self, data_dir: Optional[str] = None, transforms: Optional[Any] = None
+        data_dir: Optional[str] = None, transforms: Optional[Any] = None
     ) -> dict:
         train_set = GATEDataset(
             dataset=Food101Dataset.build_food101_dataset(
