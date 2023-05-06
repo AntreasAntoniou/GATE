@@ -17,8 +17,6 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
-from gate.config import BaseConfig
-
 
 def get_logger(
     name=__name__, logging_level: str = None, set_rich: bool = False
@@ -385,7 +383,7 @@ def download_model_with_name(
     }
 
 
-def create_hf_model_repo_and_download_maybe(cfg: BaseConfig):
+def create_hf_model_repo_and_download_maybe(cfg: Any):
     import yaml
     from huggingface_hub import HfApi
 
@@ -524,9 +522,6 @@ def create_hf_model_repo_and_download_maybe(cfg: BaseConfig):
 
     except Exception as e:
         return None, repo_url
-
-
-import os
 
 
 def count_files_recursive(directory: str) -> int:
