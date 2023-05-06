@@ -5,8 +5,11 @@ import numpy as np
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
+
+logger = get_logger(name=__name__, set_rich=True)
 
 
 @configurable
@@ -25,6 +28,10 @@ def build_food101_dataset(
         A dictionary containing the dataset split.
     """
     rng = np.random.RandomState(42)
+
+    logger.info(
+        f"Loading Food-101 dataset, will download to {data_dir} if necessary."
+    )
 
     train_val_data = load_dataset(
         path="food101",
