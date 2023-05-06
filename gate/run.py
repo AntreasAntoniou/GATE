@@ -46,7 +46,9 @@ logger = get_logger(name=__name__)
 
 def setup(ckpt_path: str, cfg: BaseConfig):
     if ckpt_path is not None and cfg.resume is True:
-        trainer_state = torch.load(pathlib.Path(ckpt_path) / "trainer_state.pt")
+        trainer_state = torch.load(
+            pathlib.Path(ckpt_path) / "trainer_state.pt"
+        )
         global_step = trainer_state["global_step"]
         # neptune_id = (
         #     trainer_state["neptune_id"]
@@ -106,7 +108,9 @@ def run(cfg: BaseConfig) -> None:
     dataset_dict = {"train": [], "val": [], "test": []}
 
     for dataset_name, dataset_config in cfg.dataset.items():
-        dataset: GATEDataset = instantiate(dataset_config, transforms=transform)
+        dataset: GATEDataset = instantiate(
+            dataset_config, transforms=transform
+        )
 
         dataset_dict["train"].append(dataset["train"])
         dataset_dict["val"].append(dataset["val"])
