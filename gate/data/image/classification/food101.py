@@ -16,7 +16,7 @@ class Food101Dataset:
     @configurable
     @staticmethod
     def build_food101_dataset(
-        self, set_name: str, data_dir: Optional[str] = None
+        set_name: str, data_dir: Optional[str] = None
     ) -> dict:
         """
         Build a Food-101 dataset using the Hugging Face datasets library.
@@ -63,7 +63,9 @@ class Food101Dataset:
         self, data_dir: Optional[str] = None, transforms: Optional[Any] = None
     ) -> dict:
         train_set = GATEDataset(
-            dataset=self.build_food101_dataset("train", data_dir=data_dir),
+            dataset=Food101Dataset.build_food101_dataset(
+                "train", data_dir=data_dir
+            ),
             infinite_sampling=True,
             task=ClassificationTask(),
             key_remapper_dict={"pixel_values": "image"},
@@ -71,7 +73,9 @@ class Food101Dataset:
         )
 
         val_set = GATEDataset(
-            dataset=self.build_food101_dataset("val", data_dir=data_dir),
+            dataset=Food101Dataset.build_food101_dataset(
+                "val", data_dir=data_dir
+            ),
             infinite_sampling=False,
             task=ClassificationTask(),
             key_remapper_dict={"pixel_values": "image"},
@@ -79,7 +83,9 @@ class Food101Dataset:
         )
 
         test_set = GATEDataset(
-            dataset=self.build_food101_dataset("test", data_dir=data_dir),
+            dataset=Food101Dataset.build_food101_dataset(
+                "test", data_dir=data_dir
+            ),
             infinite_sampling=True,
             task=ClassificationTask(),
             key_remapper_dict={"pixel_values": "image"},
