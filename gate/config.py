@@ -245,7 +245,7 @@ def collect_config_store():
     )
 
     hf_upload = HFModelUploadConfig(
-        repo_name=EXPERIMENT_NAME, repo_owner=HF_USERNAME
+        repo_name="${exp_name}", repo_owner=HF_USERNAME
     )
 
     default_callbacks = dict(hf_uploader=hf_upload)
