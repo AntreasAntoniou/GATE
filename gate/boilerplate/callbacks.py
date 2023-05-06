@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 from hydra_zen import instantiate
 from torch.utils.data import DataLoader
-from huggingface_hub import HfApi
 import os
 
 from .utils import get_logger
