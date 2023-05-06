@@ -38,6 +38,7 @@ dev_requirements = [
     "sphinx",
     "sphinx_rtd_theme",
     "sphinx-autodoc-typehints",
+    "sphinx-material",
 ]
 
 print(f"Installing {find_packages()}")
