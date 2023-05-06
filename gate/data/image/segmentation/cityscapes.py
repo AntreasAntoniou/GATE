@@ -93,4 +93,4 @@ def build_cityscapes_dataset(
 
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
 
-    return dataset_dict[set_name]
+    return dataset_dict
