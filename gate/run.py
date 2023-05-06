@@ -70,40 +70,40 @@ def setup(ckpt_path: str, cfg: BaseConfig):
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: BaseConfig) -> None:
-    ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
+    # ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
 
-    if ckpt_path is not None:
-        logger.info(
-            f"ckpt_path: {ckpt_path}, exists: {ckpt_path.exists()}, "
-            f"resume: {cfg.resume}, not resume: {not cfg.resume}"
-        )
-    else:
-        logger.info(
-            f"ckpt_path: {ckpt_path}, resume: {cfg.resume}, "
-            f"not resume: {not cfg.resume}"
-        )
+    # if ckpt_path is not None:
+    #     logger.info(
+    #         f"ckpt_path: {ckpt_path}, exists: {ckpt_path.exists()}, "
+    #         f"resume: {cfg.resume}, not resume: {not cfg.resume}"
+    #     )
+    # else:
+    #     logger.info(
+    #         f"ckpt_path: {ckpt_path}, resume: {cfg.resume}, "
+    #         f"not resume: {not cfg.resume}"
+    #     )
 
-    logger.info(f"Using checkpoint: {ckpt_path}")
+    # logger.info(f"Using checkpoint: {ckpt_path}")
 
-    print(pretty_config(cfg, resolve=True))
-    set_seed(seed=cfg.seed)
+    # print(pretty_config(cfg, resolve=True))
+    # set_seed(seed=cfg.seed)
 
-    global_step, experiment_tracker = setup(ckpt_path, cfg)
+    # global_step, experiment_tracker = setup(ckpt_path, cfg)
 
     model_and_transform = instantiate(cfg.model)
 
     model: GATEModel = model_and_transform.model
     transform: Optional[Callable] = model_and_transform.transform
 
-    wandb.init()
-    config_dict = OmegaConf.to_container(cfg, resolve=True)
-    experiment_tracker["config"] = config_dict
-    experiment_tracker["notes"] = repo_url
-    experiment_tracker["init_global_step"] = global_step
+    # wandb.init()
+    # config_dict = OmegaConf.to_container(cfg, resolve=True)
+    # experiment_tracker["config"] = config_dict
+    # experiment_tracker["notes"] = repo_url
+    # experiment_tracker["init_global_step"] = global_step
 
-    wandb.config.update(config_dict)
-    wandb.config.update({"notes": repo_url})
-    wandb.config.update({"init_global_step": global_step})
+    # wandb.config.update(config_dict)
+    # wandb.config.update({"notes": repo_url})
+    # wandb.config.update({"init_global_step": global_step})
 
     dataset_dict = {"train": [], "val": [], "test": []}
 
@@ -147,9 +147,9 @@ def run(cfg: BaseConfig) -> None:
         shuffle=False,
     )
 
-    experiment_tracker["num_parameters"] = sum(
-        p.numel() for p in model.parameters() if p.requires_grad
-    )
+    # experiment_tracker["num_parameters"] = sum(
+    #     p.numel() for p in model.parameters() if p.requires_grad
+    # )
 
     optimizer: torch.optim.Optimizer = instantiate(
         cfg.optimizer, params=model.parameters(), _partial_=False

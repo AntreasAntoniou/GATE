@@ -165,7 +165,11 @@ class GATEDataset(Dataset):
         item = self.dataset[index]
 
         item = self.transforms(item) if self.transforms is not None else item
-        item: Any = self.remap_keys(item)
+        item: Any = (
+            self.remap_keys(item)
+            if self.key_remapper_dict is not None
+            else item
+        )
         # print(f"data {list(item.keys())}")
         # Apply the task to the item if it exists
         return self.task(item) if self.task is not None else item
