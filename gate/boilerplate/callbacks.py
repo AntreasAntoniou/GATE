@@ -10,7 +10,6 @@ import torch.nn as nn
 from huggingface_hub import HfApi
 from hydra_zen import instantiate
 from torch.utils.data import DataLoader
-import os
 
 from .utils import get_logger
 
