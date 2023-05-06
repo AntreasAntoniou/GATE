@@ -74,7 +74,10 @@ def build_gate_model(
         image=[SourceModalityConfig(image=True)]
     )
 
-    model_key_remapper_dict_config = {"image": "pixel_values"}
+    model_key_remapper_dict_config = {
+        "image": "pixel_values"
+    }  # HuggingFace Dataset -> dict("pixel_values", "labels") -> GATEDataset ->
+    # dict("image", "labels") -> GATEModel -> choose-right-modalities and pass to model -> dict("pixel_values", "labels")
 
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
