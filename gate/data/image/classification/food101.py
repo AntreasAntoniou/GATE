@@ -1,8 +1,10 @@
 # food101.py
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
+from zstandard import train_dictionary
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
@@ -91,3 +93,10 @@ def build_gate_food_101_dataset(
 def build_dummy_food101_dataset(transforms: Optional[Any] = None) -> dict:
     # Create a dummy dataset that emulates food-101's shape and modality
     pass
+
+
+@dataclass
+class DefaultHyperparameters:
+    train_batch_size: int = 256
+    eval_batch_size: int = 512
+    num_classes: int = 101
