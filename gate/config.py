@@ -15,8 +15,7 @@ from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.data.image.classification.food101 import (
-    build_food101_dataset,
-    build_gate_food_101_dataset,
+    Food101Dataset,
 )
 from gate.models.clip import build_gate_model, build_model
 
@@ -130,8 +129,10 @@ def collect_config_store():
     ##########################################################################
     # Dataset configs
 
-    food101_config: Any = build_gate_food_101_dataset.__config__(
-        populate_full_signature=True
+    food101_config: Any = (
+        Food101Dataset.build_gate_food_101_dataset.__config__(
+            populate_full_signature=True
+        )
     )
 
     config_store.store(
