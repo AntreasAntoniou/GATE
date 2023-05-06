@@ -12,7 +12,7 @@ from gate.data.tasks.classification import ClassificationTask
 logger = get_logger(name=__name__, set_rich=True)
 
 
-class Food101:
+class Food101Dataset:
     @configurable
     def build_food101_dataset(
         self, set_name: str, data_dir: Optional[str] = None
@@ -89,4 +89,4 @@ class Food101:
 
     def build_dummy_dataset(transforms: Optional[Any] = None) -> dict:
         # Create a dummy dataset that emulates food-101's shape and modality
-        dataset = Dataset()
+        pass
