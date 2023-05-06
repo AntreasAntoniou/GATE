@@ -14,6 +14,7 @@ logger = get_logger(name=__name__, set_rich=True)
 
 class Food101Dataset:
     @configurable
+    @staticmethod
     def build_food101_dataset(
         self, set_name: str, data_dir: Optional[str] = None
     ) -> dict:
@@ -57,6 +58,7 @@ class Food101Dataset:
         return dataset_dict[set_name]
 
     @configurable
+    @staticmethod
     def build_gate_food_101_dataset(
         self, data_dir: Optional[str] = None, transforms: Optional[Any] = None
     ) -> dict:
