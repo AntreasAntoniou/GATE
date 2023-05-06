@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from abc import ABC
 from pathlib import Path
@@ -6,10 +7,9 @@ from typing import Any, Dict, List, Union
 
 import torch
 import torch.nn as nn
+from huggingface_hub import HfApi
 from hydra_zen import instantiate
 from torch.utils.data import DataLoader
-from huggingface_hub import HfApi
-import os
 
 from .utils import get_logger
 
