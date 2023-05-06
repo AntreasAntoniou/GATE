@@ -9,12 +9,10 @@ from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
-from torch.utils.data import Dataset, Subset
+from torch.utils.data import Subset
 
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.core import Learner
-from gate.boilerplate.evaluators.classification import ClassificationEvaluator
-from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import (
     create_hf_model_repo_and_download_maybe,
     get_logger,
