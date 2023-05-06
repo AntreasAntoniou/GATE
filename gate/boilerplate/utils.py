@@ -17,6 +17,8 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+from gate.config import BaseConfig
+
 
 def get_logger(
     name=__name__, logging_level: str = None, set_rich: bool = False
@@ -383,7 +385,7 @@ def download_model_with_name(
     }
 
 
-def create_hf_model_repo_and_download_maybe(cfg: Any):
+def create_hf_model_repo_and_download_maybe(cfg: BaseConfig):
     import yaml
     from huggingface_hub import HfApi
 
@@ -410,7 +412,7 @@ def create_hf_model_repo_and_download_maybe(cfg: Any):
 
     config_dict = OmegaConf.to_container(cfg, resolve=True)
 
-    hf_api = HfApi()
+    hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
     config_json_path: pathlib.Path = save_json(
         filepath=pathlib.Path(cfg.hf_cache_dir) / "config.json",
