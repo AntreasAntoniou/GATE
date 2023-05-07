@@ -17,6 +17,27 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+import os
+import pathlib
+import shutil
+import yaml
+from omegaconf import OmegaConf
+from huggingface_hub import (
+    login,
+    create_repo,
+    download_model_with_name,
+    snapshot_download,
+    HfApi,
+)
+from typing import Optional, Tuple, Dict
+
+import os
+import os.path
+import pathlib
+from typing import Any, Dict, Union
+
+import orjson as json
+
 
 def get_logger(
     name=__name__, logging_level: str = None, set_rich: bool = False
@@ -170,14 +191,6 @@ def pretty_config(
         branch.add(Syntax(branch_content, "yaml"))
 
     return tree
-
-
-import os
-import os.path
-import pathlib
-from typing import Any, Dict, Union
-
-import orjson as json
 
 
 def save_json(
@@ -383,144 +396,80 @@ def download_model_with_name(
     }
 
 
-def create_hf_model_repo_and_download_maybe(cfg: Any):
-    import yaml
-    from huggingface_hub import HfApi
-
-    if cfg.resume_from_checkpoint is not None and cfg.resume is True:
-        raise ValueError("Cannot use both resume_from_checkpoint and resume")
-
-    hf_repo_path = cfg.hf_repo_path
+def create_hf_model_repo(cfg: Any) -> str:
     login(token=os.environ["HF_TOKEN"], add_to_git_credential=True)
-    print(
-        f"Logged in to huggingface with token {os.environ['HF_TOKEN']},"
-        f"creating repo {hf_repo_path}"
-    )
-    repo_url = create_repo(
-        hf_repo_path, repo_type="model", exist_ok=True, private=True
+    print(f"Creating repo {cfg.hf_repo_path}")
+    return create_repo(
+        cfg.hf_repo_path, repo_type="model", exist_ok=True, private=True
     )
 
-    logger.info(f"Created repo {hf_repo_path}, {cfg.hf_cache_dir}")
 
-    if not pathlib.Path(cfg.hf_cache_dir).exists():
-        pathlib.Path(cfg.hf_cache_dir).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(pathlib.Path(cfg.hf_cache_dir) / "checkpoints").mkdir(
-            parents=True, exist_ok=True
-        )
+def create_directories(cfg: Any) -> None:
+    pathlib.Path(cfg.hf_cache_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(cfg.hf_cache_dir / "checkpoints").mkdir(
+        parents=True, exist_ok=True
+    )
 
+
+def upload_config_files(cfg: Any, hf_repo_path: str) -> None:
     config_dict = OmegaConf.to_container(cfg, resolve=True)
-
+    config_json_path = save_json(
+        cfg.hf_cache_dir / "config.json", config_dict, overwrite=True
+    )
+    config_yaml_path = cfg.hf_cache_dir / "config.yaml"
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
-    config_json_path: pathlib.Path = save_json(
-        filepath=pathlib.Path(cfg.hf_cache_dir) / "config.json",
-        dict_to_store=config_dict,
-        overwrite=True,
-    )
-
-    hf_api.upload_file(
-        repo_id=hf_repo_path,
-        path_or_fileobj=config_json_path.as_posix(),
-        path_in_repo="config.json",
-    )
-
-    config_yaml_path = pathlib.Path(cfg.hf_cache_dir) / "config.yaml"
     with open(config_yaml_path, "w") as file:
-        documents = yaml.dump(config_dict, file)
+        yaml.dump(config_dict, file)
 
-    hf_api.upload_file(
-        repo_id=hf_repo_path,
-        path_or_fileobj=config_yaml_path.as_posix(),
-        path_in_repo="config.yaml",
+    for filepath, path_in_repo in [
+        (config_json_path, "config.json"),
+        (config_yaml_path, "config.yaml"),
+    ]:
+        hf_api.upload_file(
+            repo_id=hf_repo_path,
+            path_or_fileobj=filepath.as_posix(),
+            path_in_repo=path_in_repo,
+        )
+
+
+def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
+    return {
+        int(file.split("/")[-2].split("_")[-1]): "/".join(file.split("/")[:-1])
+        for file in files
+        if "checkpoints/ckpt" in file
+    }
+
+
+def download_checkpoint(cfg: Any, model_name: str) -> Tuple[pathlib.Path, str]:
+    logger.info(
+        f"Downloading checkpoint '{model_name}' from Hugging Face hub 👨🏻‍💻"
     )
+    path_dict = download_model_with_name(
+        cfg.hf_repo_path, cfg.hf_cache_dir, model_name
+    )
+    logger.info(f"Downloaded checkpoint to {cfg.hf_cache_dir}")
+    return path_dict["root_filepath"], cfg.hf_repo_path
 
-    try:
-        if cfg.resume == False and not (
-            cfg.resume_from_checkpoint is not None or cfg.resume
-        ):
-            return None, repo_url
 
-        if cfg.resume_from_checkpoint is not None:
-            logger.info(
-                f"Download {cfg.resume_from_checkpoint} checkpoint, if it exists, from the huggingface hub 👨🏻‍💻"
-            )
+def create_hf_model_repo_and_download_maybe(
+    cfg: Any,
+) -> Tuple[Optional[pathlib.Path], str]:
+    repo_url = create_hf_model_repo(cfg)
+    create_directories(cfg)
+    upload_config_files(cfg, repo_url)
 
-            path_dict = download_model_with_name(
-                hf_repo_path=hf_repo_path,
-                hf_cache_dir=cfg.hf_cache_dir,
-                model_name=cfg.resume_from_checkpoint,
-            )
-            logger.info(
-                f"Downloaded checkpoint from huggingface hub to {cfg.hf_cache_dir}"
-            )
-            return path_dict["root_filepath"], repo_url
+    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    files = hf_api.list_repo_files(repo_id=cfg.hf_repo_path)
+    ckpt_dict = get_checkpoint_dict(files)
 
-        elif cfg.resume:
-            files = hf_api.list_repo_files(
-                repo_id=hf_repo_path,
-            )
-
-            ckpt_dict = {}
-            for file in files:
-                if "checkpoints/ckpt" in file:
-                    ckpt_global_step = int(file.split("/")[-2].split("_")[-1])
-                    ckpt_dict[ckpt_global_step] = "/".join(
-                        file.split("/")[:-1]
-                    )
-
-            latest_ckpt = ckpt_dict[max(ckpt_dict.keys())]
-
-            model_dir = pathlib.Path(cfg.hf_cache_dir) / latest_ckpt
-            if model_dir.exists():
-                logger.info("Checkpoint exists, skipping download")
-            else:
-                logger.info(
-                    "Download latest checkpoint, if it exists, from the huggingface hub 👨🏻‍💻"
-                )
-                path_dict = download_model_with_name(
-                    model_name=latest_ckpt.split("/")[-1],
-                    hf_repo_path=hf_repo_path,
-                    hf_cache_dir=cfg.hf_cache_dir,
-                )
-                logger.info(
-                    f"Downloaded checkpoint from huggingface hub to {cfg.hf_cache_dir}"
-                )
-            return (
-                model_dir,
-                repo_url,
-            )
-        else:
-            logger.info(
-                "Download all available checkpoints, if they exist, from the huggingface hub 👨🏻‍💻"
-            )
-
-            ckpt_folderpath = snapshot_download(
-                repo_id=hf_repo_path,
-                cache_dir=pathlib.Path(cfg.hf_cache_dir),
-                resume_download=True,
-            )
-            latest_checkpoint = (
-                pathlib.Path(cfg.hf_cache_dir) / "checkpoints" / "latest"
-            )
-
-            if pathlib.Path(
-                pathlib.Path(cfg.hf_cache_dir) / "checkpoints"
-            ).exists():
-                pathlib.Path(
-                    pathlib.Path(cfg.hf_cache_dir) / "checkpoints"
-                ).mkdir(parents=True, exist_ok=True)
-
-            shutil.copy(
-                pathlib.Path(ckpt_folderpath), cfg.hf_cache_dir / "checkpoints"
-            )
-
-            if latest_checkpoint.exists():
-                logger.info(
-                    f"Downloaded checkpoint from huggingface hub to {latest_checkpoint}"
-                )
-            return cfg.hf_cache_dir / "checkpoints" / "latest"
-
-    except Exception as e:
+    if cfg.resume_from_checkpoint:
+        return download_checkpoint(cfg, cfg.resume_from_checkpoint)
+    elif cfg.resume:
+        latest_ckpt = ckpt_dict[max(ckpt_dict.keys())].split("/")[-1]
+        return download_checkpoint(cfg, latest_ckpt)
+    else:
+        print(f"Created repo {cfg.hf_repo_path}, {cfg.hf_cache_dir}")
         return None, repo_url
 
 
