@@ -305,7 +305,9 @@ def create_directories(cfg: Any) -> None:
 def upload_config_files(cfg: Any, hf_repo_path: str) -> None:
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     config_json_path = save_json(
-        cfg.hf_cache_dir / "config.json", config_dict, overwrite=True
+        pathlib.Path(cfg.hf_cache_dir) / "config.json",
+        config_dict,
+        overwrite=True,
     )
     config_yaml_path = cfg.hf_cache_dir / "config.yaml"
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
