@@ -1,6 +1,7 @@
 # Code inspired from https://github.com/facebookresearch/SlowFast
 import logging
 import os
+from pathlib import Path
 
 import decord
 import numpy as np
@@ -39,7 +40,7 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
         std=[0.229, 0.224, 0.225],
         normalise=True,  # divide pixels by 255
         bgr=False,
-        path_prefix="",
+        path_prefix: str | Path = "",
         sample_index_code="pyvideoai",
         num_decord_threads=1,
     ):
