@@ -227,7 +227,7 @@ def collect_config_store():
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
         checkpoint_every_n_steps=500,
-        train_iters="$train_iters",
+        train_iters="${train_iters}",
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
