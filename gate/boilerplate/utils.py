@@ -297,7 +297,7 @@ def create_hf_model_repo(cfg: Any) -> str:
 
 def create_directories(cfg: Any) -> None:
     pathlib.Path(cfg.hf_cache_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(cfg.hf_cache_dir / "checkpoints").mkdir(
+    (pathlib.Path(cfg.hf_cache_dir) / "checkpoints").mkdir(
         parents=True, exist_ok=True
     )
 
