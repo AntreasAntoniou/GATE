@@ -241,12 +241,16 @@ def download_model_with_name(
     :return: A dictionary with the filepaths of the downloaded files
     """
 
-    def download_and_copy(filename: str, target_path: pathlib.Path) -> None:
+    def download_and_copy(
+        filename: str,
+        target_path: pathlib.Path,
+        subfolder: str = f"checkpoints/{model_name}",
+    ) -> None:
         file_path = hf_hub_download(
             repo_id=hf_repo_path,
             cache_dir=pathlib.Path(hf_cache_dir),
             resume_download=True,
-            subfolder=f"checkpoints/{model_name}",
+            subfolder=subfolder,
             filename=filename,
             repo_type="model",
         )
@@ -256,7 +260,6 @@ def download_model_with_name(
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     file_mapping = {
-        "config.yaml": "config_filepath",
         "trainer_state.pt": "trainer_state_filepath",
         "optimizer.bin": "optimizer_filepath",
         "pytorch_model.bin": "model_filepath",
@@ -274,6 +277,11 @@ def download_model_with_name(
         except Exception as e:
             if key != "scaler_filepath":
                 raise e
+
+    # Handle config.yaml separately
+    config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
+    download_and_copy("config.yaml", config_target_path, subfolder="")
+    downloaded_files["config_filepath"] = config_target_path
 
     if download_only_if_finished:
         state_dict = torch.load(downloaded_files["trainer_state_filepath"])[
