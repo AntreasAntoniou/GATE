@@ -53,7 +53,7 @@ def build_kinetics_400_dataset(
     dataset = {}
     for set_name in sets_to_include:
         input_frame_length = 8
-        videos_dir = data_dir / "videos"
+        videos_dir = data_dir / "k400" / "videos"
 
         if set_name == "train":
             mode = "train"

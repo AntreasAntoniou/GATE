@@ -266,8 +266,8 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
         # Perform data augmentation.
         (
             frames,
-            scale_factor_width,
-            scale_factor_height,
+            _,
+            _,
             x_offset,
             y_offset,
             is_flipped,
@@ -282,14 +282,13 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
 
         video_id = self._video_ids[index]
         label = self._labels[index]
+
         return {
             "pixel_values": frames,
             "video_ids": video_id,
             "labels": label,
             "spatial_sample_indices": spatial_sample_index,
             "indices": index,
-            "scale_factor_width": scale_factor_width,
-            "scale_factor_height": scale_factor_height,
             "x_offset": x_offset,
             "y_offset": y_offset,
             "is_flipped": is_flipped,
