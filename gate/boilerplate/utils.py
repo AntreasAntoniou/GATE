@@ -226,160 +226,65 @@ logger = get_logger(name=__name__)
 
 
 def download_model_with_name(
-    hf_repo_path, hf_cache_dir, model_name, download_only_if_finished=False
-):
-    if not pathlib.Path(
-        pathlib.Path(hf_cache_dir) / "checkpoints" / f"{model_name}"
-    ).exists():
-        pathlib.Path(
-            pathlib.Path(hf_cache_dir) / "checkpoints" / f"{model_name}"
-        ).mkdir(parents=True, exist_ok=True)
+    hf_repo_path: str,
+    hf_cache_dir: str,
+    model_name: str,
+    download_only_if_finished: bool = False,
+) -> Dict[str, pathlib.Path]:
+    """
+    Download model checkpoint files given the model name from Hugging Face hub.
 
-    config_filepath = hf_hub_download(
-        repo_id=hf_repo_path,
-        cache_dir=pathlib.Path(hf_cache_dir),
-        resume_download=True,
-        filename="config.yaml",
-        repo_type="model",
-    )
+    :param hf_repo_path: The Hugging Face repository path
+    :param hf_cache_dir: The cache directory to store downloaded files
+    :param model_name: The model name to download
+    :param download_only_if_finished: Download only if the model training is finished (optional)
+    :return: A dictionary with the filepaths of the downloaded files
+    """
 
-    config_path = pathlib.Path(hf_cache_dir) / "config.yaml"
-
-    shutil.copy(
-        pathlib.Path(config_filepath),
-        config_path,
-    )
-
-    trainer_state_filepath = hf_hub_download(
-        repo_id=hf_repo_path,
-        cache_dir=pathlib.Path(hf_cache_dir),
-        resume_download=True,
-        subfolder=f"checkpoints/{model_name}",
-        filename="trainer_state.pt",
-        repo_type="model",
-    )
-
-    trainer_path = (
-        pathlib.Path(hf_cache_dir)
-        / "checkpoints"
-        / f"{model_name}"
-        / "trainer_state.pt"
-    )
-
-    shutil.copy(
-        pathlib.Path(trainer_state_filepath),
-        trainer_path,
-    )
-    logger.info(
-        f"Trainer state copied to {trainer_path} from {trainer_state_filepath}."
-    )
-
-    if download_only_if_finished:
-        state_dict = torch.load(trainer_path)["state_dict"]["eval"][0][
-            "auc-macro"
-        ]
-        global_step_list = list(state_dict.keys())
-        if len(global_step_list) < 40:
-            return False
-
-    optimizer_filepath = hf_hub_download(
-        repo_id=hf_repo_path,
-        cache_dir=pathlib.Path(hf_cache_dir),
-        resume_download=True,
-        subfolder=f"checkpoints/{model_name}",
-        filename="optimizer.bin",
-        repo_type="model",
-    )
-
-    model_filepath = hf_hub_download(
-        repo_id=hf_repo_path,
-        cache_dir=pathlib.Path(hf_cache_dir),
-        resume_download=True,
-        subfolder=f"checkpoints/{model_name}",
-        filename="pytorch_model.bin",
-        repo_type="model",
-    )
-
-    random_states_filepath = hf_hub_download(
-        repo_id=hf_repo_path,
-        cache_dir=pathlib.Path(hf_cache_dir),
-        resume_download=True,
-        subfolder=f"checkpoints/{model_name}",
-        filename="random_states_0.pkl",
-        repo_type="model",
-    )
-
-    try:
-        scaler_state_filepath = hf_hub_download(
+    def download_and_copy(filename: str, target_path: pathlib.Path) -> None:
+        file_path = hf_hub_download(
             repo_id=hf_repo_path,
             cache_dir=pathlib.Path(hf_cache_dir),
             resume_download=True,
             subfolder=f"checkpoints/{model_name}",
-            filename="scaler.pt",
+            filename=filename,
             repo_type="model",
         )
-    except Exception as e:
-        scaler_state_filepath = None
+        shutil.copy(pathlib.Path(file_path), target_path)
 
-    target_optimizer_path = (
-        pathlib.Path(hf_cache_dir)
-        / "checkpoints"
-        / f"{model_name}"
-        / "optimizer.bin"
-    )
+    checkpoint_dir = pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(
-        pathlib.Path(optimizer_filepath),
-        target_optimizer_path,
-    )
-
-    target_model_path = (
-        pathlib.Path(hf_cache_dir)
-        / "checkpoints"
-        / f"{model_name}"
-        / "pytorch_model.bin"
-    )
-
-    shutil.copy(
-        pathlib.Path(model_filepath),
-        target_model_path,
-    )
-
-    random_states_path = (
-        pathlib.Path(hf_cache_dir)
-        / "checkpoints"
-        / f"{model_name}"
-        / "random_states_0.pkl"
-    )
-
-    shutil.copy(
-        pathlib.Path(random_states_filepath),
-        random_states_path,
-    )
-
-    if scaler_state_filepath is not None:
-        scaler_path = (
-            pathlib.Path(hf_cache_dir)
-            / "checkpoints"
-            / f"{model_name}"
-            / "scaler.pt"
-        )
-
-        shutil.copy(
-            pathlib.Path(scaler_state_filepath),
-            scaler_path,
-        )
-
-    return {
-        "root_filepath": pathlib.Path(hf_cache_dir)
-        / "checkpoints"
-        / f"{model_name}",
-        "optimizer_filepath": target_optimizer_path,
-        "model_filepath": target_model_path,
-        "random_states_filepath": random_states_path,
-        "trainer_state_filepath": trainer_path,
-        "config_filepath": config_path,
+    file_mapping = {
+        "config.yaml": "config_filepath",
+        "trainer_state.pt": "trainer_state_filepath",
+        "optimizer.bin": "optimizer_filepath",
+        "pytorch_model.bin": "model_filepath",
+        "random_states_0.pkl": "random_states_filepath",
+        "scaler.pt": "scaler_filepath",
     }
+
+    downloaded_files = {}
+
+    for filename, key in file_mapping.items():
+        try:
+            target_path = checkpoint_dir / filename
+            download_and_copy(filename, target_path)
+            downloaded_files[key] = target_path
+        except Exception as e:
+            if key != "scaler_filepath":
+                raise e
+
+    if download_only_if_finished:
+        state_dict = torch.load(downloaded_files["trainer_state_filepath"])[
+            "state_dict"
+        ]["eval"][0]["auc-macro"]
+        if len(state_dict.keys()) < 40:
+            return {}
+
+    downloaded_files["root_filepath"] = checkpoint_dir
+
+    return downloaded_files
 
 
 def create_hf_model_repo(cfg: Any) -> str:
