@@ -1,5 +1,6 @@
 import pathlib
 from pathlib import Path
+from time import sleep
 from typing import List, Optional, Union
 
 import torch
@@ -284,9 +285,9 @@ class Learner(nn.Module):
         for trainer in self.trainers:
             trainer.end_training(global_step=self.global_step)
 
-        for background_thread in self.background_threads:
-            background_thread.start()
-            background_thread.join()
+        while len(self.background_threads) > 0:
+            self.check_manage_background_threads()
+            sleep(1)
 
         logger.info("Training finished 🎉")
 
