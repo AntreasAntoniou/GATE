@@ -309,7 +309,7 @@ def upload_config_files(cfg: Any, hf_repo_path: str) -> None:
         config_dict,
         overwrite=True,
     )
-    config_yaml_path = cfg.hf_cache_dir / "config.yaml"
+    config_yaml_path = pathlib.Path(cfg.hf_cache_dir) / "config.yaml"
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
     with open(config_yaml_path, "w") as file:
