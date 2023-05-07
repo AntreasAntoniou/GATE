@@ -231,6 +231,8 @@ def collect_config_store():
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
+        model_selection_metric_name="accuracy-top-1-epoch-mean",
+        model_selection_metric_higher_is_better=True,
     )
     config_store.store(
         group="learner",

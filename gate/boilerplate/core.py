@@ -597,6 +597,9 @@ class Learner(nn.Module):
         best_global_step, best_metric = self.evaluators[0].get_best_metric(
             metric_name, higher_is_better
         )
+        print(
+            f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
+        )
         download_dict = download_model_with_name(
             hf_repo_path=self.hf_repo_path,
             hf_cache_dir=self.hf_cache_dir,
