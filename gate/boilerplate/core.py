@@ -278,6 +278,7 @@ class Learner(nn.Module):
             trainer.end_training(global_step=self.global_step)
 
         for background_thread in self.background_threads:
+            background_thread.start()
             background_thread.join()
 
         logger.info("Training finished 🎉")
