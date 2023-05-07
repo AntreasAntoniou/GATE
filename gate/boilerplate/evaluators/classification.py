@@ -157,7 +157,7 @@ class ClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    def test_step(
+    def testing_step(
         self,
         model,
         batch,
