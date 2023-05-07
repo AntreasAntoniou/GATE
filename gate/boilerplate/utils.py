@@ -364,6 +364,9 @@ def create_hf_model_repo_and_download_maybe(
     files = hf_api.list_repo_files(repo_id=cfg.hf_repo_path)
     ckpt_dict = get_checkpoint_dict(files)
 
+    if len(ckpt_dict) == 0:
+        return None, repo_url
+
     if cfg.resume_from_checkpoint:
         return download_checkpoint(cfg, cfg.resume_from_checkpoint)
     elif cfg.resume:
