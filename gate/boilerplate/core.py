@@ -338,7 +338,6 @@ class Learner(nn.Module):
 
         for evaluator in self.evaluators:
             evaluator.start_testing(
-                step_idx=self.global_step,
                 global_step=self.global_step,
             )
             logger.info("Starting testing 🧪")
