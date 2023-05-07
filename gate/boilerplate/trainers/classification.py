@@ -178,6 +178,7 @@ class ClassificationTrainer(Trainer):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
+            print(key, value)
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
