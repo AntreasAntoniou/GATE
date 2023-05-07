@@ -62,7 +62,7 @@ class ClassificationEvaluator(Evaluator):
         global_steps = self.global_step_dict[metric_name]
         metrics = self.epoch_metrics[metric_name]
 
-        print(metrics)
+        print(self.epoch_metrics)
 
         if higher_is_better:
             best_metric_idx = torch.argmax(torch.tensor(metrics))
