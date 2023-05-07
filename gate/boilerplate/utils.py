@@ -350,7 +350,7 @@ def create_hf_model_repo_and_download_maybe(
 ) -> Tuple[Optional[pathlib.Path], str]:
     repo_url = create_hf_model_repo(cfg)
     create_directories(cfg)
-    upload_config_files(cfg, repo_url)
+    upload_config_files(cfg, cfg.hf_repo_path)
 
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
     files = hf_api.list_repo_files(repo_id=cfg.hf_repo_path)
