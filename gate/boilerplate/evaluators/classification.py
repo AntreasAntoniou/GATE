@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 import torch
 from accelerate import Accelerator
+from rich import print
 from traitlets import default
 
 from gate.boilerplate.metrics import accuracy_top_k
@@ -12,7 +13,6 @@ from gate.boilerplate.metrics import accuracy_top_k
 from ..decorators import collect_metrics, configurable
 from ..trainers.classification import StepOutput
 from ..utils import get_logger
-from rich import print
 
 logger = get_logger(__name__)
 
