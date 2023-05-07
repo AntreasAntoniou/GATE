@@ -14,7 +14,6 @@ import yaml
 from huggingface_hub import (
     HfApi,
     create_repo,
-    download_model_with_name,
     hf_hub_download,
     login,
     snapshot_download,
