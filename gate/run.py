@@ -19,7 +19,7 @@ from gate.boilerplate.utils import (
     pretty_config,
     set_seed,
 )
-from gate.config import BaseConfig, collect_config_store
+from gate.config import Any, collect_config_store
 from gate.data.core import CustomConcatDataset, GATEDataset
 from gate.models.core import GATEModel
 
@@ -42,7 +42,7 @@ config_store = collect_config_store()
 logger = get_logger(name=__name__)
 
 
-def setup(ckpt_path: str, cfg: BaseConfig):
+def setup(ckpt_path: str, cfg: Any):
     if ckpt_path is not None and cfg.resume is True:
         trainer_state = torch.load(
             pathlib.Path(ckpt_path) / "trainer_state.pt"
@@ -67,7 +67,7 @@ def setup(ckpt_path: str, cfg: BaseConfig):
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
-def run(cfg: BaseConfig) -> None:
+def run(cfg: Any) -> None:
     ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
 
     if ckpt_path is not None:
