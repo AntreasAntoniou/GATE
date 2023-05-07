@@ -138,12 +138,13 @@ class ClassificationTrainer(Trainer):
                 ),
                 "loss": torch.mean(torch.stack(overall_loss)),
             }
+
+            for key, value in metrics.items():
+                self.state_dict.setdefault(key, []).append(value)
+
             metrics |= overall_output_dict
         else:
             metrics = {}
-
-        for key, value in metrics.items():
-            self.state_dict.setdefault(key, []).append(value)
 
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
 
