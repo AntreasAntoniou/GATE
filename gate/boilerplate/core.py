@@ -589,9 +589,9 @@ class Learner(nn.Module):
         )
 
     def load_best_model(self, metric_name: str, higher_is_better: bool):
-        best_global_step, best_metric = self.evaluators[0].get_best_metric(
-            metric_name, higher_is_better
-        )
+        best_global_step, best_metric = self.evaluators[
+            0
+        ].get_best_model_global_step_and_metric(metric_name, higher_is_better)
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
         )
