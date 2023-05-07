@@ -517,7 +517,6 @@ class Learner(nn.Module):
                 ],
             },
             epoch_metrics={
-                "train": [trainer.epoch_metrics for trainer in self.trainers],
                 "eval": [
                     evaluator.epoch_metrics for evaluator in self.evaluators
                 ],
@@ -565,11 +564,6 @@ class Learner(nn.Module):
                 trainer,
                 "state_dict",
                 state_dict["train"][self.trainers.index(trainer)],
-            )
-            setattr(
-                trainer,
-                "epoch_metrics",
-                epoch_metrics["train"][self.trainers.index(trainer)],
             )
 
         for evaluator in self.evaluators:
