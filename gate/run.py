@@ -48,14 +48,14 @@ def setup(ckpt_path: str, cfg: Any):
             pathlib.Path(ckpt_path) / "trainer_state.pt"
         )
         global_step = trainer_state["global_step"]
-        neptune_id = (
-            trainer_state["neptune_id"]
-            if "neptune_id" in trainer_state
-            else None
-        )
+        # neptune_id = (
+        #     trainer_state["neptune_id"]
+        #     if "neptune_id" in trainer_state
+        #     else None
+        # )
         experiment_tracker = neptune.init_run(
             source_files=["gate/*.py", "kubernetes/*.py"],
-            with_id=neptune_id,
+            # with_id=neptune_id,
         )
     else:
         global_step = 0
