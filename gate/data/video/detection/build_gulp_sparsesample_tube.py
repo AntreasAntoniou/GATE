@@ -4,7 +4,7 @@ from pathlib import Path
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
 
-from .gulp.gulp_sparsesample_tube_dataset import GulpSparsesampleTubeDataset
+from ..loader.gulp_sparsesample_tube_dataset import GulpSparsesampleTubeDataset
 
 
 def build_gulp_tube_dataset(
