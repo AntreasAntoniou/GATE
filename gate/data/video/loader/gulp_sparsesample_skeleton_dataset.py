@@ -1,3 +1,4 @@
+# Code inspired from https://github.com/facebookresearch/SlowFast
 import logging
 import os
 import pickle
@@ -182,9 +183,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(
-            self._csv_file
-        )
+        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
 
         self._gulp_keys = []
         self._video_ids = []
@@ -226,9 +225,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
                     for label in labels:
                         if self.num_classes > 0:
                             label_list = label.split(",")
-                            label = np.zeros(
-                                self.num_classes, dtype=np.float32
-                            )
+                            label = np.zeros(self.num_classes, dtype=np.float32)
                             for label_idx in label_list:
                                 label[int(label_idx)] = 1.0  # one hot encoding
                         else:
@@ -294,15 +291,11 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             assert len({min_scale, max_scale}) == 1
             sample_uniform = True
         else:
-            raise NotImplementedError(
-                "Does not support {} mode".format(self.mode)
-            )
+            raise NotImplementedError("Does not support {} mode".format(self.mode))
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = (
-            self._end_frames[index] - self._start_frames[index] + 1
-        )
+        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
         if self.sample_index_code == "pyvideoai":
             frame_indices = utils.sparse_frame_indices(
                 num_video_frames,
@@ -329,9 +322,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         if self.flow == "grey":
             # Frames are saved as (u0, v0, u1, v1, ...)
             # Read pairs of greyscale images.
-            frame_indices = [
-                idx * 2 + uv for idx in frame_indices for uv in range(2)
-            ]
+            frame_indices = [idx * 2 + uv for idx in frame_indices for uv in range(2)]
             frames = np.stack(
                 self.gulp_dir[self._gulp_keys[index], frame_indices][0]
             )  # (T*2, H, W)
@@ -413,9 +404,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             "y_offset": y_offset,
             "is_flipped": is_flipped,
             "skeleton_keypoints": self._skeletons[index]["keypoint"],
-            "skeleton_keypoints_scores": self._skeletons[index][
-                "keypoint_score"
-            ],
+            "skeleton_keypoints_scores": self._skeletons[index]["keypoint_score"],
         }
 
     def __len__(self):

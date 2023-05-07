@@ -28,6 +28,7 @@ main_requirements = [
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
     "nibabel",
+    "decord",
 ]
 
 dev_requirements = [

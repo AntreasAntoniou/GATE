@@ -1,3 +1,4 @@
+# Code inspired from https://github.com/facebookresearch/SlowFast
 import logging
 import os
 from pathlib import Path
@@ -107,9 +108,7 @@ class GulpSparsesampleSqueezedDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(
-            self._csv_file
-        )
+        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
 
         self._gulp_keys = []
         self._video_ids = []
@@ -190,9 +189,7 @@ class GulpSparsesampleSqueezedDataset(torch.utils.data.Dataset):
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = (
-            self._end_frames[index] - self._start_frames[index] + 1
-        )
+        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
         frame_indices = utils.sparse_frame_indices(
             num_video_frames,
             self.num_frames,
@@ -221,9 +218,7 @@ class GulpSparsesampleSqueezedDataset(torch.utils.data.Dataset):
         pil_transform = Compose(pil_transform)
 
         frames = self.gulp_dir[self._gulp_keys[index], frame_indices][0]
-        frames = pil_transform(
-            frames
-        )  # (T, H, W, C) or (T, H, W) if greyscaled images
+        frames = pil_transform(frames)  # (T, H, W, C) or (T, H, W) if greyscaled images
         frames = torch.from_numpy(frames)
 
         frames = frames / 255.0
