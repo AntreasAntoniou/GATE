@@ -81,6 +81,7 @@ class BaseConfig:
     seed: int = SEED
     train_batch_size: int = TRAIN_BATCH_SIZE
     eval_batch_size: int = EVAL_BATCH_SIZE
+    train_iters: int = TRAIN_ITERS
     resume: bool = RESUME
     resume_from_checkpoint: Optional[int] = None
     print_config: bool = True
@@ -226,7 +227,7 @@ def collect_config_store():
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
         checkpoint_every_n_steps=500,
-        train_iters=TRAIN_ITERS,
+        train_iters="$train_iters",
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
