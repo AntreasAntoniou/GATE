@@ -50,7 +50,6 @@ class ClassificationEvaluator(Evaluator):
         super().__init__()
         self.state_dict = {}
         self.epoch_metrics = defaultdict(list)
-        self.global_step_dict = defaultdict(list)
         self.experiment_tracker = experiment_tracker
 
     def get_best_model_global_step_and_metric(
@@ -59,10 +58,8 @@ class ClassificationEvaluator(Evaluator):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
 
-        global_steps = self.global_step_dict[metric_name]
         metrics = self.epoch_metrics[metric_name]
-
-        print(self.global_step_dict)
+        global_steps = self.epoch_metrics["global_step"]
 
         if higher_is_better:
             best_metric_idx = torch.argmax(torch.tensor(metrics))
@@ -259,8 +256,8 @@ class ClassificationEvaluator(Evaluator):
             self.epoch_metrics[f"{key}-epoch-std"].append(
                 phase_metrics[f"{key}-epoch-std"]
             )
-            self.global_step_dict[f"{key}-epoch-mean"].append(global_step)
-            self.global_step_dict[f"{key}-epoch-std"].append(global_step)
+
+        self.epoch_metrics["global_step"].append(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,
