@@ -4,9 +4,7 @@ from pathlib import Path
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
 
-from .gulp.gulp_sparsesample_skeleton_dataset import (
-    GulpSparsesampleSkeletonDataset,
-)
+from ..loader.gulp_sparsesample_skeleton_dataset import GulpSparsesampleSkeletonDataset
 
 
 def build_gulp_skeleton_dataset(
@@ -98,14 +96,10 @@ def build_gulp_skeleton_dataset(
             skeleton_pkl_path = data_dir / "posec3d" / "hmdb51_2d.pkl"
             if set_name == "train":
                 mode = "train"
-                csv_path = (
-                    data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
-                )
+                csv_path = data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
             elif set_name == "test":
                 mode = "test"
-                csv_path = (
-                    data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
-                )
+                csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "ucf-101":
@@ -113,17 +107,11 @@ def build_gulp_skeleton_dataset(
             if set_name == "train":
                 mode = "train"
                 csv_path = (
-                    data_dir
-                    / "splits_gulp_rgb"
-                    / f"trainlist{split_num:02d}.txt"
+                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
                 )
             elif set_name == "test":
                 mode = "test"
-                csv_path = (
-                    data_dir
-                    / "splits_gulp_rgb"
-                    / f"testlist{split_num:02d}.txt"
-                )
+                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         else:
