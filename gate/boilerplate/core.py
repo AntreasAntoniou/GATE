@@ -576,7 +576,7 @@ class Learner(nn.Module):
             setattr(
                 evaluator,
                 "epoch_metrics",
-                epoch_metrics["eval"][self.evaluators.index(trainer)],
+                epoch_metrics["eval"][self.evaluators.index(evaluator)],
             )
 
         self.accelerator.load_state(checkpoint_path)
