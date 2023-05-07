@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from torch.utils.data import DataLoader
 
 from gate.data.video.classification.build_kinetics_400 import build_kinetics_400_dataset
 
@@ -27,5 +28,22 @@ def test_build_kinetics_400_dataset():
         )
 
 
+def test_kinetics_400_dataloader():
+    datasets = build_kinetics_400_dataset(
+        data_dir=os.environ.get("PYTEST_DIR"),
+        sets_to_include=["val"],
+    )
+    val_set = datasets["val"]
+
+    val_loader = DataLoader(val_set, batch_size=2, shuffle=True)
+
+    for batch in val_loader:
+        assert batch["pixel_values"].shape == (2, 3, 8, 224, 224)
+        assert batch["labels"].shape == (2,)
+        assert batch["video_ids"].shape == (2,)
+        break
+
+
 if __name__ == "__main__":
     test_build_kinetics_400_dataset()
+    test_kinetics_400_dataloader()
