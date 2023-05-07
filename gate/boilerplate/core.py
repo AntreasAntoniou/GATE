@@ -595,6 +595,9 @@ class Learner(nn.Module):
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
         )
+        print(
+            f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
+        )
         download_dict = download_model_with_name(
             hf_repo_path=self.hf_repo_path,
             hf_cache_dir=self.hf_cache_dir,
