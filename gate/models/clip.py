@@ -6,6 +6,7 @@ import torch.nn as nn
 from numpy import isin
 
 from gate.boilerplate.decorators import configurable
+from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -20,7 +21,6 @@ class ModelAndTransform:
     transform: Any
 
 
-@configurable
 def build_model(
     model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
@@ -62,7 +62,9 @@ def build_model(
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
 
-@configurable
+@configurable(
+    group="model", config_name="clip", defaults=dict(num_classes=HYDRATED_NUM_CLASSES))
+)
 def build_gate_model(
     model_name: str = "openai/clip-vit-large-patch14",
     pretrained: bool = True,

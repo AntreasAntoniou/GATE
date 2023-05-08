@@ -37,6 +37,7 @@ GPU_MEMORY = 24  # in GB
 ## Define yaml variable access codes here
 HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
+HYDRATED_NUM_CLASSES = "${dataset.num_classes}"
 HYDRATED_TRAINER_CONFIG = "${trainer}"
 HYDRATED_EVALUATOR_CONFIG = "${evaluator}"
 
