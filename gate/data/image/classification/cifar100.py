@@ -63,7 +63,7 @@ def build_cifar100_dataset(
         )
 
     dataset_length = len(data)
-    val_split = 0.1  # Fraction for the validation set (e.g., 10%)
+    val_split = 0.05  # Fraction for the validation set (e.g., 10%)
 
     # Calculate the number of samples for train and validation sets
     val_length = int(dataset_length * val_split)

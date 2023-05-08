@@ -174,8 +174,6 @@ class GATEDataset(Dataset):
 
         item = self.dataset[index]
 
-        item = self._apply_transforms(item)
-
         if not isinstance(item, dict):
             if self.item_keys is None:
                 raise ValueError(
@@ -184,6 +182,8 @@ class GATEDataset(Dataset):
                     f"or use a dict as the return type of the dataset"
                 )
             item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
+
+        item = self._apply_transforms(item)
 
         item: Any = (
             self.remap_keys(item)
