@@ -7,8 +7,8 @@ from accelerate import Accelerator
 
 from gate.boilerplate.metrics import accuracy_top_k
 
-from ..decorators import collect_metrics, configurable
-from ..utils import get_logger
+from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
 
