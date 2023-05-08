@@ -15,29 +15,28 @@ from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.config.variables import (
-    HF_USERNAME,
-    SEED,
-    TRAIN_BATCH_SIZE,
-    EVAL_BATCH_SIZE,
-    NUM_WORKERS,
-    PREFETCH_FACTOR,
-    TRAIN_ITERS,
-    RESUME,
-    LOGGER_LEVEL,
+    CODE_DIR,
+    CURRENT_EXPERIMENT_DIR,
+    DATASET_DIR,
     DUMMY_BATCH_MODE,
-    GPU_MEMORY,
-    PERSISTENT_WORKERS,
-    PIN_MEMORY,
+    EVAL_BATCH_SIZE,
     EXPERIMENT_NAME,
     EXPERIMENTS_ROOT_DIR,
-    CURRENT_EXPERIMENT_DIR,
-    CODE_DIR,
-    DATASET_DIR,
+    GPU_MEMORY,
     HF_CACHE_DIR,
+    HF_USERNAME,
+    LOGGER_LEVEL,
+    NUM_WORKERS,
+    PERSISTENT_WORKERS,
+    PIN_MEMORY,
+    PREFETCH_FACTOR,
+    RESUME,
+    SEED,
+    TRAIN_BATCH_SIZE,
+    TRAIN_ITERS,
 )
 from gate.data.image.classification.food101 import build_gate_food_101_dataset
 from gate.models.clip import build_gate_model, build_model
-
 
 hydra_logger = get_logger("hydra")
 
