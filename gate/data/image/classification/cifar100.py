@@ -6,21 +6,12 @@ from typing import Any, Dict, Optional
 import torch
 import torchvision
 from torch.utils.data import random_split
-from gate.config import config
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
-from torchvision import transforms
-
-
-def pad_image(image, target_size=224):
-    w, h = image.size
-    pad_w = (target_size - w) // 2
-    pad_h = (target_size - h) // 2
-    padding = (pad_w, pad_h, target_size - w - pad_w, target_size - h - pad_h)
-    return transforms.functional.pad(image, padding, fill=0)
+from gate.data.transforms.tiny_image_transforms import pad_image
 
 
 def transform_wrapper(inputs: Dict, target_size=224):
