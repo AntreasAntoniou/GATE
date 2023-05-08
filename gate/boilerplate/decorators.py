@@ -70,6 +70,7 @@ def register_configurables(
                     name=func_name,
                     node={func_name: obj.__config__()},
                 )
+    return config_store
 
 
 def collect_metrics(func: Callable) -> Callable:
