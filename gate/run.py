@@ -105,24 +105,17 @@ def run(cfg: Any) -> None:
 
     dataset_dict = {"train": [], "val": [], "test": []}
 
-    for dataset_name, dataset_config in cfg.dataset.items():
-        dataset: GATEDataset = instantiate(
-            dataset_config, transforms=transform
+    dataset: GATEDataset = instantiate(cfg.dataset, transforms=transform)
+
+    train_dataset = dataset["train"]
+    val_dataset = dataset["val"]
+    test_dataset = dataset["test"]
+
+    if global_step > 0:
+        dataset_dict["train"][-1] = Subset(
+            dataset_dict["train"][-1],
+            range(global_step, len(dataset_dict["train"][-1])),
         )
-
-        dataset_dict["train"].append(dataset["train"])
-        dataset_dict["val"].append(dataset["val"])
-        dataset_dict["test"].append(dataset["test"])
-
-        if global_step > 0:
-            dataset_dict["train"][-1] = Subset(
-                dataset_dict["train"][-1],
-                range(global_step, len(dataset_dict["train"][-1])),
-            )
-
-    train_dataset = CustomConcatDataset(dataset_dict["train"])
-    val_dataset = CustomConcatDataset(dataset_dict["val"])
-    test_dataset = CustomConcatDataset(dataset_dict["test"])
 
     train_dataloader = instantiate(
         cfg.dataloader,
