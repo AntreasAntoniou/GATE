@@ -1,5 +1,5 @@
 import pytest
-from hydra_zen import ConfigStore
+from hydra.core.config_store import ConfigStore
 import gate
 from gate.boilerplate.decorators import configurable, register_configurables
 
