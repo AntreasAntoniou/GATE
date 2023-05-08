@@ -1,3 +1,5 @@
+from hydra_zen import instantiate
+from numpy import insert
 import pytest
 from hydra.core.config_store import ConfigStore
 
@@ -19,7 +21,7 @@ def test_configurable_and_register_configurables():
     assert config["test_function"]["b"] == 2
 
     # Create an instance of the configurable function with the configuration
-    configured_function = test_function.__config__(**config["test_function"])
+    configured_function = instantiate(config)
 
     # Check if the function is executed correctly
     assert configured_function() == 3
