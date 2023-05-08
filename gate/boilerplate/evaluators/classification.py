@@ -44,7 +44,7 @@ class EvaluatorOutput:
 import torch.nn.functional as F
 
 
-@configurable(group="evaluator", config_name="classification")
+@configurable(group="evaluator", name="classification")
 class ClassificationEvaluator(Evaluator):
     def __init__(self, experiment_tracker: Optional[Any] = None):
         super().__init__()
