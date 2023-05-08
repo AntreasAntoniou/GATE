@@ -61,11 +61,7 @@ def register_configurables(
     def _process_module(module_name):
         module = importlib.import_module(module_name)
         for name, obj in inspect.getmembers(module):
-            if (
-                inspect.isfunction(obj)
-                and hasattr(obj, "__configurable__")
-                and obj.__configurable__
-            ):
+            if hasattr(obj, "__configurable__") and obj.__configurable__:
                 group = obj.__config_group__
                 name = obj.__config_name__
 
@@ -78,7 +74,6 @@ def register_configurables(
     for importer, module_name, is_pkg in pkgutil.walk_packages(
         package.__path__, prefix
     ):
-        print(f"Importing {module_name}, is_pkg={is_pkg}")
         if is_pkg:
             register_configurables(module_name)
         else:
