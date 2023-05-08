@@ -1,7 +1,7 @@
 # cifar100.py
 from dataclasses import dataclass
 import os
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import torch
 import torchvision
@@ -21,6 +21,13 @@ def pad_image(image, target_size=224):
     pad_h = (target_size - h) // 2
     padding = (pad_w, pad_h, target_size - w - pad_w, target_size - h - pad_h)
     return transforms.functional.pad(image, padding, fill=0)
+
+
+def transform_wrapper(inputs: Dict, target_size=224):
+    return {
+        "image": pad_image(inputs["image"], target_size=target_size),
+        "labels": inputs["labels"],
+    }
 
 
 def build_cifar100_dataset(
@@ -103,7 +110,7 @@ def build_gate_cifar100_dataset(
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
@@ -112,7 +119,7 @@ def build_gate_cifar100_dataset(
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
@@ -121,7 +128,7 @@ def build_gate_cifar100_dataset(
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
