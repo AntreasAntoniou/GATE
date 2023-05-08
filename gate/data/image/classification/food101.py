@@ -59,7 +59,7 @@ def build_food101_dataset(
 
 
 @configurable(
-    group="dataset", config_name="food101", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="food101", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_food_101_dataset(
     data_dir: Optional[str] = None,
