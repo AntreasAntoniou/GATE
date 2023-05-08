@@ -57,7 +57,6 @@ def register_configurables(
 
     package = importlib.import_module(package_name)
     prefix = package.__name__ + "."
-    print_config_dict = defaultdict(dict)
 
     def _process_module(module_name):
         module = importlib.import_module(module_name)
@@ -69,9 +68,7 @@ def register_configurables(
             ):
                 group = obj.__config_group__
                 name = obj.__config_name__
-                print_config_dict[group][name] = obj.__config__(
-                    populate_full_signature=True
-                )
+
                 config_store.store(
                     group=group,
                     name=name,
@@ -86,8 +83,26 @@ def register_configurables(
         else:
             _process_module(module_name)
 
-    print(print_config_dict)
     return config_store
+
+
+def pretty_print_tree(tree_dict, prefix=""):
+    from rich.console import Console
+    from rich.tree import Tree
+
+    console = Console()
+    tree = Tree(prefix)
+
+    def _add_tree_node(node, d):
+        for key, value in d.items():
+            if isinstance(value, dict):
+                child_node = node.add(key)
+                _add_tree_node(child_node, value)
+            else:
+                node.add(f"{key}")
+
+    _add_tree_node(tree, tree_dict)
+    console.print(tree)
 
 
 def collect_metrics(func: Callable) -> Callable:
