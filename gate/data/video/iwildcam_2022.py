@@ -84,7 +84,16 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
             count = seq_id_to_counts[seq_id]
         seq_id_to_annotations[seq_id][id]["count"] = count
 
-    return seq_id_to_annotations
+    # Rearrange annotations.
+    # seq_id_to_annotations[seq_id][id] -> seq_id_to_annotations[seq_id][frame_index]
+
+    seq_id_to_per_image_annotations = {}
+    for seq_id, image_id_to_annotations in seq_id_to_annotations.items():
+        seq_id_to_per_image_annotations[seq_id] = list(
+            sorted(image_id_to_annotations.items(), key=lambda x: x[1]["seq_frame_num"])
+        )
+
+    return seq_id_to_per_image_annotations
 
 
 def count_num_files(dataset_rootdir: str | Path):
