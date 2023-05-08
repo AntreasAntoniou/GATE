@@ -2,7 +2,7 @@ from .callbacks import *
 from .convenience import *
 from .core import *
 from .decorators import *
-from .evaluators.classification import *
+from .evaluators import *
 from .metrics import *
-from .trainers.classification import *
+from .trainers import *
 from .utils import *
