@@ -16,10 +16,8 @@ from gate.boilerplate.decorators import (
 )
 from rich import print
 from gate.boilerplate.utils import (
-    get_all_configs,
     get_hydra_config,
     get_logger,
-    pretty_all_configs,
     pretty_config,
     pretty_print_dictionary,
 )
