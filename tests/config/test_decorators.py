@@ -17,8 +17,11 @@ def test_configurable_and_register_configurables():
     config = config_store.load(config_path="test_group/test_function.yaml")
 
     # Check if the configuration is loaded correctly
-    assert config.a == 1
-    assert config.b == 2
+    # ConfigNode(name='test_function.yaml',
+    # node={'_target_': 'gate.test_module.test_function', 'a': 1, 'b': 2},
+    # group='test_group', package=None, provider=None)
+    assert config.node["a"] == 1
+    assert config.node["b"] == 2
 
     # Create an instance of the configurable function with the configuration
     configured_function = instantiate(config)
