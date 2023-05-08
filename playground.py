@@ -1,4 +1,3 @@
-import imgur_uploader
 import os
 import torchvision.transforms as transforms
 from PIL import Image
@@ -23,6 +22,8 @@ def create_sample_image(size=(32, 32)):
 
 
 def upload_to_imgur(image):
+    import imgur_uploader
+
     image_path = "temp_image.png"
     image.save(image_path)
     response = imgur_uploader.upload_image(image_path)
