@@ -11,7 +11,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 
 from gate.data.core import GATEDataset
-from gate.data.tasks import ClassificationTask
+from gate.data.tasks.classification import ClassificationTask
 from torchvision import transforms
 
 
