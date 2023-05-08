@@ -27,4 +27,4 @@ def test_configurable_and_register_configurables():
     configured_function = instantiate(config.node)
 
     # Check if the function is executed correctly
-    assert configured_function() == 3
+    assert configured_function == 3
