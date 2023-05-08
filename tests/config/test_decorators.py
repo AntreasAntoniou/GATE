@@ -19,7 +19,7 @@ gate.test_function = test_function
 
 def test_configurable_and_register_configurables():
     # Register the configurables
-    register_configurables("your_module")
+    register_configurables("gate")
 
     # Retrieve the configuration from the config store
     config_store = ConfigStore.instance()
