@@ -63,7 +63,9 @@ def build_model(
 
 
 @configurable(
-    group="model", config_name="clip", defaults=dict(num_classes=HYDRATED_NUM_CLASSES))
+    group="model",
+    config_name="clip",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_model(
     model_name: str = "openai/clip-vit-large-patch14",
