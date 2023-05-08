@@ -24,7 +24,7 @@ def test_configurable_and_register_configurables():
     assert config.node["b"] == 2
 
     # Create an instance of the configurable function with the configuration
-    configured_function = instantiate(config)
+    configured_function = instantiate(config.node)
 
     # Check if the function is executed correctly
     assert configured_function() == 3
