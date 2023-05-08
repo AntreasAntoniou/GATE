@@ -58,6 +58,7 @@ def register_configurables(
     for _1, module_name, _2 in pkgutil.walk_packages(package.__path__, prefix):
         module = importlib.import_module(module_name)
         for name, obj in inspect.getmembers(module):
+            print(f"Registering {name}")
             if (
                 inspect.isfunction(obj)
                 and hasattr(obj, "__configurable__")
