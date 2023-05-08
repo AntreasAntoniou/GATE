@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 
-def read_csv_to_listdict(csv_file: str | Path):
+def _read_csv_to_listdict(csv_file: str | Path):
     csv_file = Path(csv_file)
     with open(csv_file) as f:
         lines = f.readlines()
@@ -15,15 +15,14 @@ def read_csv_to_listdict(csv_file: str | Path):
     return data
 
 
-# TODO: load train counts (only a fraction of the train data is annotated)
-def read_all_train_metadata(dataset_root: str | Path):
-    dataset_root = Path(dataset_root)
-    if dataset_root.name != "iwildcam2022":
-        dataset_root = dataset_root / "iwildcam2022"
+def read_all_train_metadata(dataset_rootdir: str | Path):
+    dataset_rootdir = Path(dataset_rootdir)
+    if dataset_rootdir.name != "iwildcam2022":
+        dataset_rootdir = dataset_rootdir / "iwildcam2022"
 
-    metadata_dir = dataset_root / "metadata" / "metadata"
+    metadata_dir = dataset_rootdir / "metadata" / "metadata"
 
-    sequence_counts = read_csv_to_listdict(metadata_dir / "train_sequence_counts.csv")
+    sequence_counts = _read_csv_to_listdict(metadata_dir / "train_sequence_counts.csv")
 
     with open(metadata_dir / "iwildcam2022_mdv4_detections.json") as f:
         detection_data = json.load(f)
@@ -88,7 +87,36 @@ def read_all_train_metadata(dataset_root: str | Path):
     return seq_id_to_annotations
 
 
+def count_num_files(dataset_rootdir: str | Path):
+    dataset_rootdir = Path(dataset_rootdir)
+    if dataset_rootdir.name != "iwildcam2022":
+        dataset_rootdir = dataset_rootdir / "iwildcam2022"
+
+    metadata_dir = dataset_rootdir / "metadata" / "metadata"
+    num_train_files = len(list((dataset_rootdir / "train" / "train").glob("*.jpg")))
+    # num_test_files = len(list((dataset_rootdir / "test" / "test").glob("*.jpg")))
+    num_metadata_files = len(list(metadata_dir.glob("*")))
+    num_mask_files = len(
+        list((dataset_rootdir / "instance_masks" / "instance_masks").glob("*.png"))
+    )
+
+    if num_train_files != 201399:
+        raise FileNotFoundError(
+            f"Expected 201399 train files, but found {num_train_files}"
+        )
+    if num_metadata_files != 5:
+        raise FileNotFoundError(
+            f"Expected 5 metadata files, but found {num_metadata_files}"
+        )
+    if num_mask_files != 150221:
+        raise FileNotFoundError(
+            f"Expected 150221 mask files, but found {num_mask_files}"
+        )
+    # assert num_test_files == 60029
+
+
 if __name__ == "__main__":
+    count_num_files("/disk/scratch_fast1/datasets/iwildcam2022")
     seq_id_to_annotations = read_all_train_metadata(
         "/disk/scratch_fast1/datasets/iwildcam2022"
     )
