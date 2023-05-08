@@ -44,7 +44,7 @@ def configurable(
 
 
 def register_configurables(
-    package_name: str, config_store: Optional[ConfigStore] = None
+    package_name: str,
 ):
     """
     Registers all configurable functions in the specified package to the config store.
@@ -82,8 +82,6 @@ def register_configurables(
             register_configurables(module_name, config_store=config_store)
         else:
             _process_module(module_name)
-
-    return config_store
 
 
 def pretty_print_tree(tree_dict, prefix=""):

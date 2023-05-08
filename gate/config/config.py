@@ -106,7 +106,7 @@ def collect_config_store():
 
     config_store = ConfigStore.instance()
 
-    config_store = register_configurables("gate", config_store)
+    register_configurables("gate")
 
     ##########################################################################
     # Dataloader configs
