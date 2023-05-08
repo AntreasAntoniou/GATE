@@ -23,7 +23,7 @@ def test_configurable_and_register_configurables():
 
     # Retrieve the configuration from the config store
     config_store = ConfigStore.instance()
-    config = config_store.load("test_group/test_function")
+    config = config_store.load("test_group/test_function", config_store)
 
     # Check if the configuration is loaded correctly
     assert config["test_function"]["a"] == 1
