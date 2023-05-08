@@ -4,15 +4,14 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
+import torch.nn.functional as F
 from accelerate import Accelerator
-from rich import print
-from traitlets import default
 
 from gate.boilerplate.metrics import accuracy_top_k
 
-from ..decorators import collect_metrics, configurable
-from ..trainers.classification import StepOutput
-from ..utils import get_logger
+from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.trainers.classification import StepOutput
+from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -39,9 +38,6 @@ class EvaluatorOutput:
     metrics: Dict
     phase_name: str
     experiment_tracker: Any = None
-
-
-import torch.nn.functional as F
 
 
 @configurable(group="evaluator", name="classification")
