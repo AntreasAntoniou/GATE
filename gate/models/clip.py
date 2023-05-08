@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Union
-from numpy import isin
 
 import torch
 import torch.nn as nn
+from numpy import isin
 
 from gate.boilerplate.decorators import configurable
 from gate.models.core import (

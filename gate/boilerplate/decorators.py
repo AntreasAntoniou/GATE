@@ -6,10 +6,8 @@ from typing import Any, Callable, Dict, Optional
 
 import torch
 import wandb
-from hydra_zen import builds, instantiate
 from hydra.core.config_store import ConfigStore
-
-from typing import Callable
+from hydra_zen import builds, instantiate
 
 
 def configurable(
