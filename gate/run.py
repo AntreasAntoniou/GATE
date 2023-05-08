@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 import hydra
 import neptune
@@ -19,7 +19,7 @@ from gate.boilerplate.utils import (
     pretty_config,
     set_seed,
 )
-from gate.config import Any, collect_config_store
+from gate.config.config import collect_config_store
 from gate.data.core import CustomConcatDataset, GATEDataset
 from gate.models.core import GATEModel
 
