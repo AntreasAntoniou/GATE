@@ -64,7 +64,7 @@ def build_model(
 
 @configurable(
     group="model",
-    name="clip",
+    name="clip-base16",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_model(
