@@ -21,12 +21,19 @@ def create_sample_image(size=(32, 32)):
     return image
 
 
+from imgurpython import ImgurClient
+
+
 def upload_to_imgur(image):
-    import imgur_uploader
+    client_id = os.environ["IMGUR_API_ID"]
+    client_secret = os.environ["IMGUR_API_SECRET"]
+
+    client = ImgurClient(client_id, client_secret)
 
     image_path = "temp_image.png"
     image.save(image_path)
-    response = imgur_uploader.upload_image(image_path)
+
+    response = client.upload_from_path(image_path)
     os.remove(image_path)
     return response["link"]
 
