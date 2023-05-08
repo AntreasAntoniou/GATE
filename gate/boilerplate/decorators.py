@@ -1,3 +1,4 @@
+from collections import defaultdict
 import functools
 import importlib
 import inspect
@@ -5,9 +6,11 @@ import pkgutil
 from typing import Any, Callable, Dict, Optional
 
 import torch
+from traitlets import default
 import wandb
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds, instantiate
+from rich import print
 
 
 def configurable(
@@ -54,6 +57,7 @@ def register_configurables(
 
     package = importlib.import_module(package_name)
     prefix = package.__name__ + "."
+    print_config_dict = defaultdict(dict)
 
     for _1, module_name, _2 in pkgutil.walk_packages(package.__path__, prefix):
         module = importlib.import_module(module_name)
@@ -63,16 +67,17 @@ def register_configurables(
                 and hasattr(obj, "__configurable__")
                 and obj.__configurable__
             ):
-                print(
-                    f"Registering {name}, under {obj.__config_group__}, as {obj.__config__(populate_full_signature=True)}"
-                )
                 group = obj.__config_group__
                 name = obj.__config_name__
+                print_config_dict[group][name] = obj.__config__(
+                    populate_full_signature=True
+                )
                 config_store.store(
                     group=group,
                     name=name,
                     node=obj.__config__(populate_full_signature=True),
                 )
+    print(print_config_dict)
     return config_store
 
 
