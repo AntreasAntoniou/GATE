@@ -58,7 +58,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
 
 
 @configurable(
-    group="dataset", name="stl10", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="svhn", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_svhn_dataset(
     data_dir: Optional[str] = None,
