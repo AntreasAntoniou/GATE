@@ -11,7 +11,9 @@ from hydra_zen import builds, instantiate
 
 
 def configurable(
-    group: str, name: str, defaults: Optional[Dict[str, Any]] = None
+    group: str,
+    name: str,
+    defaults: Optional[Dict[str, Any]] = None,
 ) -> Callable:
     """
     A decorator for making functions configurable and setting default values for their arguments.

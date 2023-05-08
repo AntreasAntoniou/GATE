@@ -8,13 +8,13 @@ from zstandard import train_dictionary
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
+from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
 logger = get_logger(name=__name__, set_rich=True)
 
 
-@configurable
 def build_food101_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
@@ -58,9 +58,13 @@ def build_food101_dataset(
     return dataset_dict[set_name]
 
 
-@configurable
+@configurable(
+    group="dataset", config_name="food101", defaults=dict(data_dir=DATASET_DIR)
+)
 def build_gate_food_101_dataset(
-    data_dir: Optional[str] = None, transforms: Optional[Any] = None
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=101,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_food101_dataset("train", data_dir=data_dir),

@@ -116,44 +116,6 @@ def collect_config_store():
     )
 
     ##########################################################################
-    # Dataset configs
-
-    food101_config: Any = build_gate_food_101_dataset.__config__(
-        populate_full_signature=True
-    )
-
-    config_store.store(
-        group="dataset",
-        name="food101",
-        node={"food101": food101_config(data_dir=DATASET_DIR)},
-    )
-    ##########################################################################
-    # Trainer configs
-
-    classification_trainer_config = ClassificationTrainer.__config__(
-        populate_full_signature=True
-    )
-
-    config_store.store(
-        group="trainer",
-        name="classification",
-        node=classification_trainer_config(optimizer=None),
-    )
-
-    ##########################################################################
-    # Evaluator configs
-
-    classification_evaluator_config = ClassificationEvaluator.__config__(
-        populate_full_signature=True
-    )
-
-    config_store.store(
-        group="evaluator",
-        name="classification",
-        node=classification_evaluator_config(),
-    )
-
-    ##########################################################################
     # Dataloader configs
 
     dataloader_config = builds(
@@ -204,57 +166,6 @@ def collect_config_store():
         group="scheduler",
         name="cosine-annealing",
         node=cosine_learning_rate_scheduler_config,
-    )
-
-    ##########################################################################
-    learner_config = builds(Learner, populate_full_signature=True)
-
-    learner_config = learner_config(
-        model=None,
-        experiment_name=EXPERIMENT_NAME,
-        experiment_dir=CURRENT_EXPERIMENT_DIR,
-        resume=RESUME,
-        evaluate_every_n_steps=1000,
-        checkpoint_after_validation=True,
-        checkpoint_every_n_steps=500,
-        train_iters="${train_iters}",
-        limit_val_iters=1000,
-        dummy_batch_mode=DUMMY_BATCH_MODE,
-        print_model_parameters=False,
-        model_selection_metric_name="accuracy_top_1-epoch-mean",
-        model_selection_metric_higher_is_better=True,
-        hf_cache_dir="${hf_cache_dir}",
-        hf_repo_path="${hf_repo_path}",
-    )
-
-    #     experiment_name: str,
-    #     experiment_dir: Union[str, Path],
-    #     model: torch.nn.Module,
-    #     resume: Union[bool, str] = False,
-    #     evaluate_every_n_steps: int = None,
-    #     checkpoint_every_n_steps: int = None,
-    #     checkpoint_after_validation: bool = False,
-    #     train_iters: int = None,
-    #     train_dataloader: DataLoader = None,
-    #     limit_train_iters: int = None,
-    #     val_dataloader: Union[List[DataLoader], DataLoader] = None,
-    #     limit_val_iters: int = None,
-    #     test_dataloader: Union[List[DataLoader], DataLoader] = None,
-    #     trainers: Union[List[Trainer], Trainer] = None,
-    #     evaluators: Union[List[Evaluator], Evaluator] = None,
-    #     model_selection_metric_name: str = None,
-    #     model_selection_metric_higher_is_better: bool = True,
-    #     callbacks: Union[List[Callback], Callback] = None,
-    #     print_model_parameters: bool = False,
-    #     hf_cache_dir: str = None,
-    #     hf_repo_path: str = None,
-    #     experiment_tracker: Optional[Run] = None,
-    #     dummy_batch_mode: Optional[bool] = False,
-
-    config_store.store(
-        group="learner",
-        name="default",
-        node=learner_config,
     )
 
     ##########################################################################

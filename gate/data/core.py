@@ -108,7 +108,6 @@ def dataclass_collate(batch):
         raise e
 
 
-@configurable
 class GATEDataset(Dataset):
     """
     The GATEDataset class is a wrapper around another dataset, allowing for key

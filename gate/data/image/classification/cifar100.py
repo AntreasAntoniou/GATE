@@ -1,19 +1,19 @@
 # cifar100.py
-import os
 from dataclasses import dataclass
+import os
 from typing import Any, Optional
 
 import torch
 import torchvision
 from torch.utils.data import random_split
-
-from gate import config
+from gate.config import config
 from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
+
 from gate.data.core import GATEDataset
 from gate.data.tasks import ClassificationTask
 
 
-@configurable
 def build_cifar100_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
@@ -80,9 +80,13 @@ def build_cifar100_dataset(
     return dataset_dict[set_name]
 
 
-@configurable
+@configurable(
+    group="dataset", name="cifar100", defaults=dict(data_dir=DATASET_DIR)
+)
 def build_gate_cifar100_dataset(
-    data_dir: Optional[str] = None, transforms: Optional[Any] = None
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=100,
 ):
     train_set = GATEDataset(
         dataset=build_cifar100_dataset("train", data_dir=data_dir),
