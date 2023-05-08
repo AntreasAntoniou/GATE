@@ -80,23 +80,6 @@ def register_configurables(
             _process_module(module_name)
 
 
-def pretty_print_tree(tree_dict, prefix=""):
-    from rich.tree import Tree
-
-    tree = Tree(prefix)
-
-    def _add_tree_node(node, d):
-        for key, value in d.items():
-            if isinstance(value, dict):
-                child_node = node.add(key)
-                _add_tree_node(child_node, value)
-            else:
-                node.add(f"{key}")
-
-    _add_tree_node(tree, tree_dict)
-    return tree
-
-
 def collect_metrics(func: Callable) -> Callable:
     def collect_metrics(
         metrics_dict: dict(),

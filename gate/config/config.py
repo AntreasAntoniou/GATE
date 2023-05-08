@@ -187,7 +187,7 @@ def collect_config_store():
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
 
-    print(pretty_print_tree(config_store.repo, "gate"))
+    print(pretty_config(config_store.repo))
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
