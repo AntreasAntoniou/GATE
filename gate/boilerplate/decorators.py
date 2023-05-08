@@ -78,6 +78,7 @@ def register_configurables(
     for importer, module_name, is_pkg in pkgutil.walk_packages(
         package.__path__, prefix
     ):
+        print(f"Importing {module_name}, is_pkg={is_pkg}")
         if is_pkg:
             register_configurables(module_name)
         else:
