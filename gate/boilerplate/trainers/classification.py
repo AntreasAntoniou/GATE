@@ -45,7 +45,7 @@ class StepOutput:
     accuracy_top_5: torch.Tensor
 
 
-@configurable(group="trainer", config_name="classification")
+@configurable(group="trainer", name="classification")
 class ClassificationTrainer(Trainer):
     def __init__(
         self,
