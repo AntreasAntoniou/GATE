@@ -30,16 +30,16 @@ def upload_to_imgur(image):
     return response["link"]
 
 
-# Create a 32x32 sample image
-image = create_sample_image()
+if __name__ == "__main__":
+    # Create a 32x32 sample image
+    image = create_sample_image()
 
+    # Apply the custom pad_image transform
+    padded_image = pad_image(image, target_size=224)
 
-# Apply the custom pad_image transform
-padded_image = pad_image(image, target_size=224)
+    # Upload the original and padded images to Imgur
+    image_url = upload_to_imgur(image)
+    padded_image_url = upload_to_imgur(padded_image)
 
-# Upload the original and padded images to Imgur
-image_url = upload_to_imgur(image)
-padded_image_url = upload_to_imgur(padded_image)
-
-print("Original image URL:", image_url)
-print("Padded image URL:", padded_image_url)
+    print("Original image URL:", image_url)
+    print("Padded image URL:", padded_image_url)
