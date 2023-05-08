@@ -21,6 +21,7 @@ from gate.boilerplate.utils import (
     get_logger,
     pretty_all_configs,
     pretty_config,
+    pretty_print_dictionary,
 )
 from gate.config.variables import (
     CODE_DIR,
@@ -192,9 +193,7 @@ def collect_config_store():
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
 
-    all_configs = get_all_configs(config_store)
-    tree = pretty_all_configs(config_store, all_configs)
-    print(tree)
+    pretty_print_dictionary(config_store.repo)
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
