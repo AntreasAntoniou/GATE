@@ -81,10 +81,8 @@ def register_configurables(
 
 
 def pretty_print_tree(tree_dict, prefix=""):
-    from rich.console import Console
     from rich.tree import Tree
 
-    console = Console()
     tree = Tree(prefix)
 
     def _add_tree_node(node, d):
@@ -96,7 +94,7 @@ def pretty_print_tree(tree_dict, prefix=""):
                 node.add(f"{key}")
 
     _add_tree_node(tree, tree_dict)
-    console.print(tree)
+    return tree
 
 
 def collect_metrics(func: Callable) -> Callable:
