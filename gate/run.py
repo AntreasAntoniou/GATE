@@ -112,15 +112,15 @@ def run(cfg: Any) -> None:
     test_dataset = dataset["test"]
 
     if global_step > 0:
-        dataset_dict["train"][-1] = Subset(
-            dataset_dict["train"][-1],
-            range(global_step, len(dataset_dict["train"][-1])),
+        train_dataset = Subset(
+            train_dataset,
+            range(global_step, len(train_dataset)),
         )
 
     train_dataloader = instantiate(
         cfg.dataloader,
         dataset=train_dataset,
-        batch_size=16,
+        batch_size=cfg.train_batch_size,
         shuffle=True,
     )
 
