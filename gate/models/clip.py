@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Union
+from numpy import isin
 
 import torch
 import torch.nn as nn
@@ -52,10 +53,10 @@ def build_model(
         images=image, return_tensors="pt"
     )
 
-    def transform_wrapper(input_dict: Dict):
+    def transform_wrapper(inputs: Union[Dict, Any]):
         return {
-            "pixel_values": transform(input_dict["image"])["pixel_values"][0],
-            "labels": input_dict["labels"],
+            "pixel_values": transform(inputs["image"])["pixel_values"][0],
+            "labels": inputs["labels"],
         }
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
