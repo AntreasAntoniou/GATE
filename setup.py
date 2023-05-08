@@ -28,6 +28,7 @@ main_requirements = [
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
     "nibabel",
+    "natsort",
 ]
 
 dev_requirements = [
@@ -39,6 +40,7 @@ dev_requirements = [
     "sphinx_rtd_theme",
     "sphinx-autodoc-typehints",
     "sphinx-material",
+    "matplotlib",
 ]
 
 print(f"Installing {find_packages()}")
