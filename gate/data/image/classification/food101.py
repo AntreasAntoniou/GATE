@@ -80,7 +80,7 @@ def build_gate_food_101_dataset(
 
     test_set = GATEDataset(
         dataset=build_food101_dataset("test", data_dir=data_dir),
-        infinite_sampling=False,
+        infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,

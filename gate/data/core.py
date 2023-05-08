@@ -126,6 +126,7 @@ class GATEDataset(Dataset):
         infinite_sampling: bool = False,
         task: Optional[Any] = None,
         key_remapper_dict: Optional[Dict] = None,
+        item_keys: Optional[Dict] = None,
         transforms: Optional[Any] = None,
     ):
         super().__init__()
@@ -134,6 +135,7 @@ class GATEDataset(Dataset):
         self.key_remapper_dict = key_remapper_dict
         self.infinite_sampling = infinite_sampling
         self.transforms = transforms
+        self.item_keys = item_keys
 
     def remap_keys(self, item: Dict) -> Dict:
         class_type = None
@@ -165,6 +167,16 @@ class GATEDataset(Dataset):
         item = self.dataset[index]
 
         item = self.transforms(item) if self.transforms is not None else item
+
+        if not isinstance(item, dict):
+            if self.item_keys is None:
+                raise ValueError(
+                    f"item_keys must be specified for {item}, because it is not a dict,"
+                    f"please specify the keys of each of the retuned items for each sample,"
+                    f"or use a dict as the return type of the dataset"
+                )
+            item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
+
         item: Any = (
             self.remap_keys(item)
             if self.key_remapper_dict is not None

@@ -14,38 +14,29 @@ from gate.boilerplate.core import Learner
 from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
+from gate.config.variables import (
+    HF_USERNAME,
+    SEED,
+    TRAIN_BATCH_SIZE,
+    EVAL_BATCH_SIZE,
+    NUM_WORKERS,
+    PREFETCH_FACTOR,
+    TRAIN_ITERS,
+    RESUME,
+    LOGGER_LEVEL,
+    DUMMY_BATCH_MODE,
+    GPU_MEMORY,
+    PERSISTENT_WORKERS,
+    PIN_MEMORY,
+    EXPERIMENT_NAME,
+    EXPERIMENTS_ROOT_DIR,
+    CURRENT_EXPERIMENT_DIR,
+    CODE_DIR,
+    DATASET_DIR,
+    HF_CACHE_DIR,
+)
 from gate.data.image.classification.food101 import build_gate_food_101_dataset
 from gate.models.clip import build_gate_model, build_model
-
-
-def get_env_var(key: str, default: Any) -> Any:
-    return os.environ.get(key, default)
-
-
-HF_CACHE_DIR = get_env_var(
-    "HF_CACHE_DIR", os.path.expanduser("~/.cache/huggingface")
-)
-HF_USERNAME = get_env_var("HF_USERNAME", None)
-CODE_DIR = get_env_var("CODE_DIR", "")
-DATASET_DIR = get_env_var("DATASET_DIR", "data/")
-EXPERIMENT_NAME = get_env_var("EXPERIMENT_NAME", "exp_0")
-EXPERIMENTS_ROOT_DIR = get_env_var("EXPERIMENTS_ROOT_DIR", "experiments/")
-CURRENT_EXPERIMENT_DIR = get_env_var(
-    "CURRENT_EXPERIMENT_DIR", f"{EXPERIMENTS_ROOT_DIR}/{EXPERIMENT_NAME}"
-)
-TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
-EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
-NUM_WORKERS = get_env_var("NUM_WORKERS", 8)
-PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
-PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
-PIN_MEMORY = get_env_var("PIN_MEMORY", True)
-
-TRAIN_ITERS = get_env_var("TRAIN_ITERS", 10000)
-SEED = get_env_var("SEED", 42)
-RESUME = get_env_var("RESUME", True)
-LOGGER_LEVEL = get_env_var("LOGGER_LEVEL", "INFO")
-DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
-GPU_MEMORY = 24  # in GB
 
 
 hydra_logger = get_logger("hydra")
