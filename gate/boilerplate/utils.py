@@ -179,6 +179,52 @@ def pretty_config(
     return tree
 
 
+def pretty_all_configs(
+    config: DictConfig,
+    all_configs: Dict[str, Dict[str, DictConfig]],
+    resolve: bool = True,
+):
+    """Prints content of all possible configurations for each group using Rich library and its tree structure.
+
+    Args:
+        config (DictConfig): Configuration composed by Hydra.
+        all_configs (Dict[str, Dict[str, DictConfig]]): Dictionary of all available configurations for each group.
+        resolve (bool, optional): Whether to resolve reference fields of DictConfig.
+    """
+
+    style = "dim"
+    tree = Tree("ALL CONFIGS", style=style, guide_style=style)
+
+    for group, group_configs in all_configs.items():
+        group_branch = tree.add(f"{group}", style=style, guide_style=style)
+
+        for config_name, config_section in group_configs.items():
+            config_branch = group_branch.add(
+                f"{config_name}", style=style, guide_style=style
+            )
+
+            config_content = str(config_section)
+            if isinstance(config_section, DictConfig):
+                config_content = OmegaConf.to_yaml(
+                    config_section, resolve=resolve
+                )
+
+            config_branch.add(Syntax(config_content, "yaml"))
+
+    return tree
+
+
+def get_all_configs(
+    config_store: Any,
+) -> Dict[str, Dict[str, DictConfig]]:
+    all_configs = {}
+    for group_name, group_configs in config_store.config_groups.items():
+        all_configs[group_name] = {}
+        for config_name, config_node in group_configs.items():
+            all_configs[group_name][config_name] = config_node.node
+    return all_configs
+
+
 def save_json(
     filepath: Union[str, pathlib.Path], dict_to_store: Dict, overwrite=True
 ):
