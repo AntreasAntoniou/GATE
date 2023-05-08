@@ -9,7 +9,8 @@ from accelerate import Accelerator
 
 from gate.boilerplate.metrics import accuracy_top_k
 
-from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.decorators import collect_metrics
+from gate.boilerplate.decorators import configurable
 from gate.trainers.classification import StepOutput
 from gate.boilerplate.utils import get_logger
 
