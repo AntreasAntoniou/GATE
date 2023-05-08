@@ -2,7 +2,6 @@ import logging
 import sys
 import warnings
 
-import ignite
 import matplotlib.pyplot as plt
 import monai
 import monai.transforms as mt
