@@ -218,10 +218,13 @@ def get_all_configs(
     config_store: Any,
 ) -> Dict[str, Dict[str, DictConfig]]:
     all_configs = {}
-    for group_name, group_configs in config_store.config_groups.items():
+
+    for group_name in config_store.get_groups():
         all_configs[group_name] = {}
-        for config_name, config_node in group_configs.items():
-            all_configs[group_name][config_name] = config_node.node
+        for config_name in config_store.get_options(group_name):
+            config_node = config_store.load(group_name, config_name)
+            all_configs[group_name][config_name] = config_node
+
     return all_configs
 
 
