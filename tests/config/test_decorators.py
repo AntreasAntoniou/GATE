@@ -5,18 +5,6 @@ import gate
 from gate.boilerplate.decorators import configurable, register_configurables
 
 
-# Define a sample configurable function
-@configurable(
-    group="test_group", name="test_function", defaults={"a": 1, "b": 2}
-)
-def test_function(a: int, b: int) -> int:
-    return a + b
-
-
-# Register the test_function in the your_module
-gate.test_function = test_function
-
-
 def test_configurable_and_register_configurables():
     # Register the configurables
     config_store = ConfigStore.instance()
