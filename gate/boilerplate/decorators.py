@@ -63,12 +63,14 @@ def register_configurables(
                 and hasattr(obj, "__configurable__")
                 and obj.__configurable__
             ):
-                print(f"Registering {name}, under {obj.__config_group__}")
+                print(
+                    f"Registering {name}, under {obj.__config_group__}, as {obj.__config__(populate_full_signature=True)}"
+                )
                 group = obj.__config_group__
-                func_name = obj.__config_name__
+                name = obj.__config_name__
                 config_store.store(
                     group=group,
-                    name=func_name,
+                    name=name,
                     node=obj.__config__(populate_full_signature=True),
                 )
     return config_store
