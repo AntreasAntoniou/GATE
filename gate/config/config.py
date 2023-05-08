@@ -11,7 +11,10 @@ from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
-from gate.boilerplate.decorators import register_configurables
+from gate.boilerplate.decorators import (
+    pretty_print_tree,
+    register_configurables,
+)
 from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
@@ -186,6 +189,8 @@ def collect_config_store():
         name="default",
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
+
+    pretty_print_tree(config_store.repo, "gate")
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
