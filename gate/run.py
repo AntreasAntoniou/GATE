@@ -103,8 +103,6 @@ def run(cfg: Any) -> None:
     wandb.config.update({"notes": repo_url})
     wandb.config.update({"init_global_step": global_step})
 
-    dataset_dict = {"train": [], "val": [], "test": []}
-
     dataset: GATEDataset = instantiate(cfg.dataset, transforms=transform)
 
     train_dataset = dataset["train"]

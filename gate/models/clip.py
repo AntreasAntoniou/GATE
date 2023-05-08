@@ -68,7 +68,7 @@ def build_model(
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_model(
-    model_name: str = "openai/clip-vit-large-patch14",
+    model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     num_classes: int = 100,
 ):
