@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
 from gate.boilerplate.decorators import (
-    pretty_print_tree,
     register_configurables,
 )
 from rich import print
