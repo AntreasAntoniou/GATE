@@ -14,7 +14,7 @@ def test_configurable_and_register_configurables():
     config_store = register_configurables("gate", config_store)
 
     # Retrieve the configuration from the config store
-    config = config_store.load("test_group/test_function")
+    config = config_store.load("test_group")
 
     # Check if the configuration is loaded correctly
     assert config["test_function"]["a"] == 1
