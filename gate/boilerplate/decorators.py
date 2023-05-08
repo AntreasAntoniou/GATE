@@ -79,7 +79,7 @@ def register_configurables(
         package.__path__, prefix
     ):
         if is_pkg:
-            register_configurables(module_name, config_store=config_store)
+            register_configurables(module_name)
         else:
             _process_module(module_name)
 
