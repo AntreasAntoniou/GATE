@@ -1,5 +1,5 @@
 from rich import print
-import gate.trainers.classification as classify
+from gate.trainers.classification import ClassificationTrainer
 
 
-print(classify)
+print(ClassificationTrainer)
