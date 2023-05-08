@@ -1,5 +1,5 @@
 # gate/example_module.py
-from boilerplate.decorators import configurable
+from gate.boilerplate.decorators import configurable
 
 
 @configurable(
