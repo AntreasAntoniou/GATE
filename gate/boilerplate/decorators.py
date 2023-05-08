@@ -59,7 +59,7 @@ def register_configurables(
     prefix = package.__name__ + "."
     print_config_dict = defaultdict(dict)
 
-    for _1, module_name, _2 in pkgutil.walk_packages(package.__path__, prefix):
+    def _process_module(module_name):
         module = importlib.import_module(module_name)
         for name, obj in inspect.getmembers(module):
             if (
@@ -77,6 +77,15 @@ def register_configurables(
                     name=name,
                     node=obj.__config__(populate_full_signature=True),
                 )
+
+    for importer, module_name, is_pkg in pkgutil.walk_packages(
+        package.__path__, prefix
+    ):
+        if is_pkg:
+            register_configurables(module_name, config_store=config_store)
+        else:
+            _process_module(module_name)
+
     print(print_config_dict)
     return config_store
 
