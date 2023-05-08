@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
+from gate.boilerplate.decorators import register_configurables
 from gate.boilerplate.evaluators.classification import ClassificationEvaluator
 from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
@@ -106,14 +107,7 @@ def collect_config_store():
 
     config_store = ConfigStore.instance()
 
-    ##########################################################################
-    # Model configs
-
-    model_config = build_gate_model.__config__(populate_full_signature=True)
-
-    config_store.store(
-        group="model", name="clip-base16", node=model_config(num_classes=101)
-    )
+    config_store = register_configurables("gate", config_store)
 
     ##########################################################################
     # Dataloader configs
