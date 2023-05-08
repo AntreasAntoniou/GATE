@@ -14,11 +14,11 @@ def test_configurable_and_register_configurables():
     config_store = register_configurables("gate", config_store)
 
     # Retrieve the configuration from the config store
-    config = config_store.load_config(config_path="test_group/test_function")
+    config = config_store.load(config_path="test_group/test_function")
 
     # Check if the configuration is loaded correctly
-    assert config["test_function"]["a"] == 1
-    assert config["test_function"]["b"] == 2
+    assert config.a == 1
+    assert config.b == 2
 
     # Create an instance of the configurable function with the configuration
     configured_function = instantiate(config)
