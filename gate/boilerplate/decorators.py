@@ -69,7 +69,9 @@ def register_configurables(
                 config_store.store(
                     group=group,
                     name=func_name,
-                    node={func_name: obj.__config__()},
+                    node={
+                        func_name: obj.__config__(populate_full_signature=True)
+                    },
                 )
     return config_store
 
