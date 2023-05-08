@@ -15,8 +15,6 @@ from gate.boilerplate.decorators import (
     pretty_print_tree,
     register_configurables,
 )
-from gate.boilerplate.evaluators.classification import ClassificationEvaluator
-from gate.boilerplate.trainers.classification import ClassificationTrainer
 from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.config.variables import (
     CODE_DIR,
@@ -39,8 +37,6 @@ from gate.config.variables import (
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
 )
-from gate.data.image.classification.food101 import build_gate_food_101_dataset
-from gate.models.clip import build_gate_model, build_model
 
 hydra_logger = get_logger("hydra")
 

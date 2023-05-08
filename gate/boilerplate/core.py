@@ -12,11 +12,11 @@ from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.evaluators.classification import (
+from gate.evaluators.classification import (
     ClassificationEvaluator,
     Evaluator,
 )
-from gate.boilerplate.trainers.classification import (
+from gate.trainers.classification import (
     ClassificationTrainer,
     Trainer,
 )
