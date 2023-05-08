@@ -1,10 +1,16 @@
 # stl10.py
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import torch
 import torchvision
 from torch.utils.data import random_split
+
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
+from gate.data.core import GATEDataset
+from gate.data.tasks.classification import ClassificationTask
+from gate.data.transforms.tiny_image_transforms import pad_image
 
 
 def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -69,3 +75,54 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
 
     return dataset_dict[set_name]
+
+
+def transform_wrapper(inputs: Dict, target_size=224):
+    return {
+        "image": pad_image(inputs["image"], target_size=target_size),
+        "labels": inputs["labels"],
+    }
+
+
+@configurable(
+    group="dataset", name="stl10", defaults=dict(data_dir=DATASET_DIR)
+)
+def build_gate_stl10_dataset(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=10,
+) -> dict:
+    train_set = GATEDataset(
+        dataset=build_stl10_dataset("train", data_dir=data_dir),
+        infinite_sampling=True,
+        task=ClassificationTask(),
+        key_remapper_dict={"pixel_values": "image"},
+        item_keys=["image", "labels"],
+        transforms=[transform_wrapper, transforms],
+    )
+
+    val_set = GATEDataset(
+        dataset=build_stl10_dataset("val", data_dir=data_dir),
+        infinite_sampling=False,
+        task=ClassificationTask(),
+        key_remapper_dict={"pixel_values": "image"},
+        item_keys=["image", "labels"],
+        transforms=[transform_wrapper, transforms],
+    )
+
+    test_set = GATEDataset(
+        dataset=build_stl10_dataset("test", data_dir=data_dir),
+        infinite_sampling=False,
+        task=ClassificationTask(),
+        key_remapper_dict={"pixel_values": "image"},
+        item_keys=["image", "labels"],
+        transforms=[transform_wrapper, transforms],
+    )
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict
+
+
+def build_dummy_stl10_dataset(transforms: Optional[Any] = None) -> dict:
+    # Create a dummy dataset that emulates food-101's shape and modality
+    pass

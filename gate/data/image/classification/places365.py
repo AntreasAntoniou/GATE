@@ -115,7 +115,7 @@ def build_gate_places365_dataset(
 
     test_set = GATEDataset(
         dataset=build_places365_dataset("test", data_dir=data_dir),
-        infinite_sampling=True,
+        infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
@@ -126,7 +126,7 @@ def build_gate_places365_dataset(
     return dataset_dict
 
 
-def build_dummy_imagenet1k_dataset(transforms: Optional[Any] = None) -> dict:
+def build_dummy_places365_dataset(transforms: Optional[Any] = None) -> dict:
     # Create a dummy dataset that emulates food-101's shape and modality
     pass
 
