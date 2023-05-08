@@ -159,13 +159,22 @@ class GATEDataset(Dataset):
             return int(9 * 10**7)
         return len(self.dataset)
 
+    def _apply_transforms(self, item: Any) -> Any:
+        if self.transforms is not None:
+            if isinstance(self.transforms, list):
+                for transform in self.transforms:
+                    item = transform(item)
+            else:
+                item = self.transforms(item)
+        return item
+
     def __getitem__(self, index) -> Any:
         if self.infinite_sampling:
             index = index % len(self.dataset)
 
         item = self.dataset[index]
 
-        item = self.transforms(item) if self.transforms is not None else item
+        item = self._apply_transforms(item)
 
         if not isinstance(item, dict):
             if self.item_keys is None:
@@ -181,6 +190,6 @@ class GATEDataset(Dataset):
             if self.key_remapper_dict is not None
             else item
         )
-        # print(f"data {list(item.keys())}")
+
         # Apply the task to the item if it exists
         return self.task(item) if self.task is not None else item
