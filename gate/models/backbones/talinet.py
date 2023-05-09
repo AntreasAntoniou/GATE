@@ -10,6 +10,11 @@ from transformers import CLIPProcessor, WhisperProcessor
 
 import accelerate
 
+from gate.boilerplate.utils import (
+    create_hf_model_repo_and_download_maybe,
+    download_model_checkpoint_from_hub,
+)
+
 
 class TALINet(nn.Module):
     """
@@ -129,13 +134,18 @@ class TALINet(nn.Module):
             ),
         }
 
-    def load_from_hub(self, model_repo_path: str, **kwargs):
+    def load_from_hub(
+        self, model_repo_path: str, ckpt_identifier: str, **kwargs
+    ):
         import os
 
-        path_dict = download_model_with_name(
+        path_dict = download_model_checkpoint_from_hub(
             hf_repo_path=model_repo_path,
             hf_cache_dir=os.environ["HF_CACHE_DIR"],
-            model_name=model_repo_path,
+            ckpt_identifier=ckpt_identifier
+            if "latest" != ckpt_identifier
+            else None,
+            get_latest=True if "latest" == ckpt_identifier else False,
         )
 
         self.accelerator = accelerate.Accelerator()
