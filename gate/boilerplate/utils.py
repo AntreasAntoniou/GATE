@@ -8,6 +8,7 @@ from functools import wraps
 from typing import Any, Dict, Optional, Tuple, Union
 
 import accelerate
+from hydra.core.config_store import ConfigNode
 import orjson as json
 import torch
 import yaml
@@ -179,9 +180,12 @@ def pretty_config(
     return tree
 
 
-def pretty_dict(input_dict: Dict, resolve: bool = False):
+def pretty_dict(
+    input_dict: Dict, resolve: bool = False, tree: Optional[Tree] = None
+):
     style = "dim"
-    tree = Tree("CONFIG", style=style, guide_style=style)
+    if tree is None:
+        tree = Tree("CONFIG", style=style, guide_style=style)
 
     for group_name, group in input_dict.items():
         branch = tree.add(group_name, style=style, guide_style=style)
@@ -190,16 +194,21 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
                 subbranch = branch.add(
                     option_name, style=style, guide_style=style
                 )
-                if (
-                    isinstance(option, DictConfig)
-                    or isinstance(option, dict)
-                    or isinstance(option, list)
-                    or isinstance(option, ListConfig)
-                ):
-                    option = OmegaConf.to_yaml(option, resolve=resolve)
+                if isinstance(option, ConfigNode):
+                    option = pretty_config(option, resolve=resolve)
+                else:
+                    option = str(option)
+                    if (
+                        isinstance(option, DictConfig)
+                        or isinstance(option, dict)
+                        or isinstance(option, list)
+                        or isinstance(option, ListConfig)
+                    ):
+                        option = OmegaConf.to_yaml(option, resolve=resolve)
 
                 subbranch.add(Syntax(option, "yaml"))
         else:
+            group = str(group)
             if (
                 isinstance(option, DictConfig)
                 or isinstance(option, dict)
