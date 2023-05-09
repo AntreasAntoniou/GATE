@@ -139,7 +139,7 @@ class TALINet(nn.Module):
     ):
         import os
 
-        path_dict = download_model_checkpoint_from_hub(
+        download_dir, repo_path = download_model_checkpoint_from_hub(
             hf_repo_path=model_repo_path,
             hf_cache_dir=os.environ["HF_CACHE_DIR"],
             checkpoint_identifier=checkpoint_identifier
@@ -150,7 +150,7 @@ class TALINet(nn.Module):
 
         self.accelerator = accelerate.Accelerator()
         self.talinet = self.accelerator.prepare(self.talinet)
-        self.accelerator.load_state(path_dict["root_filepath"])
+        self.accelerator.load_state(download_dir)
 
 
 if __name__ == "__main__":
