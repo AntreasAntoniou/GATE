@@ -52,9 +52,7 @@ class CLIPAdapter(nn.Module):
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text).pooler_output
-            output_dict[
-                "text_features"
-            ] = text.text_model_output.last_hidden_state
+            output_dict["text_features"] = text
 
         if len(output_dict) == 1:
             return output_dict[list(output_dict.keys())[0]]
