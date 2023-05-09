@@ -42,6 +42,7 @@ def build_model(
                 "image": backbone_model.image_num_features,
             }[modality],
             num_classes,
+            modality=modality,
         )
     else:
         raise ValueError(f"Modality {modality} not supported for CLIP.")

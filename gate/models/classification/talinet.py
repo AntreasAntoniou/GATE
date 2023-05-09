@@ -23,7 +23,10 @@ def create_model_with_linear(
     Helper function to create a model with linear layer.
     """
     return BackboneWithLinear(
-        backbone_model, num_features, num_classes, modality
+        model=backbone_model,
+        num_clip_features=num_features,
+        num_classes=num_classes,
+        modality=modality,
     )
 
 
