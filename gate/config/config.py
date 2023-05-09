@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import hydra
 from omegaconf import OmegaConf
+from rich.syntax import Syntax
 import torch
 import yaml
 from hydra.core.config_store import ConfigStore
@@ -21,8 +22,6 @@ from gate.boilerplate.utils import (
     get_hydra_config,
     get_logger,
     pretty_config,
-    pretty_dict,
-    pretty_print_dictionary,
 )
 from gate.config.variables import (
     CODE_DIR,
@@ -195,7 +194,13 @@ def collect_config_store():
     )
 
     # Pretty print dict with rich
-    print(yaml.dumb(config_store.repo))
+    # Convert dictionary to YAML and remove newlines after hyphens for a more compact representation
+    yaml_data = yaml.dump(config_store.repo).replace("\n-", " -")
+
+    # Create a Syntax instance for the YAML
+    syntax = Syntax(yaml_data, "yaml")
+
+    print(syntax)
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
