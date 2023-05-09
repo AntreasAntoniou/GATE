@@ -174,7 +174,7 @@ class TALINet(nn.Module):
         if download_dir is not None:
             config = yaml.safe_load(open(download_dir["config_filepath"]))
             print(config)
-            self.model = self.model = TALIModel(**config.model)
+            self.model = self.model = TALIModel(**config["model"])
 
             self.accelerator = accelerate.Accelerator()
             self.model = self.accelerator.prepare(self.model)
