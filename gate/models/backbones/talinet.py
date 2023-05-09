@@ -17,6 +17,7 @@ class TALINet(nn.Module):
         self,
         clip_model_name: str = "openai/clip-vit-base-patch16",
         whisper_model_name: str = "openai/whisper-small",
+        pretrained: bool = True,
     ):
         super().__init__()
 
@@ -26,6 +27,11 @@ class TALINet(nn.Module):
             audio_model_name=whisper_model_name,
             multi_modality_config=MultiModalityConfig(),
         )
+
+        self.video_num_features = self.talinet.video_linear_layer.in_features
+        self.image_num_features = self.talinet.image_linear_layer.in_features
+        self.text_num_features = self.talinet.text_linear_layer.in_features
+        self.audio_num_features = self.talinet.audio_linear_layer.in_features
 
     def forward(
         self,
@@ -80,3 +86,32 @@ class TALINet(nn.Module):
             }
 
         return output_dict
+
+    def get_transforms(self):
+        return {
+            "image": lambda x: self.talinet.image_text_processor(
+                images=x, return_tensors="pt"
+            ).pixel_values.squeeze(1),
+            "text": lambda x: self.talinet.image_text_processor(
+                text=x, return_tensors="pt", padding=True, truncation=True
+            ).input_ids.squeeze(0),
+            "audio": lambda x: torch.cat(
+                [
+                    self.talinet.audio_processor(
+                        item.view(-1),
+                        sampling_rate=16000,
+                        return_tensors="pt",
+                    ).input_features
+                    for item in x.unbind(0)
+                ]
+            ),
+            "video": lambda x: torch.stack(
+                [
+                    self.talinet.image_text_processor(
+                        images=image, return_tensors="pt"
+                    ).pixel_values
+                    for image in x
+                ],
+                dim=0,
+            ),
+        }

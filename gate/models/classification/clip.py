@@ -8,7 +8,7 @@ from numpy import isin
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.talinet import TALINet
+from gate.models.backbones.clip import CLIPAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -33,7 +33,7 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = TALINet(model_name=model_name, pretrained=pretrained)
+    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
     if modality in ["image", "text", "audio", "video"]:
         model = BackboneWithLinear(backbone_model, backbone_model, num_classes)
     else:
@@ -42,23 +42,20 @@ def build_model(
     if not pretrained:
         model.init_weights()
 
-    image_text_transform = (
-        lambda image: backbone_model.image_text_preprocessor(
-            images=image, return_tensors="pt"
-        )
-    )
-    
-    audio_transform = 
+    transform_dict = backbone_model.get_transforms()
 
     def transform_wrapper(inputs: Union[Dict, Any]):
         output_dict = {}
 
         if "image" in inputs:
-            output_dict["image"] = transform(inputs["image"])["pixel_values"][
-                0
-            ]
+            output_dict["image"] = transform_dict["image"](inputs["image"])[
+                "pixel_values"
+            ][0]
+
         if "text" in inputs:
-            output_dict["text"] = transform(inputs["text"])["input_ids"][0]
+            output_dict["text"] = transform_dict["text"](inputs["text"])[
+                "input_ids"
+            ][0]
 
         if "labels" in inputs:
             output_dict["labels"] = inputs["labels"]

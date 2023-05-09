@@ -55,3 +55,13 @@ class CLIPAdapter(nn.Module):
             ] = text.text_model_output.text_embeds
 
         return output_dict
+
+    def get_transforms(self):
+        return {
+            "image": lambda x: self.preprocessor(
+                images=x, return_tensors="pt"
+            ).pixel_values.squeeze(1),
+            "text": lambda x: self.preprocessor(
+                text=x, return_tensors="pt", padding=True, truncation=True
+            ).input_ids.squeeze(0),
+        }
