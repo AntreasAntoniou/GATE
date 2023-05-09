@@ -12,10 +12,11 @@ import PIL.Image as Image
 class TimmModel(nn.Module):
     def __init__(
         self,
-        model_identifier: str = "vit_large_patch14_clip_224.openai_ft_in12k_in1k",
+        model_identifier: str = "hf_hub:timm/vit_large_patch14_clip_224.openai_ft_in12k_in1k",
         pretrained: bool = True,
     ):
         super().__init__()
+
         self.model = timm.create_model(
             model_identifier,
             pretrained=pretrained,
@@ -23,7 +24,7 @@ class TimmModel(nn.Module):
         )
 
         # get model specific transforms (normalization, resize)
-        data_config = timm.data.resolve_model_data_config(self.model)
+        data_config = timm.data.resolve_data_config(self.model)
         self.num_output_features = self.infer_output_shape()[-1]
         self.transforms = timm.data.create_transform(
             **data_config, is_training=False
