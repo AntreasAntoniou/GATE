@@ -55,14 +55,10 @@ def build_model(
         output_dict = {}
 
         if "image" in inputs:
-            output_dict["image"] = transform_dict["image"](inputs["image"])[
-                "pixel_values"
-            ][0]
+            output_dict["image"] = transform_dict["image"](inputs["image"])
 
         if "text" in inputs:
-            output_dict["text"] = transform_dict["text"](inputs["text"])[
-                "input_ids"
-            ][0]
+            output_dict["text"] = transform_dict["text"](inputs["text"])
 
         if "labels" in inputs:
             output_dict["labels"] = inputs["labels"]
