@@ -195,7 +195,7 @@ def collect_config_store():
     )
 
     # Pretty print dict with rich
-    print(pretty_dict(config_store.repo))
+    print(pretty_dict(config_store.repo, resolve=True))
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
