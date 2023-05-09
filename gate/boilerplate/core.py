@@ -440,6 +440,9 @@ class Learner(nn.Module):
                             return self.end_training()
 
                     for batch_idx, batch in enumerate(train_dataloader):
+                        for key, value in batch.items():
+                            print(f"{key}: {value.shape}")
+
                         output_list = self.training_step(
                             model=self.model,
                             batch=batch,
