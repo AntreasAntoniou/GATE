@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import hydra
 import torch
+import yaml
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config
 from timm.scheduler import CosineLRScheduler
@@ -191,7 +192,11 @@ def collect_config_store():
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
 
-    pretty_print_dictionary(config_store.repo)
+    # Convert dictionary to YAML
+    yaml_data = yaml.dump(config_store.repo)
+
+    # Pretty print YAML with rich
+    print(yaml_data)
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
