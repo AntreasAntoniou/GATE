@@ -190,7 +190,6 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
                 subbranch = branch.add(
                     option_name, style=style, guide_style=style
                 )
-                option = str(option)
                 if (
                     isinstance(option, DictConfig)
                     or isinstance(option, dict)
@@ -201,7 +200,6 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
 
                 subbranch.add(Syntax(option, "yaml"))
         else:
-            group = str(group)
             if (
                 isinstance(option, DictConfig)
                 or isinstance(option, dict)
