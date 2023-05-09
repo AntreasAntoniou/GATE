@@ -224,7 +224,7 @@ def collect_config_store():
             dict(learner="default"),
             dict(optimizer="adamw"),
             dict(scheduler="cosine-annealing"),
-            dict(model="clip"),
+            dict(model="clip-classification"),
             dict(dataset="cifar100"),
             dict(trainer="classification"),
             dict(evaluator="classification"),
