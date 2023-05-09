@@ -6,7 +6,6 @@ main_requirements = [
     "torch",
     "torchvision",
     "torchaudio",
-    "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "accelerate",
     "datasets",
     "transformers",
@@ -29,6 +28,7 @@ main_requirements = [
     "monai",
     "nibabel",
     "natsort",
+    "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
 
