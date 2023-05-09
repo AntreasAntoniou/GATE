@@ -6,7 +6,7 @@ main_requirements = [
     "torch",
     "torchvision",
     "torchaudio",
-    "timm",
+    "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "accelerate",
     "datasets",
     "transformers",
