@@ -147,7 +147,7 @@ def collect_config_store():
     config_store.store(
         group="optimizer",
         name="adamw",
-        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
+        node=adamw_optimizer_config(lr=1e-5, weight_decay=2e-5),
     )
 
     ##########################################################################
