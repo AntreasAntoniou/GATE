@@ -46,7 +46,9 @@ def build_model(
 
     num_features_attr = f"{modality}_num_features"
     num_features = getattr(backbone_model, num_features_attr, None)
-    model = create_model_with_linear(backbone_model, num_features, num_classes)
+    model = create_model_with_linear(
+        backbone_model, num_features, num_classes, modality
+    )
 
     if not pretrained:
         model.init_weights()
