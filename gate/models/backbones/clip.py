@@ -8,6 +8,7 @@ from transformers.models.clip.modeling_clip import CLIPOutput
 
 class CLIPAdapter(nn.Module):
     def __init__(self, model_name: str, pretrained: bool = True):
+        super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
