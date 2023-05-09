@@ -39,6 +39,7 @@ class TALINet(nn.Module):
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
+        **kwargs,
     ) -> Dict[str, torch.Tensor]:
         """
         Forward pass of the model. Processes each modality if provided, and merges the outputs.
