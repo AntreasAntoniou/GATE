@@ -148,7 +148,7 @@ class TALINet(nn.Module):
             else None,
             get_latest=True if "latest" == checkpoint_identifier else False,
         )
-
+        self.accelerator = accelerate.Accelerator()
         self.model = self.accelerator.prepare(self.model)
         # Load the state dict from the path
         state_dict = torch.load(
