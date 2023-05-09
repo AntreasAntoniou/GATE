@@ -26,10 +26,10 @@ class TimmModel(nn.Module):
         )
 
         # get model specific transforms (normalization, resize)
-        self.num_output_features = self.infer_output_shape()[-1]
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
+        self.num_output_features = self.infer_output_shape()[-1]
 
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
