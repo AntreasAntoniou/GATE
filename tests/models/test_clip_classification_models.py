@@ -74,3 +74,9 @@ def test_clip_with_linear_forward():
 
     loss = F.cross_entropy(output["image"]["image"], y_dummy)
     assert loss.item() > 0
+
+
+if __name__ == "__main__":
+    test_build_model()
+    test_clip_with_linear_forward()
+    test_clip_with_linear_forward()
