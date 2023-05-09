@@ -155,7 +155,8 @@ class TALINet(nn.Module):
             pathlib.Path(download_dir) / "pytorch_model.bin"
         )
         # Load the state dict into the model
-        self.load_state_dict(state_dict, strict=False)
+        report = self.load_state_dict(state_dict, strict=False)
+        print(report)
 
 
 if __name__ == "__main__":
