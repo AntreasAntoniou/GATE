@@ -1,4 +1,5 @@
 from collections import defaultdict
+import pathlib
 from typing import Any, Dict, Optional, Union
 from tali.utils import download_model_with_name
 
@@ -31,7 +32,7 @@ class TALINet(nn.Module):
         super().__init__()
 
         # Initialize TALIModel with specified image, text and audio models
-        self.talinet = TALIModel(
+        self.model = TALIModel(
             image_text_model_name=clip_model_name,
             audio_model_name=whisper_model_name,
             multi_modality_config=MultiModalityConfig(),
@@ -45,10 +46,10 @@ class TALINet(nn.Module):
             whisper_model_name
         )
 
-        self.video_num_features = self.talinet.video_linear_layer.in_features
-        self.image_num_features = self.talinet.image_linear_layer.in_features
-        self.text_num_features = self.talinet.text_linear_layer.in_features
-        self.audio_num_features = self.talinet.audio_linear_layer.in_features
+        self.video_num_features = self.model.video_linear_layer.in_features
+        self.image_num_features = self.model.image_linear_layer.in_features
+        self.text_num_features = self.model.text_linear_layer.in_features
+        self.audio_num_features = self.model.audio_linear_layer.in_features
 
     def forward(
         self,
@@ -85,22 +86,22 @@ class TALINet(nn.Module):
         if image is not None:
             output_dict |= {
                 f"image_{k}": v
-                for k, v in self.talinet.forward_image(image).items()
+                for k, v in self.model.forward_image(image).items()
             }
         if text is not None:
             output_dict |= {
                 f"text_{k}": v
-                for k, v in self.talinet.forward_text(text).items()
+                for k, v in self.model.forward_text(text).items()
             }
         if audio is not None:
             output_dict |= {
                 f"audio_{k}": v
-                for k, v in self.talinet.forward_audio(audio).items()
+                for k, v in self.model.forward_audio(audio).items()
             }
         if video is not None:
             output_dict |= {
                 f"video_{k}": v
-                for k, v in self.talinet.forward_video(video).items()
+                for k, v in self.model.forward_video(video).items()
             }
 
         return output_dict
@@ -148,9 +149,13 @@ class TALINet(nn.Module):
             get_latest=True if "latest" == checkpoint_identifier else False,
         )
 
-        self.accelerator = accelerate.Accelerator()
-        self.talinet = self.accelerator.prepare(self.talinet)
-        self.accelerator.load_state(download_dir)
+        self.model = self.accelerator.prepare(self.model)
+        # Load the state dict from the path
+        state_dict = torch.load(
+            pathlib.Path(download_dir) / "pytorch_model.bin"
+        )
+        # Load the state dict into the model
+        self.model.load_state_dict(state_dict)
 
 
 if __name__ == "__main__":
