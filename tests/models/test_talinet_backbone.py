@@ -11,7 +11,7 @@ def test_talinet_forward():
 
     # Generate some fake input data
     image = torch.randn(1, 3, 224, 224)
-    text = torch.randn(1, 512)  # adjust dimensions as needed
+    text = torch.randint(0, 100, (1, 512))
     audio = torch.randn(1, 44100)  # adjust dimensions as needed
     video = torch.randn(1, 3, 224, 224)  # adjust dimensions as needed
 
