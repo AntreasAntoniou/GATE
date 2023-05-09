@@ -115,6 +115,8 @@ class ClassificationTrainer(Trainer):
         overall_output_dict = {}
 
         self.optimizer.zero_grad()
+        for key, value in batch.items():
+            print(f"{key}: {value.shape}")
 
         step_output: StepOutput = self.step(
             model=model,
