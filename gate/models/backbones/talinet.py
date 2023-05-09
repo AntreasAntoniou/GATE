@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from tali.models import TALIModel, MultiModalityConfig
+from transformers import CLIPProcessor, WhisperProcessor
 
 
 class TALINet(nn.Module):
@@ -26,6 +27,14 @@ class TALINet(nn.Module):
             image_text_model_name=clip_model_name,
             audio_model_name=whisper_model_name,
             multi_modality_config=MultiModalityConfig(),
+        )
+
+        self.image_text_preprocessor: CLIPProcessor = (
+            CLIPProcessor.from_pretrained(clip_model_name)
+        )
+
+        self.audio_preprocessor = WhisperProcessor.from_pretrained(
+            whisper_model_name
         )
 
         self.video_num_features = self.talinet.video_linear_layer.in_features
@@ -90,15 +99,15 @@ class TALINet(nn.Module):
 
     def get_transforms(self):
         return {
-            "image": lambda x: self.talinet.image_text_processor(
+            "image": lambda x: self.image_text_preprocessor(
                 images=x, return_tensors="pt"
             ).pixel_values.squeeze(1),
-            "text": lambda x: self.talinet.image_text_processor(
+            "text": lambda x: self.image_text_preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0),
             "audio": lambda x: torch.cat(
                 [
-                    self.talinet.audio_processor(
+                    self.audio_preprocessor(
                         item.view(-1),
                         sampling_rate=16000,
                         return_tensors="pt",
@@ -108,7 +117,7 @@ class TALINet(nn.Module):
             ),
             "video": lambda x: torch.stack(
                 [
-                    self.talinet.image_text_processor(
+                    self.image_text_preprocessor(
                         images=image, return_tensors="pt"
                     ).pixel_values
                     for image in x
