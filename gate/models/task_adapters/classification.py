@@ -5,9 +5,16 @@ import torch
 
 
 class BackboneWithLinear(nn.Module):
-    def __init__(self, model: nn.Module, num_clip_features, num_classes: int):
+    def __init__(
+        self,
+        model: nn.Module,
+        num_clip_features,
+        num_classes: int,
+        modality: str,
+    ):
         super().__init__()
         self.model = model
+        self.modality = modality
         self.linear = nn.Linear(num_clip_features, num_classes)
 
     def forward(
@@ -32,6 +39,9 @@ class BackboneWithLinear(nn.Module):
 
         if video is not None:
             x = self.model(video=video)
+
+        if isinstance(x, dict):
+            x = x[f"{self.modality}_features"]
 
         x = self.linear(x)
         return x

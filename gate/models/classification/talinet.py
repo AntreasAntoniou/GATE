@@ -16,11 +16,15 @@ from gate.models.task_adapters.classification import BackboneWithLinear
 SUPPORTED_MODALITIES = ["image", "text", "audio", "video"]
 
 
-def create_model_with_linear(backbone_model, num_features, num_classes):
+def create_model_with_linear(
+    backbone_model, num_features, num_classes, modality
+):
     """
     Helper function to create a model with linear layer.
     """
-    return BackboneWithLinear(backbone_model, num_features, num_classes)
+    return BackboneWithLinear(
+        backbone_model, num_features, num_classes, modality
+    )
 
 
 def build_model(
