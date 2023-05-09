@@ -164,7 +164,10 @@ class GATEDataset(Dataset):
             if isinstance(self.transforms, list):
                 for transform in self.transforms:
                     item = transform(item)
-                    print(item)
+                    if hasattr(item["image"], "shape"):
+                        print(f"image shape: {item['image'].shape}")
+                    else:
+                        print(f"image shape: {item['image']}")
             else:
                 item = self.transforms(item)
         return item
