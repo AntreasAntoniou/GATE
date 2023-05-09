@@ -78,12 +78,6 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
         # Detection
         seq_id_to_annotations[seq_id][id]["detection"] = image_id_to_detection[id]
 
-        # Count
-        count = None
-        if seq_id in seq_id_to_counts:
-            count = seq_id_to_counts[seq_id]
-        seq_id_to_annotations[seq_id][id]["count"] = count
-
     # Rearrange annotations.
     # seq_id_to_annotations[seq_id][id] -> seq_id_to_annotations[seq_id][frame_index]
 
@@ -93,7 +87,17 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
             sorted(image_id_to_annotations.items(), key=lambda x: x[1]["seq_frame_num"])
         )
 
-    return seq_id_to_per_image_annotations
+    return seq_id_to_per_image_annotations, seq_id_to_counts
+
+
+def filter_metadata_with_counts(
+    seq_id_to_per_image_annotations: dict, seq_id_to_counts: dict[str, int]
+):
+    seq_id_to_per_image_annotations_filtered = {}
+    for seq_id, per_image_annotations in seq_id_to_per_image_annotations.items():
+        if seq_id in seq_id_to_counts:
+            seq_id_to_per_image_annotations_filtered[seq_id] = per_image_annotations
+    return seq_id_to_per_image_annotations_filtered
 
 
 def count_num_files(dataset_rootdir: str | Path):
@@ -126,8 +130,11 @@ def count_num_files(dataset_rootdir: str | Path):
 
 if __name__ == "__main__":
     count_num_files("/disk/scratch_fast1/datasets/iwildcam2022")
-    seq_id_to_annotations = read_all_train_metadata(
+    seq_id_to_annotations, seq_id_to_counts = read_all_train_metadata(
         "/disk/scratch_fast1/datasets/iwildcam2022"
+    )
+    seq_id_to_annotations = filter_metadata_with_counts(
+        seq_id_to_annotations, seq_id_to_counts
     )
     print(seq_id_to_annotations)
     print(len(seq_id_to_annotations))
