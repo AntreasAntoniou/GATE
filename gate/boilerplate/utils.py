@@ -185,7 +185,7 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
 
     for group_name, group in input_dict.items():
         branch = tree.add(group_name, style=style, guide_style=style)
-        if isinstance(group, dict):
+        if isinstance(group, DictConfig):
             for option_name, option in group.items():
                 subbranch = branch.add(
                     option_name, style=style, guide_style=style
