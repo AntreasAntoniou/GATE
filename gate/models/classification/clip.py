@@ -20,7 +20,7 @@ from gate.models.task_adapters.classification import (
 
 
 def build_model(
-    model_name: str = "Antreas/clip-vit-base-patch16-whisper-small",
+    model_name: str = "openai/clip-vit-base-patch16",
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
