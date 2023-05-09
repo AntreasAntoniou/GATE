@@ -45,7 +45,7 @@ def download_and_extract_file(extract_to: str) -> pathlib.Path:
     with zipfile.ZipFile(local_filename, "r") as zip_ref:
         zip_ref.extractall(path=extract_to)
 
-    return pathlib.Path(extract_to)
+    return pathlib.Path(extract_to) / "ACDC"
 
 
 class ACDCDataset(Dataset):
@@ -57,9 +57,7 @@ class ACDCDataset(Dataset):
         self.root_dir = download_and_extract_file(self.root_dir)
 
         # Set the data directory based on the mode
-        self.data_dir = (
-            pathlib.Path(self.root_dir) / "ACDC" / "database" / f"{mode}ing"
-        )
+        self.data_dir = pathlib.Path(self.root_dir) / "database" / f"{mode}ing"
 
         # Get the list of patients
         self.patients = sorted(
