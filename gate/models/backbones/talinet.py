@@ -135,17 +135,17 @@ class TALINet(nn.Module):
         }
 
     def load_from_hub(
-        self, model_repo_path: str, ckpt_identifier: str, **kwargs
+        self, model_repo_path: str, checkpoint_identifier: str, **kwargs
     ):
         import os
 
         path_dict = download_model_checkpoint_from_hub(
             hf_repo_path=model_repo_path,
             hf_cache_dir=os.environ["HF_CACHE_DIR"],
-            ckpt_identifier=ckpt_identifier
-            if "latest" != ckpt_identifier
+            checkpoint_identifier=checkpoint_identifier
+            if "latest" != checkpoint_identifier
             else None,
-            get_latest=True if "latest" == ckpt_identifier else False,
+            get_latest=True if "latest" == checkpoint_identifier else False,
         )
 
         self.accelerator = accelerate.Accelerator()
@@ -157,6 +157,6 @@ if __name__ == "__main__":
     model = TALINet()
     model.load_from_hub(
         model_repo_path="Antreas/tali-2-tali_image_text_base_patch16_224-wit_image_text_dataset-2306",
-        ckpt_identifier="latest",
+        checkpoint_identifier="latest",
     )
     print(model)
