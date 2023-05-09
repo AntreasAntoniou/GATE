@@ -156,6 +156,7 @@ class TALINet(nn.Module):
 if __name__ == "__main__":
     model = TALINet()
     model.load_from_hub(
-        "Antreas/tali-2-tali_image_text_base_patch16_224-wit_image_text_dataset-2306"
+        model_repo_path="Antreas/tali-2-tali_image_text_base_patch16_224-wit_image_text_dataset-2306",
+        ckpt_identifier="latest",
     )
     print(model)
