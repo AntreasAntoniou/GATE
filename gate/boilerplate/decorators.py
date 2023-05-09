@@ -16,6 +16,7 @@ from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
 
+
 def configurable(
     group: str,
     name: str,
@@ -77,7 +78,9 @@ def register_configurables(
                         node=obj.__config__(populate_full_signature=True),
                     )
                 else:
-                    logger.warning(f"Excluding {name} from config store, as it does not have a group or name."
+                    logger.warning(
+                        f"Excluding {name} from config store, as it does not have a group or name."
+                    )
 
     for importer, module_name, is_pkg in pkgutil.walk_packages(
         package.__path__, prefix
