@@ -22,6 +22,13 @@ def test_talinet_forward():
         "video": transforms["video"](video),
     }
 
+    print(
+        input_dict["image"].shape,
+        input_dict["text"].shape,
+        input_dict["audio"].shape,
+        input_dict["video"].shape,
+    )
+
     # Call the forward method
     output = model.forward(**input_dict)
 
