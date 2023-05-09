@@ -66,6 +66,7 @@ class TimmCLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
+        self.clip = CLIPModel.from_pretrained(clip_model_name)
 
         self.vision_model = TimmModel(
             model_identifier=timm_model_name, pretrained=pretrained
