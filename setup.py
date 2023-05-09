@@ -30,6 +30,7 @@ main_requirements = [
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
+# "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
 
 dev_requirements = [
     "pytest",
