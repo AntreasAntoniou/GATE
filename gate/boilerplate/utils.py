@@ -205,7 +205,7 @@ def pretty_dict(
                         or isinstance(option, ListConfig)
                     ):
                         option = OmegaConf.to_yaml(option, resolve=resolve)
-
+                str(option)
                 subbranch.add(Syntax(option, "yaml"))
         else:
             group = str(group)
