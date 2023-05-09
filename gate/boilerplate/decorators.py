@@ -12,6 +12,9 @@ from hydra.core.config_store import ConfigStore
 from hydra_zen import builds, instantiate
 from rich import print
 
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(__name__)
 
 def configurable(
     group: str,
@@ -62,14 +65,19 @@ def register_configurables(
         module = importlib.import_module(module_name)
         for name, obj in inspect.getmembers(module):
             if hasattr(obj, "__configurable__") and obj.__configurable__:
-                group = obj.__config_group__
-                name = obj.__config_name__
+                if hasattr(obj, "__config_group__") and hasattr(
+                    obj, "__config_name__"
+                ):
+                    group = obj.__config_group__
+                    name = obj.__config_name__
 
-                config_store.store(
-                    group=group,
-                    name=name,
-                    node=obj.__config__(populate_full_signature=True),
-                )
+                    config_store.store(
+                        group=group,
+                        name=name,
+                        node=obj.__config__(populate_full_signature=True),
+                    )
+                else:
+                    logger.warning(f"Excluding {name} from config store, as it does not have a group or name."
 
     for importer, module_name, is_pkg in pkgutil.walk_packages(
         package.__path__, prefix
