@@ -22,7 +22,6 @@ main_requirements = [
     "rich",
     "opencv-python",
     "scipy",
-    "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
     "soundfile",
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
