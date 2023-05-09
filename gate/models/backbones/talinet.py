@@ -201,7 +201,7 @@ if __name__ == "__main__":
     print(model)
     # TODO:
     # 1. Get a way to build the right TALI model given config (10m) (DONE)
-    # 2. Add a timm model with clip text encoder as another (15m)
+    # 2. Add a timm model with clip text encoder as another (15m) (DONE)
     # baseline so we can immediately get access to shitloads of baseline models
     # 3. Get VQA to work (2h)
     # 4. Get text benchmarks to work (2h)

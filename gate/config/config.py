@@ -194,13 +194,13 @@ def collect_config_store():
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
 
-    # Convert dictionary to YAML
-    yaml_data = OmegaConf.to_yaml(config_store.repo, resolve=False)
+    # # Convert dictionary to YAML
+    # yaml_data = OmegaConf.to_yaml(config_store.repo, resolve=False)
 
-    # Pretty print YAML with rich
-    syntax = Syntax(yaml_data, "yaml", theme="one-dark")
+    # # Pretty print YAML with rich
+    # syntax = Syntax(yaml_data, "yaml", theme="one-dark")
 
-    print(syntax)
+    # print(syntax)
 
     ###########################################################################
     # 🌐 Hydra Zen global configs
