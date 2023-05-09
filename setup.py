@@ -29,6 +29,7 @@ main_requirements = [
     "monai",
     "nibabel",
     "natsort",
+    "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
 
 dev_requirements = [

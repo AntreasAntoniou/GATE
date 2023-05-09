@@ -3,7 +3,7 @@ from typing import Dict
 import torch.nn as nn
 
 
-class CLIPWithLinear(nn.Module):
+class BackboneWithLinear(nn.Module):
     def __init__(self, model: nn.Module, num_clip_features, num_classes: int):
         super().__init__()
         self.model = model
