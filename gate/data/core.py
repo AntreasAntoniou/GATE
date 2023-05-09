@@ -164,7 +164,7 @@ class GATEDataset(Dataset):
             if isinstance(self.transforms, list):
                 for transform in self.transforms:
                     item = transform(item)
-                    print(item["image"].shape)
+                    print(item)
             else:
                 item = self.transforms(item)
         return item
