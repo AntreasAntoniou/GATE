@@ -21,6 +21,7 @@ from gate.boilerplate.utils import (
     get_hydra_config,
     get_logger,
     pretty_config,
+    pretty_dict,
     pretty_print_dictionary,
 )
 from gate.config.variables import (
