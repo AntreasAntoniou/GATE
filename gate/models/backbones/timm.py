@@ -20,7 +20,7 @@ class TimmModel(nn.Module):
         super().__init__()
 
         self.model = timm.create_model(
-            model_identifier,
+            model_name=model_identifier,
             pretrained=pretrained,
             num_classes=0,  # remove classifier nn.Linear
         )
