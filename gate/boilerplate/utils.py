@@ -185,20 +185,18 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
 
     for group_name, group in input_dict.items():
         branch = tree.add(group_name, style=style, guide_style=style)
-        if isinstance(group, DictConfig):
+        if isinstance(group, dict):
             for option_name, option in group.items():
                 subbranch = branch.add(
                     option_name, style=style, guide_style=style
                 )
                 option = str(option)
-                if isinstance(option, DictConfig):
-                    option = OmegaConf.to_yaml(option, resolve=resolve)
+                option = OmegaConf.to_yaml(option, resolve=resolve)
 
                 subbranch.add(Syntax(option, "yaml"))
         else:
             group = str(group)
-            if isinstance(group, DictConfig):
-                group = OmegaConf.to_yaml(group, resolve=resolve)
+            group = OmegaConf.to_yaml(group, resolve=resolve)
 
             branch.add(Syntax(group, "yaml"))
 
