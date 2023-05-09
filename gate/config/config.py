@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import hydra
+from omegaconf import OmegaConf
 import torch
 import yaml
 from hydra.core.config_store import ConfigStore
@@ -193,7 +194,7 @@ def collect_config_store():
     )
 
     # Convert dictionary to YAML
-    yaml_data = yaml.dump(config_store.repo)
+    yaml_data = OmegaConf.to_yaml(config_store.repo, resolve=False)
 
     # Pretty print YAML with rich
     print(yaml_data)
