@@ -9,7 +9,7 @@ class BackboneWithLinear(nn.Module):
         self.model = model
         self.linear = nn.Linear(num_clip_features, num_classes)
 
-    def forward(self, **input_dict: Dict):
-        x = self.model(**input_dict).pooler_output
+    def forward(self, input_dict: Dict):
+        x = self.model(**input_dict)
         x = self.linear(x)
         return x
