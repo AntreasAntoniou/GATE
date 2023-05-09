@@ -52,7 +52,7 @@ def test_clip_with_linear_forward_loss():
     transform = model_and_transform.transform
 
     model = GATEModel(
-        target_config, model, key_remapper_dict={"image": "pixel_values"}
+        target_config, model, key_remapper_dict={"image": "image"}
     )
 
     input_dict = transform({"image": x_dummy, "labels": y_dummy})
