@@ -37,7 +37,7 @@ class CLIPAdapter(nn.Module):
         # output_hidden_states: Optional[bool] = None,
         # return_dict: Optional[bool] = None,
 
-        if image:
+        if image is not None:
             image: CLIPOutput = self.clip(pixel_values=image)
             output_dict[
                 "image_features"
@@ -46,7 +46,7 @@ class CLIPAdapter(nn.Module):
                 "image_projection_output"
             ] = image.vision_model_output.image_embeds
 
-        if text:
+        if text is not None:
             text: CLIPOutput = self.clip(input_ids=text)
             output_dict[
                 "text_features"
