@@ -104,7 +104,7 @@ class TALINet(nn.Module):
             ).pixel_values.squeeze(1),
             "text": lambda x: self.image_text_preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0),
+            ).input_ids,
             "audio": lambda x: torch.cat(
                 [
                     self.audio_preprocessor(
