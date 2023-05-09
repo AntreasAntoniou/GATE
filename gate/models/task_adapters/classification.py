@@ -11,6 +11,6 @@ class BackboneWithLinear(nn.Module):
 
     def forward(self, input_dict: Dict):
         print(list(input_dict.keys()))
-        x = self.model(**input_dict)
+        x = self.model(input_dict)
         x = self.linear(x)
         return x
