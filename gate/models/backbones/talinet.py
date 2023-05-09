@@ -175,6 +175,7 @@ class TALINet(nn.Module):
             config = yaml.safe_load(open(download_dir["config_filepath"]))
             model_config = config["model"]
             del model_config["_target_"]
+            model_config = DictConfig(model_config)
             self.model = self.model = TALIModel(**model_config)
 
             self.accelerator = accelerate.Accelerator()
