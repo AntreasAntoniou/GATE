@@ -56,6 +56,9 @@ class CLIPAdapter(nn.Module):
                 "text_features"
             ] = text.text_model_output.last_hidden_state
 
+        if len(output_dict) == 1:
+            return output_dict[list(output_dict.keys())[0]]
+
         return output_dict
 
     def get_transforms(self):
