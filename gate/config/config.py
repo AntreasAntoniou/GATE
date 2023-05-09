@@ -198,7 +198,7 @@ def collect_config_store():
     yaml_data = OmegaConf.to_yaml(config_store.repo, resolve=False)
 
     # Pretty print YAML with rich
-    syntax = Syntax(yaml_data, "yaml")
+    syntax = Syntax(yaml_data, "yaml", theme="material")
 
     print(syntax)
 
