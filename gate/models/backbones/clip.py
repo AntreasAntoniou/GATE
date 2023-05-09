@@ -41,6 +41,7 @@ class CLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
+            print(image)
             image: CLIPOutput = self.clip(pixel_values=image)
             output_dict[
                 "image_features"
