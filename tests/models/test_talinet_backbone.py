@@ -11,7 +11,7 @@ def test_talinet_forward():
     transforms = model.get_transforms()
     # Generate some fake input data
     image = torch.randn(1, 3, 224, 224)
-    text = torch.randint(0, 100, ["Hello my dude let's do a test"])
+    text = [["Hello my dude let's do a test"]]
     audio = torch.randn(1, 44000)  # adjust dimensions as needed
     video = torch.randn(1, 3, 224, 224)  # adjust dimensions as needed
 
