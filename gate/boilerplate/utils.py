@@ -179,6 +179,22 @@ def pretty_config(
     return tree
 
 
+def pretty_dict(input_dict: Dict, resolve: bool = False):
+    style = "dim"
+    tree = Tree("CONFIG", style=style, guide_style=style)
+
+    for field, section in input_dict.items():
+        branch = tree.add(field, style=style, guide_style=style)
+
+        branch_content = str(section)
+        if isinstance(section, DictConfig):
+            branch_content = OmegaConf.to_yaml(section, resolve=resolve)
+
+        branch.add(Syntax(branch_content, "yaml"))
+
+    return tree
+
+
 from rich import print as rprint
 from rich.pretty import Pretty
 from typing import Any, Dict
