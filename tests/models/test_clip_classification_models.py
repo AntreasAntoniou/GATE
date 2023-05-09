@@ -18,7 +18,7 @@ def test_build_model():
 
 
 def test_clip_with_linear_forward():
-    model_and_transform = build_model()
+    model_and_transform = build_model(modality="image")
 
     x_dummy = torch.rand(2, 3, 224, 224)
     y_dummy = torch.randint(0, 100, (2,))
@@ -37,7 +37,7 @@ def test_clip_with_linear_forward():
 
 
 def test_clip_with_linear_forward_loss():
-    model_and_transform = build_model()
+    model_and_transform = build_model(modality="image")
     model = model_and_transform.model
     transform = model_and_transform.transform
 
