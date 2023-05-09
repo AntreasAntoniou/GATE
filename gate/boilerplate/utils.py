@@ -183,14 +183,15 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
     style = "dim"
     tree = Tree("CONFIG", style=style, guide_style=style)
 
-    for field, section in input_dict.items():
-        branch = tree.add(field, style=style, guide_style=style)
+    for group_name, group in input_dict.items():
+        branch = tree.add(group_name, style=style, guide_style=style)
+        for option_name, option in group.items():
+            subbranch = branch.add(option_name, style=style, guide_style=style)
+            option = str(option)
+            if isinstance(option, DictConfig):
+                option = OmegaConf.to_yaml(option, resolve=resolve)
 
-        branch_content = str(section)
-        if isinstance(section, DictConfig):
-            branch_content = OmegaConf.to_yaml(section, resolve=resolve)
-
-        branch.add(Syntax(branch_content, "yaml"))
+            subbranch.add(Syntax(option, "yaml"))
 
     return tree
 
