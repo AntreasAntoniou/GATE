@@ -185,7 +185,9 @@ class TALINet(nn.Module):
             state_dict = torch.load(download_dir["model_filepath"])
             # Load the state dict into the model
             report = self.model.load_state_dict(state_dict, strict=False)
-            print(report)
+            print(
+                f"Loaded weights succesfully, the reported outcome was: {report}"
+            )
 
 
 if __name__ == "__main__":
@@ -196,7 +198,7 @@ if __name__ == "__main__":
 
     print(model)
     # TODO:
-    # 1. Get a way to build the right TALI model given config (10m)
+    # 1. Get a way to build the right TALI model given config (10m) (DONE)
     # 2. Add a timm model with clip text encoder as another (15m)
     # baseline so we can immediately get access to shitloads of baseline models
     # 3. Get VQA to work (2h)
