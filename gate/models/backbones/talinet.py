@@ -64,22 +64,22 @@ class TALINet(nn.Module):
 
         # For each modality, call the corresponding forward method and merge the results into output_dict
         # 💡 Using dictionary comprehension to simplify code and improve readability
-        if image:
+        if image is not None:
             output_dict |= {
                 f"image_{k}": v
                 for k, v in self.talinet.forward_image(image).items()
             }
-        if text:
+        if text is not None:
             output_dict |= {
                 f"text_{k}": v
                 for k, v in self.talinet.forward_text(text).items()
             }
-        if audio:
+        if audio is not None:
             output_dict |= {
                 f"audio_{k}": v
                 for k, v in self.talinet.forward_audio(audio).items()
             }
-        if video:
+        if video is not None:
             output_dict |= {
                 f"video_{k}": v
                 for k, v in self.talinet.forward_video(video).items()
