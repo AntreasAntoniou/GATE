@@ -1,11 +1,14 @@
 from collections import defaultdict
 from typing import Any, Dict, Optional, Union
+from tali.utils import download_model_with_name
 
 import torch
 import torch.nn as nn
 
 from tali.models import TALIModel, MultiModalityConfig
 from transformers import CLIPProcessor, WhisperProcessor
+
+import accelerate
 
 
 class TALINet(nn.Module):
@@ -125,3 +128,24 @@ class TALINet(nn.Module):
                 dim=0,
             ),
         }
+
+    def load_from_hub(self, model_repo_path: str, **kwargs):
+        import os
+
+        path_dict = download_model_with_name(
+            hf_repo_path=model_repo_path,
+            hf_cache_dir=os.environ["HF_CACHE_DIR"],
+            model_name=model_repo_path,
+        )
+
+        self.accelerator = accelerate.Accelerator()
+        self.talinet = self.accelerator.prepare(self.talinet)
+        self.accelerator.load_state(path_dict["root_filepath"])
+
+
+if __name__ == "__main__":
+    model = TALINet()
+    model.load_from_hub(
+        "Antreas/tali-2-tali_image_text_base_patch16_224-wit_image_text_dataset-2306"
+    )
+    print(model)
