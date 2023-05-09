@@ -1,6 +1,7 @@
 from collections import defaultdict
 import pathlib
 from typing import Any, Dict, Optional, Union
+from omegaconf import DictConfig
 from tali.utils import download_model_with_name
 
 import torch
