@@ -68,7 +68,8 @@ def setup(ckpt_path: str, cfg: Any):
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: Any) -> None:
-    ckpt_path = create_hf_model_repo_and_download_maybe(cfg)
+    ckpt_dict = create_hf_model_repo_and_download_maybe(cfg)
+    ckpt_path = ckpt_dict["root_filepath"]
 
     if ckpt_path is not None:
         logger.info(
