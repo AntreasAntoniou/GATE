@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import hydra
 from omegaconf import OmegaConf
+from rich.syntax import Syntax
 import torch
 import yaml
 from hydra.core.config_store import ConfigStore
