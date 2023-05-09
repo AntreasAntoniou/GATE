@@ -13,6 +13,10 @@ class CLIPAdapter(nn.Module):
             model_name
         )
         self.clip = CLIPModel.from_pretrained(model_name)
+
+        self.vision_model = self.clip.vision_model
+        self.text_model = self.clip.text_model
+
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
 
@@ -41,8 +45,9 @@ class CLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
-            print(image)
-            image: CLIPOutput = self.clip(pixel_values=image)
+            image: CLIPOutput = self.vision_model(
+                pixel_values=image
+            ).pooler_output
             output_dict[
                 "image_features"
             ] = image.vision_model_output.last_hidden_state
@@ -51,7 +56,7 @@ class CLIPAdapter(nn.Module):
             ] = image.vision_model_output.image_embeds
 
         if text is not None:
-            text: CLIPOutput = self.clip(input_ids=text)
+            text: CLIPOutput = self.text_model(input_ids=text).pooler_output
             output_dict[
                 "text_features"
             ] = text.text_model_output.last_hidden_state
