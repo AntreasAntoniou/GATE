@@ -191,12 +191,14 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
                     option_name, style=style, guide_style=style
                 )
                 option = str(option)
-                option = OmegaConf.to_yaml(option, resolve=resolve)
+                if isinstance(option, DictConfig) or isinstance(option, dict):
+                    option = OmegaConf.to_yaml(option, resolve=resolve)
 
                 subbranch.add(Syntax(option, "yaml"))
         else:
             group = str(group)
-            group = OmegaConf.to_yaml(group, resolve=resolve)
+            if isinstance(group, DictConfig) or isinstance(group, dict):
+                group = OmegaConf.to_yaml(group, resolve=resolve)
 
             branch.add(Syntax(group, "yaml"))
 
