@@ -21,14 +21,13 @@ vqa_train_vqa = build_vqa_v2_dataset(
 #     break
 
 # print(
-    "-------------------------------------------------------------------------------------------"
-)
+#     "-------------------------------------------------------------------------------------------"
+# )
 
 for idx, item in enumerate(vqa_train_vqa):
     print(item)
     if idx == 5:
         break
-    
 
 
 def select_okvqa_items(data_dict):
