@@ -34,8 +34,15 @@ def build_model(
     :return: A ModelAndTransform instance containing the model and transform function.
     """
     backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
-    if modality in ["image", "text", "audio", "video"]:
-        model = BackboneWithLinear(backbone_model, backbone_model, num_classes)
+    if modality in ["image", "text"]:
+        model = BackboneWithLinear(
+            backbone_model,
+            {
+                "text": backbone_model.text_num_features,
+                "image": backbone_model.image_num_features,
+            }[modality],
+            num_classes,
+        )
     else:
         raise ValueError(f"Modality {modality} not supported for CLIP.")
 
