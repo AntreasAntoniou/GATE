@@ -11,6 +11,7 @@ from transformers import CLIPProcessor, WhisperProcessor
 
 import accelerate
 from rich import print
+import yaml
 
 from gate.boilerplate.utils import (
     create_hf_model_repo_and_download_maybe,
@@ -28,16 +29,30 @@ class TALINet(nn.Module):
         self,
         clip_model_name: str = "openai/clip-vit-base-patch16",
         whisper_model_name: str = "openai/whisper-small",
+        model_repo_path: Optional[str] = None,
+        checkpoint_identifier: Optional[str] = None,
         pretrained: bool = True,
     ):
         super().__init__()
 
         # Initialize TALIModel with specified image, text and audio models
-        self.model = TALIModel(
-            image_text_model_name=clip_model_name,
-            audio_model_name=whisper_model_name,
-            multi_modality_config=MultiModalityConfig(),
-        )
+        if pretrained:
+            if checkpoint_identifier is not None:
+                self.load_from_hub(
+                    model_repo_path=model_repo_path,
+                    checkpoint_identifier=checkpoint_identifier,
+                )
+            else:
+                self.load_from_hub(
+                    model_repo_path=model_repo_path,
+                    checkpoint_identifier="latest",
+                )
+        else:
+            self.model = TALIModel(
+                image_text_model_name=clip_model_name,
+                audio_model_name=whisper_model_name,
+                multi_modality_config=MultiModalityConfig(),
+            )
 
         self.image_text_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
@@ -47,10 +62,17 @@ class TALINet(nn.Module):
             whisper_model_name
         )
 
-        self.video_num_features = self.model.video_linear_layer.in_features
-        self.image_num_features = self.model.image_linear_layer.in_features
-        self.text_num_features = self.model.text_linear_layer.in_features
-        self.audio_num_features = self.model.audio_linear_layer.in_features
+        if hasattr(self.model, "video_linear_layer"):
+            self.video_num_features = self.model.video_linear_layer.in_features
+
+        if hasattr(self.model, "image_linear_layer"):
+            self.image_num_features = self.model.image_linear_layer.in_features
+
+        if hasattr(self.model, "text_linear_layer"):
+            self.text_num_features = self.model.text_linear_layer.in_features
+
+        if hasattr(self.model, "audio_linear_layer"):
+            self.audio_num_features = self.model.audio_linear_layer.in_features
 
     def forward(
         self,
@@ -149,15 +171,18 @@ class TALINet(nn.Module):
             else None,
             get_latest=True if "latest" == checkpoint_identifier else False,
         )
-        self.accelerator = accelerate.Accelerator()
-        self.model = self.accelerator.prepare(self.model)
-        # Load the state dict from the path
-        state_dict = torch.load(
-            pathlib.Path(download_dir) / "pytorch_model.bin"
-        )
-        # Load the state dict into the model
-        report = self.model.load_state_dict(state_dict, strict=False)
-        print(report)
+        if download_dir is not None:
+            config = yaml.safe_load(open(download_dir["config_filepath"]))
+            print(config)
+            self.model = self.model = TALIModel(**config.model)
+
+            self.accelerator = accelerate.Accelerator()
+            self.model = self.accelerator.prepare(self.model)
+            # Load the state dict from the path
+            state_dict = torch.load(download_dir["model_filepath"])
+            # Load the state dict into the model
+            report = self.model.load_state_dict(state_dict, strict=False)
+            print(report)
 
 
 if __name__ == "__main__":
@@ -167,3 +192,10 @@ if __name__ == "__main__":
         checkpoint_identifier="latest",
     )
     print(model)
+    # TODO:
+    # 1. Get a way to build the right TALI model given config (10m)
+    # 2. Add a timm model with clip text encoder as another (15m)
+    # baseline so we can immediately get access to shitloads of baseline models
+    # 3. Get VQA to work (2h)
+    # 4. Get text benchmarks to work (2h)
+    # 5. RUN ALL THE BENCHMARKS (2h)

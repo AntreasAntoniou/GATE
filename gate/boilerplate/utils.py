@@ -361,7 +361,7 @@ def download_checkpoint(
         hf_repo_path, hf_cache_dir, ckpt_identifier
     )
     logger.info(f"Downloaded checkpoint to {hf_cache_dir}")
-    return path_dict["root_filepath"], hf_repo_path
+    return path_dict
 
 
 def create_hf_model_repo_and_download_maybe(
