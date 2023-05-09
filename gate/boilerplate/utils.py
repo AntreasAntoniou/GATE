@@ -195,7 +195,7 @@ def pretty_dict(
                     option_name, style=style, guide_style=style
                 )
                 if isinstance(option, ConfigNode):
-                    option = pretty_config(option, resolve=resolve)
+                    option = pretty_config(option.__dict__, resolve=resolve)
                 else:
                     option = str(option)
                     if (
