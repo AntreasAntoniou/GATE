@@ -10,6 +10,7 @@ from tali.models import TALIModel, MultiModalityConfig
 from transformers import CLIPProcessor, WhisperProcessor
 
 import accelerate
+from rich import print
 
 from gate.boilerplate.utils import (
     create_hf_model_repo_and_download_maybe,
