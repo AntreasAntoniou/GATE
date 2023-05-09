@@ -13,6 +13,8 @@ class CLIPAdapter(nn.Module):
             model_name
         )
         self.clip = CLIPModel.from_pretrained(model_name)
+        self.image_num_features = self.clip.vision_embed_dim
+        self.text_num_features = self.clip.text_embed_dim
 
     def forward(
         self,
