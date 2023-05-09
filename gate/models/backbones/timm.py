@@ -7,6 +7,8 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 import timm
 import PIL.Image as Image
+from timm.data import resolve_data_config
+from timm.data.transforms_factory import create_transform
 
 
 class TimmModel(nn.Module):
@@ -24,10 +26,9 @@ class TimmModel(nn.Module):
         )
 
         # get model specific transforms (normalization, resize)
-        data_config = timm.data.resolve_data_config(self.model)
         self.num_output_features = self.infer_output_shape()[-1]
-        self.transforms = timm.data.create_transform(
-            **data_config, is_training=False
+        self.transforms = create_transform(
+            **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
 
     def forward(self, x):
