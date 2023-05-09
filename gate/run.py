@@ -68,6 +68,9 @@ def setup(ckpt_path: str, cfg: Any):
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: Any) -> None:
+    print(pretty_config(cfg, resolve=True))
+    set_seed(seed=cfg.seed)
+
     ckpt_dict = create_hf_model_repo_and_download_maybe(cfg)
     ckpt_path = ckpt_dict["root_filepath"]
 
@@ -83,9 +86,6 @@ def run(cfg: Any) -> None:
         )
 
     logger.info(f"Using checkpoint: {ckpt_path}")
-
-    print(pretty_config(cfg, resolve=True))
-    set_seed(seed=cfg.seed)
 
     global_step, experiment_tracker = setup(ckpt_path, cfg)
 
