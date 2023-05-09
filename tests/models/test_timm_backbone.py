@@ -30,7 +30,7 @@ def test_TimmCLIPAdapter_resnet():
 
 def test_TimmCLIPAdapter_vit():
     clip_model_name = "openai/clip-vit-base-patch32"
-    timm_model_name = "hf_hub:timm/vit_tiny_patch16_224"
+    timm_model_name = "vit_tiny_patch16_224.augreg_in21k_ft_in1k"
     adapter = TimmCLIPAdapter(
         timm_model_name=timm_model_name, clip_model_name=clip_model_name
     )
