@@ -20,6 +20,7 @@ class CLIPAdapter(nn.Module):
         self,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
+        **kwargs,
     ):
         if image is None and text is None:
             raise ValueError(
