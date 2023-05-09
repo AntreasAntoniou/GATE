@@ -195,7 +195,7 @@ def collect_config_store():
 
     # Pretty print dict with rich
     # Convert dictionary to YAML and remove newlines after hyphens for a more compact representation
-    yaml_data = yaml.dump(config_store.repo)
+    yaml_data = yaml.dump(config_store.repo.__dict__)
     print(yaml_data)
     # Create a Syntax instance for the YAML
     syntax = Syntax(yaml_data, "yaml")
