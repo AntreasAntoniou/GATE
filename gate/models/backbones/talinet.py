@@ -163,7 +163,7 @@ class TALINet(nn.Module):
     ):
         import os
 
-        download_dir, repo_path = download_model_checkpoint_from_hub(
+        download_dir = download_model_checkpoint_from_hub(
             hf_repo_path=model_repo_path,
             hf_cache_dir=os.environ["HF_CACHE_DIR"],
             checkpoint_identifier=checkpoint_identifier
