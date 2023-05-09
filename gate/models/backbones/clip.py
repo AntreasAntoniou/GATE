@@ -63,7 +63,7 @@ class CLIPAdapter(nn.Module):
         return {
             "image": lambda x: self.preprocessor(
                 images=x, return_tensors="pt"
-            ).pixel_values.squeeze(1),
+            ).pixel_values.squeeze(0),
             "text": lambda x: self.preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0),
