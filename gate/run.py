@@ -68,7 +68,7 @@ def setup(ckpt_path: str, cfg: Any):
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: Any) -> None:
-    ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
+    ckpt_path = create_hf_model_repo_and_download_maybe(cfg)
 
     if ckpt_path is not None:
         logger.info(
@@ -96,11 +96,9 @@ def run(cfg: Any) -> None:
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     experiment_tracker["config"] = config_dict
-    experiment_tracker["notes"] = repo_url
     experiment_tracker["init_global_step"] = global_step
 
     wandb.config.update(config_dict)
-    wandb.config.update({"notes": repo_url})
     wandb.config.update({"init_global_step": global_step})
 
     dataset: GATEDataset = instantiate(cfg.dataset, transforms=transform)
