@@ -48,21 +48,13 @@ class CLIPAdapter(nn.Module):
             image: CLIPOutput = self.vision_model(
                 pixel_values=image
             ).pooler_output
-            output_dict[
-                "image_features"
-            ] = image.vision_model_output.last_hidden_state
-            output_dict[
-                "image_projection_output"
-            ] = image.vision_model_output.image_embeds
+            output_dict["image_features"] = image
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text).pooler_output
             output_dict[
                 "text_features"
             ] = text.text_model_output.last_hidden_state
-            output_dict[
-                "text_projection_output"
-            ] = text.text_model_output.text_embeds
 
         return output_dict
 
