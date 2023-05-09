@@ -186,11 +186,11 @@ class TALINet(nn.Module):
 
 
 if __name__ == "__main__":
-    model = TALINet()
-    model.load_from_hub(
+    model = TALINet(
         model_repo_path="Antreas/tali-2-tali_image_text_base_patch16_224-wit_image_text_dataset-2306",
         checkpoint_identifier="latest",
     )
+
     print(model)
     # TODO:
     # 1. Get a way to build the right TALI model given config (10m)
