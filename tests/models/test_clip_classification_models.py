@@ -58,7 +58,7 @@ def test_clip_with_linear_forward_loss():
     input_dict = transform({"image": x_dummy, "labels": y_dummy})
 
     output = model.forward(input_dict)
-    assert output.shape == (2, 100)
+    assert output["image"]["image"].shape == (2, 100)
 
     loss = F.cross_entropy(output["image"]["image"], y_dummy)
     assert loss.item() > 0
