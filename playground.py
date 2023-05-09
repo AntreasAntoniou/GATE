@@ -1,4 +1,5 @@
 import os
+from rich import print
 from gate.data.image.visual_question_answering.ok_vqa import (
     build_ok_vqa_dataset,
 )
