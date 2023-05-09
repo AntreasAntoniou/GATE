@@ -57,7 +57,9 @@ class ACDCDataset(Dataset):
         self.root_dir = download_and_extract_file(self.root_dir)
 
         # Set the data directory based on the mode
-        self.data_dir = pathlib.Path(self.root_dir) / "database" / f"{mode}ing"
+        self.data_dir = (
+            pathlib.Path(self.root_dir) / "ACDC" / "database" / f"{mode}ing"
+        )
 
         # Get the list of patients
         self.patients = sorted(
