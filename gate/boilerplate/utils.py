@@ -18,7 +18,7 @@ from huggingface_hub import (
     login,
     snapshot_download,
 )
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from rich.logging import RichHandler
 from rich.syntax import Syntax
 from rich.traceback import install
@@ -191,13 +191,23 @@ def pretty_dict(input_dict: Dict, resolve: bool = False):
                     option_name, style=style, guide_style=style
                 )
                 option = str(option)
-                if isinstance(option, DictConfig) or isinstance(option, dict):
+                if (
+                    isinstance(option, DictConfig)
+                    or isinstance(option, dict)
+                    or isinstance(option, list)
+                    or isinstance(option, ListConfig)
+                ):
                     option = OmegaConf.to_yaml(option, resolve=resolve)
 
                 subbranch.add(Syntax(option, "yaml"))
         else:
             group = str(group)
-            if isinstance(group, DictConfig) or isinstance(group, dict):
+            if (
+                isinstance(option, DictConfig)
+                or isinstance(option, dict)
+                or isinstance(option, list)
+                or isinstance(option, ListConfig)
+            ):
                 group = OmegaConf.to_yaml(group, resolve=resolve)
 
             branch.add(Syntax(group, "yaml"))
