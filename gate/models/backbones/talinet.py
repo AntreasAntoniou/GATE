@@ -30,8 +30,10 @@ class TALINet(nn.Module):
         self,
         clip_model_name: str = "openai/clip-vit-base-patch16",
         whisper_model_name: str = "openai/whisper-small",
-        model_repo_path: Optional[str] = None,
-        checkpoint_identifier: Optional[str] = None,
+        model_repo_path: Optional[
+            str
+        ] = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+        checkpoint_identifier: Optional[str] = "latest",
         pretrained: bool = True,
     ):
         super().__init__()
