@@ -29,7 +29,7 @@ class TimmModel(nn.Module):
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
-        self.num_output_features = self.infer_output_shape()[-1]
+        self.num_output_features = self.get_output_shape()[-1]
 
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
@@ -46,7 +46,7 @@ class TimmModel(nn.Module):
     def get_transforms(self):
         return {"image": self.transforms}
 
-    def infer_output_shape(self):
+    def get_output_shape(self):
         img = Image.open(
             urlopen(
                 "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/beignets-task-guide.png"
