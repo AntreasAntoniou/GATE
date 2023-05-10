@@ -5,6 +5,18 @@ from tqdm import tqdm
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+from collections import defaultdict
+from typing import Optional
+from urllib.request import urlopen
+import torch
+import torch.nn as nn
+from transformers import CLIPModel, CLIPProcessor
+from transformers.models.clip.modeling_clip import CLIPOutput
+import timm
+import PIL.Image as Image
+from timm.data import resolve_data_config
+from timm.data.transforms_factory import create_transform
+
 tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
 tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(
@@ -181,18 +193,6 @@ vqa_model = SimpleVQATransformer(
 )
 vqa_model = accelerator.prepare(vqa_model)
 vqa_transforms = vqa_model.get_transforms()
-
-from collections import defaultdict
-from typing import Optional
-from urllib.request import urlopen
-import torch
-import torch.nn as nn
-from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
-import timm
-import PIL.Image as Image
-from timm.data import resolve_data_config
-from timm.data.transforms_factory import create_transform
 
 img = Image.open(
     urlopen(
