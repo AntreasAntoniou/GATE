@@ -187,6 +187,8 @@ class GATEDataset(Dataset):
                 )
             item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
 
+        item = self.task(item) if self.task is not None else item
+
         item = self._apply_transforms(item)
 
         item: Any = (
@@ -196,4 +198,4 @@ class GATEDataset(Dataset):
         )
 
         # Apply the task to the item if it exists
-        return self.task(item) if self.task is not None else item
+        return item

@@ -107,7 +107,7 @@ class GATEModel(nn.Module):
             # )  # 📋 Print the input modalities
             return self.model(**input_modalities)
         else:
-            raise ValueError(f"Unsupported transformation: {key}")
+            raise ValueError(f"Unsupported modality: {key}")
 
     def get_valid_combinations(self) -> List[Tuple[Tuple[str, ...], str]]:
         """
