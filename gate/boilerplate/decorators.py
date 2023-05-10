@@ -1,25 +1,94 @@
+from collections import defaultdict
 import functools
-from typing import Any, Callable
+import importlib
+import inspect
+import pkgutil
+from typing import Any, Callable, Dict, Optional
 
 import torch
+from traitlets import default
 import wandb
+from hydra.core.config_store import ConfigStore
 from hydra_zen import builds, instantiate
+from rich import print
+
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(__name__)
 
 
-def configurable(func: Callable) -> Callable:
-    func.__configurable__ = True
+def configurable(
+    group: str,
+    name: str,
+    defaults: Optional[Dict[str, Any]] = None,
+) -> Callable:
+    """
+    A decorator for making functions configurable and setting default values for their arguments.
 
-    def build_config(**kwargs):
-        return builds(func, **kwargs)
+    Args:
+        group (str): The group name under which the configurable function will be registered in the config store.
+        name (str): The name of the configurable function in the config store.
+        defaults (Optional[Dict[str, Any]], optional): A dictionary of default values for the function's arguments. Defaults to None.
+    """
 
-    setattr(func, "__config__", build_config)
-    return func
+    def wrapper(func: Callable) -> Callable:
+        func.__configurable__ = True
+        func.__config_group__ = group
+        func.__config_name__ = name
+
+        def build_config(**kwargs):
+            if defaults:
+                kwargs = {**defaults, **kwargs}
+            return builds(func, **kwargs)
+
+        setattr(func, "__config__", build_config)
+        return func
+
+    return wrapper
 
 
-def check_if_configurable(func: Callable, phase_name: str) -> bool:
-    return (
-        func.__configurable__ if hasattr(func, "__configurable__") else False
-    )
+def register_configurables(
+    package_name: str,
+):
+    """
+    Registers all configurable functions in the specified package to the config store.
+
+    Args:
+        package_name (str): The name of the package containing the configurable functions.
+    """
+
+    config_store = ConfigStore.instance()
+
+    package = importlib.import_module(package_name)
+    prefix = package.__name__ + "."
+
+    def _process_module(module_name):
+        module = importlib.import_module(module_name)
+        for name, obj in inspect.getmembers(module):
+            if hasattr(obj, "__configurable__") and obj.__configurable__:
+                if hasattr(obj, "__config_group__") and hasattr(
+                    obj, "__config_name__"
+                ):
+                    group = obj.__config_group__
+                    name = obj.__config_name__
+
+                    config_store.store(
+                        group=group,
+                        name=name,
+                        node=obj.__config__(populate_full_signature=True),
+                    )
+                else:
+                    logger.warning(
+                        f"Excluding {name} from config store, as it does not have a group or name."
+                    )
+
+    for importer, module_name, is_pkg in pkgutil.walk_packages(
+        package.__path__, prefix
+    ):
+        if is_pkg:
+            register_configurables(module_name)
+        else:
+            _process_module(module_name)
 
 
 def collect_metrics(func: Callable) -> Callable:

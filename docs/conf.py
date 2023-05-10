@@ -29,7 +29,30 @@ language = "python"
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_material"
+
+html_theme_options = {
+    # Set the name of the project to appear in the navigation.
+    "nav_title": project,
+    # Set you GA account ID to enable tracking
+    # "google_analytics_account": "UA-XXXXX",
+    # Specify a base_url used to generate sitemap.xml. If not
+    # specified, then no sitemap will be built.
+    "base_url": "https://antreas.io/gate",
+    # Set the color and the accent color
+    "color_primary": "blue",
+    "color_accent": "light-blue",
+    # Set the repo location to get a badge with stats
+    "repo_url": "https://github.com/AntreasAntoniou/GATE/",
+    "repo_name": "GATE",
+    # Visible levels of the global TOC; -1 means unlimited
+    "globaltoc_depth": 3,
+    # If False, expand all TOC entries
+    "globaltoc_collapse": False,
+    # If True, show hidden TOC entries
+    "globaltoc_includehidden": False,
+}
+
 html_static_path = ["_static"]
 extensions = ["sphinx.ext.autodoc", "sphinx_rtd_theme"]
 extensions.append("sphinx.ext.autosummary")

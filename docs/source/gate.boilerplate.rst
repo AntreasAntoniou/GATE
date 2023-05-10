@@ -36,18 +36,10 @@ gate.boilerplate.decorators module
    :undoc-members:
    :show-inheritance:
 
-gate.boilerplate.evaluators module
-----------------------------------
+gate.boilerplate.metrics module
+-------------------------------
 
-.. automodule:: gate.boilerplate.evaluators
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-gate.boilerplate.trainers module
---------------------------------
-
-.. automodule:: gate.boilerplate.trainers
+.. automodule:: gate.boilerplate.metrics
    :members:
    :undoc-members:
    :show-inheritance:

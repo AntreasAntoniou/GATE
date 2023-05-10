@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from abc import ABC
 from pathlib import Path
@@ -6,6 +7,7 @@ from typing import Any, Dict, List, Union
 
 import torch
 import torch.nn as nn
+from huggingface_hub import HfApi
 from hydra_zen import instantiate
 from torch.utils.data import DataLoader
 
@@ -335,13 +337,11 @@ class CallbackHandler(Callback):
 
 class UploadCheckpointToHuggingFaceBackground(threading.Thread):
     def __init__(self, repo_name: str, repo_owner: str, checkpoint_path: Path):
-        from huggingface_hub import HfApi
-
         super().__init__()
         self.repo_name = repo_name
         self.repo_owner = repo_owner
         self.checkpoint_path = checkpoint_path
-        self.hf_api = HfApi()
+        self.hf_api = HfApi(token=os.environ["HF_TOKEN"])
         self.done = False
 
     def run(self):

@@ -6,7 +6,6 @@ main_requirements = [
     "torch",
     "torchvision",
     "torchaudio",
-    "timm",
     "accelerate",
     "datasets",
     "transformers",
@@ -23,16 +22,26 @@ main_requirements = [
     "rich",
     "opencv-python",
     "scipy",
-    "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
+    "soundfile",
+    "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
     "nibabel",
+    "natsort",
+    "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
+    "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
+# "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
 
 dev_requirements = [
     "pytest",
     "isort",
     "jupyterlab",
     "black",
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-autodoc-typehints",
+    "sphinx-material",
+    "matplotlib",
 ]
 
 print(f"Installing {find_packages()}")
