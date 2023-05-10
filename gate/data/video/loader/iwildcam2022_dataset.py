@@ -1,274 +1,211 @@
 import logging
-import os
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
+import cv2
 import numpy as np
 import torch
 import torch.utils.data
+from torchvision.transforms import Resize
 
+from ..iwildcam_2022 import filter_metadata_with_counts, read_all_train_metadata
 from . import utils as utils
 
 logger = logging.getLogger(__name__)
 
 
-class FramesSparsesampleDataset(torch.utils.data.Dataset):
+PAD_VALUE = -999999
+
+
+def squeeze_transform_224(video):
     """
-    Video loader. Construct the video loader, then sample
-    clips from the videos. For training, a single clip is
-    randomly sampled from every video with random cropping, scaling, and
-    flipping. For testing, multiple clips are uniformaly sampled from every
-    video with uniform cropping. For uniform cropping, we take the center
-    and four corners.
+    video: (T, C, H, W)
+    """
+
+    return Resize((224, 224), antialias=True)(video)
+
+
+class IWildCam2022Dataset(torch.utils.data.Dataset):
+    """
+    Note that it will only return sequences with count annotations. (1780 samples)
     """
 
     def __init__(
         self,
-        csv_file,
-        mode,
-        num_frames,
-        train_jitter_min=256,
-        train_jitter_max=320,
-        train_horizontal_flip=True,
-        test_scale=256,
-        test_num_spatial_crops=10,
-        crop_size=224,
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225],
-        normalise=True,  # divide pixels by 255
-        bgr=False,
-        path_prefix="",
-        num_retries=10,
+        dataset_rootdir: str | Path,
+        transform: Any | None = squeeze_transform_224,
+        max_num_frames: int = 10,
+        max_num_detections: int = 23,
     ):
-        """
-        Construct the video loader with a given csv file. The format of
-        the csv file is:
-        ```
-        num_classes     # set it to zero for single label. Only needed for multilabel.
-        path_to_frames_dir_1/{frame:05d}.jpg video_id_1 label_1 start_frame_1 end_frame_1
-        path_to_frames_dir_2/{frame:05d}.jpg video_id_2 label_2 start_frame_2 end_frame_2
-        ...
-        path_to_frames_dir_N/{frame:05d}.jpg video_id_N label_N start_frame_N end_frame_N
-        ```
+        self.dataset_rootdir = Path(dataset_rootdir)
+        self.transform = transform
+        self.max_num_frames = max_num_frames
+        self.max_num_detections = max_num_detections
 
-        Note that the video_id must be an integer.
-
-        Args:
-            mode (str): Options includes `train`, or `test` mode.
-                For the train, the data loader will sample one clip per video.
-                For the test mode, the data loader may sample multiple clips per video.
-            sample_index_code (str): Options include `pyvideoai`, `TSN` and `TDN`.
-                Slightly different implementation of how video is sampled (pyvideoai and TSN),
-                and for the TDN, it is completely different as it samples num_frames*5 frames.
-                pyvideoai code utilises all frames when there are not enough frames, whereas TSN code will just sample the first frame and duplicate it.
-        """
-        # Only support train, and test mode.
-        assert mode in [
-            "train",
-            "test",
-        ], "Split '{}' not supported".format(mode)
-        self._csv_file = csv_file
-        self._path_prefix = path_prefix
-        self._num_retries = num_retries
-        self.mode = mode
-
-        self.train_jitter_min = train_jitter_min
-        self.train_jitter_max = train_jitter_max
-        self.test_scale = test_scale
-
-        self.train_horizontal_flip = train_horizontal_flip
-
-        self.num_frames = num_frames
-
-        self.crop_size = crop_size
-
-        assert len(mean) in [1, 3]
-        assert len(std) in [1, 3]
-        self.mean = torch.FloatTensor(mean)
-        self.std = torch.FloatTensor(std)
-
-        self.normalise = normalise
-        self.bgr = bgr
-        self.greyscale = greyscale
-
-        # For training mode, one single clip is sampled from every
-        # video. For testing, NUM_ENSEMBLE_VIEWS clips are sampled from every
-        # video. For every clip, NUM_SPATIAL_CROPS is cropped spatially from
-        # the frames.
-        if self.mode == "train":
-            self._num_clips = 1
-        elif self.mode == "test":
-            self._num_clips = test_num_spatial_crops
-
-        assert test_num_spatial_crops in [
-            1,
-            5,
-            10,
-        ], "1 for centre, 5 for centre and four corners, 10 for their horizontal flips"
-        self.test_num_spatial_crops = test_num_spatial_crops
-
-        logger.info(f"Constructing frames dataset {mode=}...")
-        self._construct_loader()
-
-    def _construct_loader(self):
-        """
-        Construct the video loader.
-        """
-        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
-
-        self._path_to_frames = []
-        self._video_ids = []
-        self._labels = []
-        self._start_frames = []  # number of sample video frames
-        self._end_frames = []  # number of sample video frames
-        self._spatial_temporal_idx = []
-        with open(self._csv_file, "r") as f:
-            self.num_classes = int(f.readline())
-            for clip_idx, path_label in enumerate(f.read().splitlines()):
-                assert len(path_label.split()) == 5
-                path, video_id, label, start_frame, end_frame = path_label.split()
-
-                if self.num_classes > 0:
-                    label_list = label.split(",")
-                    label = np.zeros(self.num_classes, dtype=np.float32)
-                    for label_idx in label_list:
-                        label[int(label_idx)] = 1.0  # one hot encoding
-                else:
-                    label = int(label)
-
-                for idx in range(self._num_clips):
-                    self._path_to_frames.append(os.path.join(self._path_prefix, path))
-                    self._video_ids.append(int(video_id))
-                    self._labels.append(label)
-                    self._start_frames.append(int(start_frame))
-                    self._end_frames.append(int(end_frame))
-                    self._spatial_temporal_idx.append(idx)
-        assert (
-            len(self._path_to_frames) > 0
-        ), f"Failed to load frames loader from {self._csv_file}"
-
-        logger.info(
-            f"Constructing frames dataloader (size: {len(self)}) from {self._csv_file}"
+        (
+            seq_id_to_per_image_annotations,
+            self.seq_id_to_counts,
+        ) = read_all_train_metadata(self.dataset_rootdir)
+        self.seq_id_to_per_image_annotations = filter_metadata_with_counts(
+            seq_id_to_per_image_annotations, self.seq_id_to_counts
         )
-
-    def filter_samples(self, video_ids: list):
-        """Given a video_ids list, filter the samples.
-        Used for visualisation.
-        """
-        indices_of_video_ids = [
-            x for x, v in enumerate(self._video_ids) if v in video_ids
-        ]
-
-        self._path_to_frames = [self._path_to_frames[x] for x in indices_of_video_ids]
-        self._video_ids = [self._video_ids[x] for x in indices_of_video_ids]
-        self._labels = [self._labels[x] for x in indices_of_video_ids]
-        self._start_frames = [self._start_frames[x] for x in indices_of_video_ids]
-        self._end_frames = [self._end_frames[x] for x in indices_of_video_ids]
-        self._spatial_temporal_idx = [
-            self._spatial_temporal_idx[x] for x in indices_of_video_ids
-        ]
+        self.index_to_seq_id = list(sorted(self.seq_id_to_per_image_annotations.keys()))
 
     def __getitem__(self, index):
-        """
-        Given the video index, return the list of frames, label, and video
-        index if the video can be fetched and decoded successfully, otherwise
-        repeatly find a random video that can be decoded as a replacement.
-        Args:
-            index (int): the video index provided by the pytorch sampler.
-        Returns:
-            frames (tensor): the frames of sampled from the video. The dimension
-                is `channel` x `num frames` x `height` x `width`.
-            video_id (int): the ID of the current video.
-            label (int): the label of the current video.
-            index (int): if the video provided by pytorch sampler can be
-                decoded, then return the index of the video. If not, return the
-                index of the video replacement that can be decoded.
-        """
-        crop_size = self.crop_size
-        if self.mode == "train":
-            # -1 indicates random sampling.
-            spatial_sample_index = -1
-            min_scale = self.train_jitter_min
-            max_scale = self.train_jitter_max
-            sample_uniform = False
-        elif self.mode == "test":
-            # spatial_sample_index is in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].
-            spatial_sample_index = (
-                self._spatial_temporal_idx[index] % self.test_num_spatial_crops
+        seq_id = self.index_to_seq_id[index]
+        per_image_annotations = self.seq_id_to_per_image_annotations[seq_id]
+        counts = self.seq_id_to_counts[seq_id]
+
+        num_frames = len(per_image_annotations)
+        width = per_image_annotations[0]["width"]
+        height = per_image_annotations[0]["height"]
+
+        locations = torch.zeros(self.max_num_frames, dtype=torch.int64)
+        sub_locations = torch.zeros(self.max_num_frames, dtype=torch.int64)
+        utc_timestamps = torch.zeros(self.max_num_frames, dtype=torch.float32)
+        category_ids = torch.zeros(self.max_num_frames, dtype=torch.int64)
+        gps_locations = torch.zeros(
+            self.max_num_frames, 2, dtype=torch.float32
+        )  # (latitude, longitude)
+        gps_sub_locations = torch.zeros(
+            self.max_num_frames, 2, dtype=torch.float32
+        )  # (latitude, longitude)
+
+        instance_masks = torch.zeros(
+            self.max_num_frames, height, width, dtype=torch.uint8
+        )
+        max_detection_confs = torch.zeros(self.max_num_frames, dtype=torch.float32)
+
+        num_detections = torch.zeros(self.max_num_frames, dtype=torch.int64)
+        detection_categories = torch.zeros(
+            self.max_num_frames, self.max_num_detections, dtype=torch.int64
+        )
+        detection_confs = torch.zeros(
+            self.max_num_frames, self.max_num_detections, dtype=torch.float32
+        )
+        detection_bboxes = torch.zeros(
+            self.max_num_frames, self.max_num_detections, 4, dtype=torch.float32
+        )
+
+        video = torch.zeros(self.max_num_frames, 3, height, width, dtype=torch.uint8)
+
+        for frame_idx, image_annotaion in enumerate(per_image_annotations):
+            """
+            Example of image_annotaion:
+                {'seq_num_frames': 9, 'location': 218, 'datetime': '2013-05-25 17:05:41.000', 'id': '97b37728-21bc-11ea-a13a-137349068a90', 'seq_id': '3019fa50-7d42-11eb-8fb5-0242ac1c0002', 'width': 1920, 'height': 1080, 'file_name': '97b37728-21bc-11ea-a13a-137349068a90.jpg', 'sub_location': 0, 'seq_frame_num': 8, 'category_id': 372, 'gps_location': {'latitude': 17.492381819738956, 'longitude': -89.21560449646441}, 'gps_sub_location': {'latitude': -2.6262412503467187, 'longitude': 29.35055652840072}, 'detection': {'file': 'train/97b37728-21bc-11ea-a13a-137349068a90.jpg', 'max_detection_conf': 0.999, 'detections': [{'category': '1', 'conf': 0.999, 'bbox': [0.153, 0.366, 0.186, 0.535]}, {'category': '1', 'conf': 0.999, 'bbox': [0.355, 0.451, 0.288, 0.518]}, {'category': '1', 'conf': 0.971, 'bbox': [0, 0.338, 0.056, 0.343]}, {'category': '1', 'conf': 0.715, 'bbox': [0.978, 0.649, 0.021, 0.078]}, {'category': '1', 'conf': 0.353, 'bbox': [0.002, 0.272, 0.055, 0.177]}, {'category': '2', 'conf': 0.251, 'bbox': [0.003, 0.27, 0.051, 0.172]}, {'category': '1', 'conf': 0.169, 'bbox': [0.002, 0.281, 0.057, 0.282]}]}})]}
+            """
+
+            assert image_annotaion["seq_id"] == seq_id
+            assert image_annotaion["seq_frame_num"] == frame_idx
+            assert image_annotaion["seq_num_frames"] == num_frames
+            assert image_annotaion["width"] == width
+            assert image_annotaion["height"] == height
+
+            location = image_annotaion["location"]
+            utc_timestamp = datetime.strptime(
+                image_annotaion["datetime"] + "+0000", "%Y-%m-%d %H:%M:%S.%f%z"
+            ).timestamp()
+            file_name = image_annotaion["file_name"]
+            if "sub_location" in image_annotaion:
+                sub_location = image_annotaion["sub_location"]
+            else:
+                sub_location = PAD_VALUE
+            category_id = image_annotaion["category_id"]
+
+            if "gps_location" in image_annotaion:
+                gps_location_latitude = image_annotaion["gps_location"]["latitude"]
+                gps_location_longitude = image_annotaion["gps_location"]["longitude"]
+            else:
+                gps_location_latitude = PAD_VALUE
+                gps_location_longitude = PAD_VALUE
+
+            if "gps_sub_location" in image_annotaion:
+                gps_sub_location_latitude = image_annotaion["gps_sub_location"][
+                    "latitude"
+                ]
+                gps_sub_location_longitude = image_annotaion["gps_sub_location"][
+                    "longitude"
+                ]
+            else:
+                gps_sub_location_latitude = PAD_VALUE
+                gps_sub_location_longitude = PAD_VALUE
+
+            max_detection_conf = image_annotaion["detection"]["max_detection_conf"]
+            detections = image_annotaion["detection"]["detections"]
+
+            # Annotations
+            locations[frame_idx] = location
+            sub_locations[frame_idx] = sub_location
+            utc_timestamps[frame_idx] = utc_timestamp
+            category_ids[frame_idx] = category_id
+            gps_locations[frame_idx, 0] = gps_location_latitude
+            gps_locations[frame_idx, 1] = gps_location_longitude
+            gps_sub_locations[frame_idx, 0] = gps_sub_location_latitude
+            gps_sub_locations[frame_idx, 1] = gps_sub_location_longitude
+            max_detection_confs[frame_idx] = max_detection_conf
+
+            num_detections[frame_idx] = len(detections)
+            detection_confs[frame_idx, : len(detections)] = torch.tensor(
+                [detection["conf"] for detection in detections]
             )
-            min_scale, max_scale = [self.test_scale] * 2
-            # The testing is deterministic and no jitter should be performed.
-            # min_scale, max_scale are expect to be the same.
-            assert len({min_scale, max_scale}) == 1
-            sample_uniform = True
-        else:
-            raise NotImplementedError("Does not support {} mode".format(self.mode))
+            detection_categories[frame_idx, : len(detections)] = torch.tensor(
+                [int(detection["category"]) for detection in detections]
+            )
+            detection_bboxes[frame_idx, : len(detections), :] = torch.tensor(
+                [detection["bbox"] for detection in detections]
+            )
 
-        # Decode video. Meta info is used to perform selective decoding.
-        #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
-        frame_indices = [
-            idx + self._start_frames[index] for idx in frame_indices
-        ]  # add offset (frame number start)
+            # Load image (BGR -> RGB)
+            image = cv2.imread(
+                str(self.dataset_rootdir / "train" / "train" / file_name)
+            )[..., ::-1]
+            video[frame_idx] = (
+                torch.from_numpy(np.ascontiguousarray(image))
+                .permute(2, 0, 1)
+                .contiguous()
+            )
 
-        try:
-            # {frame:05d} format (new)
-            frame_paths = [
-                self._path_to_frames[index].format(frame=frame_idx)
-                for frame_idx in frame_indices
-            ]
-        except IndexError:
-            # {:05d} format (old)
-            frame_paths = [
-                self._path_to_frames[index].format(frame_idx)
-                for frame_idx in frame_indices
-            ]
+            # Load detection masks
+            instance_mask = cv2.imread(
+                str(
+                    (
+                        self.dataset_rootdir
+                        / "instance_masks"
+                        / "instance_masks"
+                        / file_name
+                    ).with_suffix(".png")
+                ),
+                cv2.IMREAD_UNCHANGED,
+            )
+            instance_masks[frame_idx] = torch.from_numpy(instance_mask)
 
-        frames = utils.retry_load_images(
-            frame_paths,
-            retry=self._num_retries,
-            backend="pytorch",
-            bgr=self.bgr,
-            greyscale=self.greyscale,
-        )
+        if self.transform is not None:
+            video = self.transform(video)
+            instance_masks = self.transform(instance_masks)
 
-        # Perform color normalization.
-        frames = utils.tensor_normalize(
-            frames, self.mean, self.std, normalise=self.normalise
-        )
-
-        # T, H, W, C -> C, T, H, W
-        frames = frames.permute(3, 0, 1, 2)
-
-        # Perform data augmentation.
-        (
-            frames,
-            scale_factor_width,
-            scale_factor_height,
-            x_offset,
-            y_offset,
-            is_flipped,
-        ) = utils.spatial_sampling_5(
-            frames,
-            spatial_idx=spatial_sample_index,
-            min_scale=min_scale,
-            max_scale=max_scale,
-            crop_size=crop_size,
-            random_horizontal_flip=self.train_horizontal_flip,
-        )
-
-        video_id = self._video_ids[index]
-        label = self._labels[index]
-        return (
-            frames,
-            video_id,
-            label,
-            spatial_sample_index,
-            index,
-            np.array(frame_indices),
-        )
+        return {
+            "index": index,
+            "counts": counts,
+            "num_frames": num_frames,
+            "locations": locations,
+            "sub_locations": sub_locations,
+            "utc_timestamps": utc_timestamps,
+            "category_ids": category_ids,
+            "gps_locations": gps_locations,
+            "gps_sub_locations": gps_sub_locations,
+            "instance_masks": instance_masks,
+            "max_detection_confs": max_detection_confs,
+            "num_detections": num_detections,
+            "detection_categories": detection_categories,
+            "detection_confs": detection_confs,
+            "detection_bboxes": detection_bboxes,
+            "video": video,
+        }
 
     def __len__(self):
         """
         Returns:
             (int): the number of videos in the dataset.
         """
-        return len(self._path_to_frames)
+        return len(self.index_to_seq_id)
