@@ -38,7 +38,7 @@ def test_build_vqa_v2_gate_dataset():
     vqa_model = build_model()
 
     train_set = build_vqa_v2_gate_dataset(
-        data_dir=os.environ.get("PYTEST_DIR"), transforms=vqa_model.transforms
+        data_dir=os.environ.get("PYTEST_DIR"), transforms=vqa_model.transform
     )
     assert train_set is not None, "Train set should not be None"
 
