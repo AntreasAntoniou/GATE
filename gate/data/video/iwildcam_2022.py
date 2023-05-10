@@ -84,7 +84,7 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
     seq_id_to_per_image_annotations = {}
     for seq_id, image_id_to_annotations in seq_id_to_annotations.items():
         seq_id_to_per_image_annotations[seq_id] = list(
-            sorted(image_id_to_annotations.items(), key=lambda x: x[1]["seq_frame_num"])
+            sorted(image_id_to_annotations.values(), key=lambda x: x["seq_frame_num"])
         )
 
     return seq_id_to_per_image_annotations, seq_id_to_counts
@@ -128,6 +128,10 @@ def count_num_files(dataset_rootdir: str | Path):
     # assert num_test_files == 60029
 
 
+def prepare_iwildcam_2022(dataset_rootdir: str | Path):
+    pass
+
+
 if __name__ == "__main__":
     count_num_files("/disk/scratch_fast1/datasets/iwildcam2022")
     seq_id_to_annotations, seq_id_to_counts = read_all_train_metadata(
@@ -138,3 +142,13 @@ if __name__ == "__main__":
     )
     print(seq_id_to_annotations)
     print(len(seq_id_to_annotations))
+
+    for seq_id, annotations in seq_id_to_annotations.items():
+        for annotation in annotations:
+            if len(annotation["detection"]["detections"]) > 23:
+                # Maximum number of detections is 23. This shouldn't print anything
+                print(len(annotation["detection"]["detections"]))
+
+            if annotation["seq_num_frames"] > 10:
+                # Maximum number of frames is 10. This shouldn't print anything
+                print(annotation["seq_num_frames"])
