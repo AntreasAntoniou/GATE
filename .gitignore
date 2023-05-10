@@ -11,6 +11,7 @@ wandb/*
 data/*
 experiments/*
 path/*
+eidf*
 
 # C extensions
 *.so

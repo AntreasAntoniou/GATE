@@ -26,4 +26,6 @@ def test_build_food101_dataset():
 
     # Test if the function raises an error when an invalid set_name is given
     with pytest.raises(KeyError):
-        build_food101_dataset("invalid_set_name")
+        build_food101_dataset(
+            "invalid_set_name", data_dir=os.environ.get("PYTEST_DIR")
+        )

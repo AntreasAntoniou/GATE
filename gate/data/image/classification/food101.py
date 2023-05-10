@@ -1,15 +1,20 @@
 # food101.py
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
+from zstandard import train_dictionary
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
+from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
+logger = get_logger(name=__name__, set_rich=True)
 
-@configurable
+
 def build_food101_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
@@ -25,6 +30,10 @@ def build_food101_dataset(
         A dictionary containing the dataset split.
     """
     rng = np.random.RandomState(42)
+
+    logger.info(
+        f"Loading Food-101 dataset, will download to {data_dir} if necessary."
+    )
 
     train_val_data = load_dataset(
         path="food101",
@@ -49,9 +58,13 @@ def build_food101_dataset(
     return dataset_dict[set_name]
 
 
-@configurable
+@configurable(
+    group="dataset", name="food101", defaults=dict(data_dir=DATASET_DIR)
+)
 def build_gate_food_101_dataset(
-    data_dir: Optional[str] = None, transforms: Optional[Any] = None
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=101,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_food101_dataset("train", data_dir=data_dir),
@@ -71,7 +84,7 @@ def build_gate_food_101_dataset(
 
     test_set = GATEDataset(
         dataset=build_food101_dataset("test", data_dir=data_dir),
-        infinite_sampling=True,
+        infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
@@ -79,3 +92,15 @@ def build_gate_food_101_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
+
+
+def build_dummy_food101_dataset(transforms: Optional[Any] = None) -> dict:
+    # Create a dummy dataset that emulates food-101's shape and modality
+    pass
+
+
+@dataclass
+class DefaultHyperparameters:
+    train_batch_size: int = 256
+    eval_batch_size: int = 512
+    num_classes: int = 101

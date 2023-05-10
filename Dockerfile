@@ -25,13 +25,8 @@ SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 RUN conda install -c conda-forge mamba -y
 RUN mamba install -c conda-forge starship jupyterlab black git-lfs -y
 RUN mamba install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
-RUN mamba install -c conda-forge timm accelerate datasets transformers -y
-RUN mamba install -c conda-forge orjson -y
-RUN mamba install -c conda-forge git gh -y
-RUN mamba install -c conda-forge starship -y
 
-RUN echo y | pip install tabulate nvitop hydra_zen neptune pytorchvideo torchtyping --upgrade
-RUN echo y | pip install git+https://github.com/BayesWatch/bwatchcompute@main
+RUN echo y | pip install nvitop --upgrade
 
 RUN conda init bash
 RUN conda init fish
@@ -40,9 +35,6 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
-RUN echo y | pip install wandb --upgrade
-RUN echo y | pip install h5py --upgrade
-RUN echo y | pip install git+https://github.com/qubvel/segmentation_models@master
 
 RUN mkdir /app/
 ADD gate/ /app/gate

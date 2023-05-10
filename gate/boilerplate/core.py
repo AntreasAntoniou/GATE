@@ -1,5 +1,6 @@
 import pathlib
 from pathlib import Path
+from time import sleep
 from typing import List, Optional, Union
 
 import torch
@@ -11,15 +12,24 @@ from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.evaluators.classification import (
+from gate.evaluators.classification import (
     ClassificationEvaluator,
     Evaluator,
 )
-from gate.boilerplate.trainers.classification import (
+from gate.trainers.classification import (
     ClassificationTrainer,
     Trainer,
 )
-from gate.boilerplate.utils import get_logger
+from gate.boilerplate.utils import download_model_with_name, get_logger
+from gate.config.variables import (
+    CURRENT_EXPERIMENT_DIR,
+    DUMMY_BATCH_MODE,
+    EXPERIMENT_NAME,
+    HYDRATED_HF_CACHE_DIR,
+    HYDRATED_HF_REPO_PATH,
+    HYDRATED_TRAIN_ITERS,
+    RESUME,
+)
 
 logger = get_logger(__name__)
 
@@ -27,7 +37,27 @@ logger = get_logger(__name__)
 accelerate_logger = get_logger("accelerate", logging_level="ERROR")
 
 
-@configurable
+@configurable(
+    group="learner",
+    name="default",
+    defaults=dict(
+        model=None,
+        experiment_name=EXPERIMENT_NAME,
+        experiment_dir=CURRENT_EXPERIMENT_DIR,
+        resume=RESUME,
+        evaluate_every_n_steps=1000,
+        checkpoint_after_validation=True,
+        checkpoint_every_n_steps=500,
+        train_iters=HYDRATED_TRAIN_ITERS,
+        limit_val_iters=1000,
+        dummy_batch_mode=DUMMY_BATCH_MODE,
+        print_model_parameters=False,
+        model_selection_metric_name="accuracy_top_1-epoch-mean",
+        model_selection_metric_higher_is_better=True,
+        hf_cache_dir=HYDRATED_HF_CACHE_DIR,
+        hf_repo_path=HYDRATED_HF_REPO_PATH,
+    ),
+)
 class Learner(nn.Module):
     def __init__(
         self,
@@ -46,6 +76,8 @@ class Learner(nn.Module):
         test_dataloader: Union[List[DataLoader], DataLoader] = None,
         trainers: Union[List[Trainer], Trainer] = None,
         evaluators: Union[List[Evaluator], Evaluator] = None,
+        model_selection_metric_name: str = None,
+        model_selection_metric_higher_is_better: bool = True,
         callbacks: Union[List[Callback], Callback] = None,
         print_model_parameters: bool = False,
         hf_cache_dir: str = None,
@@ -94,6 +126,11 @@ class Learner(nn.Module):
         self.checkpoint_after_validation = checkpoint_after_validation
         self.step_idx = 0
         self.global_step = 0
+        self.model_selection_metric_name = model_selection_metric_name
+        self.model_selection_metric_higher_is_better = (
+            model_selection_metric_higher_is_better
+        )
+
         self.limit_train_iters = limit_train_iters
         self.limit_val_iters = limit_val_iters
         self.dummy_batch_mode = dummy_batch_mode
@@ -277,8 +314,9 @@ class Learner(nn.Module):
         for trainer in self.trainers:
             trainer.end_training(global_step=self.global_step)
 
-        for background_thread in self.background_threads:
-            background_thread.join()
+        while len(self.background_threads) > 0:
+            self.check_manage_background_threads()
+            sleep(1)
 
         logger.info("Training finished 🎉")
 
@@ -329,7 +367,6 @@ class Learner(nn.Module):
 
         for evaluator in self.evaluators:
             evaluator.start_testing(
-                step_idx=self.global_step,
                 global_step=self.global_step,
             )
             logger.info("Starting testing 🧪")
@@ -371,7 +408,13 @@ class Learner(nn.Module):
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
 
-        model = self.accelerator.prepare(model)
+        if model is None:
+            if self.model_selection_metric_name is not None:
+                self.load_best_model(
+                    metric_name=self.model_selection_metric_name,
+                    higher_is_better=self.model_selection_metric_higher_is_better,
+                )
+            model = self.accelerator.prepare(self.model)
 
         self._testing_loop(
             test_dataloader=self.test_dataloader,
@@ -453,7 +496,7 @@ class Learner(nn.Module):
                         if batch_idx >= self.limit_val_iters:
                             break
                     self.validation_step(
-                        model=self.model,
+                        model=model,
                         batch=batch,
                     )
                     pbar_dataloaders.update(1)
@@ -477,7 +520,7 @@ class Learner(nn.Module):
             with tqdm(total=len(test_dataloader)) as pbar_dataloaders:
                 for batch_idx, batch in enumerate(test_dataloader):
                     self.testing_step(
-                        model=self.model,
+                        model=model,
                         batch=batch,
                     )
                     pbar_dataloaders.update(1)
@@ -500,6 +543,11 @@ class Learner(nn.Module):
                 "train": [trainer.state_dict for trainer in self.trainers],
                 "eval": [
                     evaluator.state_dict for evaluator in self.evaluators
+                ],
+            },
+            epoch_metrics={
+                "eval": [
+                    evaluator.epoch_metrics for evaluator in self.evaluators
                 ],
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,
@@ -538,6 +586,7 @@ class Learner(nn.Module):
         self.step_idx = trainer_state["step_idx"]
         self.global_step = trainer_state["global_step"]
         state_dict = trainer_state["state_dict"]
+        epoch_metrics = trainer_state["epoch_metrics"]
 
         for trainer in self.trainers:
             setattr(
@@ -552,6 +601,11 @@ class Learner(nn.Module):
                 "state_dict",
                 state_dict["eval"][self.evaluators.index(evaluator)],
             )
+            setattr(
+                evaluator,
+                "epoch_metrics",
+                epoch_metrics["eval"][self.evaluators.index(evaluator)],
+            )
 
         self.accelerator.load_state(checkpoint_path)
 
@@ -561,6 +615,24 @@ class Learner(nn.Module):
             experiment=self,
             checkpoint_path=checkpoint_path,
         )
+
+    def load_best_model(self, metric_name: str, higher_is_better: bool):
+        best_global_step, best_metric = self.evaluators[
+            0
+        ].get_best_model_global_step_and_metric(metric_name, higher_is_better)
+        print(
+            f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
+        )
+        print(
+            f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
+        )
+        download_dict = download_model_with_name(
+            hf_repo_path=self.hf_repo_path,
+            hf_cache_dir=self.hf_cache_dir,
+            model_name=f"ckpt_{best_global_step}",
+        )
+
+        self.load_checkpoint(checkpoint_path=download_dict["root_filepath"])
 
 
 if __name__ == "__main__":
