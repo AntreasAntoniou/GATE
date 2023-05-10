@@ -26,7 +26,7 @@ vqa_train_vqa = build_vqa_v2_dataset(
 
 for idx, item in enumerate(vqa_train_vqa):
     print(item)
-    if idx == 5:
+    if idx == 20:
         break
 
 

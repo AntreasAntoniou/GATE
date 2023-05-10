@@ -36,10 +36,10 @@ RUN apt-get install git -y
 RUN git lfs install
 RUN git config --global credential.helper store
 
-RUN mkdir /app/
-ADD gate/ /app/gate
-ADD setup.py /app/
+# RUN mkdir /app/
+# ADD gate/ /app/gate
+# ADD setup.py /app/
 
-RUN echo y | pip install /app/
+# RUN echo y | pip install /app/[dev]
 
 ENTRYPOINT ["/bin/bash"]
