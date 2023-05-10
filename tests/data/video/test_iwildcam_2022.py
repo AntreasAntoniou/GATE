@@ -44,10 +44,13 @@ def test_iwildcam_2022_dataloader():
         assert len(batch["num_frames"]) == 2
         assert batch["locations"].shape == (2, 10)
         assert batch["sub_locations"].shape == (2, 10)
+        assert batch["sub_location_available"].shape == (2, 10)
         assert batch["utc_timestamps"].shape == (2, 10)
         assert batch["category_ids"].shape == (2, 10)
         assert batch["gps_locations"].shape == (2, 10, 2)
         assert batch["gps_sub_locations"].shape == (2, 10, 2)
+        assert batch["gps_available"].shape == (2, 10)
+        assert batch["gps_sub_available"].shape == (2, 10)
         assert batch["instance_masks"].shape == (2, 10, 224, 224)
         assert batch["max_detection_confs"].shape == (2, 10)
         assert batch["num_detections"].shape == (2, 10)
