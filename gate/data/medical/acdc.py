@@ -45,7 +45,7 @@ def download_and_extract_file(extract_to: str) -> pathlib.Path:
     with zipfile.ZipFile(local_filename, "r") as zip_ref:
         zip_ref.extractall(path=extract_to)
 
-    return pathlib.Path(extract_to)
+    return pathlib.Path(extract_to) / "ACDC"
 
 
 class ACDCDataset(Dataset):

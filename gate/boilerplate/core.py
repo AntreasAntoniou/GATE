@@ -12,15 +12,24 @@ from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.evaluators.classification import (
+from gate.evaluators.classification import (
     ClassificationEvaluator,
     Evaluator,
 )
-from gate.boilerplate.trainers.classification import (
+from gate.trainers.classification import (
     ClassificationTrainer,
     Trainer,
 )
 from gate.boilerplate.utils import download_model_with_name, get_logger
+from gate.config.variables import (
+    CURRENT_EXPERIMENT_DIR,
+    DUMMY_BATCH_MODE,
+    EXPERIMENT_NAME,
+    HYDRATED_HF_CACHE_DIR,
+    HYDRATED_HF_REPO_PATH,
+    HYDRATED_TRAIN_ITERS,
+    RESUME,
+)
 
 logger = get_logger(__name__)
 
@@ -28,7 +37,27 @@ logger = get_logger(__name__)
 accelerate_logger = get_logger("accelerate", logging_level="ERROR")
 
 
-@configurable
+@configurable(
+    group="learner",
+    name="default",
+    defaults=dict(
+        model=None,
+        experiment_name=EXPERIMENT_NAME,
+        experiment_dir=CURRENT_EXPERIMENT_DIR,
+        resume=RESUME,
+        evaluate_every_n_steps=1000,
+        checkpoint_after_validation=True,
+        checkpoint_every_n_steps=500,
+        train_iters=HYDRATED_TRAIN_ITERS,
+        limit_val_iters=1000,
+        dummy_batch_mode=DUMMY_BATCH_MODE,
+        print_model_parameters=False,
+        model_selection_metric_name="accuracy_top_1-epoch-mean",
+        model_selection_metric_higher_is_better=True,
+        hf_cache_dir=HYDRATED_HF_CACHE_DIR,
+        hf_repo_path=HYDRATED_HF_REPO_PATH,
+    ),
+)
 class Learner(nn.Module):
     def __init__(
         self,
@@ -338,7 +367,6 @@ class Learner(nn.Module):
 
         for evaluator in self.evaluators:
             evaluator.start_testing(
-                step_idx=self.global_step,
                 global_step=self.global_step,
             )
             logger.info("Starting testing 🧪")
@@ -594,6 +622,9 @@ class Learner(nn.Module):
         ].get_best_model_global_step_and_metric(metric_name, higher_is_better)
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
+        )
+        print(
+            f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
         download_dict = download_model_with_name(
             hf_repo_path=self.hf_repo_path,

@@ -7,8 +7,9 @@ from accelerate import Accelerator
 
 from gate.boilerplate.metrics import accuracy_top_k
 
-from ..decorators import collect_metrics, configurable
-from ..utils import get_logger
+from gate.boilerplate.decorators import collect_metrics
+from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -45,7 +46,7 @@ class StepOutput:
     accuracy_top_5: torch.Tensor
 
 
-@configurable
+@configurable(group="trainer", name="classification")
 class ClassificationTrainer(Trainer):
     def __init__(
         self,

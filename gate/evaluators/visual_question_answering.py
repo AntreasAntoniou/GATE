@@ -4,15 +4,16 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
+import torch.nn.functional as F
 from accelerate import Accelerator
-from rich import print
-from traitlets import default
 
-from gate.boilerplate.metrics import accuracy_top_k
+from gate.boilerplate.metrics.core import accuracy_top_k
 
-from ..decorators import collect_metrics, configurable
-from ..trainers.classification import StepOutput
-from ..utils import get_logger
+from gate.boilerplate.decorators import collect_metrics
+from gate.boilerplate.decorators import configurable
+from gate.models.core import GATEModel
+from gate.trainers.classification import StepOutput
+from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -41,49 +42,27 @@ class EvaluatorOutput:
     experiment_tracker: Any = None
 
 
-import torch.nn.functional as F
-
-
-@configurable
-class ClassificationEvaluator(Evaluator):
+@configurable(group="evaluator", name="visual_question_answering")
+class VQAEvaluator(Evaluator):
     def __init__(self, experiment_tracker: Optional[Any] = None):
         super().__init__()
         self.state_dict = {}
         self.epoch_metrics = defaultdict(list)
         self.experiment_tracker = experiment_tracker
 
-    def get_best_model_global_step_and_metric(
-        self, metric_name: str, higher_is_better: bool
+    def step(
+        self,
+        model: GATEModel,
+        batch: Dict,
+        global_step: int,
+        accelerator: Accelerator,
     ):
-        # Finds the best model based on the metric name,
-        # and returns the global step and the metric value of that model
-
-        metrics = self.epoch_metrics[metric_name]
-        global_steps = self.epoch_metrics["global_step"]
-
-        if higher_is_better:
-            best_metric_idx = torch.argmax(torch.tensor(metrics))
-        else:
-            best_metric_idx = torch.argmin(torch.tensor(metrics))
-
-        best_global_step = global_steps[best_metric_idx]
-        best_metric = metrics[best_metric_idx]
-
-        return best_global_step, best_metric
-
-    def step(self, model, batch, global_step, accelerator: Accelerator):
         output_dict = model.forward(batch)
-        loss = F.cross_entropy(output_dict["image"]["image"], batch["labels"])
-        accuracy = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=1
-        )
-        accuracy_top_5 = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=5
-        )
+        loss = output_dict["loss"]
+
         output_metrics_dict = {
             "loss": loss,
-            "accuracy_top_1": accuracy,
-            "accuracy_top_5": accuracy_top_5,
+            "accuracy": accuracy,
         }
         keys = list(output_metrics_dict.keys())
 
@@ -157,7 +136,7 @@ class ClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    def test_step(
+    def testing_step(
         self,
         model,
         batch,
@@ -282,3 +261,22 @@ class ClassificationEvaluator(Evaluator):
             metrics=phase_metrics,
             experiment_tracker=self.experiment_tracker,
         )
+
+    def get_best_model_global_step_and_metric(
+        self, metric_name: str, higher_is_better: bool
+    ):
+        # Finds the best model based on the metric name,
+        # and returns the global step and the metric value of that model
+
+        metrics = self.epoch_metrics[metric_name]
+        global_steps = self.epoch_metrics["global_step"]
+
+        if higher_is_better:
+            best_metric_idx = torch.argmax(torch.tensor(metrics))
+        else:
+            best_metric_idx = torch.argmin(torch.tensor(metrics))
+
+        best_global_step = global_steps[best_metric_idx]
+        best_metric = metrics[best_metric_idx]
+
+        return best_global_step, best_metric

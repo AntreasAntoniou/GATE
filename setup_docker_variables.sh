@@ -11,7 +11,8 @@ export PYTEST_DIR="/data/"
 
 export EXPERIMENT_NAME=gate-dev-0-8-0
 export HF_USERNAME="Antreas"
-export HF_TOKEN=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
+export HF_TOKEN=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
+export HF_CACHE_DIR=$PYTEST_DIR
 
 export TOKENIZERS_PARALLELISM=False
 

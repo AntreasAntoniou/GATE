@@ -1,13 +1,16 @@
 # food101.py
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, Optional
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
+from gate.data.core import GATEDataset
+from gate.data.tasks.visual_question_answering import VQAV2Task
 
 import numpy as np
 from datasets import load_dataset
 
 
-def build_vqa_v2_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a VQA V2 dataset using the Hugging Face datasets library.
 
@@ -40,3 +43,45 @@ def build_vqa_v2_dataset(
     dataset_dict = {"train": train_set, "val": val_set, "test": test_data}
 
     return dataset_dict[set_name]
+
+
+@configurable(
+    group="dataset", name="cifar100", defaults=dict(data_dir=DATASET_DIR)
+)
+def build_gate_dataset(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+):
+    train_set = GATEDataset(
+        dataset=build_dataset("train", data_dir=data_dir),
+        infinite_sampling=True,
+        task=VQAV2Task(),
+        transforms=transforms,
+    )
+
+    val_set = GATEDataset(
+        dataset=build_dataset("val", data_dir=data_dir),
+        infinite_sampling=False,
+        task=VQAV2Task(),
+        transforms=transforms,
+    )
+
+    test_set = GATEDataset(
+        dataset=build_dataset("test", data_dir=data_dir),
+        infinite_sampling=False,
+        task=VQAV2Task(),
+        transforms=transforms,
+    )
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict
+
+
+def build_dummy_cifar100_dataset(transforms: Optional[Any] = None):
+    pass
+
+
+@dataclass
+class DefaultHyperparameters:
+    train_batch_size: int = 256
+    eval_batch_size: int = 512

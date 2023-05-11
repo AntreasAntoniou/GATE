@@ -3,7 +3,10 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import hydra
+from omegaconf import OmegaConf
+from rich.syntax import Syntax
 import torch
+import yaml
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config
 from timm.scheduler import CosineLRScheduler
@@ -11,42 +14,37 @@ from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
-from gate.boilerplate.evaluators.classification import ClassificationEvaluator
-from gate.boilerplate.trainers.classification import ClassificationTrainer
-from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
-from gate.data.image.classification.food101 import build_gate_food_101_dataset
-from gate.models.clip import build_gate_model, build_model
-
-
-def get_env_var(key: str, default: Any) -> Any:
-    return os.environ.get(key, default)
-
-
-HF_CACHE_DIR = get_env_var(
-    "HF_CACHE_DIR", os.path.expanduser("~/.cache/huggingface")
+from gate.boilerplate.decorators import (
+    register_configurables,
 )
-HF_USERNAME = get_env_var("HF_USERNAME", None)
-CODE_DIR = get_env_var("CODE_DIR", "")
-DATASET_DIR = get_env_var("DATASET_DIR", "data/")
-EXPERIMENT_NAME = get_env_var("EXPERIMENT_NAME", "exp_0")
-EXPERIMENTS_ROOT_DIR = get_env_var("EXPERIMENTS_ROOT_DIR", "experiments/")
-CURRENT_EXPERIMENT_DIR = get_env_var(
-    "CURRENT_EXPERIMENT_DIR", f"{EXPERIMENTS_ROOT_DIR}/{EXPERIMENT_NAME}"
+from rich import print
+from gate.boilerplate.utils import (
+    get_hydra_config,
+    get_logger,
+    pretty_config,
+    pretty_print_dictionary,
 )
-TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
-EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
-NUM_WORKERS = get_env_var("NUM_WORKERS", 8)
-PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
-PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
-PIN_MEMORY = get_env_var("PIN_MEMORY", True)
-
-TRAIN_ITERS = get_env_var("TRAIN_ITERS", 10000)
-SEED = get_env_var("SEED", 42)
-RESUME = get_env_var("RESUME", True)
-LOGGER_LEVEL = get_env_var("LOGGER_LEVEL", "INFO")
-DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
-GPU_MEMORY = 24  # in GB
-
+from gate.config.variables import (
+    CODE_DIR,
+    CURRENT_EXPERIMENT_DIR,
+    DATASET_DIR,
+    DUMMY_BATCH_MODE,
+    EVAL_BATCH_SIZE,
+    EXPERIMENT_NAME,
+    EXPERIMENTS_ROOT_DIR,
+    GPU_MEMORY,
+    HF_CACHE_DIR,
+    HF_USERNAME,
+    LOGGER_LEVEL,
+    NUM_WORKERS,
+    PERSISTENT_WORKERS,
+    PIN_MEMORY,
+    PREFETCH_FACTOR,
+    RESUME,
+    SEED,
+    TRAIN_BATCH_SIZE,
+    TRAIN_ITERS,
+)
 
 hydra_logger = get_logger("hydra")
 
@@ -116,52 +114,7 @@ def collect_config_store():
 
     config_store = ConfigStore.instance()
 
-    ##########################################################################
-    # Model configs
-
-    model_config = build_gate_model.__config__(populate_full_signature=True)
-
-    config_store.store(
-        group="model", name="clip-base16", node=model_config(num_classes=101)
-    )
-
-    ##########################################################################
-    # Dataset configs
-
-    food101_config: Any = build_gate_food_101_dataset.__config__(
-        populate_full_signature=True
-    )
-
-    config_store.store(
-        group="dataset",
-        name="food101",
-        node={"food101": food101_config(data_dir=DATASET_DIR)},
-    )
-    ##########################################################################
-    # Trainer configs
-
-    classification_trainer_config = ClassificationTrainer.__config__(
-        populate_full_signature=True
-    )
-
-    config_store.store(
-        group="trainer",
-        name="classification",
-        node=classification_trainer_config(optimizer=None),
-    )
-
-    ##########################################################################
-    # Evaluator configs
-
-    classification_evaluator_config = ClassificationEvaluator.__config__(
-        populate_full_signature=True
-    )
-
-    config_store.store(
-        group="evaluator",
-        name="classification",
-        node=classification_evaluator_config(),
-    )
+    register_configurables("gate")
 
     ##########################################################################
     # Dataloader configs
@@ -217,30 +170,6 @@ def collect_config_store():
     )
 
     ##########################################################################
-    learner_config = builds(Learner, populate_full_signature=True)
-
-    learner_config = learner_config(
-        model=None,
-        experiment_name=EXPERIMENT_NAME,
-        experiment_dir=CURRENT_EXPERIMENT_DIR,
-        resume=RESUME,
-        evaluate_every_n_steps=1000,
-        checkpoint_after_validation=True,
-        checkpoint_every_n_steps=500,
-        train_iters="${train_iters}",
-        limit_val_iters=1000,
-        dummy_batch_mode=DUMMY_BATCH_MODE,
-        print_model_parameters=False,
-        model_selection_metric_name="accuracy_top_1-epoch-mean",
-        model_selection_metric_higher_is_better=True,
-    )
-    config_store.store(
-        group="learner",
-        name="default",
-        node=learner_config,
-    )
-
-    ##########################################################################
     # Callback configs
 
     HFModelUploadConfig = builds(
@@ -265,6 +194,14 @@ def collect_config_store():
         node=get_hydra_config(logger_level=LOGGER_LEVEL),
     )
 
+    # # Convert dictionary to YAML
+    # yaml_data = OmegaConf.to_yaml(config_store.repo, resolve=False)
+
+    # # Pretty print YAML with rich
+    # syntax = Syntax(yaml_data, "yaml", theme="one-dark")
+
+    # print(syntax)
+
     ###########################################################################
     # 🌐 Hydra Zen global configs
     zen_config = []
@@ -287,8 +224,8 @@ def collect_config_store():
             dict(learner="default"),
             dict(optimizer="adamw"),
             dict(scheduler="cosine-annealing"),
-            dict(model="clip-base16"),
-            dict(dataset="food101"),
+            dict(model="clip-classification"),
+            dict(dataset="cifar100"),
             dict(trainer="classification"),
             dict(evaluator="classification"),
             dict(dataloader="default"),

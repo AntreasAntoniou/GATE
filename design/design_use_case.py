@@ -23,7 +23,7 @@ import gate.data.image.classification.stl10 as stl
 
 data = stl.build_stl10_dataset("train", data_dir=os.environ.get("PYTEST_DIR"))
 
-import gate.models.clip as clip
+import gate.models.classification.clip as clip
 
 model = clip.build_clip_model("RN50x4", pretrained=True)
 

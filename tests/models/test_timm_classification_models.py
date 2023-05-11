@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from gate.models.clip import ModelAndTransform, build_model
+from gate.models.classification.timm import ModelAndTransform, build_model
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -18,7 +18,12 @@ def test_build_model():
 
 
 def test_clip_with_linear_forward():
-    model_and_transform = build_model()
+    model_and_transform = build_model(
+        clip_model_name="openai/clip-vit-base-patch32",
+        timm_model_name="resnet50.a1_in1k",
+        modality="image",
+        num_classes=100,
+    )
 
     x_dummy = torch.rand(2, 3, 224, 224)
     y_dummy = torch.randint(0, 100, (2,))
@@ -26,15 +31,9 @@ def test_clip_with_linear_forward():
     model = model_and_transform.model
     transform = model_and_transform.transform
 
-    input_images = torch.cat(
-        [
-            transform({"image": x, "labels": y})["input_images"]
-            for x, y in zip(x_dummy, y_dummy)
-        ],
-        dim=0,
-    )
+    input_dict = transform({"image": x_dummy, "labels": y_dummy})
 
-    output = model.forward({"pixel_values": input_images})
+    output = model.forward(input_dict)
 
     assert output.shape == (2, 100)
 
@@ -42,8 +41,13 @@ def test_clip_with_linear_forward():
     assert loss.item() > 0
 
 
-def test_clip_with_linear_forward():
-    model_and_transform = build_model()
+def test_clip_with_linear_forward_loss():
+    model_and_transform = build_model(
+        clip_model_name="openai/clip-vit-base-patch32",
+        timm_model_name="resnet50.a1_in1k",
+        modality="image",
+        num_classes=100,
+    )
     model = model_and_transform.model
     transform = model_and_transform.transform
 
@@ -58,19 +62,19 @@ def test_clip_with_linear_forward():
     transform = model_and_transform.transform
 
     model = GATEModel(
-        target_config, model, key_remapper_dict={"image": "pixel_values"}
+        target_config, model, key_remapper_dict={"image": "image"}
     )
 
-    input_images = torch.cat(
-        [
-            transform({"image": x, "labels": y})["pixel_values"]
-            for x, y in zip(x_dummy, y_dummy)
-        ],
-        dim=0,
-    )
+    input_dict = transform({"image": x_dummy, "labels": y_dummy})
 
-    output = model.forward({"image": input_images})
+    output = model.forward(input_dict)
     assert output["image"]["image"].shape == (2, 100)
 
     loss = F.cross_entropy(output["image"]["image"], y_dummy)
     assert loss.item() > 0
+
+
+if __name__ == "__main__":
+    test_build_model()
+    test_clip_with_linear_forward()
+    test_clip_with_linear_forward_loss()
