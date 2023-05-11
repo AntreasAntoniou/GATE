@@ -1,6 +1,20 @@
 import json
+import logging
 import os
+import random
+import shutil
+import subprocess
+import tempfile
+import zipfile
 from pathlib import Path
+
+from huggingface_hub import snapshot_download
+
+logger = logging.getLogger(__name__)
+
+
+DOWNLOAD_GB = 105  # more precisely, 101GiB
+EXTRACT_GB = 108  # more precisely, 104GiB
 
 
 def _read_csv_to_listdict(csv_file: str | Path):
@@ -129,10 +143,77 @@ def count_num_files(dataset_rootdir: str | Path):
 
 
 def prepare_iwildcam_2022(dataset_rootdir: str | Path):
-    pass
+    logger.info(
+        "Preparing iWildCam 2022 dataset. NOTE: you need to have kaggle API key configured and join the competition."
+    )
+    dataset_rootdir = Path(dataset_rootdir)
+    if dataset_rootdir.name != "iwildcam2022":
+        dataset_rootdir = dataset_rootdir / "iwildcam2022"
+
+    dataset_rootdir.mkdir(parents=True, exist_ok=True)
+    cache_dir = os.environ.get("HF_CACHE_DIR", None)
+    if cache_dir is None:
+        # use tmp dir
+        cache_dir = Path(tempfile.gettempdir()) / "hf"
+
+    snapshot_download(
+        "kiyoonkim/iwildcam-2022-splits",
+        repo_type="dataset",
+        cache_dir=cache_dir,
+        local_dir=dataset_rootdir / "splits",
+        resume_download=True,
+    )
+
+    try:
+        count_num_files(dataset_rootdir)
+    except FileNotFoundError:
+        disk_space = shutil.disk_usage(dataset_rootdir).free
+        if disk_space < (DOWNLOAD_GB + EXTRACT_GB) * 1024 * 1024 * 1024:
+            raise RuntimeError(
+                f"Insufficient disk space. At least {DOWNLOAD_GB + EXTRACT_GB} GB is required, but only {disk_space / 1024 / 1024 / 1024:.1f} GB available"
+            )
+
+        subprocess.call(
+            [
+                "kaggle",
+                "competitions",
+                "download",
+                "-c",
+                "iwildcam2022-fgvc9",
+                "-p",
+                str(dataset_rootdir),
+            ]
+        )
+        with zipfile.ZipFile(
+            dataset_rootdir / "iwildcam2022-fgvc9.zip", "r"
+        ) as zip_ref:
+            zip_ref.extractall(dataset_rootdir)
+
+
+def train_val_test_splits(seq_ids: list[str]):
+    """
+    Split seq_ids into train (80%), val (10%), test (10%).
+    """
+    random.seed(0)
+    random.shuffle(seq_ids)
+    num_train = int(len(seq_ids) * 0.8)
+    num_val = int(len(seq_ids) * 0.1)
+    train_seq_ids = seq_ids[:num_train]
+    val_seq_ids = seq_ids[num_train : num_train + num_val]
+    test_seq_ids = seq_ids[num_train + num_val :]
+    return train_seq_ids, val_seq_ids, test_seq_ids
+
+
+def _save_list_to_file(file_path: str | Path, seq_ids: list[str]):
+    file_path = Path(file_path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(file_path, "w") as f:
+        for seq_id in seq_ids:
+            f.write(seq_id + "\n")
 
 
 if __name__ == "__main__":
+    prepare_iwildcam_2022("/disk/scratch_fast1/datasets")
     count_num_files("/disk/scratch_fast1/datasets/iwildcam2022")
     seq_id_to_annotations, seq_id_to_counts = read_all_train_metadata(
         "/disk/scratch_fast1/datasets/iwildcam2022"
@@ -140,8 +221,21 @@ if __name__ == "__main__":
     seq_id_to_annotations = filter_metadata_with_counts(
         seq_id_to_annotations, seq_id_to_counts
     )
-    print(seq_id_to_annotations)
+    # print(seq_id_to_annotations)
     print(len(seq_id_to_annotations))
+
+    # Save splits
+    seq_ids = list(sorted(seq_id_to_annotations.keys()))
+    train_seq_ids, val_seq_ids, test_seq_ids = train_val_test_splits(seq_ids)
+    _save_list_to_file(
+        "/disk/scratch_fast1/datasets/iwildcam2022/splits/train.txt", train_seq_ids
+    )
+    _save_list_to_file(
+        "/disk/scratch_fast1/datasets/iwildcam2022/splits/val.txt", val_seq_ids
+    )
+    _save_list_to_file(
+        "/disk/scratch_fast1/datasets/iwildcam2022/splits/test.txt", test_seq_ids
+    )
 
     for seq_id, annotations in seq_id_to_annotations.items():
         for annotation in annotations:

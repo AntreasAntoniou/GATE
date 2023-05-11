@@ -32,6 +32,7 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
         self,
         dataset_rootdir: str | Path,
         transform: Any | None = squeeze_transform_224,
+        split_path: str | Path | None = None,
         max_num_frames: int = 10,
         max_num_detections: int = 23,
     ):
@@ -47,7 +48,26 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
         self.seq_id_to_per_image_annotations = filter_metadata_with_counts(
             seq_id_to_per_image_annotations, self.seq_id_to_counts
         )
-        self.index_to_seq_id = list(sorted(self.seq_id_to_per_image_annotations.keys()))
+
+        if split_path is not None:
+            split_path = Path(split_path)
+            with open(split_path, "r") as f:
+                lines = f.readlines()
+            lines = [line.strip() for line in lines]
+            self.index_to_seq_id = lines
+        else:
+            self.index_to_seq_id = list(
+                sorted(self.seq_id_to_per_image_annotations.keys())
+            )
+
+        # Remove unnecessary metadata not included in the split
+        self.seq_id_to_per_image_annotations = {
+            seq_id: self.seq_id_to_per_image_annotations[seq_id]
+            for seq_id in self.index_to_seq_id
+        }
+        self.seq_id_to_counts = {
+            seq_id: self.seq_id_to_counts[seq_id] for seq_id in self.index_to_seq_id
+        }
 
     def __getitem__(self, index):
         seq_id = self.index_to_seq_id[index]

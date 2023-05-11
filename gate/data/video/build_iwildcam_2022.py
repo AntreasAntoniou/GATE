@@ -34,24 +34,12 @@ def build_iwildcam_2022_dataset(
 
     dataset = {}
     for set_name in sets_to_include:
-        # input_frame_length = 8
-        videos_dir = data_dir / "k400" / "videos"
-        if set_name == "train":
-            mode = "train"
-            csv_path = data_dir / "k400" / "splits_decord_videos" / "train.csv"
-            videos_dir = videos_dir / "train"
-        elif set_name == "val":
-            mode = "test"
-            csv_path = data_dir / "k400" / "splits_decord_videos" / "val.csv"
-            videos_dir = videos_dir / "val"
-        elif set_name == "test":
-            mode = "test"
-            csv_path = data_dir / "k400" / "splits_decord_videos" / "test.csv"
-            videos_dir = videos_dir / "test"
-        else:
+        split_path = data_dir / "splits" / f"{set_name}.txt"
+
+        if set_name not in ["train", "val", "test"]:
             raise ValueError(f"Unknown set_name: {set_name}")
 
-        data = IWildCam2022Dataset(data_dir)
+        data = IWildCam2022Dataset(data_dir, split_path=split_path)
         dataset[set_name] = data
 
     return dataset
