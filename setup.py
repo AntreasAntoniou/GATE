@@ -29,6 +29,7 @@ main_requirements = [
     "monai",
     "nibabel",
     "decord",
+    "kaggle",
 ]
 
 dev_requirements = [
