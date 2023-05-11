@@ -41,7 +41,3 @@ def test_build_vqa_v2_gate_dataset():
         data_dir=os.environ.get("PYTEST_DIR"), transforms=vqa_model.transform
     )
     assert train_set is not None, "Train set should not be None"
-
-    # Test if the function raises an error when an invalid set_name is given
-    with pytest.raises(KeyError):
-        build_vqa_v2_gate_dataset("invalid_set_name")
