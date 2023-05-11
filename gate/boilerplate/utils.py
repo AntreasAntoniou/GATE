@@ -174,9 +174,18 @@ def pretty_config(
         if isinstance(config_section, DictConfig):
             branch_content = OmegaConf.to_yaml(config_section, resolve=resolve)
 
-        branch.add(Syntax(branch_content, "yaml"))
+        branch.add(Syntax(branch_content, "yaml", theme="one-dark"))
 
     return tree
+
+
+from rich import print as rprint
+from rich.pretty import Pretty
+from typing import Any, Dict
+
+
+def pretty_print_dictionary(dictionary: Dict[str, Any]) -> None:
+    rprint(Pretty(dictionary))
 
 
 def save_json(
@@ -342,15 +351,17 @@ def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
     }
 
 
-def download_checkpoint(cfg: Any, model_name: str) -> Tuple[pathlib.Path, str]:
+def download_checkpoint(
+    hf_repo_path: str, ckpt_identifier: str, hf_cache_dir: str
+) -> Tuple[pathlib.Path, str]:
     logger.info(
-        f"Downloading checkpoint '{model_name}' from Hugging Face hub 👨🏻‍💻"
+        f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging Face hub 👨🏻‍💻"
     )
     path_dict = download_model_with_name(
-        cfg.hf_repo_path, cfg.hf_cache_dir, model_name
+        hf_repo_path, hf_cache_dir, ckpt_identifier
     )
-    logger.info(f"Downloaded checkpoint to {cfg.hf_cache_dir}")
-    return path_dict["root_filepath"], cfg.hf_repo_path
+    logger.info(f"Downloaded checkpoint to {hf_cache_dir}")
+    return path_dict
 
 
 def create_hf_model_repo_and_download_maybe(
@@ -368,13 +379,57 @@ def create_hf_model_repo_and_download_maybe(
         return None, repo_url
 
     if cfg.resume_from_checkpoint:
-        return download_checkpoint(cfg, cfg.resume_from_checkpoint)
+        return download_checkpoint(
+            hf_cache_dir=cfg.hf_cache_dir,
+            hf_repo_path=cfg.hf_repo_path,
+            ckpt_identifier=cfg.resume_from_checkpoint,
+        )
     elif cfg.resume:
         latest_ckpt = ckpt_dict[max(ckpt_dict.keys())].split("/")[-1]
-        return download_checkpoint(cfg, latest_ckpt)
+        return download_checkpoint(
+            hf_cache_dir=cfg.hf_cache_dir,
+            hf_repo_path=cfg.hf_repo_path,
+            ckpt_identifier=latest_ckpt,
+        )
     else:
         print(f"Created repo {cfg.hf_repo_path}, {cfg.hf_cache_dir}")
         return None, repo_url
+
+
+def download_model_checkpoint_from_hub(
+    hf_repo_path: str,
+    hf_cache_dir: str,
+    checkpoint_identifier: Optional[str] = None,
+    get_latest: bool = False,
+) -> Tuple[Optional[pathlib.Path], str]:
+    if get_latest and checkpoint_identifier is not None:
+        raise ValueError(
+            "Only one of `get_latest` and `checkpoint_identifier` can be set to True"
+        )
+
+    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    files = hf_api.list_repo_files(repo_id=hf_repo_path)
+    ckpt_dict = get_checkpoint_dict(files)
+
+    if len(ckpt_dict) == 0:
+        return None
+
+    if get_latest:
+        latest_ckpt = ckpt_dict[max(ckpt_dict.keys())].split("/")[-1]
+        return download_checkpoint(
+            hf_cache_dir=hf_cache_dir,
+            hf_repo_path=hf_repo_path,
+            ckpt_identifier=latest_ckpt,
+        )
+
+    if checkpoint_identifier is not None:
+        return download_checkpoint(
+            hf_cache_dir=hf_cache_dir,
+            hf_repo_path=hf_repo_path,
+            ckpt_identifier=checkpoint_identifier,
+        )
+
+    return None
 
 
 def count_files_recursive(directory: str) -> int:

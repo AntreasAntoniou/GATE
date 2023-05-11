@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 import hydra
 import neptune
@@ -19,7 +19,7 @@ from gate.boilerplate.utils import (
     pretty_config,
     set_seed,
 )
-from gate.config import Any, collect_config_store
+from gate.config.config import collect_config_store
 from gate.data.core import CustomConcatDataset, GATEDataset
 from gate.models.core import GATEModel
 
@@ -68,7 +68,11 @@ def setup(ckpt_path: str, cfg: Any):
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: Any) -> None:
-    ckpt_path, repo_url = create_hf_model_repo_and_download_maybe(cfg)
+    print(pretty_config(cfg, resolve=True))
+    set_seed(seed=cfg.seed)
+
+    ckpt_dict = create_hf_model_repo_and_download_maybe(cfg)
+    ckpt_path = ckpt_dict["root_filepath"]
 
     if ckpt_path is not None:
         logger.info(
@@ -83,9 +87,6 @@ def run(cfg: Any) -> None:
 
     logger.info(f"Using checkpoint: {ckpt_path}")
 
-    print(pretty_config(cfg, resolve=True))
-    set_seed(seed=cfg.seed)
-
     global_step, experiment_tracker = setup(ckpt_path, cfg)
 
     model_and_transform = instantiate(cfg.model)
@@ -96,38 +97,27 @@ def run(cfg: Any) -> None:
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     experiment_tracker["config"] = config_dict
-    experiment_tracker["notes"] = repo_url
     experiment_tracker["init_global_step"] = global_step
 
     wandb.config.update(config_dict)
-    wandb.config.update({"notes": repo_url})
     wandb.config.update({"init_global_step": global_step})
 
-    dataset_dict = {"train": [], "val": [], "test": []}
+    dataset: GATEDataset = instantiate(cfg.dataset, transforms=transform)
 
-    for dataset_name, dataset_config in cfg.dataset.items():
-        dataset: GATEDataset = instantiate(
-            dataset_config, transforms=transform
+    train_dataset = dataset["train"]
+    val_dataset = dataset["val"]
+    test_dataset = dataset["test"]
+
+    if global_step > 0:
+        train_dataset = Subset(
+            train_dataset,
+            range(global_step, len(train_dataset)),
         )
-
-        dataset_dict["train"].append(dataset["train"])
-        dataset_dict["val"].append(dataset["val"])
-        dataset_dict["test"].append(dataset["test"])
-
-        if global_step > 0:
-            dataset_dict["train"][-1] = Subset(
-                dataset_dict["train"][-1],
-                range(global_step, len(dataset_dict["train"][-1])),
-            )
-
-    train_dataset = CustomConcatDataset(dataset_dict["train"])
-    val_dataset = CustomConcatDataset(dataset_dict["val"])
-    test_dataset = CustomConcatDataset(dataset_dict["test"])
 
     train_dataloader = instantiate(
         cfg.dataloader,
         dataset=train_dataset,
-        batch_size=16,
+        batch_size=cfg.train_batch_size,
         shuffle=True,
     )
 
