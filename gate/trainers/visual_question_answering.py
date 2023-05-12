@@ -5,8 +5,6 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.metrics import accuracy_top_k
-
 from gate.boilerplate.decorators import collect_metrics
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
