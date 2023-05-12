@@ -66,9 +66,13 @@ class SimpleVQATransformer(nn.Module):
             "distilgpt2", add_cross_attention=True
         )
 
+        self.image_embedding_projection = nn.Linear(
+            image_encoder_num_features, 512
+        )
+
         # Linear layer to combine image and text embeddings
         self.combine_embeddings_linear = nn.Linear(
-            image_encoder_num_features + text_encoder_num_features,
+            512,
             768,  # The combined embeddings size is set to match the hidden size of the 'distilgpt2' model
         )
 
@@ -113,6 +117,7 @@ class SimpleVQATransformer(nn.Module):
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
             "image"
         ]["raw_features"][:, 0:8, :]
+        image_embeddings = self.image_embedding_projection(image_embeddings)
 
         # Obtain the question text embeddings from the text encoder
         question_text_embeddings = self.text_encoder(
@@ -120,11 +125,8 @@ class SimpleVQATransformer(nn.Module):
         )["text"]["raw_features"]
 
         # Concatenate image and text embeddings along dimension 2
-        print(
-            f"image_embeddings.shape: {image_embeddings.shape}, question_text_embeddings.shape: {question_text_embeddings.shape}"
-        )
         concat_embeddings = torch.cat(
-            [image_embeddings, question_text_embeddings], dim=2
+            [image_embeddings, question_text_embeddings], dim=1
         )
 
         # Combine image and text embeddings using a linear layer
@@ -228,7 +230,7 @@ class SimpleVQATransformer(nn.Module):
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
             "image"
         ]["raw_features"][:, 0:8, :]
-
+        image_embeddings = self.image_embedding_projection(image_embeddings)
         # Obtain the question text embeddings from the text encoder
         question_text_embeddings = self.text_encoder(
             text=question_encoder_tokens
