@@ -44,6 +44,8 @@ class VQATrainer(Trainer):
         with torch.no_grad():
             # Generate answers and get the ground truth
             predicted_answers = model.model.generate_text(**batch)
+
+        print(predicted_answers)
         ground_truth_answers = batch["text"][
             "answer_original"
         ]  # Assuming this is where the true answers are
