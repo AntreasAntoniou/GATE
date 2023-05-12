@@ -11,7 +11,7 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
         output_dict["image"]["image_encoder_tokens"] = transform_dict[
             "image_encoder"
         ](inputs["image"])
-        output_dict["image"]["image_original"] = inputs["image"]
+        output_dict["image"]["image_original"] = [inputs["image"]]
 
     if "text" in inputs and "question" in inputs["text"]:
         output_dict["text"]["question_encoder_tokens"] = transform_dict[
@@ -22,9 +22,9 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
             "text_decoder"
         ](copy(inputs["text"]["question"]))
 
-        output_dict["text"]["question_original"] = copy(
-            inputs["text"]["question"]
-        )
+        output_dict["text"]["question_original"] = [
+            copy(inputs["text"]["question"])
+        ]
 
     if "text" in inputs and "answers" in inputs["text"]:
         random_idx = random.randint(0, len(inputs["text"]["answers"]) - 1)
@@ -32,8 +32,8 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
             "text_decoder"
         ](copy(inputs["text"]["answers"])[random_idx])
 
-        output_dict["text"]["answer_original"] = copy(
-            inputs["text"]["answers"]
-        )[random_idx]
+        output_dict["text"]["answer_original"] = [
+            copy(inputs["text"]["answers"])[random_idx]
+        ]
 
     return output_dict
