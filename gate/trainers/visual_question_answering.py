@@ -49,6 +49,7 @@ class VQATrainer(Trainer):
             "answer_original"
         ]  # Assuming this is where the true answers are
         questions = batch["text"]["question_original"]
+        print(ground_truth_answers)
 
         # Prepare data for VQA evaluation
         vqa_data = {
