@@ -34,7 +34,7 @@ class StepOutput:
 
 
 @configurable(group="trainer", name="classification")
-class ClassificationTrainer(Trainer):
+class VQATrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
 
