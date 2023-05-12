@@ -41,8 +41,9 @@ class VQATrainer(Trainer):
         output_dict = model.forward(batch)["text"]["image_text"]
         loss = output_dict["loss"]
 
-        # Generate answers and get the ground truth
-        predicted_answers = model.model.generate_text(**batch)
+        with torch.no_grad():
+            # Generate answers and get the ground truth
+            predicted_answers = model.model.generate_text(**batch)
         ground_truth_answers = batch["text"][
             "answer_original"
         ]  # Assuming this is where the true answers are
@@ -63,10 +64,8 @@ class VQATrainer(Trainer):
             )
         }
         vqa_predictions = {
-            question_id: AnswerData(answer=predicted_answer)
-            for question_id, predicted_answer in zip(
-                batch["question_ids"], predicted_answers
-            )
+            idx: AnswerData(answer=predicted_answer)
+            for idx, predicted_answer in enumerate(predicted_answers)
         }
 
         # Run the evaluation
