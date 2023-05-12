@@ -105,7 +105,6 @@ class SimpleVQATransformer(nn.Module):
             image_encoder_tokens = image["image_encoder_tokens"]
 
         if text is not None:
-            print(text)
             question_encoder_tokens = text["question_encoder_tokens"]
             question_decoder_tokens = text["question_decoder_tokens"]
             answer_decoder_tokens = text["answer_decoder_tokens"]

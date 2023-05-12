@@ -64,17 +64,17 @@ def build_model(
             ](inputs["image"])
 
         if "text" in inputs and "question" in inputs["text"]:
-            output_dict["text"]["encoder_question_tokens"] = transform_dict[
+            output_dict["text"]["question_encoder_tokens"] = transform_dict[
                 "text_encoder"
             ](copy(inputs["text"]["question"]))
 
-            output_dict["text"]["decoder_question_tokens"] = transform_dict[
+            output_dict["text"]["question_decoder_tokens"] = transform_dict[
                 "text_decoder"
             ](copy(inputs["text"]["question"]))
 
         if "text" in inputs and "answers" in inputs["text"]:
             random_idx = random.randint(0, len(inputs["text"]["answers"]) - 1)
-            output_dict["text"]["decoder_answer_tokens"] = transform_dict[
+            output_dict["text"]["answer_decoder_tokens"] = transform_dict[
                 "text_decoder"
             ](copy(inputs["text"]["answers"])[random_idx])
 
