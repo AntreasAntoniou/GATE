@@ -133,8 +133,7 @@ class SimpleVQATransformer(nn.Module):
         combine_embeddings = self.combine_embeddings_linear(
             concat_embeddings.view(
                 -1,
-                self.image_encoder_num_features
-                + self.text_encoder_num_features,
+                512,
             )
         ).view(concat_embeddings.shape[0], -1, 768)
 
@@ -245,8 +244,7 @@ class SimpleVQATransformer(nn.Module):
         combined_embeddings = self.combine_embeddings_linear(
             concat_embeddings.view(
                 -1,
-                self.image_encoder_num_features
-                + self.text_encoder_num_features,
+                512,
             )
         ).view(concat_embeddings.shape[0], -1, 768)
         # Use the Transformers 'generate' method to generate an answer
