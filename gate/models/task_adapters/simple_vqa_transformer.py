@@ -140,7 +140,7 @@ class SimpleVQATransformer(nn.Module):
         if answer_decoder_tokens is not None:
             # If answer tokens are provided, concatenate question and answer tokens
             combined_sequence = torch.cat(
-                [question_decoder_tokens, answer_decoder_tokens]
+                [question_decoder_tokens, answer_decoder_tokens], dim=1
             )
 
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
