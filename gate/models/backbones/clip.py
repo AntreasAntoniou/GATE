@@ -6,7 +6,7 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 
-def forward_dict(self, x):
+def forward_dict(x):
     output = self.legacy_forward(x)
     return {
         "features": output.pooler_output,
