@@ -178,7 +178,7 @@ class SimpleVQATransformer(nn.Module):
                 **question_decoder_tokens,
                 encoder_hidden_states=combine_embeddings,
             )
-        return output.__dict__
+        return output
 
     def generate_tokens(
         self,
