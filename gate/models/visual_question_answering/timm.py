@@ -38,10 +38,10 @@ def build_model(
     clip_transforms = backbone_model.get_transforms()
 
     model = SimpleVQATransformer(
-        image_encoder=backbone_model.vision_model,
+        image_encoder=backbone_model,
         image_encoder_transforms=clip_transforms["image"],
         image_encoder_num_features=backbone_model.image_num_features,
-        text_encoder=backbone_model.text_model,
+        text_encoder=backbone_model,
         text_encoder_transforms=clip_transforms["text"],
         text_encoder_num_features=backbone_model.text_num_features,
     )

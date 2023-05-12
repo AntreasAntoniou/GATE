@@ -26,22 +26,19 @@ class BackboneWithLinear(nn.Module):
         video: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
-            x = self.model(**input_dict)
+            x = self.model(**input_dict)[self.modality]["features"]
 
         if image is not None:
-            x = self.model(image=image)
+            x = self.model(image=image)["image"]["features"]
 
         if text is not None:
-            x = self.model(text=text)
+            x = self.model(text=text)["text"]["features"]
 
         if audio is not None:
-            x = self.model(audio=audio)
+            x = self.model(audio=audio)["audio"]["features"]
 
         if video is not None:
-            x = self.model(video=video)
-
-        if isinstance(x, dict):
-            x = x[f"{self.modality}_features"]
+            x = self.model(video=video)["video"]["features"]
 
         x = self.linear(x)
         return x
