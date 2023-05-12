@@ -10,6 +10,25 @@ from transformers import (
 )
 
 
+def tokenize_with_start_end(text, tokenizer):
+    input_ids = tokenizer.encode(text, truncation=True, return_tensors="pt")
+    start_token_id = tokenizer.bos_token_id  # get the id of the start token
+    end_token_id = tokenizer.eos_token_id  # get the id of the end token
+
+    # add start and end tokens
+
+    input_ids = torch.cat(
+        [
+            torch.tensor([[start_token_id]]),
+            input_ids,
+            torch.tensor([[end_token_id]]),
+        ],
+        dim=1,
+    )
+
+    return input_ids
+
+
 class SimpleVQATransformer(nn.Module):
     """
     This class represents a simple Visual Question Answering (VQA) transformer model.
@@ -144,8 +163,8 @@ class SimpleVQATransformer(nn.Module):
           Each key corresponds to a function that applies the appropriate transformations.
         """
         return {
-            "text_decoder": lambda x: self.text_decoder_tokenizer(
-                x, truncation=True, padding=True, return_tensors="pt"
+            "text_decoder": lambda x: tokenize_with_start_end(
+                text=x, tokenizer=self.text_decoder_tokenizer
             ),
             "image_encoder": self.image_encoder_transforms,
             "text_encoder": self.text_encoder_transforms,
