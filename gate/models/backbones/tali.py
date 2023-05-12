@@ -139,7 +139,7 @@ class TALINet(nn.Module):
                 },
             }
 
-        print(f"🚀 Output dict: {list(output_dict.keys())}")
+        print(f"🚀 Output dict: {output_dict}")
 
         return output_dict
 
