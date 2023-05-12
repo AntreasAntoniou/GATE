@@ -45,6 +45,7 @@ from gate.config.variables import (
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
 )
+from gate.data.core import collate_fn_with_token_pad
 
 hydra_logger = get_logger("hydra")
 
@@ -133,6 +134,7 @@ def collect_config_store():
             shuffle=True,
             prefetch_factor=PREFETCH_FACTOR,
             persistent_workers=PERSISTENT_WORKERS,
+            collate_fn=collate_fn_with_token_pad,
         ),
     )
     ##########################################################################
