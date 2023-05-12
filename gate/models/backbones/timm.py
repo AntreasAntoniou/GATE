@@ -104,8 +104,8 @@ class TimmCLIPAdapter(nn.Module):
             output_dict["image"][
                 "features"
             ] = self.vision_model.forward_features(image)
-            output_dict[
-                "image"["raw_features"]
+            output_dict["image"][
+                "raw_features"
             ] = self.vision_model.forward_raw_features(image)
 
         if text is not None:
