@@ -1,6 +1,5 @@
 from urllib.request import urlopen
 import torch
-import torch.nn.functional as F
 
 from gate.models.visual_question_answering.timm import (
     ModelAndTransform,
