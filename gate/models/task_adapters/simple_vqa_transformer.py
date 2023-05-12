@@ -89,10 +89,7 @@ class SimpleVQATransformer(nn.Module):
         question_text_embeddings = self.text_encoder(
             text=question_encoder_tokens
         )["text"]["raw_features"]
-        print(
-            f"question_text_embeddings: {question_text_embeddings.shape},"
-            f"image_embeddings: {image_embeddings.shape}"
-        )
+
         # Concatenate image and text embeddings along dimension 2
         concat_embeddings = torch.cat(
             [image_embeddings, question_text_embeddings], dim=2

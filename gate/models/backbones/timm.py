@@ -107,6 +107,12 @@ class TimmCLIPAdapter(nn.Module):
             output_dict["image"][
                 "raw_features"
             ] = self.vision_model.forward_raw_features(image)
+            output_shape = output_dict["image"]["raw_features"] = output_dict[
+                "image"
+            ]["raw_features"].shape
+            output_dict["image"]["raw_features"] = output_dict["image"][
+                "raw_features"
+            ].view(output_shape[0], output_shape[1], -1)
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
