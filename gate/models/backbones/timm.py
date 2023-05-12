@@ -29,9 +29,11 @@ class TimmModel(nn.Module):
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
-        self.num_output_features = self.get_output_shape()[-1] if len(
-            self.get_output_shape()
-        ) == 3 else self.get_output_shape()[-2] * self.get_output_shape()[-3]
+        self.num_output_features = (
+            self.get_output_shape()[-1]
+            if len(self.get_output_shape()) == 3
+            else self.get_output_shape()[-2] * self.get_output_shape()[-3]
+        )
 
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
@@ -115,7 +117,9 @@ class TimmCLIPAdapter(nn.Module):
                 output_dict["image"]["raw_features"] = output_dict["image"][
                     "raw_features"
                 ].view(output_shape[0], output_shape[1], -1)
-                output_dict["image"]["raw_features"] = output_dict["image"]["raw_features"].permute([0, 2, 1]])
+                output_dict["image"]["raw_features"] = output_dict["image"][
+                    "raw_features"
+                ].permute([0, 2, 1])
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
