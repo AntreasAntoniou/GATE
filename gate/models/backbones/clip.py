@@ -6,7 +6,7 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 
-def forward_dict(x):
+def forward_dict(self, x):
     output = self.legacy_forward(x)
     return {
         "features": output.pooler_output,
@@ -31,8 +31,14 @@ class CLIPAdapter(nn.Module):
         setattr(self.vision_model, "legacy_forward", self.vision_model.forward)
         setattr(self.text_model, "legacy_forward", self.text_model.forward)
 
-        setattr(self.vision_model, "forward", forward_dict)
-        setattr(self.text_model, "forward", forward_dict)
+        setattr(
+            self.vision_model,
+            "forward",
+            forward_dict.__get__(self.vision_model),
+        )
+        setattr(
+            self.text_model, "forward", forward_dict.__get__(self.text_model)
+        )
 
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
