@@ -30,11 +30,8 @@ class TimmModel(nn.Module):
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
         output_shape = self.get_output_shape()["raw_features"]
-        print(f"output_shape: {output_shape}")
         self.num_output_features = (
-            output_shape[-1]
-            if len(output_shape) == 3
-            else output_shape[2] * output_shape[3]
+            output_shape[-1] if len(output_shape) == 3 else output_shape[1]
         )
 
     def forward(self, x):
@@ -81,7 +78,14 @@ class TimmCLIPAdapter(nn.Module):
         )
         self.text_model = self.clip.text_model
 
-        self.image_num_features = self.vision_model.num_output_features
+        vision_model_output_shape = self.vision_model.get_output_shape()[
+            "raw_features"
+        ]
+        self.image_num_features = (
+            vision_model_output_shape[-1]
+            if len(vision_model_output_shape) == 3
+            else vision_model_output_shape[1]
+        )
         self.text_num_features = self.clip.text_embed_dim
 
     def forward(
