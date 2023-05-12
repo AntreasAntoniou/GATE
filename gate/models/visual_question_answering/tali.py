@@ -65,19 +65,17 @@ def build_model(
         if "text" in inputs and "question" in inputs["text"]:
             output_dict["text"]["encoder_question_token"] = transform_dict[
                 "text_encoder"
-            ](inputs["text"]["question"].copy())
+            ](copy(inputs["text"]["question"]))
 
             output_dict["text"]["decoder_question_token"] = transform_dict[
                 "text_decoder"
-            ](inputs["text"]["question"].copy())
+            ](copy(inputs["text"]["question"]))
 
         if "text" in inputs and "answers" in inputs["text"]:
-            random_idx = random.randint(
-                0, len(inputs["text"]["answers"].copy()) - 1
-            )
+            random_idx = random.randint(0, len(inputs["text"]["answers"]) - 1)
             output_dict["text"]["decoder_answers_tokens"] = transform_dict[
                 "text_decoder"
-            ](inputs["text"]["answers"].copy()[random_idx])
+            ](copy(inputs["text"]["answers"])[random_idx])
 
         return output_dict
 
