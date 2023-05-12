@@ -1,3 +1,4 @@
+import collections
 import json
 from collections import defaultdict
 from typing import Any, Dict, Optional
@@ -110,19 +111,37 @@ def dataclass_collate(batch):
 
 
 def collate_fn_with_token_pad(batch):
-    # Find the maximum length of sequences in this batch
-    max_len = max(len(item) for item in batch)
+    # Initialize a defaultdict(list) to hold the padded items
+    padded_batch = collections.defaultdict(list)
 
-    # Pad all sequences to this length
-    batch = [
-        torch.cat([item, item[-1].repeat(max_len - len(item))])
-        if len(item) < max_len
-        else item
-        for item in batch
-    ]
+    # Find the maximum length of sequences in this batch for each field
+    max_len_dict = {
+        key: max(len(item[key]) for item in batch) for key in batch[0].keys()
+    }
 
-    # Now that all items in the batch have the same length, they can be stacked
-    return torch.stack(batch)
+    # Pad all sequences to this length for each field
+    for item in batch:
+        for key in item.keys():
+            if len(item[key]) < max_len_dict[key]:
+                # Pad this item for this field
+                padded_item = torch.cat(
+                    [
+                        item[key],
+                        item[key][-1].repeat(
+                            max_len_dict[key] - len(item[key])
+                        ),
+                    ]
+                )
+            else:
+                # No padding needed
+                padded_item = item[key]
+            padded_batch[key].append(padded_item)
+
+    # Now that all items in the batch have the same length for each field, they can be stacked
+    for key in padded_batch.keys():
+        padded_batch[key] = torch.stack(padded_batch[key])
+
+    return padded_batch
 
 
 class GATEDataset(Dataset):
