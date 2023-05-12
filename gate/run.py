@@ -75,6 +75,8 @@ def run(cfg: Any) -> None:
 
     if ckpt_dict is not None:
         ckpt_path = ckpt_dict["root_filepath"]
+    else:
+        ckpt_path = None
 
     if ckpt_path is not None:
         logger.info(
