@@ -4,7 +4,7 @@ import accelerate
 import PIL.Image as Image
 import torch
 from gate.models.backbones.clip import CLIPAdapter
-from gate.models.task_adapters.vqa.simple_vqa_transformer import (
+from gate.models.task_adapters.simple_vqa_transformer import (
     SimpleVQATransformer,
 )
 
