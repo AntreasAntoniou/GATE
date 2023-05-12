@@ -27,3 +27,7 @@ def test_collate_fn_with_token_pad():
     train_loader = DataLoader(
         train_set, batch_size=2, collate_fn=collate_fn_with_token_pad
     )
+
+    for batch in train_loader:
+        print(batch)
+        break
