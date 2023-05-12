@@ -50,10 +50,9 @@ def build_model(
         output_dict = defaultdict(dict)
 
         if "image" in inputs:
-            output_dict["image"]["image_encoder_tokens"] = [
-                transform_dict["image_encoder"](image)
-                for image in inputs["image"]
-            ]
+            output_dict["image"]["image_encoder_tokens"] = transform_dict[
+                "image_encoder"
+            ](inputs["image"])
 
         if "text" in inputs and "question" in inputs["text"]:
             output_dict["text"]["encoder_question_token"] = transform_dict[
