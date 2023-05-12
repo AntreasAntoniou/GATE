@@ -1,6 +1,7 @@
 import json
 from collections import defaultdict
 from typing import Any, Dict, Optional
+import torch
 
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
@@ -106,6 +107,22 @@ def dataclass_collate(batch):
             f"{json.dumps(dict_to_summary(batch), indent=4)}"
         )
         raise e
+
+
+def collate_fn_with_token_pad(batch):
+    # Find the maximum length of sequences in this batch
+    max_len = max(len(item) for item in batch)
+
+    # Pad all sequences to this length
+    batch = [
+        torch.cat([item, item[-1].repeat(max_len - len(item))])
+        if len(item) < max_len
+        else item
+        for item in batch
+    ]
+
+    # Now that all items in the batch have the same length, they can be stacked
+    return torch.stack(batch)
 
 
 class GATEDataset(Dataset):
