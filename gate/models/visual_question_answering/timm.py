@@ -4,7 +4,7 @@ from typing import Any, Dict, Union
 
 from gate.boilerplate.decorators import configurable
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
+from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -16,7 +16,8 @@ from gate.models.task_adapters.simple_vqa_transformer import (
 
 
 def build_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
 ) -> ModelAndTransform:
     """
@@ -28,7 +29,11 @@ def build_model(
     :return: A ModelAndTransform instance containing the model
     and transform function.
     """
-    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
+    backbone_model = TimmCLIPAdapter(
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
+        pretrained=pretrained,
+    )
 
     clip_transforms = backbone_model.get_transforms()
 
@@ -79,14 +84,16 @@ def build_model(
 
 @configurable(
     group="model",
-    name="clip-vqa",
+    name="timm-vqa",
 )
 def build_gate_clip_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
 ):
     model_and_transform = build_model(
-        model_name=model_name,
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
         pretrained=pretrained,
     )
 

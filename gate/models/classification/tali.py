@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Any, Dict, Union
 
 from gate.boilerplate.decorators import configurable
