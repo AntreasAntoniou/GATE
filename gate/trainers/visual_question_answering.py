@@ -10,6 +10,7 @@ from gate.boilerplate.metrics import accuracy_top_k
 from gate.boilerplate.decorators import collect_metrics
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
+from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
 from gate.trainers import Trainer, TrainerOutput
 
 logger = get_logger(__name__)
@@ -33,39 +34,63 @@ class StepOutput:
     accuracy_top_5: torch.Tensor
 
 
-@configurable(group="trainer", name="classification")
+@configurable(group="trainer", name="visual_question_answering")
 class VQATrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
         output_dict = model.forward(batch)
-        loss = F.cross_entropy(output_dict["image"]["image"], batch["labels"])
-        accuracy = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=1
-        )
-        accuracy_top_5 = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=5
-        )
+        loss = output_dict["loss"]
+
+        # Generate answers and get the ground truth
+        predicted_answers = model.generate_text(batch)
+        ground_truth_answers = batch[
+            "answers"
+        ]  # Assuming this is where the true answers are
+
+        # Prepare data for VQA evaluation
+        vqa_data = {
+            question_id: VQAItem(
+                answers=ground_truth_answers[i],
+                image_id=batch["image_ids"][i],
+                question=batch["questions"][i],
+                question_id=batch["question_ids"][i],
+                question_type=None,
+                answer_type=None,
+            )
+            for i, question_id in enumerate(batch["question_ids"])
+        }
+        vqa_predictions = {
+            question_id: AnswerData(answer=predicted_answer)
+            for question_id, predicted_answer in zip(
+                batch["question_ids"], predicted_answers
+            )
+        }
+
+        # Run the evaluation
+        result = vqa_metric(vqa_data, vqa_predictions)
+
         output_metrics_dict = {
             "loss": loss,
-            "accuracy_top_1": accuracy,
-            "accuracy_top_5": accuracy_top_5,
+            "vqa_score": torch.mean(
+                torch.tensor(result["overall"])
+            ),  # Use the mean VQA score here
         }
-        keys = list(output_metrics_dict.keys())
 
+        keys = list(output_metrics_dict.keys())
         for key in keys:
-            if "loss" not in key and "accuracy" not in key:
+            if "loss" not in key and "vqa_score" not in key:
                 del output_dict[key]
 
         accelerator.backward(loss)
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            output_metrics_dict=output_metrics_dict,
             loss=loss,
-            accuracy=accuracy,
-            accuracy_top_5=accuracy_top_5,
+            vqa_score=output_metrics_dict[
+                "vqa_score"
+            ],  # Add the VQA score here
         )
 
     @collect_metrics
@@ -79,8 +104,7 @@ class VQATrainer(Trainer):
         model.train()
 
         overall_loss = []
-        overall_accuracy = []
-        overall_accuracy_top_5 = []
+        overall_vqa_score = []
         overall_output_dict = {}
 
         self.optimizer.zero_grad()
@@ -95,23 +119,24 @@ class VQATrainer(Trainer):
         if step_output is not None:
             overall_output_dict |= step_output.output_metrics_dict
             overall_loss.append(step_output.loss)
-            overall_accuracy.append(step_output.accuracy)
-            overall_accuracy_top_5.append(step_output.accuracy_top_5)
+            overall_vqa_score.append(step_output.vqa_score)
 
         self.optimizer.step()
 
+        keys = list(step_output.output_metrics_dict.keys())
+        for key in keys:
+            if (
+                "loss" not in key and "vqa_score" not in key
+            ):  # Consider vqa_score now
+                del step_output.output_metrics_dict[key]
+
         if len(overall_loss) > 0:
             metrics = {
-                "accuracy_top_1": torch.mean(torch.stack(overall_accuracy)),
-                "accuracy_top_5": torch.mean(
-                    torch.stack(overall_accuracy_top_5)
-                ),
+                "vqa_score": torch.mean(
+                    torch.stack(overall_vqa_score)
+                ),  # Include vqa_score here
                 "loss": torch.mean(torch.stack(overall_loss)),
             }
-
-            for key, value in metrics.items():
-                self.state_dict.setdefault(key, []).append(value)
-
             metrics |= overall_output_dict
         else:
             metrics = {}
