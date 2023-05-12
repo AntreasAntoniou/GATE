@@ -1,12 +1,11 @@
 from collections import defaultdict
-from copy import copy
+from copy import deepcopy as copy
 import random
 from typing import Union, Any, Dict
 
 
 def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
     output_dict = defaultdict(dict)
-    print(inputs)
     if "image" in inputs:
         output_dict["image"]["image_encoder_tokens"] = transform_dict[
             "image_encoder"
