@@ -20,9 +20,10 @@ class CLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
-        self.clip = CLIPModel.from_pretrained(
-            model_name, pretrained=pretrained
-        )
+        self.clip = CLIPModel.from_pretrained(model_name)
+
+        if not pretrained:
+            self.clip.init_weights()
 
         self.vision_model = self.clip.vision_model
         self.text_model = self.clip.text_model
