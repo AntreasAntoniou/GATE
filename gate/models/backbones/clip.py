@@ -59,12 +59,12 @@ class CLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
-            image: CLIPOutput = self.vision_model(pixel_values=image)
+            image: CLIPOutput = self.vision_model(x=image)
             output_dict["image_features"] = image.pooler_output
             output_dict["image_raw_features"] = image.last_hidden_state
 
         if text is not None:
-            text: CLIPOutput = self.text_model(input_ids=text)
+            text: CLIPOutput = self.text_model(x=text)
             output_dict["text_features"] = text.pooler_output
             output_dict["text_raw_features"] = text.last_hidden_state
 
