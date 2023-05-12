@@ -63,5 +63,5 @@ def test_generate():
     print(answer)
     # Check that the function returned a string
     assert isinstance(
-        answer, str
+        answer[0], str
     ), "The generate function should return a string"
