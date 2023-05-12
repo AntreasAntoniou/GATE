@@ -148,10 +148,7 @@ class SimpleVQATransformer(nn.Module):
 
         if answer_decoder_tokens is not None:
             # If answer tokens are provided, concatenate question and answer tokens
-            print(
-                answer_decoder_tokens["input_ids"],
-                answer_decoder_tokens["attention_mask"],
-            )
+
             answer_decoder_tokens["input_ids"] = torch.cat(
                 [
                     answer_decoder_tokens["input_ids"],
@@ -172,6 +169,7 @@ class SimpleVQATransformer(nn.Module):
             # and question tokens as labels
             output = self.text_decoder(
                 input_ids=question_decoder_tokens["input_ids"],
+                attention_mask=question_decoder_tokens["attention_mask"],
                 encoder_hidden_states=combine_embeddings,
                 labels=answer_decoder_tokens["input_ids"],
             )
