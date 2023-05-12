@@ -393,7 +393,7 @@ def create_hf_model_repo_and_download_maybe(
         )
     else:
         print(f"Created repo {cfg.hf_repo_path}, {cfg.hf_cache_dir}")
-        return None, repo_url
+        return None
 
 
 def download_model_checkpoint_from_hub(
