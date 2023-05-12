@@ -168,8 +168,7 @@ class SimpleVQATransformer(nn.Module):
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
             output = self.text_decoder(
-                input_ids=question_decoder_tokens["input_ids"],
-                attention_mask=question_decoder_tokens["attention_mask"],
+                **question_decoder_tokens,
                 encoder_hidden_states=combine_embeddings,
                 labels=answer_decoder_tokens["input_ids"],
             )
