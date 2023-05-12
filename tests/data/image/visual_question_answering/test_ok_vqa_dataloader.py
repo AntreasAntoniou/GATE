@@ -29,5 +29,5 @@ def test_collate_fn_with_token_pad():
     )
 
     for batch in train_loader:
-        print(batch)
+        print(batch["decoder_answers_tokens"])
         break
