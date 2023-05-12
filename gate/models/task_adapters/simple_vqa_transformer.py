@@ -79,6 +79,8 @@ class SimpleVQATransformer(nn.Module):
         question_encoder_tokens: Optional[torch.Tensor] = None,
         question_decoder_tokens: Optional[torch.Tensor] = None,
         answer_decoder_tokens: Optional[torch.Tensor] = None,
+        image: Optional[Dict[str, torch.Tensor]] = None,
+        text: Optional[Dict[str, torch.Tensor]] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         The forward method for the SimpleVQATransformer model.
@@ -98,6 +100,14 @@ class SimpleVQATransformer(nn.Module):
             question_encoder_tokens = input_dict["question_encoder_tokens"]
             question_decoder_tokens = input_dict["question_decoder_tokens"]
             answer_decoder_tokens = input_dict["answer_decoder_tokens"]
+
+        if image is not None:
+            image_encoder_tokens = image["image_encoder_tokens"]
+
+        if text is not None:
+            question_encoder_tokens = text["question_encoder_tokens"]
+            question_decoder_tokens = text["question_decoder_tokens"]
+            answer_decoder_tokens = text["answer_decoder_tokens"]
 
         # Obtain the image embeddings from the image encoder
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
@@ -176,6 +186,8 @@ class SimpleVQATransformer(nn.Module):
         image_encoder_tokens: Optional[torch.Tensor] = None,
         question_encoder_tokens: Optional[torch.Tensor] = None,
         question_decoder_tokens: Optional[torch.Tensor] = None,
+        image: Optional[Dict[str, torch.Tensor]] = None,
+        text: Optional[Dict[str, torch.Tensor]] = None,
         max_length: int = 50,
     ) -> str:
         """
@@ -201,6 +213,13 @@ class SimpleVQATransformer(nn.Module):
             image_encoder_tokens = input_dict["image_encoder_tokens"]
             question_encoder_tokens = input_dict["question_encoder_tokens"]
             question_decoder_tokens = input_dict["question_decoder_tokens"]
+
+        if image is not None:
+            image_encoder_tokens = image["image_encoder_tokens"]
+
+        if text is not None:
+            question_encoder_tokens = text["question_encoder_tokens"]
+            question_decoder_tokens = text["question_decoder_tokens"]
 
         # Obtain the image embeddings from the image encoder
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
