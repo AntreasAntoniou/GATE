@@ -45,7 +45,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
 
 @configurable(
-    group="dataset", name="cifar100", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="ok_vqa", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
