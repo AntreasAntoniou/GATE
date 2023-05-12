@@ -17,11 +17,8 @@ def test_collate_fn_with_token_pad():
     vqa_model = build_model()
     train_set = build_ok_vqa_gate_dataset(
         data_dir=os.environ.get("PYTEST_DIR"), transforms=vqa_model.transform
-    )
+    )["train"]
     assert train_set is not None, "Train set should not be None"
-
-    for item in train_set:
-        print(item)
 
     # Create a DataLoader with the custom collate function
     train_loader = DataLoader(
