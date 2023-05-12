@@ -38,7 +38,7 @@ class VQATrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        output_dict = model.forward(batch)["text"]
+        output_dict = model.forward(batch)["text"]["image_text"]
         print(list(output_dict.keys()))
         loss = output_dict["loss"]
 
