@@ -376,7 +376,7 @@ def create_hf_model_repo_and_download_maybe(
     ckpt_dict = get_checkpoint_dict(files)
 
     if len(ckpt_dict) == 0:
-        return None, repo_url
+        return None
 
     if cfg.resume_from_checkpoint:
         return download_checkpoint(
