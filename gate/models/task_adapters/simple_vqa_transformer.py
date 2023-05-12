@@ -120,6 +120,9 @@ class SimpleVQATransformer(nn.Module):
         )["text"]["raw_features"]
 
         # Concatenate image and text embeddings along dimension 2
+        print(
+            f"image_embeddings.shape: {image_embeddings.shape}, question_text_embeddings.shape: {question_text_embeddings.shape}"
+        )
         concat_embeddings = torch.cat(
             [image_embeddings, question_text_embeddings], dim=2
         )
