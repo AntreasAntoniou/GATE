@@ -238,7 +238,7 @@ class SimpleVQATransformer(nn.Module):
 
         # Concatenate image and text embeddings along dimension 2
         concat_embeddings = torch.cat(
-            [image_embeddings, question_text_embeddings], dim=2
+            [image_embeddings, question_text_embeddings], dim=1
         )
 
         # Combine image and text embeddings using a linear layer
