@@ -153,8 +153,11 @@ class SimpleVQATransformer(nn.Module):
                     answer_decoder_tokens["input_ids"],
                     self.text_decoder_tokenizer.eos_token_id
                     * torch.ones(
-                        question_decoder_tokens["input_ids"].shape[1]
-                        - answer_decoder_tokens["input_ids"].shape[1],
+                        (
+                            question_decoder_tokens["input_ids"].shape[0],
+                            question_decoder_tokens["input_ids"].shape[1]
+                            - answer_decoder_tokens["input_ids"].shape[1],
+                        ),
                         dtype=torch.long,
                     ).to(answer_decoder_tokens["input_ids"].device),
                 ],
