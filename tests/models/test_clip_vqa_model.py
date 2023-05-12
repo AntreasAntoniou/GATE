@@ -22,7 +22,7 @@ def test_build_model():
     assert model_and_transform.transform is not None
 
 
-def test_clip_vqa_forward():
+def test_model_forward():
     model_and_transform = build_model()
     model = model_and_transform.model
     transforms_dict = model.get_transforms()
@@ -62,7 +62,7 @@ def test_clip_vqa_forward():
     assert output.loss.item() > 0
 
 
-def test_clip_vqa_forward_loss():
+def test_model_forward_loss():
     model_and_transform = build_model()
     model = model_and_transform.model
     transforms_dict = model.get_transforms()
@@ -106,5 +106,5 @@ def test_clip_vqa_forward_loss():
 
 if __name__ == "__main__":
     test_build_model()
-    test_clip_vqa_forward()
-    test_clip_vqa_forward_loss()
+    test_model_forward()
+    test_model_forward_loss()
