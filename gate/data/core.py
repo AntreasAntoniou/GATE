@@ -122,7 +122,7 @@ def pad_and_stack_tensors(tensor_list):
                 dtype=tensor.dtype,
                 device=tensor.device,
             )
-            tensor = torch.cat([tensor, padding * tensor[-1]], dim=1)
+            tensor = torch.cat([tensor, padding * tensor[-1]], dim=0)
         padded_list.append(tensor)
 
     print(f"padded_list: {[item.shape for item in padded_list]}")
