@@ -11,7 +11,7 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
         output_dict["image"]["image_encoder_tokens"] = transform_dict[
             "image_encoder"
         ](inputs["image"])
-        output_dict["image"]["image_original"] = [inputs["image"]]
+        # output_dict["image"]["image_original"] = [inputs["image"]]
 
     if "text" in inputs and "question" in inputs["text"]:
         output_dict["text"]["question_encoder_tokens"] = transform_dict[
