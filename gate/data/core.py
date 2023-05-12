@@ -112,14 +112,18 @@ def dataclass_collate(batch):
 
 def pad_and_stack_tensors(tensor_list):
     max_len = max(tensor.size(0) for tensor in tensor_list)
-    padded_list = [
-        torch.nn.functional.pad(
-            tensor, pad=(tensor_list[0][-1], max_len - tensor.size(0))
-        )
-        if tensor.size(0) < max_len
-        else tensor
-        for tensor in tensor_list
-    ]
+    padded_list = []
+
+    for tensor in tensor_list:
+        if tensor.size(0) < max_len:
+            padding_size = max_len - tensor.size(0)
+            padding = torch.ones(
+                (padding_size),
+                dtype=tensor.dtype,
+                device=tensor.device,
+            )
+            tensor = torch.cat([tensor, padding * tensor[-1]], dim=1)
+        padded_list.append(tensor)
 
     print(f"padded_list: {[item.shape for item in padded_list]}")
     print(f"tensor_list: {[item.shape for item in tensor_list]}")
