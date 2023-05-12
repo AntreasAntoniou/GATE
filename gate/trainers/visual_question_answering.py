@@ -46,18 +46,21 @@ class VQATrainer(Trainer):
         ground_truth_answers = batch["text"][
             "answer_original"
         ]  # Assuming this is where the true answers are
+        questions = batch["text"]["question_original"]
 
         # Prepare data for VQA evaluation
         vqa_data = {
-            question_id: VQAItem(
-                answers=ground_truth_answers[i],
-                image_id=batch["image_ids"][i],
-                question=batch["questions"][i],
-                question_id=batch["question_ids"][i],
+            idx: VQAItem(
+                answers=answers,
+                image_id=idx,
+                question=question,
+                question_id=idx,
                 question_type=None,
                 answer_type=None,
             )
-            for i, question_id in enumerate(batch["question_ids"])
+            for idx, (question, answers) in enumerate(
+                zip(questions, ground_truth_answers)
+            )
         }
         vqa_predictions = {
             question_id: AnswerData(answer=predicted_answer)
