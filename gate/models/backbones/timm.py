@@ -59,11 +59,8 @@ class TimmModel(nn.Module):
                 "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/beignets-task-guide.png"
             )
         )
-        return {
-            "linear_projection": self.forward(
-                self.transforms(img).unsqueeze(0)
-            ).shape
-        }
+        output_dict = self.forward(self.transforms(img).unsqueeze(0))
+        return {k: v.shape for k, v in output_dict.items()}
 
 
 class TimmCLIPAdapter(nn.Module):
