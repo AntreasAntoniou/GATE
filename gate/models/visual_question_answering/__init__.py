@@ -34,5 +34,8 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
         output_dict["text"]["answer_original"] = [
             copy(inputs["text"]["answers"])
         ]
+        print(
+            inputs["text"]["answers"], output_dict["text"]["answer_original"]
+        )
 
     return output_dict
