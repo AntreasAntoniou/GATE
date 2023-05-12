@@ -36,14 +36,14 @@ def test_talinet_forward():
     assert isinstance(output, dict)
 
     # Check that the dictionary has keys for each modality
-    assert "image_features" in output
-    assert "image_projection_output" in output
-    assert "text_features" in output
-    assert "text_projection_output" in output
-    assert "audio_features" in output
-    assert "audio_projection_output" in output
-    assert "video_features" in output
-    assert "video_projection_output" in output
+    assert "image" in output and "features" in output["image"]
+    assert "image" in output and "projection_output" in output["image"]
+    assert "text" in output and "features" in output["text"]
+    assert "text" in output and "projection_output" in output["text"]
+    assert "audio" in output and "features" in output["audio"]
+    assert "audio" in output and "projection_output" in output["audio"]
+    assert "video" in output and "features" in output["video"]
+    assert "video" in output and "projection_output" in output["video"]
 
     # More detailed checks can be added here, depending on the expected properties of the output
 
