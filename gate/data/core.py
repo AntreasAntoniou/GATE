@@ -154,7 +154,7 @@ def collate_fn_with_token_pad(batch):
         else:
             return torch.stack(batch)
     else:
-        raise TypeError(f"Unsupported data type: {type(elem).__name__}")
+        return default_collate(batch)
 
 
 class GATEDataset(Dataset):
