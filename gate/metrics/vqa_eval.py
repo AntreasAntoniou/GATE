@@ -89,7 +89,6 @@ def vqa_metric(
     for question_id in tqdm(question_ids, desc="Processing questions"):
         vqa_item = target_qa_dict[question_id]
         for answer in vqa_item.answers:
-            print(answer)
             answer.answer = (
                 answer.answer.replace("\n", " ").replace("\t", " ").strip()
             )
