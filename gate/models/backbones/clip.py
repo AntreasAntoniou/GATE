@@ -73,9 +73,6 @@ class CLIPAdapter(nn.Module):
         if text is not None:
             output_dict["text"] = self.text_model(x=text)
 
-        if len(output_dict) == 1:
-            return output_dict[list(output_dict.keys())[0]]
-
         return output_dict
 
     def get_transforms(self):
