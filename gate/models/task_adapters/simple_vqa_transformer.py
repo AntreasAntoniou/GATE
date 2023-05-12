@@ -150,7 +150,7 @@ class SimpleVQATransformer(nn.Module):
             # If answer tokens are provided, concatenate question and answer tokens
             print(
                 answer_decoder_tokens["input_ids"],
-                answer_decoder_tokens["attention_masks"].shape,
+                answer_decoder_tokens["attention_mask"],
             )
             answer_decoder_tokens["input_ids"] = torch.cat(
                 [
