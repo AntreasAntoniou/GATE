@@ -20,6 +20,9 @@ def test_collate_fn_with_token_pad():
     )["train"]
     assert train_set is not None, "Train set should not be None"
 
+    for batch in train_set:
+        print(batch)
+        break
     # Create a DataLoader with the custom collate function
     train_loader = DataLoader(
         train_set, batch_size=2, collate_fn=collate_fn_with_token_pad
