@@ -122,6 +122,7 @@ def pad_and_stack_tensors(tensor_list):
     ]
 
     print(f"padded_list: {[item.shape for item in padded_list]}")
+    print(f"tensor_list: {[item.shape for item in tensor_list]}")
 
     return torch.stack(padded_list)
 
