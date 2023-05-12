@@ -139,6 +139,8 @@ class TALINet(nn.Module):
                 },
             }
 
+        print(f"🚀 Output dict: {list(output_dict.keys())}")
+
         return output_dict
 
     def get_transforms(self):
