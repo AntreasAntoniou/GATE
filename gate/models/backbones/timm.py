@@ -29,23 +29,26 @@ class TimmModel(nn.Module):
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
+        output_shape = self.get_output_shape()
+        print(f"output_shape: {output_shape}")
         self.num_output_features = (
-            self.get_output_shape()[-1]
-            if len(self.get_output_shape()) == 3
-            else self.get_output_shape()[-2] * self.get_output_shape()[-3]
+            output_shape[-1]
+            if len(output_shape) == 3
+            else output_shape[2] * output_shape[3]
         )
 
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
-        return self.forward_features(x)
 
-    def forward_features(self, x):
-        # output is unpooled, a (1, 257, 1024) shaped tensor
-        return self.model.forward_head(x, pre_logits=True)
+        raw_features = self.model.forward_features(x)
+        features = self.model.forward_head(raw_features, pre_logits=True)
+        predictions = self.model.forward_head(raw_features)
 
-    def forward_raw_features(self, x):
-        # output is a (1, num_features) shaped tensor
-        return self.model.forward_features(x)
+        return {
+            "classifier": predictions,
+            "features": features,
+            "raw_features": raw_features,
+        }
 
     def get_transforms(self):
         return {"image": self.transforms}
@@ -56,7 +59,11 @@ class TimmModel(nn.Module):
                 "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/beignets-task-guide.png"
             )
         )
-        return self.forward(self.transforms(img).unsqueeze(0)).shape
+        return {
+            "linear_projection": self.forward(
+                self.transforms(img).unsqueeze(0)
+            ).shape
+        }
 
 
 class TimmCLIPAdapter(nn.Module):
@@ -105,12 +112,7 @@ class TimmCLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
-            output_dict["image"][
-                "features"
-            ] = self.vision_model.forward_features(image)
-            output_dict["image"][
-                "raw_features"
-            ] = self.vision_model.forward_raw_features(image)
+            output_dict["image"] = self.vision_model.forward(image)
 
             if output_dict["image"]["raw_features"].dim() == 4:
                 output_shape = output_dict["image"]["raw_features"].shape
