@@ -72,8 +72,9 @@ def run(cfg: Any) -> None:
     set_seed(seed=cfg.seed)
 
     ckpt_dict = create_hf_model_repo_and_download_maybe(cfg)
-    print(f"ckpt_dict: {ckpt_dict}")
-    ckpt_path = ckpt_dict["root_filepath"]
+
+    if ckpt_dict is not None:
+        ckpt_path = ckpt_dict["root_filepath"]
 
     if ckpt_path is not None:
         logger.info(
