@@ -43,7 +43,7 @@ class VQATrainer(Trainer):
         loss = output_dict["loss"]
 
         # Generate answers and get the ground truth
-        predicted_answers = model.generate_text(batch)
+        predicted_answers = model.model.generate_text(batch)
         ground_truth_answers = batch[
             "answers"
         ]  # Assuming this is where the true answers are
