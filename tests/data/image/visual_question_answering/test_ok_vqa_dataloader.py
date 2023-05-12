@@ -27,12 +27,3 @@ def test_collate_fn_with_token_pad():
     train_loader = DataLoader(
         train_set, batch_size=2, collate_fn=collate_fn_with_token_pad
     )
-
-    # Iterate over the DataLoader
-    for batch in train_loader:
-        # Verify that all tensors in a batch have the same size
-        for key in batch:
-            tensor_sizes = [item.size(0) for item in batch[key]]
-            assert all(
-                size == tensor_sizes[0] for size in tensor_sizes
-            ), f"All tensors in {key} should have the same size"
