@@ -3,7 +3,7 @@ from typing import Any, Dict, Union
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.talinet import TALINet
+from gate.models.backbones.tali import TALINet
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
