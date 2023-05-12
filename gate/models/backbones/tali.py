@@ -123,19 +123,19 @@ class TALINet(nn.Module):
         if text is not None:
             output_dict |= {
                 "text": {
-                    k: v for k, v in self.model.forward_text(image).items()
+                    k: v for k, v in self.model.forward_text(text).items()
                 },
             }
         if audio is not None:
             output_dict |= {
                 "audio": {
-                    k: v for k, v in self.model.forward_audio(image).items()
+                    k: v for k, v in self.model.forward_audio(audio).items()
                 },
             }
         if video is not None:
             output_dict |= {
                 "video": {
-                    k: v for k, v in self.model.forward_video(image).items()
+                    k: v for k, v in self.model.forward_video(video).items()
                 },
             }
 

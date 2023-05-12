@@ -42,6 +42,8 @@ dev_requirements = [
     "sphinx-autodoc-typehints",
     "sphinx-material",
     "matplotlib",
+    "pytest-rich",
+    "pytest-sugar",
 ]
 
 print(f"Installing {find_packages()}")
