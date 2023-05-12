@@ -148,19 +148,15 @@ class SimpleVQATransformer(nn.Module):
 
         if answer_decoder_tokens is not None:
             # If answer tokens are provided, concatenate question and answer tokens
-            combined_sequence = {}
-            combined_sequence["input_ids"] = torch.cat(
+            answer_decoder_tokens["input_ids"] = torch.cat(
                 [
-                    question_decoder_tokens["input_ids"],
                     answer_decoder_tokens["input_ids"],
-                ],
-                dim=1,
-            )
-
-            combined_sequence["attention_mask"] = torch.cat(
-                [
-                    question_decoder_tokens["attention_mask"],
-                    answer_decoder_tokens["attention_mask"],
+                    self.text_decoder_tokenizer.eos_token_id
+                    * torch.ones(
+                        question_decoder_tokens["input_ids"].shape[1]
+                        - answer_decoder_tokens["input_ids"].shape[1],
+                        dtype=torch.long,
+                    ).to(answer_decoder_tokens["input_ids"].device),
                 ],
                 dim=1,
             )
@@ -168,9 +164,9 @@ class SimpleVQATransformer(nn.Module):
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
             output = self.text_decoder(
-                **combined_sequence,
+                input_ids=question_decoder_tokens["input_ids"],
                 encoder_hidden_states=combine_embeddings,
-                labels=combined_sequence,
+                labels=answer_decoder_tokens["input_ids"],
             )
         else:
             # If answer tokens are not provided, simply return the output of the text decoder
