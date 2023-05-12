@@ -116,7 +116,7 @@ def pad_and_stack_tensors(tensor_list):
         torch.nn.functional.pad(
             tensor, pad=(tensor_list[0][-1], max_len - tensor.size(1))
         )
-        if tensor.size(1) < max_len
+        if tensor.size(0) < max_len
         else tensor
         for tensor in tensor_list
     ]
