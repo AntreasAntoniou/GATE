@@ -101,12 +101,17 @@ class TimmCLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
-            image: CLIPOutput = self.vision_model(x=image)
-            output_dict["image_features"] = image
+            output_dict["image_features"] = self.vision_model.forward_features(
+                image
+            )
+            output_dict[
+                "image_raw_features"
+            ] = self.vision_model.forward_raw_features(image)
 
         if text is not None:
-            text: CLIPOutput = self.text_model(input_ids=text).pooler_output
-            output_dict["text_features"] = text
+            text: CLIPOutput = self.text_model(input_ids=text)
+            output_dict["text_features"] = text.pooler_output
+            output_dict["text_raw_features"] = text.last_hidden_state
 
         if len(output_dict) == 1:
             return output_dict[list(output_dict.keys())[0]]

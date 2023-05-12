@@ -86,7 +86,8 @@ class TALINet(nn.Module):
         **kwargs,
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass of the model. Processes each modality if provided, and merges the outputs.
+        Forward pass of the model. Processes each modality if provided,
+        and merges the outputs.
 
         Args:
             image (Optional[torch.Tensor]): The image tensor.
@@ -95,20 +96,24 @@ class TALINet(nn.Module):
             video (Optional[torch.Tensor]): The video tensor.
 
         Returns:
-            Dict[str, torch.Tensor]: A dictionary containing the output tensors from each modality.
+            Dict[str, torch.Tensor]: A dictionary containing the output
+            tensors from each modality.
         """
 
         # Raise ValueError if no input modality is provided
         if image is None and text is None and audio is None and video is None:
             raise ValueError(
-                f"🚫 Must provide at least one input modality to {self.__class__.__name__}."
+                f"🚫 Must provide at least one "
+                f"input modality to {self.__class__.__name__}."
             )
 
         # Process each modality and merge the outputs
         output_dict = defaultdict(dict)
 
-        # For each modality, call the corresponding forward method and merge the results into output_dict
-        # 💡 Using dictionary comprehension to simplify code and improve readability
+        # For each modality, call the corresponding forward method
+        # and merge the results into output_dict
+        # 💡 Using dictionary comprehension to simplify code and
+        # improve readability
         if image is not None:
             output_dict |= {
                 f"image_{k}": v

@@ -156,33 +156,38 @@ class SimpleVQATransformer(nn.Module):
         max_length: int = 50,
     ) -> str:
         """
-        This method generates a textual answer given the same inputs as the forward pass.
+        This method generates a textual answer given the same inputs
+        as the forward pass.
 
         Parameters:
-        - input_dict (Optional[Dict]): A dictionary containing image and question tokens.
-        - image_encoder_tokens (Optional[torch.Tensor]): Tokens for the image encoder.
-        - question_encoder_tokens (Optional[torch.Tensor]): Tokens for the question encoder.
+        - input_dict (Optional[Dict]): A dictionary containing image
+        and question tokens.
+        - image_encoder_tokens (Optional[torch.Tensor]): Tokens for the
+        image encoder.
+        - question_encoder_tokens (Optional[torch.Tensor]): Tokens for the
+        question encoder.
         - max_length (int): Maximum length of the generated answer.
 
         Returns:
         - A string containing the generated answer.
         """
 
-        # Get the model output using the forward method with input_dict or the supplied encoder tokens
+        # Get the model output using the forward method with input_dict or the
+        # supplied encoder tokens
         if input_dict is not None:
             image_encoder_tokens = input_dict["image_encoder_tokens"]
             question_encoder_tokens = input_dict["question_encoder_tokens"]
             question_decoder_tokens = input_dict["question_decoder_tokens"]
 
         # Obtain the image embeddings from the image encoder
-        image_embeddings = self.image_encoder(
-            image_encoder_tokens
-        ).last_hidden_state[:, 0:8, :]
+        image_embeddings = self.image_encoder(image_encoder_tokens)[
+            "raw_features"
+        ][:, 0:8, :]
 
         # Obtain the question text embeddings from the text encoder
-        question_text_embeddings = self.text_encoder(
-            question_encoder_tokens
-        ).last_hidden_state
+        question_text_embeddings = self.text_encoder(question_encoder_tokens)[
+            "raw_features"
+        ]
 
         # Concatenate image and text embeddings along dimension 2
         concat_embeddings = torch.cat(
