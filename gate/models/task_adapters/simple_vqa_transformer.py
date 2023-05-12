@@ -140,50 +140,20 @@ class SimpleVQATransformer(nn.Module):
         if answer_decoder_tokens is not None:
             # If answer tokens are provided, concatenate question and answer tokens
             print(f"question_decoder_tokens: {question_decoder_tokens}")
-            question_decoder_tokens["input_ids"] = torch.cat(
-                [
-                    question_decoder_tokens["input_ids"],
-                    answer_decoder_tokens["input_ids"],
-                ],
-                dim=1,
-            )
-            question_decoder_tokens["attention_mask"] = torch.cat(
-                [
-                    question_decoder_tokens["attention_mask"],
-                    answer_decoder_tokens["attention_mask"],
-                ],
-                dim=1,
-            )
 
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
             return self.text_decoder(
-                **question_decoder_tokens,
+                input_ids=question_decoder_tokens,
                 encoder_hidden_states=combine_embeddings,
-                labels=answer_decoder_tokens["input_ids"],
+                labels=answer_decoder_tokens,
             )
         else:
             # If answer tokens are not provided, simply return the output of the text decoder
             return self.text_decoder(
-                **question_decoder_tokens,
+                input_ids=question_decoder_tokens,
                 encoder_hidden_states=combine_embeddings,
             )
-
-    def get_transforms(self):
-        """
-        This method returns a dictionary of transformations for the text decoder, image encoder, and text encoder.
-
-        Returns:
-        - A dictionary with keys 'text_decoder', 'image_encoder', 'text_encoder'.
-          Each key corresponds to a function that applies the appropriate transformations.
-        """
-        return {
-            "text_decoder": lambda x: tokenize_with_start_end(
-                text=x, tokenizer=self.text_decoder_tokenizer
-            ),
-            "image_encoder": self.image_encoder_transforms,
-            "text_encoder": self.text_encoder_transforms,
-        }
 
     def generate_tokens(
         self,
@@ -250,7 +220,7 @@ class SimpleVQATransformer(nn.Module):
         ).view(concat_embeddings.shape[0], -1, 768)
         # Use the Transformers 'generate' method to generate an answer
         answer_tokens = self.text_decoder.generate(
-            **question_decoder_tokens,
+            input_ids=question_decoder_tokens,
             encoder_hidden_states=combined_embeddings,
             max_length=max_length,
         )
@@ -280,3 +250,19 @@ class SimpleVQATransformer(nn.Module):
             )
             for decoded_token in decoded_tokens
         ]
+
+    def get_transforms(self):
+        """
+        This method returns a dictionary of transformations for the text decoder, image encoder, and text encoder.
+
+        Returns:
+        - A dictionary with keys 'text_decoder', 'image_encoder', 'text_encoder'.
+          Each key corresponds to a function that applies the appropriate transformations.
+        """
+        return {
+            "text_decoder": lambda x: tokenize_with_start_end(
+                text=x, tokenizer=self.text_decoder_tokenizer
+            ),
+            "image_encoder": self.image_encoder_transforms,
+            "text_encoder": self.text_encoder_transforms,
+        }
