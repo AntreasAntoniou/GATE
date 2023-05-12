@@ -81,14 +81,10 @@ class SimpleVQATransformer(nn.Module):
             answer_decoder_tokens = input_dict["answer_decoder_tokens"]
 
         # Obtain the image embeddings from the image encoder
-        image_embeddings = self.image_encoder(
-            image_encoder_tokens
-        ).last_hidden_state[:, 0:8, :]
+        image_embeddings = self.image_encoder(image_encoder_tokens)[:, 0:8, :]
 
         # Obtain the question text embeddings from the text encoder
-        question_text_embeddings = self.text_encoder(
-            question_encoder_tokens
-        ).last_hidden_state
+        question_text_embeddings = self.text_encoder(question_encoder_tokens)
 
         # Concatenate image and text embeddings along dimension 2
         concat_embeddings = torch.cat(
