@@ -26,6 +26,7 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
         ]
 
     if "text" in inputs and "answers" in inputs["text"]:
+        print(inputs["text"]["answers"])
         random_idx = random.randint(0, len(inputs["text"]["answers"]) - 1)
         output_dict["text"]["answer_decoder_tokens"] = transform_dict[
             "text_decoder"
@@ -34,5 +35,6 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
         output_dict["text"]["answer_original"] = copy(
             inputs["text"]["answers"]
         )
+        print(inputs["text"]["answers"])
 
     return output_dict
