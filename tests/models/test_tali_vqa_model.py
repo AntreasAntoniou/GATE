@@ -19,7 +19,7 @@ def test_build_model():
 
 def test_model_forward():
     model_and_transform = build_model()
-    model = model_and_transform.model
+    model = model_and_transform.model.to("cpu")
     transforms_dict = model.get_transforms()
 
     img = Image.open(
