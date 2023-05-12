@@ -257,14 +257,18 @@ class SimpleVQATransformer(nn.Module):
         image_encoder_tokens: Optional[torch.Tensor] = None,
         question_encoder_tokens: Optional[torch.Tensor] = None,
         question_decoder_tokens: Optional[torch.Tensor] = None,
+        image: Optional[Dict[str, torch.Tensor]] = None,
+        text: Optional[Dict[str, torch.Tensor]] = None,
         max_length: int = 50,
     ):
         decoded_tokens = self.generate_tokens(
-            input_dict,
-            image_encoder_tokens,
-            question_encoder_tokens,
-            question_decoder_tokens,
-            max_length,
+            input_dict=input_dict,
+            image_encoder_tokens=image_encoder_tokens,
+            question_encoder_tokens=question_encoder_tokens,
+            question_decoder_tokens=question_decoder_tokens,
+            image=image,
+            text=text,
+            max_length=max_length,
         )
         # Decode the generated tokens into a string
         return [
