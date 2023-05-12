@@ -367,7 +367,7 @@ def download_checkpoint(
 def create_hf_model_repo_and_download_maybe(
     cfg: Any,
 ) -> Tuple[Optional[pathlib.Path], str]:
-    repo_url = create_hf_model_repo(cfg)
+    create_hf_model_repo(cfg)
     create_directories(cfg)
     upload_config_files(cfg, cfg.hf_repo_path)
 
