@@ -21,7 +21,7 @@ from gate.models.task_adapters.classification import (
 
 def build_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
-    timm_model_name: str = "vit_base_patch16_224",
+    timm_model_name: str = "resnet50.a1_in1k",
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,

@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 from gate.boilerplate.decorators import configurable
 from gate.models import ModelAndTransform
 from gate.models.backbones.clip import CLIPAdapter
+from gate.models.backbones.talinet import TALINet
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -14,9 +15,12 @@ from gate.models.task_adapters.simple_vqa_transformer import (
     SimpleVQATransformer,
 )
 
+SUPPORTED_MODALITIES = ["image", "text", "audio", "video"]
+
 
 def build_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    whisper_model_name: str = "openai/whisper-small",
     pretrained: bool = True,
 ) -> ModelAndTransform:
     """
@@ -28,16 +32,20 @@ def build_model(
     :return: A ModelAndTransform instance containing the model
     and transform function.
     """
-    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
+    backbone_model = TALINet(
+        clip_model_name=clip_model_name,
+        whisper_model_name=whisper_model_name,
+        pretrained=pretrained,
+    )
 
-    clip_transforms = backbone_model.get_transforms()
+    tali_transforms = backbone_model.get_transforms()
 
     model = SimpleVQATransformer(
         image_encoder=backbone_model.vision_model,
-        image_encoder_transforms=clip_transforms["image"],
+        image_encoder_transforms=tali_transforms["image"],
         image_encoder_num_features=backbone_model.image_num_features,
         text_encoder=backbone_model.text_model,
-        text_encoder_transforms=clip_transforms["text"],
+        text_encoder_transforms=tali_transforms["text"],
         text_encoder_num_features=backbone_model.text_num_features,
     )
 
@@ -79,14 +87,16 @@ def build_model(
 
 @configurable(
     group="model",
-    name="clip-vqa",
+    name="tali-vqa",
 )
-def build_gate_clip_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+def build_gate_model(
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    whisper_model_name: str = "openai/whisper-small",
     pretrained: bool = True,
 ):
     model_and_transform = build_model(
-        model_name=model_name,
+        clip_model_name=clip_model_name,
+        whisper_model_name=whisper_model_name,
         pretrained=pretrained,
     )
 
