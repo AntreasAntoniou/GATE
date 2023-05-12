@@ -110,38 +110,36 @@ def dataclass_collate(batch):
         raise e
 
 
+def pad_and_stack_tensors(tensor_list):
+    max_len = max(tensor.size(0) for tensor in tensor_list)
+    padded_list = [
+        torch.cat(
+            [tensor, tensor[-1].expand(max_len - tensor.size(0))]
+            + tensor.size()[1:]
+        )
+        if tensor.size(0) < max_len
+        else tensor
+        for tensor in tensor_list
+    ]
+    return torch.stack(padded_list)
+
+
 def collate_fn_with_token_pad(batch):
-    # Initialize a defaultdict(list) to hold the padded items
-    padded_batch = collections.defaultdict(list)
+    from collections.abc import Mapping
 
-    # Find the maximum length of sequences in this batch for each field
-    max_len_dict = {
-        key: max(len(item[key]) for item in batch) for key in batch[0].keys()
-    }
-
-    # Pad all sequences to this length for each field
-    for item in batch:
-        for key in item.keys():
-            if len(item[key]) < max_len_dict[key]:
-                # Pad this item for this field
-                padded_item = torch.cat(
-                    [
-                        item[key],
-                        item[key][-1].repeat(
-                            max_len_dict[key] - len(item[key])
-                        ),
-                    ]
-                )
-            else:
-                # No padding needed
-                padded_item = item[key]
-            padded_batch[key].append(padded_item)
-
-    # Now that all items in the batch have the same length for each field, they can be stacked
-    for key in padded_batch.keys():
-        padded_batch[key] = torch.stack(padded_batch[key])
-
-    return padded_batch
+    elem = batch[0]
+    if isinstance(elem, Mapping):
+        return {
+            key: collate_fn_with_token_pad([d[key] for d in batch])
+            for key in elem
+        }
+    elif isinstance(elem, torch.Tensor):
+        if elem.ndim == 1:  # If it's a 1D tensor like (seq_len,) then pad it
+            return pad_and_stack_tensors(batch)
+        else:
+            return torch.stack(batch)
+    else:
+        raise TypeError(f"Unsupported data type: {type(elem).__name__}")
 
 
 class GATEDataset(Dataset):
