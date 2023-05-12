@@ -6,6 +6,9 @@ from gate.models.visual_question_answering.timm import (
     build_model,
 )
 import PIL.Image as Image
+from rich.traceback import install
+
+install()
 
 
 def test_build_model():
