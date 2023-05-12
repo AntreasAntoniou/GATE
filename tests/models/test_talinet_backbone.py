@@ -1,6 +1,6 @@
 import pytest
 import torch
-from gate.models.backbones.talinet import (
+from gate.models.backbones.tali import (
     TALINet,
 )
 
