@@ -148,7 +148,7 @@ class SimpleVQATransformer(nn.Module):
 
         if answer_decoder_tokens is not None:
             # If answer tokens are provided, concatenate question and answer tokens
-
+            print(answer_decoder_tokens["input_ids"].shape, "answer")
             answer_decoder_tokens["input_ids"] = torch.cat(
                 [
                     answer_decoder_tokens["input_ids"],
