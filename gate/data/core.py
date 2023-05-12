@@ -145,10 +145,13 @@ def collate_fn_with_token_pad(batch):
             return pad_and_stack_tensors(batch)
         elif elem.ndim == 2 and elem.shape[0] == 1 and isinstance(batch, list):
             return pad_and_stack_tensors(batch[0])
-        elif elem.ndim == 2 and elem.shape[0] == 1 and isinstance(batch, list):
+        elif (
+            elem.ndim == 2
+            and elem.shape[0] == 1
+            and isinstance(batch, torch.Tensor)
+        ):
             return pad_and_stack_tensors(batch.squeeze(0))
         else:
-            print(batch)
             return torch.stack(batch)
     else:
         raise TypeError(f"Unsupported data type: {type(elem).__name__}")
