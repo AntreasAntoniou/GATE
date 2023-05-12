@@ -7,7 +7,7 @@ from transformers.models.clip.modeling_clip import CLIPOutput
 
 
 def forward_dict(self, x):
-    output = self.forward(x)
+    output = self.legacy_forward(x)
     return {
         "features": output.pooler_output,
         "raw_features": output.last_hidden_state,
@@ -20,7 +20,9 @@ class CLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
-        self.clip = CLIPModel.from_pretrained(model_name)
+        self.clip = CLIPModel.from_pretrained(
+            model_name, pretrained=pretrained
+        )
 
         self.vision_model = self.clip.vision_model
         self.text_model = self.clip.text_model
