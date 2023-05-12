@@ -145,17 +145,18 @@ class SimpleVQATransformer(nn.Module):
 
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
-            return self.text_decoder(
+            output = self.text_decoder(
                 input_ids=combined_sequence,
                 encoder_hidden_states=combine_embeddings,
                 labels=combined_sequence,
             )
         else:
             # If answer tokens are not provided, simply return the output of the text decoder
-            return self.text_decoder(
+            output = self.text_decoder(
                 input_ids=question_decoder_tokens,
                 encoder_hidden_states=combine_embeddings,
             )
+        return output.__dict__
 
     def generate_tokens(
         self,
