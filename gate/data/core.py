@@ -139,7 +139,7 @@ def collate_fn_with_token_pad(batch):
             for key in elem
         }
     elif isinstance(elem, torch.Tensor):
-        if elem.ndim == 1:  # If it's a 1D tensor like (seq_len,) then pad it
+        if elem.ndim == 2:  # check for two-dimensional tensors
             return pad_and_stack_tensors(batch)
         else:
             return torch.stack(batch)
