@@ -136,6 +136,7 @@ def collate_fn_with_token_pad(batch):
         if elem.ndim == 2:  # check for two-dimensional tensors
             return pad_and_stack_tensors(batch)
         else:
+            print(batch)
             return torch.stack(batch)
     else:
         raise TypeError(f"Unsupported data type: {type(elem).__name__}")
