@@ -86,26 +86,22 @@ def vqa_metric(
     predicted_answer_dict = {qid: vqa_predictions[qid] for qid in question_ids}
 
     results_dict = defaultdict(list)
-    for question_id in tqdm(question_ids, desc="Processing questions"):
+    for question_id in question_ids:
         vqa_item = target_qa_dict[question_id]
         for answer in vqa_item.answers:
-            answer.answer = (
-                answer.answer.replace("\n", " ").replace("\t", " ").strip()
-            )
+            answer = answer.replace("\n", " ").replace("\t", " ").strip()
 
         predicted_answer = predicted_answer_dict[question_id].answer
         predicted_answer = (
             predicted_answer.replace("\n", " ").replace("\t", " ").strip()
         )
 
-        if len(set([ans.answer for ans in vqa_item.answers])) > 1:
+        if len(set([ans for ans in vqa_item.answers])) > 1:
             vqa_item.answers = [
                 AnswerData(
-                    answer=process_digit_article(
-                        process_punctuation(ans.answer)
-                    ),
-                    answer_confidence=ans.answer_confidence,
-                    answer_id=ans.answer_id,
+                    answer=process_digit_article(process_punctuation(ans)),
+                    answer_confidence=None,
+                    answer_id=None,
                 )
                 for ans in vqa_item.answers
             ]
@@ -116,14 +112,13 @@ def vqa_metric(
         temp_accuracy = []
         for target_answer in vqa_item.answers:
             matching_answers = [
-                ans.answer
+                ans
                 for ans in vqa_item.answers
-                if ans.answer == predicted_answer
-                and ans != target_answer.answer
+                if ans == predicted_answer and ans != target_answer
             ]
-            print(
-                f"Matching answers: {matching_answers}, Target answers: {target_answer.answer}, Predicted: {predicted_answer}"
-            )
+            # print(
+            #     f"Matching answers: {matching_answers}, Target answers: {target_answer}, Predicted: {predicted_answer}"
+            # )
             accuracy = min(1.0, float(len(matching_answers)) / 3.0)
             temp_accuracy.append(accuracy)
 

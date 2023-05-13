@@ -28,8 +28,7 @@ def get_dict_shapes(x):
 class StepOutput:
     output_metrics_dict: Dict
     loss: torch.Tensor
-    accuracy: torch.Tensor
-    accuracy_top_5: torch.Tensor
+    vqa_score: Optional[float] = None
 
 
 @configurable(group="trainer", name="visual_question_answering")
@@ -79,11 +78,6 @@ class VQATrainer(Trainer):
                 torch.tensor(result["overall"])
             ),  # Use the mean VQA score here
         }
-
-        keys = list(output_metrics_dict.keys())
-        for key in keys:
-            if "loss" not in key and "vqa_score" not in key:
-                del output_dict[key]
 
         accelerator.backward(loss)
 
