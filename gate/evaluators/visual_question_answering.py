@@ -12,6 +12,7 @@ from gate.boilerplate.decorators import configurable
 from gate.evaluators import Evaluator
 from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
 from gate.models.core import GATEModel
+from gate.trainers import log_data_to_wandb_table
 from gate.trainers.classification import StepOutput
 from gate.boilerplate.utils import get_logger
 
@@ -42,6 +43,7 @@ class StepOutput:
     output_metrics_dict: Dict
     loss: torch.Tensor
     vqa_score: Optional[float] = None
+    qa_with_preds: Optional[Dict] = None
 
 
 @configurable(group="evaluator", name="visual_question_answering")
@@ -52,6 +54,7 @@ class VQAEvaluator(Evaluator):
         batch: Dict,
         global_step: int,
         accelerator: Accelerator,
+        phase_name: Optional[str] = None,
     ):
         output_dict = model.forward(batch)["text"]["image_text"]
         loss = output_dict["loss"]
@@ -70,22 +73,29 @@ class VQAEvaluator(Evaluator):
         result = vqa_metric(
             answers=ground_truth_answers, predicted_answers=predicted_answers
         )
+        if self.starting_eval:
+            log_data_to_wandb_table(
+                questions=questions,
+                answers=ground_truth_answers,
+                predicted_answers=predicted_answers,
+                global_step=global_step,
+                phase_name=phase_name,
+            )
+            self.starting_eval = False
 
         output_metrics_dict = {
             "loss": loss,
-            "vqa_score": torch.mean(
-                torch.tensor(result["overall"])
-            ),  # Use the mean VQA score here
+            "vqa_score": torch.mean(torch.tensor(result["overall"])),
+            # Use the mean VQA score here
         }
 
         return StepOutput(
             output_metrics_dict=output_metrics_dict,
             loss=loss,
-            vqa_score=output_metrics_dict[
-                "vqa_score"
-            ],  # Add the VQA score here
+            vqa_score=output_metrics_dict["vqa_score"],
         )
 
+    @collect_metrics
     @torch.inference_mode()
     def validation_step(
         self,
@@ -106,6 +116,7 @@ class VQAEvaluator(Evaluator):
                 batch=batch,
                 global_step=global_step,
                 accelerator=accelerator,
+                phase_name="validation",
             )
 
             keys = list(step_output.output_metrics_dict.keys())
@@ -143,6 +154,7 @@ class VQAEvaluator(Evaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
+    @collect_metrics
     @torch.inference_mode()
     def testing_step(
         self,
@@ -163,6 +175,7 @@ class VQAEvaluator(Evaluator):
                 batch=batch,
                 global_step=global_step,
                 accelerator=accelerator,
+                phase_name="testing",
             )
 
             keys = list(step_output.output_metrics_dict.keys())

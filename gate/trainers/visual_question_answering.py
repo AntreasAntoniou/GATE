@@ -9,7 +9,7 @@ from gate.boilerplate.decorators import collect_metrics
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
-from gate.trainers import Trainer, TrainerOutput
+from gate.trainers import Trainer, TrainerOutput, log_data_to_wandb_table
 
 logger = get_logger(__name__)
 
@@ -39,7 +39,14 @@ class VQATrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
+    def step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        phase_name: Optional[str] = None,
+    ):
         output_dict = model.forward(batch)["text"]["image_text"]
         loss = output_dict["loss"]
 
@@ -57,12 +64,19 @@ class VQATrainer(Trainer):
         result = vqa_metric(
             answers=ground_truth_answers, predicted_answers=predicted_answers
         )
+        if self.starting_train:
+            log_data_to_wandb_table(
+                questions=questions,
+                answers=ground_truth_answers,
+                predicted_answers=predicted_answers,
+                global_step=global_step,
+                phase_name=phase_name,
+            )
+            self.starting_train = False
 
         output_metrics_dict = {
             "loss": loss,
-            "vqa_score": torch.mean(
-                torch.tensor(result["overall"])
-            ),  # Use the mean VQA score here
+            "vqa_score": torch.mean(torch.tensor(result["overall"])),
         }
 
         accelerator.backward(loss)
@@ -96,6 +110,7 @@ class VQATrainer(Trainer):
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
+            phase_name="training",
         )
 
         if step_output is not None:

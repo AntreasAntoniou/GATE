@@ -146,7 +146,7 @@ class SimpleVQATransformer(nn.Module):
                 answer_decoder_tokens = torch.cat(
                     [
                         answer_decoder_tokens,
-                        self.text_decoder_tokenizer.eos_token_id
+                        0
                         * torch.ones(
                             (
                                 question_decoder_tokens.shape[0],
@@ -165,7 +165,7 @@ class SimpleVQATransformer(nn.Module):
                 question_decoder_tokens = torch.cat(
                     [
                         question_decoder_tokens,
-                        self.text_decoder_tokenizer.eos_token_id
+                        0
                         * torch.ones(
                             (
                                 answer_decoder_tokens.shape[0],
@@ -177,12 +177,14 @@ class SimpleVQATransformer(nn.Module):
                     ],
                     dim=1,
                 )
+            attention_mask = torch.ones(answer_decoder_tokens.shape).to(
+                answer_decoder_tokens.device
+            )
+            attention_mask[question_decoder_tokens == 0] = 0
 
             model_input = {
-                "input_ids": answer_decoder_tokens,
-                "attention_mask": torch.ones(answer_decoder_tokens.shape).to(
-                    answer_decoder_tokens.device
-                ),
+                "input_ids": question_decoder_tokens,
+                "attention_mask": attention_mask,
             }
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
@@ -193,7 +195,7 @@ class SimpleVQATransformer(nn.Module):
             )
         else:
             model_input = {
-                "input_ids": answer_decoder_tokens,
+                "input_ids": question_decoder_tokens,
                 "attention_mask": torch.ones(answer_decoder_tokens.shape).to(
                     answer_decoder_tokens.device
                 ),
