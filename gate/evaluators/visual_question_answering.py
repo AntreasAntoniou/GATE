@@ -37,6 +37,13 @@ class EvaluatorOutput:
     experiment_tracker: Any = None
 
 
+@dataclass
+class StepOutput:
+    output_metrics_dict: Dict
+    loss: torch.Tensor
+    vqa_score: Optional[float] = None
+
+
 @configurable(group="evaluator", name="visual_question_answering")
 class VQAEvaluator(Evaluator):
     def step(
@@ -46,32 +53,36 @@ class VQAEvaluator(Evaluator):
         global_step: int,
         accelerator: Accelerator,
     ):
-        output_dict = model.forward(batch)
+        output_dict = model.forward(batch)["text"]["image_text"]
         loss = output_dict["loss"]
 
-        # Generate answers and get the ground truth
-        predicted_answers = model.generate_text(batch)
-        ground_truth_answers = batch[
-            "answers"
+        with torch.no_grad():
+            # Generate answers and get the ground truth
+            predicted_answers = model.model.generate_text(**batch)
+
+        ground_truth_answers = batch["text"][
+            "answer_original"
         ]  # Assuming this is where the true answers are
+
+        questions = batch["text"]["question_original"]
 
         # Prepare data for VQA evaluation
         vqa_data = {
-            question_id: VQAItem(
-                answers=ground_truth_answers[i],
-                image_id=batch["image_ids"][i],
-                question=batch["questions"][i],
-                question_id=batch["question_ids"][i],
+            idx: VQAItem(
+                answers=answers,
+                image_id=idx,
+                question=question,
+                question_id=idx,
                 question_type=None,
                 answer_type=None,
             )
-            for i, question_id in enumerate(batch["question_ids"])
+            for idx, (question, answers) in enumerate(
+                zip(questions, ground_truth_answers)
+            )
         }
         vqa_predictions = {
-            question_id: AnswerData(answer=predicted_answer)
-            for question_id, predicted_answer in zip(
-                batch["question_ids"], predicted_answers
-            )
+            idx: AnswerData(answer=predicted_answer)
+            for idx, predicted_answer in enumerate(predicted_answers)
         }
 
         # Run the evaluation
@@ -83,11 +94,6 @@ class VQAEvaluator(Evaluator):
                 torch.tensor(result["overall"])
             ),  # Use the mean VQA score here
         }
-
-        keys = list(output_metrics_dict.keys())
-        for key in keys:
-            if "loss" not in key and "vqa_score" not in key:
-                del output_dict[key]
 
         return StepOutput(
             output_metrics_dict=output_metrics_dict,
