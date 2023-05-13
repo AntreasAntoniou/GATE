@@ -472,7 +472,6 @@ class Learner(nn.Module):
                                 ]
                             )
                         )
-                        print(loss)
 
                         pbar_steps.update(1)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")

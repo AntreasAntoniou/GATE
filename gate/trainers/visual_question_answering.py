@@ -31,6 +31,9 @@ class StepOutput:
     vqa_score: Optional[float] = None
 
 
+# TODO: Make sure it's easier for user, with autocheck.
+
+
 @configurable(group="trainer", name="visual_question_answering")
 class VQATrainer(Trainer):
     def get_optimizer(self):
@@ -48,7 +51,9 @@ class VQATrainer(Trainer):
             "answer_original"
         ]  # Assuming this is where the true answers are
 
-        questions = batch["text"]["question_original"]
+        questions = batch["text"][
+            "question_original"
+        ]  # convert dicts to dataclass
 
         # Prepare data for VQA evaluation
         vqa_data = {
