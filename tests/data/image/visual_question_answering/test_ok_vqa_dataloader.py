@@ -25,9 +25,13 @@ def test_collate_fn_with_token_pad():
         break
     # Create a DataLoader with the custom collate function
     train_loader = DataLoader(
-        train_set, batch_size=16, collate_fn=collate_fn_with_token_pad
+        train_set,
+        batch_size=16,
+        collate_fn=collate_fn_with_token_pad,
+        shuffle=True,
     )
 
     for batch in train_loader:
-        print(batch["text"]["answer_decoder_tokens"])
+        for key, value in batch.items():
+            print(f"{key}: {value}")
         break
