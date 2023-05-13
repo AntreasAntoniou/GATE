@@ -1,3 +1,4 @@
+from typing import List
 from urllib.request import urlopen
 import torch
 import torch.nn.functional as F
@@ -44,9 +45,17 @@ def test_model_forward():
         [transforms_dict["image_encoder"](image) for image in images]
     )
 
-    encoder_questions = transforms_dict["text_encoder"](questions)
-    decoder_questions = transforms_dict["text_decoder"](questions)
-    decoder_answers = transforms_dict["text_decoder"](answers)
+    encoder_questions = pad_tokens(
+        [transforms_dict["text_encoder"](question) for question in questions]
+    )
+
+    decoder_questions = pad_tokens(
+        [transforms_dict["text_decoder"](question) for question in questions]
+    )
+
+    decoder_answers = pad_tokens(
+        [transforms_dict["text_decoder"](answer) for answer in answers]
+    )
 
     input_dict = {
         "image_encoder_tokens": encoder_images,
@@ -57,9 +66,25 @@ def test_model_forward():
 
     output = model.forward(input_dict)
 
-    assert output.logits.shape == (3, 9, 50257)
+    assert output["logits"].shape == (3, 8, 50257)
 
-    assert output.loss.item() > 0
+    assert output["loss"] > 0
+
+
+def pad_tokens(token_list: List):
+    token_list = [torch.tensor(token).squeeze() for token in token_list]
+    max_len = max([len(question) for question in token_list])
+
+    encoder_questions_tensor = torch.zeros(
+        (len(token_list), max_len), dtype=torch.long
+    )
+    print(f"encoder_questions_tensor: {encoder_questions_tensor.shape}")
+
+    for i, question in enumerate(token_list):
+        print("question: ", question.shape)
+        encoder_questions_tensor[i, : len(question)] = question
+
+    return encoder_questions_tensor
 
 
 def test_model_forward_loss():
@@ -84,9 +109,17 @@ def test_model_forward_loss():
         [transforms_dict["image_encoder"](image) for image in images]
     )
 
-    encoder_questions = transforms_dict["text_encoder"](questions)
-    decoder_questions = transforms_dict["text_decoder"](questions)
-    decoder_answers = transforms_dict["text_decoder"](answers)
+    encoder_questions = pad_tokens(
+        [transforms_dict["text_encoder"](question) for question in questions]
+    )
+
+    decoder_questions = pad_tokens(
+        [transforms_dict["text_decoder"](question) for question in questions]
+    )
+
+    decoder_answers = pad_tokens(
+        [transforms_dict["text_decoder"](answer) for answer in answers]
+    )
 
     input_dict = {
         "image_encoder_tokens": encoder_images,
@@ -97,11 +130,11 @@ def test_model_forward_loss():
 
     output = model.forward(input_dict)
 
-    assert output.logits.shape == (3, 9, 50257)
+    assert output["logits"].shape == (3, 8, 50257)
 
-    assert output.loss.item() > 0
+    assert output["loss"] > 0
 
-    output.loss.backward()
+    output["loss"].backward()
 
 
 if __name__ == "__main__":

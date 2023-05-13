@@ -77,7 +77,7 @@ def process_digit_article(input_text: str) -> str:
 
 def vqa_metric(
     vqa_data: Dict[int, VQAItem],
-    vqa_predictions: Dict[int, AnswerData],
+    vqa_predictions: List[str],
 ):
     """A class to evaluate VQA predictions."""
 
@@ -116,9 +116,9 @@ def vqa_metric(
                 for ans in vqa_item.answers
                 if ans == predicted_answer and ans != target_answer
             ]
-            # print(
-            #     f"Matching answers: {matching_answers}, Target answers: {target_answer}, Predicted: {predicted_answer}"
-            # )
+            print(
+                f"Matching answers: {matching_answers}, Target answers: {target_answer}, Predicted: {predicted_answer}"
+            )
             accuracy = min(1.0, float(len(matching_answers)) / 3.0)
             temp_accuracy.append(accuracy)
 
