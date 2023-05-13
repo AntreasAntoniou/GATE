@@ -32,9 +32,9 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
             "text_decoder"
         ](copy(inputs["text"]["answers"])[random_idx])
 
-        output_dict["text"]["answer_original"] = copy(
-            inputs["text"]["answers"]
-        )
+        output_dict["text"]["answer_original"] = [
+            copy(inputs["text"]["answers"])
+        ]
         # print(inputs["text"]["answers"])
 
     return output_dict
