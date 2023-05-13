@@ -10,6 +10,25 @@ from transformers import (
 )
 
 
+def tokenize_with_start_end(text, tokenizer):
+    output_dict = tokenizer(text, truncation=True, return_tensors="pt")
+    start_token_id = tokenizer.bos_token_id  # get the id of the start token
+    end_token_id = tokenizer.eos_token_id  # get the id of the end token
+
+    # add start and end tokens
+
+    output_dict = torch.cat(
+        [
+            torch.tensor([[start_token_id]]),
+            output_dict["input_ids"],
+            torch.tensor([[end_token_id]]),
+        ],
+        dim=1,
+    )
+
+    return output_dict
+
+
 class SimpleVQATransformer(nn.Module):
     """
     This class represents a simple Visual Question Answering (VQA) transformer model.
@@ -37,7 +56,7 @@ class SimpleVQATransformer(nn.Module):
         self.text_encoder_transforms = text_encoder_transforms
 
         self.text_decoder_tokenizer = AutoTokenizer.from_pretrained(
-            "distilgpt2"
+            "distilgpt2", padding_side="left"
         )
         self.text_decoder_tokenizer.pad_token = (
             self.text_decoder_tokenizer.eos_token
@@ -47,9 +66,13 @@ class SimpleVQATransformer(nn.Module):
             "distilgpt2", add_cross_attention=True
         )
 
+        self.image_embedding_projection = nn.Linear(
+            image_encoder_num_features, 512
+        )
+
         # Linear layer to combine image and text embeddings
         self.combine_embeddings_linear = nn.Linear(
-            image_encoder_num_features + text_encoder_num_features,
+            512,
             768,  # The combined embeddings size is set to match the hidden size of the 'distilgpt2' model
         )
 
@@ -60,6 +83,8 @@ class SimpleVQATransformer(nn.Module):
         question_encoder_tokens: Optional[torch.Tensor] = None,
         question_decoder_tokens: Optional[torch.Tensor] = None,
         answer_decoder_tokens: Optional[torch.Tensor] = None,
+        image: Optional[Dict[str, torch.Tensor]] = None,
+        text: Optional[Dict[str, torch.Tensor]] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         The forward method for the SimpleVQATransformer model.
@@ -80,10 +105,19 @@ class SimpleVQATransformer(nn.Module):
             question_decoder_tokens = input_dict["question_decoder_tokens"]
             answer_decoder_tokens = input_dict["answer_decoder_tokens"]
 
+        if image is not None:
+            image_encoder_tokens = image["image_encoder_tokens"]
+
+        if text is not None:
+            question_encoder_tokens = text["question_encoder_tokens"]
+            question_decoder_tokens = text["question_decoder_tokens"]
+            answer_decoder_tokens = text["answer_decoder_tokens"]
+
         # Obtain the image embeddings from the image encoder
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
             "image"
         ]["raw_features"][:, 0:8, :]
+        image_embeddings = self.image_embedding_projection(image_embeddings)
 
         # Obtain the question text embeddings from the text encoder
         question_text_embeddings = self.text_encoder(
@@ -92,64 +126,86 @@ class SimpleVQATransformer(nn.Module):
 
         # Concatenate image and text embeddings along dimension 2
         concat_embeddings = torch.cat(
-            [image_embeddings, question_text_embeddings], dim=2
+            [image_embeddings, question_text_embeddings], dim=1
         )
 
         # Combine image and text embeddings using a linear layer
         combine_embeddings = self.combine_embeddings_linear(
             concat_embeddings.view(
                 -1,
-                self.image_encoder_num_features
-                + self.text_encoder_num_features,
+                512,
             )
         ).view(concat_embeddings.shape[0], -1, 768)
 
         if answer_decoder_tokens is not None:
             # If answer tokens are provided, concatenate question and answer tokens
-            question_decoder_tokens["input_ids"] = torch.cat(
-                [
-                    question_decoder_tokens["input_ids"],
-                    answer_decoder_tokens["input_ids"],
-                ],
-                dim=1,
+            if (
+                question_decoder_tokens.shape[1]
+                > answer_decoder_tokens.shape[1]
+            ):
+                answer_decoder_tokens = torch.cat(
+                    [
+                        answer_decoder_tokens,
+                        0
+                        * torch.ones(
+                            (
+                                question_decoder_tokens.shape[0],
+                                question_decoder_tokens.shape[1]
+                                - answer_decoder_tokens.shape[1],
+                            ),
+                            dtype=torch.long,
+                        ).to(answer_decoder_tokens.device),
+                    ],
+                    dim=1,
+                )
+            elif (
+                question_decoder_tokens.shape[1]
+                < answer_decoder_tokens.shape[1]
+            ):
+                question_decoder_tokens = torch.cat(
+                    [
+                        question_decoder_tokens,
+                        0
+                        * torch.ones(
+                            (
+                                answer_decoder_tokens.shape[0],
+                                answer_decoder_tokens.shape[1]
+                                - question_decoder_tokens.shape[1],
+                            ),
+                            dtype=torch.long,
+                        ).to(question_decoder_tokens.device),
+                    ],
+                    dim=1,
+                )
+            attention_mask = torch.ones(answer_decoder_tokens.shape).to(
+                answer_decoder_tokens.device
             )
-            question_decoder_tokens["attention_mask"] = torch.cat(
-                [
-                    question_decoder_tokens["attention_mask"],
-                    answer_decoder_tokens["attention_mask"],
-                ],
-                dim=1,
-            )
+            attention_mask[question_decoder_tokens == 0] = 0
 
+            model_input = {
+                "input_ids": question_decoder_tokens,
+                "attention_mask": attention_mask,
+            }
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
-            return self.text_decoder(
-                **question_decoder_tokens,
+            output = self.text_decoder(
+                **model_input,
                 encoder_hidden_states=combine_embeddings,
-                labels=question_decoder_tokens["input_ids"],
+                labels=answer_decoder_tokens,
             )
         else:
+            model_input = {
+                "input_ids": question_decoder_tokens,
+                "attention_mask": torch.ones(answer_decoder_tokens.shape).to(
+                    answer_decoder_tokens.device
+                ),
+            }
             # If answer tokens are not provided, simply return the output of the text decoder
-            return self.text_decoder(
-                **question_decoder_tokens,
+            output = self.text_decoder(
+                **model_input,
                 encoder_hidden_states=combine_embeddings,
             )
-
-    def get_transforms(self):
-        """
-        This method returns a dictionary of transformations for the text decoder, image encoder, and text encoder.
-
-        Returns:
-        - A dictionary with keys 'text_decoder', 'image_encoder', 'text_encoder'.
-          Each key corresponds to a function that applies the appropriate transformations.
-        """
-        return {
-            "text_decoder": lambda x: self.text_decoder_tokenizer(
-                x, truncation=True, padding=True, return_tensors="pt"
-            ),
-            "image_encoder": self.image_encoder_transforms,
-            "text_encoder": self.text_encoder_transforms,
-        }
+        return output.__dict__
 
     def generate_tokens(
         self,
@@ -157,6 +213,8 @@ class SimpleVQATransformer(nn.Module):
         image_encoder_tokens: Optional[torch.Tensor] = None,
         question_encoder_tokens: Optional[torch.Tensor] = None,
         question_decoder_tokens: Optional[torch.Tensor] = None,
+        image: Optional[Dict[str, torch.Tensor]] = None,
+        text: Optional[Dict[str, torch.Tensor]] = None,
         max_length: int = 50,
     ) -> str:
         """
@@ -183,11 +241,18 @@ class SimpleVQATransformer(nn.Module):
             question_encoder_tokens = input_dict["question_encoder_tokens"]
             question_decoder_tokens = input_dict["question_decoder_tokens"]
 
+        if image is not None:
+            image_encoder_tokens = image["image_encoder_tokens"]
+
+        if text is not None:
+            question_encoder_tokens = text["question_encoder_tokens"]
+            question_decoder_tokens = text["question_decoder_tokens"]
+
         # Obtain the image embeddings from the image encoder
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
             "image"
         ]["raw_features"][:, 0:8, :]
-
+        image_embeddings = self.image_embedding_projection(image_embeddings)
         # Obtain the question text embeddings from the text encoder
         question_text_embeddings = self.text_encoder(
             text=question_encoder_tokens
@@ -195,20 +260,22 @@ class SimpleVQATransformer(nn.Module):
 
         # Concatenate image and text embeddings along dimension 2
         concat_embeddings = torch.cat(
-            [image_embeddings, question_text_embeddings], dim=2
+            [image_embeddings, question_text_embeddings], dim=1
         )
 
         # Combine image and text embeddings using a linear layer
         combined_embeddings = self.combine_embeddings_linear(
             concat_embeddings.view(
                 -1,
-                self.image_encoder_num_features
-                + self.text_encoder_num_features,
+                512,
             )
         ).view(concat_embeddings.shape[0], -1, 768)
         # Use the Transformers 'generate' method to generate an answer
         answer_tokens = self.text_decoder.generate(
-            **question_decoder_tokens,
+            input_ids=question_decoder_tokens,
+            attention_mask=torch.ones(question_decoder_tokens.shape).to(
+                question_decoder_tokens.device
+            ),
             encoder_hidden_states=combined_embeddings,
             max_length=max_length,
         )
@@ -221,14 +288,18 @@ class SimpleVQATransformer(nn.Module):
         image_encoder_tokens: Optional[torch.Tensor] = None,
         question_encoder_tokens: Optional[torch.Tensor] = None,
         question_decoder_tokens: Optional[torch.Tensor] = None,
+        image: Optional[Dict[str, torch.Tensor]] = None,
+        text: Optional[Dict[str, torch.Tensor]] = None,
         max_length: int = 50,
     ):
         decoded_tokens = self.generate_tokens(
-            input_dict,
-            image_encoder_tokens,
-            question_encoder_tokens,
-            question_decoder_tokens,
-            max_length,
+            input_dict=input_dict,
+            image_encoder_tokens=image_encoder_tokens,
+            question_encoder_tokens=question_encoder_tokens,
+            question_decoder_tokens=question_decoder_tokens,
+            image=image,
+            text=text,
+            max_length=max_length,
         )
         # Decode the generated tokens into a string
         return [
@@ -238,3 +309,19 @@ class SimpleVQATransformer(nn.Module):
             )
             for decoded_token in decoded_tokens
         ]
+
+    def get_transforms(self):
+        """
+        This method returns a dictionary of transformations for the text decoder, image encoder, and text encoder.
+
+        Returns:
+        - A dictionary with keys 'text_decoder', 'image_encoder', 'text_encoder'.
+          Each key corresponds to a function that applies the appropriate transformations.
+        """
+        return {
+            "text_decoder": lambda x: tokenize_with_start_end(
+                text=x, tokenizer=self.text_decoder_tokenizer
+            ),
+            "image_encoder": self.image_encoder_transforms,
+            "text_encoder": self.text_encoder_transforms,
+        }

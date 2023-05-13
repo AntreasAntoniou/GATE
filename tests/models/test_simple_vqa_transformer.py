@@ -7,6 +7,7 @@ from gate.models.backbones.clip import CLIPAdapter
 from gate.models.task_adapters.simple_vqa_transformer import (
     SimpleVQATransformer,
 )
+from tests.models.test_clip_vqa_model import pad_tokens
 
 
 def test_generate():
@@ -25,7 +26,7 @@ def test_generate():
         text_encoder_num_features=512,
     )
     simple_vqa_transformer = accelerator.prepare(simple_vqa_transformer)
-    vqa_transforms = simple_vqa_transformer.get_transforms()
+    transforms_dict = simple_vqa_transformer.get_transforms()
 
     # Prepare the input data
     img = Image.open(
@@ -42,11 +43,19 @@ def test_generate():
     answers = ["beignets", "a cat", "sunny"]
 
     encoder_images = [
-        vqa_transforms["image_encoder"](image) for image in images
+        transforms_dict["image_encoder"](image) for image in images
     ]
-    encoder_questions = vqa_transforms["text_encoder"](questions)
-    decoder_questions = vqa_transforms["text_decoder"](questions)
-    decoder_answers = vqa_transforms["text_decoder"](answers)
+    encoder_questions = pad_tokens(
+        [transforms_dict["text_encoder"](question) for question in questions]
+    )
+
+    decoder_questions = pad_tokens(
+        [transforms_dict["text_decoder"](question) for question in questions]
+    )
+
+    decoder_answers = pad_tokens(
+        [transforms_dict["text_decoder"](answer) for answer in answers]
+    )
 
     encoder_images = torch.stack(encoder_images).to(accelerator.device)
     encoder_questions = encoder_questions.to(accelerator.device)
