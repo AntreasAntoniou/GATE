@@ -45,6 +45,7 @@ from gate.config.variables import (
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
 )
+from gate.data.core import collate_fn_with_token_pad
 
 hydra_logger = get_logger("hydra")
 
@@ -120,7 +121,10 @@ def collect_config_store():
     # Dataloader configs
 
     dataloader_config = builds(
-        DataLoader, dataset=None, populate_full_signature=True
+        DataLoader,
+        dataset=None,
+        populate_full_signature=True,
+        collate_fn=collate_fn_with_token_pad,
     )
 
     config_store.store(

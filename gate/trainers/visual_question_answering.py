@@ -9,7 +9,7 @@ from gate.boilerplate.decorators import collect_metrics
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
-from gate.trainers import Trainer, TrainerOutput
+from gate.trainers import Trainer, TrainerOutput, log_data_to_wandb_table
 
 logger = get_logger(__name__)
 
@@ -28,8 +28,10 @@ def get_dict_shapes(x):
 class StepOutput:
     output_metrics_dict: Dict
     loss: torch.Tensor
-    accuracy: torch.Tensor
-    accuracy_top_5: torch.Tensor
+    vqa_score: Optional[float] = None
+
+
+# TODO: Make sure it's easier for user, with autocheck.
 
 
 @configurable(group="trainer", name="visual_question_answering")
@@ -37,49 +39,45 @@ class VQATrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        output_dict = model.forward(batch)
+    def step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        phase_name: Optional[str] = None,
+    ):
+        output_dict = model.forward(batch)["text"]["image_text"]
         loss = output_dict["loss"]
 
-        # Generate answers and get the ground truth
-        predicted_answers = model.generate_text(batch)
-        ground_truth_answers = batch[
-            "answers"
+        with torch.no_grad():
+            # Generate answers and get the ground truth
+            predicted_answers = model.model.generate_text(**batch)
+
+        ground_truth_answers = batch["text"][
+            "answer_original"
         ]  # Assuming this is where the true answers are
 
-        # Prepare data for VQA evaluation
-        vqa_data = {
-            question_id: VQAItem(
-                answers=ground_truth_answers[i],
-                image_id=batch["image_ids"][i],
-                question=batch["questions"][i],
-                question_id=batch["question_ids"][i],
-                question_type=None,
-                answer_type=None,
-            )
-            for i, question_id in enumerate(batch["question_ids"])
-        }
-        vqa_predictions = {
-            question_id: AnswerData(answer=predicted_answer)
-            for question_id, predicted_answer in zip(
-                batch["question_ids"], predicted_answers
-            )
-        }
+        questions = batch["text"]["question_original"]
 
         # Run the evaluation
-        result = vqa_metric(vqa_data, vqa_predictions)
+        result = vqa_metric(
+            answers=ground_truth_answers, predicted_answers=predicted_answers
+        )
+        if self.starting_train:
+            log_data_to_wandb_table(
+                questions=questions,
+                answers=ground_truth_answers,
+                predicted_answers=predicted_answers,
+                global_step=global_step,
+                phase_name=phase_name,
+            )
+            self.starting_train = False
 
         output_metrics_dict = {
             "loss": loss,
-            "vqa_score": torch.mean(
-                torch.tensor(result["overall"])
-            ),  # Use the mean VQA score here
+            "vqa_score": torch.mean(torch.tensor(result["overall"])),
         }
-
-        keys = list(output_metrics_dict.keys())
-        for key in keys:
-            if "loss" not in key and "vqa_score" not in key:
-                del output_dict[key]
 
         accelerator.backward(loss)
 
@@ -112,6 +110,7 @@ class VQATrainer(Trainer):
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
+            phase_name="training",
         )
 
         if step_output is not None:

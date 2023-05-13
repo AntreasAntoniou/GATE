@@ -1,4 +1,5 @@
 from collections import defaultdict
+from copy import copy
 import random
 from typing import Any, Dict, Union
 
@@ -14,6 +15,7 @@ from gate.models.core import (
 from gate.models.task_adapters.simple_vqa_transformer import (
     SimpleVQATransformer,
 )
+from gate.models.visual_question_answering import transform_wrapper
 
 SUPPORTED_MODALITIES = ["image", "text", "audio", "video"]
 
@@ -54,35 +56,12 @@ def build_model(
 
     transform_dict = model.get_transforms()
 
-    def transform_wrapper(inputs: Union[Dict, Any]):
-        output_dict = defaultdict(dict)
-
-        if "image" in inputs:
-            output_dict["image"]["image_encoder_tokens"] = [
-                transform_dict["image_encoder"](image)
-                for image in inputs["image"]
-            ]
-
-        if "text" in inputs and "question" in inputs["text"]:
-            output_dict["text"]["encoder_question_token"] = transform_dict[
-                "text_encoder"
-            ](inputs["text"]["question"].copy())
-
-            output_dict["text"]["decoder_question_token"] = transform_dict[
-                "text_decoder"
-            ](inputs["text"]["question"].copy())
-
-        if "text" in inputs and "answers" in inputs["text"]:
-            random_idx = random.randint(
-                0, len(inputs["text"]["answers"].copy()) - 1
-            )
-            output_dict["text"]["decoder_answers_tokens"] = transform_dict[
-                "text_decoder"
-            ](inputs["text"]["answers"].copy()[random_idx])
-
-        return output_dict
-
-    return ModelAndTransform(model=model, transform=transform_wrapper)
+    return ModelAndTransform(
+        model=model,
+        transform=lambda x: transform_wrapper(
+            x, transform_dict=transform_dict
+        ),
+    )
 
 
 @configurable(

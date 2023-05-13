@@ -8,6 +8,8 @@ from gate.models.visual_question_answering.timm import (
 import PIL.Image as Image
 from rich.traceback import install
 
+from tests.models.test_clip_vqa_model import pad_tokens
+
 install()
 
 
@@ -41,9 +43,17 @@ def test_model_forward():
         [transforms_dict["image_encoder"](image) for image in images]
     )
 
-    encoder_questions = transforms_dict["text_encoder"](questions)
-    decoder_questions = transforms_dict["text_decoder"](questions)
-    decoder_answers = transforms_dict["text_decoder"](answers)
+    encoder_questions = pad_tokens(
+        [transforms_dict["text_encoder"](question) for question in questions]
+    )
+
+    decoder_questions = pad_tokens(
+        [transforms_dict["text_decoder"](question) for question in questions]
+    )
+
+    decoder_answers = pad_tokens(
+        [transforms_dict["text_decoder"](answer) for answer in answers]
+    )
 
     input_dict = {
         "image_encoder_tokens": encoder_images,
@@ -54,9 +64,9 @@ def test_model_forward():
 
     output = model.forward(input_dict)
 
-    assert output.logits.shape == (3, 9, 50257)
+    assert output["logits"].shape == (3, 8, 50257)
 
-    assert output.loss.item() > 0
+    assert output["loss"] > 0
 
 
 def test_model_forward_loss():
@@ -81,9 +91,17 @@ def test_model_forward_loss():
         [transforms_dict["image_encoder"](image) for image in images]
     )
 
-    encoder_questions = transforms_dict["text_encoder"](questions)
-    decoder_questions = transforms_dict["text_decoder"](questions)
-    decoder_answers = transforms_dict["text_decoder"](answers)
+    encoder_questions = pad_tokens(
+        [transforms_dict["text_encoder"](question) for question in questions]
+    )
+
+    decoder_questions = pad_tokens(
+        [transforms_dict["text_decoder"](question) for question in questions]
+    )
+
+    decoder_answers = pad_tokens(
+        [transforms_dict["text_decoder"](answer) for answer in answers]
+    )
 
     input_dict = {
         "image_encoder_tokens": encoder_images,
@@ -94,11 +112,11 @@ def test_model_forward_loss():
 
     output = model.forward(input_dict)
 
-    assert output.logits.shape == (3, 9, 50257)
+    assert output["logits"].shape == (3, 8, 50257)
 
-    assert output.loss.item() > 0
+    assert output["loss"] > 0
 
-    output.loss.backward()
+    output["loss"].backward()
 
 
 if __name__ == "__main__":
