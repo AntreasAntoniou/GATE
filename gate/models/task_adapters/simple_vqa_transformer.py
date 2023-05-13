@@ -56,7 +56,7 @@ class SimpleVQATransformer(nn.Module):
         self.text_encoder_transforms = text_encoder_transforms
 
         self.text_decoder_tokenizer = AutoTokenizer.from_pretrained(
-            "distilgpt2"
+            "distilgpt2", padding_side="left"
         )
         self.text_decoder_tokenizer.pad_token = (
             self.text_decoder_tokenizer.eos_token
