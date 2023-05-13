@@ -51,31 +51,12 @@ class VQATrainer(Trainer):
             "answer_original"
         ]  # Assuming this is where the true answers are
 
-        questions = batch["text"][
-            "question_original"
-        ]  # convert dicts to dataclass
-
-        # Prepare data for VQA evaluation
-        vqa_data = {
-            idx: VQAItem(
-                answers=answers,
-                image_id=idx,
-                question=question,
-                question_id=idx,
-                question_type=None,
-                answer_type=None,
-            )
-            for idx, (question, answers) in enumerate(
-                zip(questions, ground_truth_answers)
-            )
-        }
-        vqa_predictions = {
-            idx: AnswerData(answer=predicted_answer)
-            for idx, predicted_answer in enumerate(predicted_answers)
-        }
+        questions = batch["text"]["question_original"]
 
         # Run the evaluation
-        result = vqa_metric(vqa_data, vqa_predictions)
+        result = vqa_metric(
+            answers=ground_truth_answers, predicted_answers=predicted_answers
+        )
 
         output_metrics_dict = {
             "loss": loss,
