@@ -154,7 +154,7 @@ def collate_fn_with_token_pad(batch):
         else:
             return torch.stack(batch)
     else:
-        return default_collate(batch)
+        return {key: default_collate([d[key] for d in batch]) for key in elem}
 
 
 class GATEDataset(Dataset):
