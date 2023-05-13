@@ -32,6 +32,7 @@ class Trainer(ABC):
         self.scheduler = scheduler
         self.experiment_tracker = experiment_tracker
         self.state_dict = {}
+        self.starting_train = True
 
         if self.scheduler is not None:
             assert scheduler_interval in {"step"}
@@ -72,6 +73,7 @@ class Trainer(ABC):
         global_step: int,
     ):
         self.state_dict = {}
+        self.starting_train = True
         return TrainerOutput(
             opt_loss=None,
             global_step=global_step,
@@ -97,3 +99,28 @@ class Trainer(ABC):
             phase_name="training",
             experiment_tracker=self.experiment_tracker,
         )
+
+
+import wandb
+
+
+def log_data_to_wandb_table(
+    questions: list,
+    answers: list,
+    predicted_answers: list,
+    global_step: list,
+    phase_name: str,
+):
+    # Initialize a table
+    table = wandb.Table(
+        columns=["Global Step", "Question", "Answers", "Predicted Answer"]
+    )
+
+    # Zip the lists together and add each data point to the table
+    for question, answer, predicted_answer in zip(
+        questions, answers, predicted_answers
+    ):
+        table.add_data(global_step, question, answer, predicted_answer)
+
+    # Log the table
+    wandb.log({f"{phase_name}/qa_table": table})

@@ -15,6 +15,7 @@ class Evaluator(ABC):
         self.state_dict = {}
         self.epoch_metrics = defaultdict(list)
         self.experiment_tracker = experiment_tracker
+        self.starting_eval = True
 
     @abstractmethod
     def step(self, model, batch, global_step):
@@ -57,6 +58,7 @@ class Evaluator(ABC):
         global_step: int,
     ):
         self.state_dict = {}
+        self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",
@@ -70,6 +72,7 @@ class Evaluator(ABC):
         global_step: int,
     ):
         self.state_dict = {}
+        self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="testing",
@@ -84,6 +87,9 @@ class Evaluator(ABC):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
+            if "loss" not in key and "vqa_score" not in key:
+                continue
+
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
             self.epoch_metrics[f"{key}-epoch-mean"].append(
@@ -109,6 +115,8 @@ class Evaluator(ABC):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
+            if "loss" not in key and "vqa_score" not in key:
+                continue
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
