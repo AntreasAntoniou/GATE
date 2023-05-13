@@ -1,7 +1,7 @@
 import collections
 import json
 from collections import defaultdict
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 import torch
 
 from torch.utils.data import Dataset
@@ -111,50 +111,55 @@ def dataclass_collate(batch):
 
 
 def pad_and_stack_tensors(tensor_list):
+    tensor_list = list(tensor_list)
+    for idx, tensor in enumerate(tensor_list):
+        if len(tensor.shape) == 2 and tensor.shape[0] == 1:
+            tensor = tensor.squeeze(0)
+            tensor_list[idx] = tensor
+
     max_len = max(tensor.size(0) for tensor in tensor_list)
     padded_list = []
 
     for tensor in tensor_list:
         if tensor.size(0) < max_len:
             padding_size = max_len - tensor.size(0)
-            padding = torch.ones(
-                (padding_size),
-                dtype=tensor.dtype,
-                device=tensor.device,
-            )
-            tensor = torch.cat([tensor, padding * tensor[-1]], dim=0)
+            padding = (
+                torch.ones(
+                    (padding_size),
+                    dtype=tensor.dtype,
+                    device=tensor.device,
+                )
+                * tensor[-1]
+            )  # use the last value (eos)
+            tensor = torch.cat([tensor, padding], dim=0)
         padded_list.append(tensor)
-
-    # print(f"padded_list: {[item.shape for item in padded_list]}")
-    # print(f"tensor_list: {[item.shape for item in tensor_list]}")
-
+    # print(f"padded_list: {[tensor.shape for tensor in padded_list]}")
     return torch.stack(padded_list)
 
 
-def collate_fn_with_token_pad(batch):
-    from collections.abc import Mapping
+def collate_fn_with_token_pad(data):
+    batch = defaultdict(lambda: defaultdict(dict))
 
-    elem = batch[0]
-    if isinstance(elem, Mapping):
-        return {
-            key: collate_fn_with_token_pad([d[key] for d in batch])
-            for key in elem
-        }
-    elif isinstance(elem, torch.Tensor):
-        if elem.ndim == 1:  # check for two-dimensional tensors
-            return pad_and_stack_tensors(batch)
-        elif elem.ndim == 2 and elem.shape[0] == 1 and isinstance(batch, list):
-            return pad_and_stack_tensors([item.squeeze(0) for item in batch])
-        elif (
-            elem.ndim == 2
-            and elem.shape[0] == 1
-            and isinstance(batch, torch.Tensor)
-        ):
-            return pad_and_stack_tensors(batch.squeeze(0))
+    def process_value(value):
+        if isinstance(value[0], torch.Tensor):
+            # print(f"tensor: {value}")
+            return (
+                pad_and_stack_tensors(value)
+                if value[0].dtype == torch.long
+                else torch.stack(value)
+            )
+        elif isinstance(value[0], Mapping):
+            return collate_fn_with_token_pad(value)
+        elif isinstance(value[0], str):
+            return value
         else:
-            return torch.stack(batch)
-    else:
-        return {key: default_collate([d[key] for d in batch]) for key in elem}
+            return value
+
+    batch = {}
+    for key, values in zip(data[0].keys(), zip(*[d.values() for d in data])):
+        batch[key] = process_value(values)
+
+    return batch
 
 
 class GATEDataset(Dataset):
