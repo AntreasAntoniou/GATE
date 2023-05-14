@@ -1,3 +1,4 @@
+# Code inspired from https://github.com/facebookresearch/SlowFast
 import logging
 import os
 import pickle
@@ -13,7 +14,7 @@ from . import utils as utils
 logger = logging.getLogger(__name__)
 
 
-class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
+class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
     """
     It uses GulpIO2 instead of reading directly from jpg frames to speed up the IO!
     It will ignore the gulp meta data, and read meta from the CSV instead.
@@ -32,7 +33,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         mode,
         num_frames,
         gulp_dir_path: str | Path,
-        tube_pkl_path: str | Path,
+        skeleton_pkl_path: str | Path,
         train_jitter_min=256,
         train_jitter_max=320,
         train_horizontal_flip=True,
@@ -103,7 +104,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         self.gulp_dir = GulpDirectory(gulp_dir_path)
         self.mode = mode
 
-        self._tube_pkl_path = tube_pkl_path
+        self._skeleton_pkl_path = skeleton_pkl_path
 
         self.sample_index_code = sample_index_code.lower()
 
@@ -182,9 +183,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(
-            self._csv_file
-        )
+        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
 
         self._gulp_keys = []
         self._video_ids = []
@@ -193,10 +192,15 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         self._end_frames = []  # number of sample video frames
         self._spatial_temporal_idx = []
         # each entry is a dictionary with ['keypoint', 'keypoint_score', 'frame_dir', 'total_frames', 'original_shape', 'img_shape', 'label'] keys.
-        self._tubes = []
+        self._skeletons = []
 
-        with open(self._tube_pkl_path, "rb") as f:
-            tube_data = pickle.load(f, encoding="latin1")
+        with open(self._skeleton_pkl_path, "rb") as f:
+            skeleton_data = pickle.load(f)
+
+        skeletons = {}
+        for skeleton_annotation in skeleton_data["annotations"]:
+            # frame_dir is the gulp key without the class name and a slash
+            skeletons[skeleton_annotation["frame_dir"]] = skeleton_annotation
 
         with open(self._csv_file, "r") as f:
             self.num_classes = int(f.readline())
@@ -212,7 +216,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
                 ) = key_label.split()
 
                 # frame_dir is the gulp key without the class name and a slash
-                self._tubes.append(tube_data["gttubes"][gulp_key])
+                self._skeletons.append(skeletons[gulp_key.split("/")[-1]])
 
                 if self.video_id_to_label is None:
                     labels = label.split(";")
@@ -221,9 +225,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
                     for label in labels:
                         if self.num_classes > 0:
                             label_list = label.split(",")
-                            label = np.zeros(
-                                self.num_classes, dtype=np.float32
-                            )
+                            label = np.zeros(self.num_classes, dtype=np.float32)
                             for label_idx in label_list:
                                 label[int(label_idx)] = 1.0  # one hot encoding
                         else:
@@ -289,15 +291,11 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             assert len({min_scale, max_scale}) == 1
             sample_uniform = True
         else:
-            raise NotImplementedError(
-                "Does not support {} mode".format(self.mode)
-            )
+            raise NotImplementedError("Does not support {} mode".format(self.mode))
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = (
-            self._end_frames[index] - self._start_frames[index] + 1
-        )
+        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
         if self.sample_index_code == "pyvideoai":
             frame_indices = utils.sparse_frame_indices(
                 num_video_frames,
@@ -324,9 +322,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         if self.flow == "grey":
             # Frames are saved as (u0, v0, u1, v1, ...)
             # Read pairs of greyscale images.
-            frame_indices = [
-                idx * 2 + uv for idx in frame_indices for uv in range(2)
-            ]
+            frame_indices = [idx * 2 + uv for idx in frame_indices for uv in range(2)]
             frames = np.stack(
                 self.gulp_dir[self._gulp_keys[index], frame_indices][0]
             )  # (T*2, H, W)
@@ -407,7 +403,8 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             "x_offset": x_offset,
             "y_offset": y_offset,
             "is_flipped": is_flipped,
-            "tubes": self._tubes[index],
+            "skeleton_keypoints": self._skeletons[index]["keypoint"],
+            "skeleton_keypoints_scores": self._skeletons[index]["keypoint_score"],
         }
 
     def __len__(self):

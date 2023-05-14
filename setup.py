@@ -26,6 +26,8 @@ main_requirements = [
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
     "nibabel",
+    "decord",
+    "kaggle",
     "natsort",
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",

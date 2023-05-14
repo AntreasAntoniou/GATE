@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# Code partially taken from https://github.com/facebookresearch/SlowFast
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 from __future__ import annotations
 
 import itertools
@@ -27,9 +28,7 @@ def get_sequence(center_idx, half_len, sample_rate, num_frames):
     Returns:
         seq (list): list of indexes of sampled frames in this clip.
     """
-    seq = list(
-        range(center_idx - half_len, center_idx + half_len, sample_rate)
-    )
+    seq = list(range(center_idx - half_len, center_idx + half_len, sample_rate))
 
     for seq_idx in range(len(seq)):
         if seq[seq_idx] < 0:
@@ -84,13 +83,9 @@ def spatial_sampling(
             max_size=max_scale,
             inverse_uniform_sampling=inverse_uniform_sampling,
         )
-        frames, _, x_offset, y_offset = transform.random_crop(
-            frames, crop_size
-        )
+        frames, _, x_offset, y_offset = transform.random_crop(frames, crop_size)
         if random_horizontal_flip:
-            frames, _, is_flipped = transform.random_horizontal_flip(
-                0.5, frames
-            )
+            frames, _, is_flipped = transform.random_horizontal_flip(0.5, frames)
         else:
             is_flipped = False
     else:
@@ -102,9 +97,7 @@ def spatial_sampling(
             _,
             scale_factor_width,
             scale_factor_height,
-        ) = transform.random_short_side_scale_jitter(
-            frames, min_scale, max_scale
-        )
+        ) = transform.random_short_side_scale_jitter(frames, min_scale, max_scale)
         frames, _, x_offset, y_offset = transform.uniform_crop(
             frames, crop_size, spatial_idx
         )
@@ -122,8 +115,8 @@ def spatial_sampling(
 def spatial_sampling_5(
     frames,
     spatial_idx=-1,
-    min_scale=256,
-    max_scale=320,
+    min_scale: int | None = 256,
+    max_scale: int | None = 320,
     crop_size=224,
     random_horizontal_flip=True,
     inverse_uniform_sampling=False,
@@ -170,13 +163,9 @@ def spatial_sampling_5(
             )
         else:
             scale_factor_width = scale_factor_height = None
-        frames, _, x_offset, y_offset = transform.random_crop(
-            frames, crop_size
-        )
+        frames, _, x_offset, y_offset = transform.random_crop(frames, crop_size)
         if random_horizontal_flip:
-            frames, _, is_flipped = transform.random_horizontal_flip(
-                0.5, frames
-            )
+            frames, _, is_flipped = transform.random_horizontal_flip(0.5, frames)
         else:
             is_flipped = False
     else:
@@ -189,9 +178,7 @@ def spatial_sampling_5(
                 _,
                 scale_factor_width,
                 scale_factor_height,
-            ) = transform.random_short_side_scale_jitter(
-                frames, min_scale, max_scale
-            )
+            ) = transform.random_short_side_scale_jitter(frames, min_scale, max_scale)
         else:
             scale_factor_width = scale_factor_height = None
 
@@ -231,9 +218,7 @@ def tensor_normalize(tensor, mean, std, normalise=True):
     return tensor
 
 
-def _add_neighbour_frames(
-    frame_indices: list[int], num_neighbours: int
-) -> list[int]:
+def _add_neighbour_frames(frame_indices: list[int], num_neighbours: int) -> list[int]:
     return [idx + n for idx in frame_indices for n in range(num_neighbours)]
 
 
@@ -257,9 +242,7 @@ def strided_frame_indices(
         ) * sampling_rate + num_neighbours  # e.g. 8x4 -> 29 frames span
     else:
         assert num_neighbours == 1, "Not implemented"
-        sample_span = (
-            num_sample_frames * sampling_rate
-        )  # e.g. 8x4 -> 32 frames span
+        sample_span = num_sample_frames * sampling_rate  # e.g. 8x4 -> 32 frames span
     video_frame_indices = list(range(num_video_frames))
     if num_video_frames < sample_span:
         num_repeats = (
@@ -313,9 +296,7 @@ def dense_frame_indices(
         ) * sampling_rate + num_neighbours  # e.g. 8x4 -> 29 frames span  (with num_neighbours=1)
     else:
         assert num_neighbours == 1, "Not implemented"
-        sample_span = (
-            num_sample_frames * sampling_rate
-        )  # e.g. 8x4 -> 32 frames span
+        sample_span = num_sample_frames * sampling_rate  # e.g. 8x4 -> 32 frames span
     video_frame_indices = list(range(num_video_frames))
     if num_video_frames < sample_span:
         num_repeats = (
@@ -345,9 +326,7 @@ def dense_frame_indices(
             start_idx = len(start_idx_choices) // 2
         else:
             # sample the whole temporal coverage (include clip starting from frame 0 and the last frame possible)
-            start_idx = round(
-                (len(start_idx_choices) - 1) / (num_clips - 1) * clip_idx
-            )
+            start_idx = round((len(start_idx_choices) - 1) / (num_clips - 1) * clip_idx)
 
     sampled_frame_indices = [
         video_frame_indices[idx]
@@ -374,9 +353,7 @@ def sparse_frame_indices(
     """
 
     # Assume that input is shorter. At the end, we just add neighbours per each frame index.
-    num_input_frames_wo_neighbour_length = (
-        num_input_frames - num_neighbours + 1
-    )
+    num_input_frames_wo_neighbour_length = num_input_frames - num_neighbours + 1
 
     video_frame_indices = list(range(num_input_frames_wo_neighbour_length))
     if num_input_frames_wo_neighbour_length < num_output_frames:
@@ -422,15 +399,11 @@ def sparse_frame_indices(
         for output_frame_id in range(num_output_frames):
             frame_indices.append(
                 random.randrange(
-                    *segment_start_indices[
-                        output_frame_id : output_frame_id + 2
-                    ]
+                    *segment_start_indices[output_frame_id : output_frame_id + 2]
                 )
             )
 
-        sampled_frame_indices = [
-            video_frame_indices[idx] for idx in frame_indices
-        ]
+        sampled_frame_indices = [video_frame_indices[idx] for idx in frame_indices]
 
     # Add neighbours
     return _add_neighbour_frames(sampled_frame_indices, num_neighbours)
@@ -438,17 +411,13 @@ def sparse_frame_indices(
 
 # num_input_frames = num_frames
 # num_output_frames = num_segments
-def TSN_sample_indices(
-    num_input_frames, num_output_frames, mode="train", new_length=1
-):
+def TSN_sample_indices(num_input_frames, num_output_frames, mode="train", new_length=1):
     """
     :return: list (count from zero)
     """
 
     if mode == "train":
-        average_duration = (
-            num_input_frames - new_length + 1
-        ) // num_output_frames
+        average_duration = (num_input_frames - new_length + 1) // num_output_frames
         if average_duration > 0:
             offsets = np.multiply(
                 list(range(num_output_frames)), average_duration
@@ -469,9 +438,7 @@ def TSN_sample_indices(
 
     else:
         if num_input_frames > num_output_frames + new_length - 1:
-            tick = (num_input_frames - new_length + 1) / float(
-                num_output_frames
-            )
+            tick = (num_input_frames - new_length + 1) / float(num_output_frames)
             offsets = np.array(
                 [int(tick / 2.0 + tick * x) for x in range(num_output_frames)]
             )
@@ -487,14 +454,10 @@ def TSN_sample_indices(
 from numpy.random import randint
 
 
-def TDN_sample_indices(
-    num_input_frames, num_output_frames, mode="train", new_length=5
-):
+def TDN_sample_indices(num_input_frames, num_output_frames, mode="train", new_length=5):
     if mode == "train":  # TSN uniformly sampling for TDN
         if (num_input_frames - new_length + 1) < num_output_frames:
-            average_duration = (num_input_frames - 5 + 1) // (
-                num_output_frames
-            )
+            average_duration = (num_input_frames - 5 + 1) // (num_output_frames)
         else:
             average_duration = (num_input_frames - new_length + 1) // (
                 num_output_frames
@@ -517,19 +480,13 @@ def TDN_sample_indices(
                 )
             else:
                 offsets += list(
-                    np.sort(
-                        randint(
-                            num_input_frames - 5 + 1, size=num_output_frames
-                        )
-                    )
+                    np.sort(randint(num_input_frames - 5 + 1, size=num_output_frames))
                 )
         else:
             offsets += list(np.zeros((num_output_frames,)))
     elif mode == "test":
         if num_input_frames > num_output_frames + new_length - 1:
-            tick = (num_input_frames - new_length + 1) / float(
-                num_output_frames
-            )
+            tick = (num_input_frames - new_length + 1) / float(num_output_frames)
             offsets = np.array(
                 [int(tick / 2.0 + tick * x) for x in range(num_output_frames)]
             )
@@ -538,9 +495,7 @@ def TDN_sample_indices(
     elif mode == "dense_train":  # i3d type sampling for training
         sample_pos = max(1, 1 + num_input_frames - new_length - 64)
         t_stride = 64 // num_output_frames
-        start_idx1 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
+        start_idx1 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
         offsets = [
             (idx * t_stride + start_idx1) % num_input_frames
             for idx in range(num_output_frames)
@@ -548,36 +503,16 @@ def TDN_sample_indices(
     elif mode == "dense_test":  # i3d dense sample for test
         sample_pos = max(1, 1 + num_input_frames - new_length - 64)
         t_stride = 64 // num_output_frames
-        start_idx1 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx2 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx3 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx4 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx5 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx6 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx7 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx8 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx9 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
-        start_idx10 = (
-            0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
-        )
+        start_idx1 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx2 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx3 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx4 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx5 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx6 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx7 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx8 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx9 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
+        start_idx10 = 0 if sample_pos == 1 else np.random.randint(0, sample_pos - 1)
         offsets = (
             [
                 (idx * t_stride + start_idx1) % num_input_frames
