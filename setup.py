@@ -27,8 +27,9 @@ main_requirements = [
     "monai",
     "nibabel",
     "natsort",
-    "tensorflow",
-    "tfds-nightly",
+    "gdown",
+    "gpath",
+    "learn2learn @ https://github.com/mlguild/learn2learn.git",
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
