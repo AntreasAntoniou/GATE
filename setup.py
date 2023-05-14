@@ -29,6 +29,8 @@ main_requirements = [
     "decord",
     "kaggle",
     "natsort",
+    "tensorflow",
+    "tfds-nightly",
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
