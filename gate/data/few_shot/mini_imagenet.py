@@ -16,15 +16,15 @@ logger = get_logger(
 
 
 def preprocess_transforms(sample: Tuple):
-    image_transforms = transforms.Compose(
-        [transforms.Resize((128, 128)), transforms.ToTensor()]
-    )
-    image = image_transforms(sample[0])
+    image_transforms = None  # transforms.Compose([transforms.ToTensor()])
+    image = sample[0]
     label = sample[1]
     return {"image": image, "label": label}
 
 
-class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
+class MiniImageNetFewShotClassificationDataset(
+    FewShotClassificationMetaDataset
+):
     def __init__(
         self,
         dataset_root: Union[str, pathlib.Path],
@@ -45,15 +45,14 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
         support_set_target_transform: Optional[Any] = None,
         query_set_target_transform: Optional[Any] = None,
     ):
-        DATASET_NAME = "metadataset/aircraft"
-        super(AircraftFewShotClassificationDataset, self).__init__(
+        DATASET_NAME = "metadataset/mini_imagenet"
+        super(MiniImageNetFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.FGVCAircraft(
+            dataset_class=lambda set_name: l2l.vision.datasets.MiniImagenet(
                 root=dataset_root,
                 mode=set_name,
                 download=download,
-                bounding_box_crop=True,
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -74,12 +73,12 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
             split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 60,
-                FewShotSuperSplitSetOptions.VAL: 20,
+                FewShotSuperSplitSetOptions.TRAIN: 64,
+                FewShotSuperSplitSetOptions.VAL: 16,
                 FewShotSuperSplitSetOptions.TEST: 20,
             },
-            split_config=None,
-            subset_split_name_list=["all"],
+            # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
+            subset_split_name_list=["train", "validation", "test"],
             label_extractor_fn=lambda x: bytes_to_string(x),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,

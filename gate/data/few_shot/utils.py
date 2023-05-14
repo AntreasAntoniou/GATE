@@ -7,7 +7,7 @@ import h5py
 import torch.utils.data
 from numpy import random
 from torch.utils.data import Subset
-
+from tqdm.auto import tqdm
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(
@@ -59,18 +59,17 @@ def load_split_datasets(dataset, split_tuple):
 
 
 def get_class_to_idx_dict(
-    subsets: List[Iterator],
+    dataset: Iterator,
     class_name_key: str,
     label_extractor_fn: Optional[Callable] = None,
 ):
     class_to_idx_dict = defaultdict(list)
 
-    for subset_idx, subset in enumerate(subsets):
-        for sample_idx, sample in enumerate(subset):
-            key = sample[class_name_key]
-            if label_extractor_fn is not None:
-                key = label_extractor_fn(key)
-            class_to_idx_dict[key].append((int(subset_idx), int(sample_idx)))
+    for sample_idx, sample in tqdm(enumerate(dataset)):
+        key = sample[class_name_key]
+        if label_extractor_fn is not None:
+            key = label_extractor_fn(key)
+        class_to_idx_dict[key].append(int(sample_idx))
 
     temp_class_to_idx_dict = {}
     for key in sorted(class_to_idx_dict.keys()):
