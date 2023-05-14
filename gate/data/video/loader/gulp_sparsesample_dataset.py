@@ -1,19 +1,31 @@
+# Code inspired from https://github.com/facebookresearch/SlowFast
 import logging
 import os
-import pickle
+import random
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.utils.data
 from gulpio2 import GulpDirectory
+from torchvision.transforms import Compose
 
 from . import utils as utils
+from .transforms import (
+    GroupGrayscale,
+    GroupNDarrayToPILImage,
+    GroupOneOfFiveCrops,
+    GroupPILImageToNDarray,
+    GroupRandomCrop,
+    GroupRandomHorizontalFlip,
+    GroupScale,
+    IdentityTransform,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
+class GulpSparsesampleDataset(torch.utils.data.Dataset):
     """
     It uses GulpIO2 instead of reading directly from jpg frames to speed up the IO!
     It will ignore the gulp meta data, and read meta from the CSV instead.
@@ -32,10 +44,11 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         mode,
         num_frames,
         gulp_dir_path: str | Path,
-        skeleton_pkl_path: str | Path,
         train_jitter_min=256,
         train_jitter_max=320,
         train_horizontal_flip=True,
+        train_class_balanced_sampling=False,  # index of the __getitem__ will be completely ignored, meaning any sampler like
+        # DistributedSampler, RandomSampler etc. will have no effect.
         test_scale=256,
         test_num_spatial_crops=10,
         crop_size=224,
@@ -45,6 +58,11 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         bgr=False,
         greyscale=False,
         sample_index_code="pyvideoai",
+        processing_backend="pil",  # torch, pil
+        # Note that they will produce different result as pillow performs LPF before downsampling.
+        # https://stackoverflow.com/questions/60949936/why-bilinear-scaling-of-images-with-pil-and-pytorch-produces-different-results
+        # Also note that in pil backend, horizontal flip of flow will invert the x direction.
+        # Using Pillow-SIMD, pil backend is much faster than torch.
         flow=None,  # If "grey", each image is a 2D array of shape (H, W).
         #           Optical flow has to be saved like
         #           (u1, v1, u2, v2, u3, v3, u4, v4, ...)
@@ -56,6 +74,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         #           and we're using R and G channels for the u and v optical flow channels.
         frame_neighbours=1,  # How many frames to stack.
         video_id_to_label: dict = None,  # Pass a dictionary of mapping video ID to labels, and it will ignore the label in the CSV and get labels from here. Useful when using unsupported label types such as soft labels.
+        pil_transforms_after=None,  # A list of transforms to apply after the default transforms.
     ):
         """
         Construct the video loader with a given csv file. The format of
@@ -90,8 +109,9 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
                 from the train set, and sample one clip per video.
                 For the test mode, the data loader will take data from test set,
                 and sample multiple clips per video.
-            sample_index_code (str): Options include `pyvideoai`, `TSN`.
-                Slightly different implementation of how video is sampled
+            sample_index_code (str): Options include `pyvideoai`, `TSN` and `TDN`.
+                Slightly different implementation of how video is sampled (pyvideoai and TSN),
+                and for the TDN, it is completely different as it samples num_frames*5 frames.
         """
         # Only support train, and test mode.
         assert mode in [
@@ -102,13 +122,29 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         self._gulp_dir_path = gulp_dir_path
         self.gulp_dir = GulpDirectory(gulp_dir_path)
         self.mode = mode
-
-        self._skeleton_pkl_path = skeleton_pkl_path
-
         self.sample_index_code = sample_index_code.lower()
+
+        self.processing_backend = processing_backend.lower()
+        assert self.processing_backend in ["torch", "pil"]
+        if self.processing_backend == "torch":
+            assert (
+                pil_transforms_after is None
+            ), "pil_transforms_after should be None when using torch backend."
+
+        self.pil_transforms_after = pil_transforms_after
 
         self.train_jitter_min = train_jitter_min
         self.train_jitter_max = train_jitter_max
+
+        if mode == "train":
+            if train_class_balanced_sampling:
+                logger.info("Class balanced sampling is ON for training.")
+            self.train_class_balanced_sampling = train_class_balanced_sampling
+        else:
+            assert (
+                not train_class_balanced_sampling
+            ), "train_class_balanced_sampling should only be set in train mode but used in test mode."
+            self.train_class_balanced_sampling = False
 
         self.test_scale = test_scale
 
@@ -182,9 +218,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(
-            self._csv_file
-        )
+        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
 
         self._gulp_keys = []
         self._video_ids = []
@@ -192,19 +226,16 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         self._start_frames = []  # number of sample video frames
         self._end_frames = []  # number of sample video frames
         self._spatial_temporal_idx = []
-        # each entry is a dictionary with ['keypoint', 'keypoint_score', 'frame_dir', 'total_frames', 'original_shape', 'img_shape', 'label'] keys.
-        self._skeletons = []
 
-        with open(self._skeleton_pkl_path, "rb") as f:
-            skeleton_data = pickle.load(f)
-
-        skeletons = {}
-        for skeleton_annotation in skeleton_data["annotations"]:
-            # frame_dir is the gulp key without the class name and a slash
-            skeletons[skeleton_annotation["frame_dir"]] = skeleton_annotation
+        if self.train_class_balanced_sampling:
+            self._indices_per_class = {}  # Dict[int, List[int]]
 
         with open(self._csv_file, "r") as f:
             self.num_classes = int(f.readline())
+            if self.num_classes > 0:
+                assert (
+                    not self.train_class_balanced_sampling
+                ), "We don't know how to class-balance a multilabel dataset."
 
             for clip_idx, key_label in enumerate(f.read().splitlines()):
                 assert len(key_label.split()) == 5
@@ -216,9 +247,6 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
                     end_frame,
                 ) = key_label.split()
 
-                # frame_dir is the gulp key without the class name and a slash
-                self._skeletons.append(skeletons[gulp_key.split("/")[-1]])
-
                 if self.video_id_to_label is None:
                     labels = label.split(";")
 
@@ -226,9 +254,7 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
                     for label in labels:
                         if self.num_classes > 0:
                             label_list = label.split(",")
-                            label = np.zeros(
-                                self.num_classes, dtype=np.float32
-                            )
+                            label = np.zeros(self.num_classes, dtype=np.float32)
                             for label_idx in label_list:
                                 label[int(label_idx)] = 1.0  # one hot encoding
                         else:
@@ -253,6 +279,19 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
                     self._end_frames.append(int(end_frame))
                     self._spatial_temporal_idx.append(idx)
 
+                    if self.train_class_balanced_sampling:
+                        assert (
+                            not multi_head and self.num_classes == 0
+                        ), f"self.train_class_balanced_sampling is True but it only supports single head single label. Got {label_all_heads = }"
+                        if label in self._indices_per_class.keys():
+                            self._indices_per_class[label].append(
+                                len(self._video_ids) - 1
+                            )  # last added index
+                        else:
+                            self._indices_per_class[label] = [
+                                len(self._video_ids) - 1
+                            ]  # last added index
+
         assert (
             len(self._gulp_keys) > 0
         ), f"Failed to load gulp video loader from {self._csv_file}"
@@ -260,6 +299,25 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         logger.info(
             f"Constructing gulp video dataloader (size: {len(self)}) from {self._csv_file}"
         )
+
+    def filter_samples(self, video_ids: list):
+        """Given a video_ids list, filter the samples.
+        Used for visualisation.
+        """
+        indices_of_video_ids = [
+            x for x, v in enumerate(self._video_ids) if v in video_ids
+        ]
+
+        self._gulp_keys = [self._gulp_keys[x] for x in indices_of_video_ids]
+        self._video_ids = [self._video_ids[x] for x in indices_of_video_ids]
+        self._labels = [self._labels[x] for x in indices_of_video_ids]
+        self._start_frames = [self._start_frames[x] for x in indices_of_video_ids]
+        self._end_frames = [self._end_frames[x] for x in indices_of_video_ids]
+        self._spatial_temporal_idx = [
+            self._spatial_temporal_idx[x] for x in indices_of_video_ids
+        ]
+        if self.train_class_balanced_sampling:
+            raise NotImplementedError()
 
     def __getitem__(self, index):
         """
@@ -275,6 +333,12 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             label (int): the label of the current video.
             index (int): Note that it will change from the index argument if self.train_class_balanced_sampling is True.
         """
+
+        if self.train_class_balanced_sampling:
+            # Completely ignore the index, and return new index in a class-balanced way.
+            random_label = random.choice(list(self._indices_per_class.keys()))
+            random_index = random.choice(self._indices_per_class[random_label])
+            index = random_index
 
         crop_size = self.crop_size
         if self.mode == "train":
@@ -294,15 +358,11 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             assert len({min_scale, max_scale}) == 1
             sample_uniform = True
         else:
-            raise NotImplementedError(
-                "Does not support {} mode".format(self.mode)
-            )
+            raise NotImplementedError("Does not support {} mode".format(self.mode))
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = (
-            self._end_frames[index] - self._start_frames[index] + 1
-        )
+        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
         if self.sample_index_code == "pyvideoai":
             frame_indices = utils.sparse_frame_indices(
                 num_video_frames,
@@ -317,6 +377,17 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
                 mode=self.mode,
                 new_length=self.frame_neighbours,
             )
+        elif self.sample_index_code == "tdn":
+            frame_indices = utils.TDN_sample_indices(
+                num_video_frames, self.num_frames, mode=self.mode
+            )
+        elif self.sample_index_code == "tdn_greyst":
+            frame_indices = utils.TDN_sample_indices(
+                num_video_frames,
+                self.num_frames,
+                mode=self.mode,
+                new_length=15,
+            )
         else:
             raise ValueError(
                 f"Wrong self.sample_index_code: {self.sample_index_code}. Should be pyvideoai, TSN, TDN"
@@ -326,76 +397,159 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             idx + self._start_frames[index] for idx in frame_indices
         ]  # add offset (frame number start)
 
-        if self.flow == "grey":
-            # Frames are saved as (u0, v0, u1, v1, ...)
-            # Read pairs of greyscale images.
-            frame_indices = [
-                idx * 2 + uv for idx in frame_indices for uv in range(2)
+        if self.processing_backend == "torch":
+            if self.flow == "grey":
+                # Frames are saved as (u0, v0, u1, v1, ...)
+                # Read pairs of greyscale images.
+                frame_indices = [
+                    idx * 2 + uv for idx in frame_indices for uv in range(2)
+                ]
+                frames = np.stack(
+                    self.gulp_dir[self._gulp_keys[index], frame_indices][0]
+                )  # (T*2, H, W)
+                TC, H, W = frames.shape
+                frames = np.reshape(frames, (TC // 2, 2, H, W))  # (T, C=2, H, W)
+                frames = np.transpose(frames, (0, 2, 3, 1))  # (T, H, W, C=2)
+            else:
+                frames = np.stack(
+                    self.gulp_dir[self._gulp_keys[index], frame_indices][0]
+                )  # (T, H, W, C=3)
+                # or if greyscale images, (T, H, W)
+                if frames.ndim == 3:
+                    # Greyscale images. (T, H, W) -> (T, H, W, 1)
+                    frames = np.expand_dims(frames, axis=-1)
+
+                if self.flow == "rg":
+                    frames = frames[
+                        ..., 0:2
+                    ]  # Use R and G as u and v (x,y). Discard B channel.
+
+            if self.bgr:
+                frames = frames[..., ::-1]
+
+            if self.greyscale:
+                raise NotImplementedError()
+
+            frames = torch.from_numpy(frames)
+
+            # Perform color normalization.
+            frames = utils.tensor_normalize(
+                frames, self.mean, self.std, normalise=self.normalise
+            )
+
+            # Reshape so that neighbouring frames go in the channel dimension.
+            _, H, W, _ = frames.shape
+            # T*neighbours, H, W, C -> T*neighbours, C, H, W
+            frames = frames.permute(0, 3, 1, 2)
+            if self.flow is not None:
+                frames = frames.reshape(
+                    self.num_frames, 2 * self.frame_neighbours, H, W
+                )  # T, C=2*neighbours, H, W
+            else:
+                frames = frames.reshape(
+                    self.num_frames, 3 * self.frame_neighbours, H, W
+                )  # T, C=3*neighbours, H, W
+            # T, C, H, W -> C, T, H, W
+            frames = frames.permute(1, 0, 2, 3)
+
+            # Perform data augmentation.
+            (
+                frames,
+                scale_factor_width,
+                scale_factor_height,
+                x_offset,
+                y_offset,
+                is_flipped,
+            ) = utils.spatial_sampling_5(
+                frames,
+                spatial_idx=spatial_sample_index,
+                min_scale=min_scale,
+                max_scale=max_scale,
+                crop_size=crop_size,
+                random_horizontal_flip=self.train_horizontal_flip,
+            )
+
+        elif self.processing_backend == "pil":
+            is_flow = self.flow is not None
+            pil_transform = [
+                GroupNDarrayToPILImage(),
+                GroupGrayscale() if self.greyscale else IdentityTransform(),
+                GroupScale(round(np.random.uniform(min_scale, max_scale))),
+                GroupRandomCrop(crop_size)
+                if spatial_sample_index < 0
+                else GroupOneOfFiveCrops(
+                    crop_size, spatial_sample_index, is_flow=is_flow
+                ),
+                GroupRandomHorizontalFlip(is_flow=is_flow)
+                if spatial_sample_index < 0 and self.train_horizontal_flip
+                else IdentityTransform(),
             ]
-            frames = np.stack(
-                self.gulp_dir[self._gulp_keys[index], frame_indices][0]
-            )  # (T*2, H, W)
-            TC, H, W = frames.shape
-            frames = np.reshape(frames, (TC // 2, 2, H, W))  # (T, C=2, H, W)
-            frames = np.transpose(frames, (0, 2, 3, 1))  # (T, H, W, C=2)
-        else:
-            frames = np.stack(
-                self.gulp_dir[self._gulp_keys[index], frame_indices][0]
-            )  # (T, H, W, C=3)
-            # or if greyscale images, (T, H, W)
-            if frames.ndim == 3:
-                # Greyscale images. (T, H, W) -> (T, H, W, 1)
-                frames = np.expand_dims(frames, axis=-1)
 
-            if self.flow == "rg":
-                frames = frames[
-                    ..., 0:2
-                ]  # Use R and G as u and v (x,y). Discard B channel.
+            if self.pil_transforms_after is not None:
+                pil_transform.extend(self.pil_transforms_after)
 
-        if self.bgr:
-            frames = frames[..., ::-1]
+            pil_transform.extend(
+                [
+                    GroupPILImageToNDarray(),
+                    np.stack,
+                ]
+            )
+            pil_transform = Compose(pil_transform)
 
-        if self.greyscale:
-            raise NotImplementedError()
+            if self.flow == "grey":
+                # Frames are saved as (u0, v0, u1, v1, ...)
+                # Read pairs of greyscale images.
+                frame_indices = [
+                    idx * 2 + uv for idx in frame_indices for uv in range(2)
+                ]
+                frames = self.gulp_dir[self._gulp_keys[index], frame_indices][
+                    0
+                ]  # list(ndarray(H, W)) size T*2
 
-        frames = torch.from_numpy(frames)
+                frames = pil_transform(frames)
+                TC, H, W = frames.shape
+                frames = np.reshape(frames, (TC // 2, 2, H, W))  # (T, C=2, H, W)
+                frames = np.transpose(frames, (0, 2, 3, 1))  # (T, H, W, C=2)
+            else:
+                frames = self.gulp_dir[self._gulp_keys[index], frame_indices][0]
 
-        # Perform color normalization.
-        frames = utils.tensor_normalize(
-            frames, self.mean, self.std, normalise=self.normalise
-        )
+                frames = pil_transform(
+                    frames
+                )  # (T, H, W, C) or (T, H, W) if greyscaled images
 
-        # Reshape so that neighbouring frames go in the channel dimension.
-        _, H, W, _ = frames.shape
-        # T*neighbours, H, W, C -> T*neighbours, C, H, W
-        frames = frames.permute(0, 3, 1, 2)
-        if self.flow is not None:
-            frames = frames.reshape(
-                self.num_frames, 2 * self.frame_neighbours, H, W
-            )  # T, C=2*neighbours, H, W
-        else:
-            frames = frames.reshape(
-                self.num_frames, 3 * self.frame_neighbours, H, W
-            )  # T, C=3*neighbours, H, W
-        # T, C, H, W -> C, T, H, W
-        frames = frames.permute(1, 0, 2, 3)
+                if frames.ndim == 3:
+                    # Greyscale images. (T, H, W) -> (T, H, W, 1)
+                    frames = np.expand_dims(frames, axis=-1)
 
-        # Perform data augmentation.
-        (
-            frames,
-            scale_factor_width,
-            scale_factor_height,
-            x_offset,
-            y_offset,
-            is_flipped,
-        ) = utils.spatial_sampling_5(
-            frames,
-            spatial_idx=spatial_sample_index,
-            min_scale=min_scale,
-            max_scale=max_scale,
-            crop_size=crop_size,
-            random_horizontal_flip=self.train_horizontal_flip,
-        )
+                if self.flow == "rg":
+                    frames = frames[
+                        ..., 0:2
+                    ]  # Use R and G as u and v (x,y). Discard B channel.
+
+            if self.bgr:
+                frames = frames[..., ::-1]
+
+            frames = torch.from_numpy(frames)
+
+            # Perform color normalization.
+            frames = utils.tensor_normalize(
+                frames, self.mean, self.std, normalise=self.normalise
+            )
+
+            # Reshape so that neighbouring frames go in the channel dimension.
+            _, H, W, _ = frames.shape
+            # T*neighbours, H, W, C -> T*neighbours, C, H, W
+            frames = frames.permute(0, 3, 1, 2)
+            if is_flow:
+                frames = frames.reshape(
+                    self.num_frames, 2 * self.frame_neighbours, H, W
+                )  # T, C=2*neighbours, H, W
+            else:
+                frames = frames.reshape(
+                    self.num_frames, 3 * self.frame_neighbours, H, W
+                )  # T, C=3*neighbours, H, W
+            # T, C, H, W -> C, T, H, W
+            frames = frames.permute(1, 0, 2, 3)
 
         video_id = self._video_ids[index]
         label = self._labels[index]
@@ -407,15 +561,6 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             "spatial_sample_indices": spatial_sample_index,
             "indices": index,
             "frame_indices": np.array(frame_indices),
-            "scale_factor_width": scale_factor_width,
-            "scale_factor_height": scale_factor_height,
-            "x_offset": x_offset,
-            "y_offset": y_offset,
-            "is_flipped": is_flipped,
-            "skeleton_keypoints": self._skeletons[index]["keypoint"],
-            "skeleton_keypoints_scores": self._skeletons[index][
-                "keypoint_score"
-            ],
         }
 
     def __len__(self):
