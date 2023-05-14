@@ -1,16 +1,18 @@
+import json
+import pathlib
 from typing import Any, Counter, Dict, List, Optional
 import numpy as np
-import learn2learn as l2l
 import torch
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
-
-from gate.boilerplate.utils import get_logger
+from tqdm.auto import tqdm
+from gate.boilerplate.utils import get_logger, load_json, save_json
 from gate.data.few_shot.utils import (
     FewShotSuperSplitSetOptions,
     get_class_to_idx_dict,
     get_class_to_image_idx_and_bbox,
 )
+import datasets
 
 logger = get_logger(
     __name__,
@@ -73,7 +75,8 @@ class FewShotClassificationMetaDataset(Dataset):
     split_percentage: Optional[Dict[str, float]]
         Dictionary representing the split percentages.
     split_config: Optional[DictConfig]
-        Split configuration.
+        Split configuration, a dict of lists with keys=split_name,
+        and values=classes to use for that set.
     support_set_input_transform: Any
         Transformations to be applied on the support set inputs.
     query_set_input_transform: Any
@@ -92,7 +95,6 @@ class FewShotClassificationMetaDataset(Dataset):
         dataset_root: str,
         dataset_class: Any,
         split_name: str,
-        download: bool,
         num_episodes: int,
         min_num_classes_per_set: int,
         min_num_samples_per_class: int,
@@ -112,16 +114,18 @@ class FewShotClassificationMetaDataset(Dataset):
         support_set_target_transform: Any = None,
         query_set_target_transform: Any = None,
         label_extractor_fn: Optional[Any] = None,
+        preprocess_transforms: Optional[Any] = None,
     ):
         super(FewShotClassificationMetaDataset, self).__init__()
 
         self.dataset_name = dataset_name
-        self.dataset_root = dataset_root
+        self.dataset_root = pathlib.Path(dataset_root)
         self.dataset_class = dataset_class
         self.input_target_annotation_keys = input_target_annotation_keys
         self.num_episodes = num_episodes
         self.split_config = split_config
         self.print_info = True
+        self.preprocess_transform = preprocess_transforms
 
         self._validate_samples_and_classes(
             min_num_samples_per_class,
@@ -147,20 +151,34 @@ class FewShotClassificationMetaDataset(Dataset):
 
         self.split_name = split_name
         self.split_percentage = split_percentage
-        self.subsets = []
 
         if subset_split_name_list is None:
             subset_split_name_list = ["train", "test"]
 
-        self._load_subsets(subset_split_name_list, download)
+        self.dataset = self._load_subsets(subset_split_name_list)
 
-        self.class_to_address_dict = get_class_to_idx_dict(
-            self.subsets,
-            class_name_key=self.input_target_annotation_keys[
-                "target_annotations"
-            ],
-            label_extractor_fn=label_extractor_fn,
+        class_to_address_dict_path = (
+            self.dataset_root
+            / self.dataset_name
+            / "class_to_address_dict.json"
         )
+        if class_to_address_dict_path.exists():
+            self.class_to_address_dict = load_json(
+                filepath=class_to_address_dict_path
+            )
+        else:
+            self.class_to_address_dict = get_class_to_idx_dict(
+                self.dataset,
+                class_name_key=self.input_target_annotation_keys[
+                    "target_annotations"
+                ],
+                label_extractor_fn=label_extractor_fn,
+            )
+            save_json(
+                filepath=class_to_address_dict_path,
+                dict_to_store=self.class_to_address_dict,
+                overwrite=True,
+            )
 
         self.label_extractor_fn = label_extractor_fn
 
@@ -188,33 +206,33 @@ class FewShotClassificationMetaDataset(Dataset):
             f"num_classes_per_set {num_classes_per_set}"
         )
 
-    def _load_subsets(self, subset_split_name_list, download):
+    def _load_subsets(self, subset_split_name_list):
         """Load and process the subsets."""
-        for subset_name in subset_split_name_list:
-            subset, subset_info = dataset_class(
-                self.dataset_name,
-                split=subset_name,
-                shuffle_files=False,
-                download=download,
-                as_supervised=False,
-                data_dir=self.dataset_root,
-                with_info=True,
-            )
+        dataset_path = self.dataset_root / self.dataset_name
+        state_path = dataset_path / "dataset_info.json"
+        if state_path.exists():
+            return datasets.Dataset.load_from_disk(dataset_path)
 
-            logger.info(
-                f"Loading into memory {subset_name} info: {subset_info}"
-            )
-            subset_samples = [
-                self._process_sample(sample) for sample in subset
-            ]
-            self.subsets.append(subset_samples)
+        def generate_dataset():
+            for subset_name in tqdm(subset_split_name_list):
+                subset = self.dataset_class(
+                    subset_name,
+                )
 
-            if self.print_info:
-                logger.info(f"Loaded two subsets with info: {subset_info}")
+                for sample in tqdm(subset):
+                    yield self._process_sample(sample)
+
+        dataset = datasets.Dataset.from_generator(generate_dataset)
+
+        # Save the dataset to a directory
+        dataset.save_to_disk(self.dataset_root / self.dataset_name)
+        return dataset
 
     def _process_sample(self, sample):
         """Process a sample and return its numpy representation."""
-        return {key: sample[key].numpy() for key in sample.keys()}
+        if self.preprocess_transform is not None:
+            return self.preprocess_transform(sample)
+        return sample
 
     def _get_current_class_to_address_dict(self):
         """Get current class to address dict based on split config."""
@@ -293,14 +311,19 @@ class FewShotClassificationMetaDataset(Dataset):
         return min(num_query_samples_per_class, 10)
 
     def _prepare_support_and_query_sets(
-        self, class_name, num_query_samples_per_class, rng, idx
+        self,
+        class_name,
+        num_query_samples_per_class,
+        rng,
+        idx,
+        support_set_inputs,
     ):
         """Prepare the support and query sets."""
 
         max_support_set_size = 500
         max_per_class_support_set_size = 100
         available_support_set_size = (
-            max_support_set_size - len(self.support_set_inputs) - idx
+            max_support_set_size - len(support_set_inputs) - idx
         )
 
         if self.variable_num_samples_per_class:
@@ -339,17 +362,15 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_data_inputs_and_labels(self, selected_samples_addresses):
         """Get the data inputs and labels."""
         data_inputs = [
-            self.subsets[subset_idx][idx][
-                self.input_target_annotation_keys["inputs"]
-            ]
-            for (subset_idx, idx) in selected_samples_addresses
+            self.dataset[idx][self.input_target_annotation_keys["inputs"]]
+            for idx in selected_samples_addresses
         ]
 
         data_labels = [
-            self.subsets[subset_idx][idx][
+            self.dataset[idx][
                 self.input_target_annotation_keys["target_annotations"]
             ]
-            for (subset_idx, idx) in selected_samples_addresses
+            for idx in selected_samples_addresses
         ]
 
         return data_inputs, data_labels
@@ -397,6 +418,12 @@ class FewShotClassificationMetaDataset(Dataset):
             support_set_labels.extend(data_labels[:-1])
             query_set_inputs.extend(data_inputs[-1:])
             query_set_labels.extend(data_labels[-1:])
+        return (
+            support_set_inputs,
+            support_set_labels,
+            query_set_inputs,
+            query_set_labels,
+        )
 
     def _apply_transformations(
         self, inputs, labels, input_transform, target_transform
@@ -414,6 +441,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
     def _convert_to_tensor(self, inputs, labels):
         """Convert input data and labels to tensors."""
+        inputs = [torch.tensor(input_) for input_ in inputs]
         inputs = (
             torch.stack(inputs, dim=0) if isinstance(inputs, list) else inputs
         )
@@ -517,6 +545,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 num_query_samples_per_class,
                 rng,
                 len(selected_classes_for_set) - idx,
+                support_set_inputs,
             )
 
             # Get the data inputs and labels
@@ -536,7 +565,12 @@ class FewShotClassificationMetaDataset(Dataset):
             )
 
             # Assign data to support and query sets
-            self._assign_data_to_sets(
+            (
+                support_set_inputs,
+                support_set_labels,
+                query_set_inputs,
+                query_set_labels,
+            ) = self._assign_data_to_sets(
                 num_support_samples_per_class,
                 data_inputs,
                 data_labels,
