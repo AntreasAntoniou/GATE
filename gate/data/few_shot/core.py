@@ -210,7 +210,7 @@ class FewShotClassificationMetaDataset(Dataset):
         """Load and process the subsets."""
         dataset_path = self.dataset_root / self.dataset_name
         state_path = dataset_path / "dataset_info.json"
-        
+
         if state_path.exists():
             return datasets.Dataset.load_from_disk(dataset_path)
 
