@@ -16,7 +16,9 @@ logger = get_logger(
 
 
 def preprocess_transforms(sample: Tuple):
-    image_transforms = transforms.Compose([transforms.ToTensor()])
+    image_transforms = transforms.Compose(
+        [transforms.Resize((28, 28)), transforms.ToTensor()]
+    )
     image = image_transforms(sample[0])
     label = sample[1]
     return {"image": image, "label": label}
@@ -49,7 +51,6 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             dataset_root=dataset_root,
             dataset_class=lambda set_name: l2l.vision.datasets.FullOmniglot(
                 root=dataset_root,
-                mode=set_name,
                 download=download,
             ),
             preprocess_transforms=preprocess_transforms,
@@ -76,7 +77,7 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
                 FewShotSuperSplitSetOptions.TEST: 223 / 1623 * 100,
             },
             # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
-            subset_split_name_list=["train", "validation", "test"],
+            subset_split_name_list=["all"],
             label_extractor_fn=lambda x: bytes_to_string(x),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,

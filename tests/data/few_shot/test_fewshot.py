@@ -21,12 +21,12 @@ from gate.data.few_shot import (
 set_seed(42)
 
 classes_to_test = [
-    AircraftFewShotClassificationDataset,
-    CUB200FewShotClassificationDataset,
-    CIFARFewShotClassificationDataset,
-    DescribableTexturesFewShotClassificationDataset,
-    FC100FewShotClassificationDataset,
-    FungiFewShotClassificationDataset,
+    # AircraftFewShotClassificationDataset,
+    # CUB200FewShotClassificationDataset,
+    # CIFARFewShotClassificationDataset,
+    # DescribableTexturesFewShotClassificationDataset,
+    # FC100FewShotClassificationDataset,
+    # FungiFewShotClassificationDataset,
     TieredImageNetFewShotClassificationDataset,
     MiniImageNetFewShotClassificationDataset,
     OmniglotFewShotClassificationDataset,

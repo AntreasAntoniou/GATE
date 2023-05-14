@@ -210,19 +210,23 @@ class FewShotClassificationMetaDataset(Dataset):
         """Load and process the subsets."""
         dataset_path = self.dataset_root / self.dataset_name
         state_path = dataset_path / "dataset_info.json"
+        
         if state_path.exists():
             return datasets.Dataset.load_from_disk(dataset_path)
 
-        def generate_dataset():
-            for subset_name in tqdm(subset_split_name_list):
-                subset = self.dataset_class(
-                    subset_name,
-                )
+        subsets = [
+            self.dataset_class(
+                subset_name,
+            )
+            for subset_name in subset_split_name_list
+        ]
+        datapoints = []
+        print(f"Loading and preprocessing {self.dataset_name} dataset...")
+        for subset in tqdm(subsets):
+            for sample in tqdm(subset):
+                datapoints.append(self._process_sample(sample))
 
-                for sample in tqdm(subset):
-                    yield self._process_sample(sample)
-
-        dataset = datasets.Dataset.from_generator(generate_dataset)
+        dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
         dataset.save_to_disk(self.dataset_root / self.dataset_name)

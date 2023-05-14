@@ -17,7 +17,7 @@ logger = get_logger(
 
 def preprocess_transforms(sample: Tuple):
     image_transforms = transforms.Compose(
-        [transforms.Resize((224, 224)), transforms.ToTensor()]
+        [transforms.Resize((128, 128)), transforms.ToTensor()]
     )
     image = image_transforms(sample[0])
     label = sample[1]
