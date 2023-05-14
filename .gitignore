@@ -12,6 +12,7 @@ data/*
 experiments/*
 path/*
 eidf*
+.trunk/*
 
 # C extensions
 *.so
