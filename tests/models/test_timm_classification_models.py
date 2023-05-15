@@ -1,7 +1,10 @@
 import torch
 import torch.nn.functional as F
 
-from gate.models.classification.timm import ModelAndTransform, build_model
+from gate.models.task_specific_models.classification.timm import (
+    ModelAndTransform,
+    build_model,
+)
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,

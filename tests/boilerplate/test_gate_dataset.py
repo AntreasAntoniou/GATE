@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from gate.data import GATEDataset
 from gate.data.data import build_dataset
-from gate.models.classification.clip import build_model
+from gate.models.task_specific_models.classification.clip import build_model
 
 
 def test_GATEDataset():
