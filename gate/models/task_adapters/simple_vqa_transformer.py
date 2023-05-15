@@ -276,6 +276,13 @@ class SimpleVQATransformer(nn.Module):
                 ],
             }
 
+            print(
+                question_answer_tokens["input_ids"][
+                    question_answer_tokens["input_ids"]
+                    == self.text_decoder_tokenizer.eos_token_id
+                ]
+            )
+
             # print(
             #     f"input: {input_dict['input_ids']}, input_shape: {input_dict['input_ids'].shape},\n"
             #     f"attention_mask: {input_dict['attention_mask']}, attention_mask_shape: {input_dict['attention_mask'].shape},\n"
@@ -311,7 +318,8 @@ class SimpleVQATransformer(nn.Module):
         question_decoder_tokens: Optional[torch.Tensor] = None,
         image: Optional[Dict[str, torch.Tensor]] = None,
         text: Optional[Dict[str, torch.Tensor]] = None,
-        max_length: int = 50,
+        max_length: int = 100,
+        do_sample: bool = True,
     ) -> str:
         """
         This method generates a textual answer given the same inputs
@@ -367,6 +375,31 @@ class SimpleVQATransformer(nn.Module):
             )
         ).view(concat_embeddings.shape[0], -1, 768)
         # Use the Transformers 'generate' method to generate an answer
+
+        # max_length: The maximum length of the generated sequence.
+
+        # do_sample: If set to False (default), the model will use "greedy decoding" --
+        # it will always choose the token with the highest probability as the next token.
+        # If set to True, the model will sample the next token from the probability
+        # distribution predicted by the model (potentially leading to more diverse, but
+        # less deterministic, output).
+
+        # temperature: Affects the randomness of the sampling process when do_sample=True.
+        # Higher values (e.g., 1.0) make the output more random, while lower values
+        # (e.g., 0.1) make it more deterministic.
+
+        # top_k: Used for "Top-K sampling". The model's predicted probabilities are
+        # sorted in descending order, and only the top k tokens are considered for sampling.
+
+        # top_p: Used for "nucleus sampling" (also known as "Top-P sampling").
+        # Instead of selecting the top k tokens, it selects the smallest set of
+        # tokens whose cumulative probability exceeds p.
+
+        # num_beams: The number of "beams" for beam search. Beam search keeps
+        # track of the num_beams most probable sequences at each step.
+        # If num_beams > 1, the model will generate num_return_sequences sequences.
+        # If num_return_sequences is not provided, it will generate num_beams sequences.
+
         answer_tokens = self.text_decoder.generate(
             input_ids=question_decoder_tokens,
             attention_mask=torch.ones(question_decoder_tokens.shape).to(
@@ -374,6 +407,7 @@ class SimpleVQATransformer(nn.Module):
             ),
             encoder_hidden_states=combined_embeddings,
             max_length=max_length,
+            do_sample=do_sample,
         )
 
         return answer_tokens
@@ -386,7 +420,8 @@ class SimpleVQATransformer(nn.Module):
         question_decoder_tokens: Optional[torch.Tensor] = None,
         image: Optional[Dict[str, torch.Tensor]] = None,
         text: Optional[Dict[str, torch.Tensor]] = None,
-        max_length: int = 50,
+        max_length: int = 100,
+        do_sample: bool = True,
     ):
         decoded_tokens = self.generate_tokens(
             input_dict=input_dict,
@@ -396,6 +431,7 @@ class SimpleVQATransformer(nn.Module):
             image=image,
             text=text,
             max_length=max_length,
+            do_sample=do_sample,
         )
         # Decode the generated tokens into a string
         return [
