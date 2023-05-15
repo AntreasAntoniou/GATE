@@ -22,6 +22,7 @@ class CLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
+        self.tokenizer = self.preprocessor
         self.clip = CLIPModel.from_pretrained(model_name)
 
         if not pretrained:

@@ -61,6 +61,8 @@ class TALINet(nn.Module):
             CLIPProcessor.from_pretrained(clip_model_name)
         )
 
+        self.tokenizer = self.image_text_preprocessor
+
         self.audio_preprocessor = WhisperProcessor.from_pretrained(
             whisper_model_name
         )
