@@ -10,6 +10,8 @@ import PIL.Image as Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 
+from gate.models.core import reinit
+
 
 class TimmModel(nn.Module):
     def __init__(
@@ -87,6 +89,9 @@ class TimmCLIPAdapter(nn.Module):
             else vision_model_output_shape[1]
         )
         self.text_num_features = self.clip.text_embed_dim
+
+    def init_weights(self):
+        reinit(self)
 
     def forward(
         self,

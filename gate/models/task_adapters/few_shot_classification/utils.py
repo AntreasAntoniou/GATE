@@ -34,7 +34,7 @@ def learning_scheduler_smart_autofill(
     return lr_scheduler_config
 
 
-def get_num_samples(targets, num_classes, dtype=None):
+def get_num_samples(targets, num_classes, dtype=None) -> torch.Tensor:
     batch_size = targets.size(0)
     with torch.no_grad():
         # log.info(f"Batch size is {batch_size}")
@@ -84,7 +84,9 @@ def get_prototypes(embeddings, targets, num_classes):
     return prototypes
 
 
-def prototypical_loss(prototypes, embeddings, targets, **kwargs):
+def prototypical_loss_and_logits(
+    prototypes, embeddings, targets
+) -> dict[str, torch.Tensor]:
     """Compute the loss (i.e. negative log-likelihood) for the prototypical
     network, on the test/query points.
 
@@ -110,11 +112,15 @@ def prototypical_loss(prototypes, embeddings, targets, **kwargs):
     squared_distances = torch.sum(
         (prototypes.unsqueeze(2) - embeddings.unsqueeze(1)) ** 2, dim=-1
     )
-    return F.cross_entropy(-squared_distances, targets, **kwargs)
+    return {
+        "loss": F.cross_entropy(-squared_distances, targets),
+        "logits": -squared_distances,
+    }
 
 
 def get_accuracy(prototypes, embeddings, targets):
     """Compute the accuracy of the prototypical network on the test/query points.
+
     Parameters
     ----------
     prototypes : `torch.FloatTensor` instance
@@ -126,6 +132,7 @@ def get_accuracy(prototypes, embeddings, targets):
     targets : `torch.LongTensor` instance
         A tensor containing the targets of the query points. This tensor has
         shape `(meta_batch_size, num_examples)`.
+
     Returns
     -------
     accuracy : `torch.FloatTensor` instance

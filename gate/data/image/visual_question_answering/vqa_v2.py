@@ -4,7 +4,9 @@ from typing import Any, Optional
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.visual_question_answering import VQAV2Task
+from gate.data.tasks.visual_question_answering import (
+    VQAV2Task,
+)
 
 import numpy as np
 from datasets import load_dataset

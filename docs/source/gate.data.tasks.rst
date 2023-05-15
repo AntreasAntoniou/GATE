@@ -4,10 +4,10 @@ gate.data.tasks package
 Submodules
 ----------
 
-gate.data.tasks.classification module
+gate.data.tasks.task_specific_models.classification module
 -------------------------------------
 
-.. automodule:: gate.data.tasks.classification
+.. automodule:: gate.data.tasks.task_specific_models.classification
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,8 +1,8 @@
 from urllib.request import urlopen
 import torch
-import torch.nn.functional as F
 
-from gate.models.visual_question_answering.tali import (
+
+from gate.models.task_specific_models.visual_question_answering.tali import (
     ModelAndTransform,
     build_model,
 )

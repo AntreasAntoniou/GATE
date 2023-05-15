@@ -1,7 +1,7 @@
 from urllib.request import urlopen
 import torch
 
-from gate.models.visual_question_answering.timm import (
+from gate.models.task_specific_models.visual_question_answering.timm import (
     ModelAndTransform,
     build_model,
 )
@@ -9,6 +9,7 @@ import PIL.Image as Image
 from rich.traceback import install
 
 from tests.models.test_clip_vqa_model import pad_tokens
+
 
 install()
 

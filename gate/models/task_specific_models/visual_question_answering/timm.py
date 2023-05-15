@@ -14,7 +14,9 @@ from gate.models.core import (
 from gate.models.task_adapters.simple_vqa_transformer import (
     SimpleVQATransformer,
 )
-from gate.models.visual_question_answering import transform_wrapper
+from gate.models.task_specific_models.visual_question_answering import (
+    transform_wrapper,
+)
 
 
 def build_model(

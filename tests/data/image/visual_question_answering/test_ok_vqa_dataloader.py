@@ -9,7 +9,9 @@ from gate.data.image.visual_question_answering.ok_vqa import (
     build_dataset as build_ok_vqa_dataset,
     build_gate_dataset as build_ok_vqa_gate_dataset,
 )
-from gate.models.visual_question_answering.clip import build_model
+from gate.models.task_specific_models.visual_question_answering.clip import (
+    build_model,
+)
 
 
 def test_collate_fn_with_token_pad():

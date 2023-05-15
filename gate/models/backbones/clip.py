@@ -5,6 +5,8 @@ import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
+from gate.models.core import reinit
+
 
 def forward_dict(self, x):
     output = self.legacy_forward(x)
@@ -42,6 +44,9 @@ class CLIPAdapter(nn.Module):
 
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
+
+    def init_weights(self):
+        reinit(self)
 
     def forward(
         self,
