@@ -129,7 +129,7 @@ def pad_and_stack_tensors(tensor_list):
                     dtype=tensor.dtype,
                     device=tensor.device,
                 )
-                * 0
+                * -1
             )  # use the last value (eos)
             tensor = torch.cat([tensor, padding], dim=0)
         padded_list.append(tensor)

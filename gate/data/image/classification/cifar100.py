@@ -10,7 +10,9 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
+from gate.data.tasks.classification import (
+    ClassificationTask,
+)
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 

@@ -1,4 +1,4 @@
-gate.data.video.classification package
+gate.data.video.task_specific_models.classification package
 ======================================
 
 Subpackages
@@ -7,31 +7,31 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   gate.data.video.classification.gulp
+   gate.data.video.task_specific_models.classification.gulp
 
 Submodules
 ----------
 
-gate.data.video.classification.build\_gulp\_sparsesample module
+gate.data.video.task_specific_models.classification.build\_gulp\_sparsesample module
 ---------------------------------------------------------------
 
-.. automodule:: gate.data.video.classification.build_gulp_sparsesample
+.. automodule:: gate.data.video.task_specific_models.classification.build_gulp_sparsesample
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.video.classification.build\_gulp\_sparsesample\_skeleton module
+gate.data.video.task_specific_models.classification.build\_gulp\_sparsesample\_skeleton module
 -------------------------------------------------------------------------
 
-.. automodule:: gate.data.video.classification.build_gulp_sparsesample_skeleton
+.. automodule:: gate.data.video.task_specific_models.classification.build_gulp_sparsesample_skeleton
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.video.classification.build\_gulp\_sparsesample\_tube module
+gate.data.video.task_specific_models.classification.build\_gulp\_sparsesample\_tube module
 ---------------------------------------------------------------------
 
-.. automodule:: gate.data.video.classification.build_gulp_sparsesample_tube
+.. automodule:: gate.data.video.task_specific_models.classification.build_gulp_sparsesample_tube
    :members:
    :undoc-members:
    :show-inheritance:
@@ -39,7 +39,7 @@ gate.data.video.classification.build\_gulp\_sparsesample\_tube module
 Module contents
 ---------------
 
-.. automodule:: gate.data.video.classification
+.. automodule:: gate.data.video.task_specific_models.classification
    :members:
    :undoc-members:
    :show-inheritance:

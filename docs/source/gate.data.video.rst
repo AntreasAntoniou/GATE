@@ -7,7 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   gate.data.video.classification
+   gate.data.video.task_specific_models.classification
 
 Module contents
 ---------------

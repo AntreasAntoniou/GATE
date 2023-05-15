@@ -15,9 +15,9 @@ from rich import print
 import yaml
 
 from gate.boilerplate.utils import (
-    create_hf_model_repo_and_download_maybe,
     download_model_checkpoint_from_hub,
 )
+from gate.models.core import reinit
 
 
 class TALINet(nn.Module):
@@ -61,6 +61,8 @@ class TALINet(nn.Module):
             CLIPProcessor.from_pretrained(clip_model_name)
         )
 
+        self.tokenizer = self.image_text_preprocessor
+
         self.audio_preprocessor = WhisperProcessor.from_pretrained(
             whisper_model_name
         )
@@ -76,6 +78,9 @@ class TALINet(nn.Module):
 
         if hasattr(self.model, "audio_linear_layer"):
             self.audio_num_features = self.model.audio_linear_layer.in_features
+
+    def init_weights(self):
+        reinit(self)
 
     def forward(
         self,

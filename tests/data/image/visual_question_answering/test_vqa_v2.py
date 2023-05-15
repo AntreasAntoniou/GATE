@@ -1,6 +1,8 @@
 # test_food101.py
 import os
-from gate.models.visual_question_answering.clip import build_model
+from gate.models.task_specific_models.visual_question_answering.clip import (
+    build_model,
+)
 
 import pytest
 

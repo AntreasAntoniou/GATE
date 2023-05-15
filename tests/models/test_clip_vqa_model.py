@@ -1,16 +1,10 @@
 from typing import List
 from urllib.request import urlopen
 import torch
-import torch.nn.functional as F
 
-from gate.models.visual_question_answering.clip import (
+from gate.models.task_specific_models.visual_question_answering.clip import (
     ModelAndTransform,
     build_model,
-)
-from gate.models.core import (
-    GATEModel,
-    SourceModalityConfig,
-    TargetModalityConfig,
 )
 import PIL.Image as Image
 

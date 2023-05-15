@@ -30,13 +30,13 @@ main_requirements = [
     "natsort",
     "gdown",
     "gpath",
+    "cython",
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
-    "learn2learn @ https://github.com/mlguild/learn2learn.git",
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
 # "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
-
+# "learn2learn @ git+https://github.com/mlguild/learn2learn.git", For Few Shot Learning this one must be installed manually by git clone and pip install -e .
 dev_requirements = [
     "pytest",
     "isort",
