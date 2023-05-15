@@ -9,7 +9,9 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.classification import BackboneWithLinear
+from gate.models.task_adapters.classification import (
+    BackboneWithLinear,
+)
 
 
 SUPPORTED_MODALITIES = ["image", "text", "audio", "video"]

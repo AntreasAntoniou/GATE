@@ -3,11 +3,15 @@ from typing import Dict, Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from gate.models.core import reinit
+from gate.models.task_adapters.few_shot_classification import (
+    FewShotLearningClassificationEpisode,
+)
 
 from gate.models.task_adapters.few_shot_classification.utils import (
     get_accuracy,
     get_prototypes,
-    prototypical_loss,
+    prototypical_loss_and_logits,
 )
 
 
@@ -47,6 +51,61 @@ class PrototypicalNetwork(nn.Module):
         else:
             self.num_output_features = num_output_features
             self.linear = nn.Linear(num_clip_features, num_output_features)
+
+    def init_weights(self):
+        reinit(self)
+
+    def _process_episode(self, image, audio, video, text):
+        # check that only one of the inputs is not None
+        assert (
+            sum(
+                [
+                    image is not None,
+                    audio is not None,
+                    video is not None,
+                    text is not None,
+                ]
+            )
+            == 1
+        ), "Only one input must be provided."
+
+        # Get the inputs and labels
+        if isinstance(image, Dict):
+            image = FewShotLearningClassificationEpisode(**image)
+        if isinstance(audio, Dict):
+            audio = FewShotLearningClassificationEpisode(**audio)
+        if isinstance(video, Dict):
+            video = FewShotLearningClassificationEpisode(**video)
+        if text is not None:
+            text = FewShotLearningClassificationEpisode(**text)
+
+        if image is not None:
+            support_set_inputs = image.support_set_inputs
+            support_set_labels = image.support_set_labels
+            query_set_inputs = image.query_set_inputs
+            query_set_labels = image.query_set_labels
+        elif audio is not None:
+            support_set_inputs = audio.support_set_inputs
+            support_set_labels = audio.support_set_labels
+            query_set_inputs = audio.query_set_inputs
+            query_set_labels = audio.query_set_labels
+        elif video is not None:
+            support_set_inputs = video.support_set_inputs
+            support_set_labels = video.support_set_labels
+            query_set_inputs = video.query_set_inputs
+            query_set_labels = video.query_set_labels
+        elif text is not None:
+            support_set_inputs = text.support_set_inputs
+            support_set_labels = text.support_set_labels
+            query_set_inputs = text.query_set_inputs
+            query_set_labels = text.query_set_labels
+
+        return (
+            support_set_inputs,
+            support_set_labels,
+            query_set_inputs,
+            query_set_labels,
+        )
 
     def forward_features(
         self,
@@ -88,10 +147,26 @@ class PrototypicalNetwork(nn.Module):
 
     def forward(
         self,
-        support_set_inputs: Dict[str, torch.Tensor],
-        query_set_inputs: Dict[str, torch.Tensor],
-        support_set_labels: torch.Tensor,
-        query_set_labels: Optional[torch.Tensor] = None,
+        image: Optional[
+            Union[
+                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
+            ]
+        ] = None,
+        audio: Optional[
+            Union[
+                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
+            ]
+        ] = None,
+        video: Optional[
+            Union[
+                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
+            ]
+        ] = None,
+        text: Optional[
+            Union[
+                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
+            ]
+        ] = None,
     ) -> Dict[str, Union[torch.Tensor, float]]:
         """
         This method processes the support set and query set inputs and labels, and computes the loss and accuracy if the query set labels are provided.
@@ -105,6 +180,13 @@ class PrototypicalNetwork(nn.Module):
         Returns:
             A dictionary containing the prototypes, query set embeddings, support set embeddings, and optionally the loss and accuracy.
         """
+        (
+            support_set_inputs,
+            support_set_labels,
+            query_set_inputs,
+            query_set_labels,
+        ) = self._process_episode(image, audio, video, text)
+
         # Store outputs in this dictionary
         output_dict = {}
 
@@ -112,16 +194,29 @@ class PrototypicalNetwork(nn.Module):
         num_tasks, num_examples = support_set_inputs.shape[:2]
 
         # Compute the support set features and embeddings
-        support_set_features = self.forward_features(**support_set_inputs)
-        support_set_embedding = F.adaptive_avg_pool2d(
-            support_set_features, self.num_output_features
-        ).view(num_tasks, num_examples, -1)
+        support_set_features = self.forward_features(
+            **{
+                self.modality: support_set_inputs.view(
+                    -1, *support_set_inputs.shape[2:]
+                )
+            }
+        )
+
+        support_set_embedding = support_set_features.view(
+            num_tasks, num_examples, -1
+        )
 
         # Compute the query set features and embeddings
-        query_set_features = self.forward_features(**query_set_inputs)
-        query_set_embedding = F.adaptive_avg_pool2d(
-            query_set_features, self.num_output_features
-        ).view(num_tasks, num_examples, -1)
+        query_set_features = self.forward_features(
+            **{
+                self.modality: query_set_inputs.view(
+                    -1, *query_set_inputs.shape[2:]
+                )
+            }
+        )
+        query_set_embedding = query_set_features.view(
+            num_tasks, num_examples, -1
+        )
 
         # Get the prototypes
         prototypes = get_prototypes(
@@ -137,12 +232,14 @@ class PrototypicalNetwork(nn.Module):
 
         # If query set labels are provided, calculate the loss and accuracy
         if query_set_labels is not None:
-            loss = torch.mean(
-                prototypical_loss(
-                    prototypes, query_set_embedding, query_set_labels
-                )
+            prototype_loss_and_logits = prototypical_loss_and_logits(
+                prototypes, query_set_embedding, query_set_labels
             )
-            output_dict["loss"] = loss
+
+            output_dict["loss"] = torch.mean(prototype_loss_and_logits["loss"])
+            output_dict["logits"] = prototype_loss_and_logits[
+                "logits"
+            ].permute([0, 2, 1])
 
             accuracy = get_accuracy(
                 prototypes, query_set_embedding, query_set_labels
