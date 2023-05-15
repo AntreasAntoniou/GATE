@@ -73,6 +73,8 @@ class TimmCLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
+        self.tokenizer = self.preprocessor
+
         self.clip = CLIPModel.from_pretrained(clip_model_name)
 
         self.vision_model = TimmModel(
