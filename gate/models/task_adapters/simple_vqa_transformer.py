@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 from transformers import (
     AutoTokenizer,
-    AutoModelForCausalLM,
-    GPT2Tokenizer,
-    GPT2TokenizerFast,
+    BartForQuestionAnswering,
+    BartTokenizer,
+    BartTokenizerFast,
 )
 
 
@@ -29,6 +29,9 @@ def tokenize_with_start_end(text, tokenizer):
     )
 
     return output_dict
+
+class BartWithCustomEncoder(BartForQuestionAnswering):
+
 
 
 class SimpleVQATransformer(nn.Module):
@@ -59,12 +62,14 @@ class SimpleVQATransformer(nn.Module):
         self.text_encoder_transforms = text_encoder_transforms
 
         # Existing tokenizer
-        self.text_decoder_tokenizer: GPT2Tokenizer | GPT2TokenizerFast = (
-            AutoTokenizer.from_pretrained("distilgpt2", use_fast=True)
+        self.text_decoder_tokenizer: BartTokenizer | BartTokenizerFast = (
+            AutoTokenizer.from_pretrained(
+                "valhalla/bart-large-finetuned-squadv1", use_fast=True
+            )
         )
 
-        self.text_decoder = AutoModelForCausalLM.from_pretrained(
-            "distilgpt2", add_cross_attention=True
+        self.text_decoder = BartForQuestionAnswering.from_pretrained(
+            "valhalla/bart-large-finetuned-squadv1"
         )
 
         self._setup_special_tokens()
@@ -101,9 +106,9 @@ class SimpleVQATransformer(nn.Module):
         answer_start_token = self.text_decoder_tokenizer.encode("<a>")[0]
         answer_end_token = self.text_decoder_tokenizer.encode("<a/>")[0]
 
-        # print(
-        #     f"pad_token: {pad_token}, question_start_token: {question_start_token}, question_end_token: {question_end_token}, answer_start_token: {answer_start_token}, answer_end_token: {answer_end_token}"
-        # )
+        print(
+            f"pad_token: {pad_token}, question_start_token: {question_start_token}, question_end_token: {question_end_token}, answer_start_token: {answer_start_token}, answer_end_token: {answer_end_token}"
+        )
 
         setattr(
             self.text_decoder_tokenizer,
@@ -275,13 +280,13 @@ class SimpleVQATransformer(nn.Module):
                     :, 1:
                 ],
             }
+            # torch.set_printoptions(
+            #     edgeitems=1000
+            # )  # Adjust the number as needed
 
-            print(
-                question_answer_tokens["input_ids"][
-                    question_answer_tokens["input_ids"]
-                    == self.text_decoder_tokenizer.eos_token_id
-                ]
-            )
+            # print(
+            #     f"question_answer_tokens: {question_answer_tokens['input_ids'][0]}"
+            # )
 
             # print(
             #     f"input: {input_dict['input_ids']}, input_shape: {input_dict['input_ids'].shape},\n"
@@ -409,6 +414,8 @@ class SimpleVQATransformer(nn.Module):
             max_length=max_length,
             do_sample=do_sample,
         )
+
+        # print(f"answer_tokens: {answer_tokens[0]}")
 
         return answer_tokens
 
