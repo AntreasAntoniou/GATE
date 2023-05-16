@@ -51,6 +51,8 @@ class VQATrainer(Trainer):
 
         output_metrics = {"loss": loss}
 
+        accelerator.backward(loss)
+
         if torch.rand(1) > 0.95:
             metrics = self.sample_answers_and_compute_vqa_score(
                 model=model,
@@ -59,8 +61,6 @@ class VQATrainer(Trainer):
                 phase_name=phase_name,
             )
             output_metrics |= metrics
-
-        accelerator.backward(loss)
 
         return StepOutput(
             output_metrics_dict=output_metrics,
