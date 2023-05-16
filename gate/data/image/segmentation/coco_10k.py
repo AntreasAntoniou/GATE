@@ -61,8 +61,9 @@ class COCOStuff10K(BaseDataset):
         """
         self.warp_image = warp_image
         root = pathlib.Path(root)
-
+        print(f"Here is the root: {root}")
         if download:
+            print(f"Here is the count: {count_files_recursive(root)}")
             if count_files_recursive(root) == 20004:
                 print("Dataset already downloaded. Skipping download.")
             else:
@@ -80,7 +81,7 @@ class COCOStuff10K(BaseDataset):
             flip=flip,
         )
 
-    def _set_files(self):
+    def _setup_dataset_files(self):
         """
         Create a file path/image id list based on the dataset split.
         """
