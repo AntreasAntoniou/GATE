@@ -25,6 +25,8 @@ class Trainer(ABC):
         scheduler: torch.optim.lr_scheduler._LRScheduler = None,
         scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
+        source_modality: Optional[str] = None,
+        target_modality: Optional[str] = None,
     ):
         super().__init__()
 
@@ -33,6 +35,8 @@ class Trainer(ABC):
         self.experiment_tracker = experiment_tracker
         self.state_dict = {}
         self.starting_train = True
+        self.souce_modality = source_modality
+        self.target_modality = target_modality
 
         if self.scheduler is not None:
             assert scheduler_interval in {"step"}
