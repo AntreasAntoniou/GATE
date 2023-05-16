@@ -28,6 +28,16 @@ class TargetModalityConfig:
     text: Optional[List[SourceModalityConfig]] = None
     audio: Optional[List[SourceModalityConfig]] = None
     video: Optional[List[SourceModalityConfig]] = None
+    image_text: Optional[List[SourceModalityConfig]] = None
+    text_image: Optional[List[SourceModalityConfig]] = None
+    audio_text: Optional[List[SourceModalityConfig]] = None
+    text_audio: Optional[List[SourceModalityConfig]] = None
+    audio_image: Optional[List[SourceModalityConfig]] = None
+    image_audio: Optional[List[SourceModalityConfig]] = None
+    video_text: Optional[List[SourceModalityConfig]] = None
+    text_video: Optional[List[SourceModalityConfig]] = None
+    video_audio: Optional[List[SourceModalityConfig]] = None
+    audio_video: Optional[List[SourceModalityConfig]] = None
 
 
 class GATEModel(nn.Module):
