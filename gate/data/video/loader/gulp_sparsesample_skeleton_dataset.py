@@ -193,6 +193,8 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         self._spatial_temporal_idx = []
         # each entry is a dictionary with ['keypoint', 'keypoint_score', 'frame_dir', 'total_frames', 'original_shape', 'img_shape', 'label'] keys.
         self._skeletons = []
+        self.max_num_persons = 0
+        self.max_num_frames = 0
 
         with open(self._skeleton_pkl_path, "rb") as f:
             skeleton_data = pickle.load(f)
@@ -201,6 +203,14 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         for skeleton_annotation in skeleton_data["annotations"]:
             # frame_dir is the gulp key without the class name and a slash
             skeletons[skeleton_annotation["frame_dir"]] = skeleton_annotation
+            self.max_num_persons = max(
+                self.max_num_persons,
+                skeleton_annotation["keypoint"].shape[0],
+            )
+            self.max_num_frames = max(
+                self.max_num_frames,
+                skeleton_annotation["keypoint"].shape[1],
+            )
 
         with open(self._csv_file, "r") as f:
             self.num_classes = int(f.readline())
@@ -391,6 +401,48 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
         video_id = self._video_ids[index]
         label = self._labels[index]
 
+        keypoint = self._skeletons[index]["keypoint"]
+        keypoint_score = self._skeletons[index]["keypoint_score"]
+        skeleton_num_persons = keypoint.shape[0]
+        skeleton_num_frames = keypoint.shape[1]
+        # zero padding
+        if skeleton_num_persons < self.max_num_persons:
+            keypoint = np.pad(
+                keypoint,
+                (
+                    (0, self.max_num_persons - skeleton_num_persons),
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                ),
+                "constant",
+                constant_values=0,
+            )
+            keypoint_score = np.pad(
+                keypoint_score,
+                ((0, self.max_num_persons - skeleton_num_persons), (0, 0), (0, 0)),
+                "constant",
+                constant_values=0,
+            )
+        if skeleton_num_frames < self.max_num_frames:
+            keypoint = np.pad(
+                keypoint,
+                (
+                    (0, 0),
+                    (0, self.max_num_frames - skeleton_num_frames),
+                    (0, 0),
+                    (0, 0),
+                ),
+                "constant",
+                constant_values=0,
+            )
+            keypoint_score = np.pad(
+                keypoint_score,
+                ((0, 0), (0, self.max_num_frames - skeleton_num_frames), (0, 0)),
+                "constant",
+                constant_values=0,
+            )
+
         return {
             "pixel_values": frames,
             "video_ids": video_id,
@@ -403,8 +455,10 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             "x_offset": x_offset,
             "y_offset": y_offset,
             "is_flipped": is_flipped,
-            "skeleton_keypoints": self._skeletons[index]["keypoint"],
-            "skeleton_keypoints_scores": self._skeletons[index]["keypoint_score"],
+            "skeleton_num_persons": skeleton_num_persons,
+            "skeleton_num_frames": skeleton_num_frames,
+            "skeleton_keypoints": keypoint,
+            "skeleton_keypoints_scores": keypoint_score,
         }
 
     def __len__(self):
