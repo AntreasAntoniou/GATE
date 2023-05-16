@@ -7,7 +7,7 @@ import torch.nn as nn
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
+from gate.models.backbones.tali import TALINet
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -27,7 +27,10 @@ from gate.models.task_adapters.duo_modal_zero_shot_classification import (
 
 
 def build_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    whisper_model_name: str = "openai/whisper-small",
+    model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+    checkpoint_identifier: str = "latest",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
@@ -41,15 +44,25 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
+    backbone_model = TALINet(
+        clip_model_name=clip_model_name,
+        whisper_model_name=whisper_model_name,
+        model_repo_path=model_repo_path,
+        checkpoint_identifier=checkpoint_identifier,
+        pretrained=pretrained,
+    )
     num_feature_dict = {
         "text": backbone_model.text_num_features,
         "image": backbone_model.image_num_features,
+        "audio": backbone_model.audio_num_features,
+        "video": backbone_model.video_num_features,
     }
     if modality_a_identifier in [
         "image",
         "text",
-    ] and modality_b_identifier in ["image", "text"]:
+        "audio",
+        "video",
+    ] and modality_b_identifier in ["image", "text", "audio", "video"]:
         model = DuoModalZeroShotModel(
             modality_a_model=backbone_model,
             modality_b_model=backbone_model,
@@ -61,7 +74,7 @@ def build_model(
         )
     else:
         raise ValueError(
-            f"Modality combination of {modality_a_identifier} {modality_b_identifier} not supported for CLIP."
+            f"Modality combination of {modality_a_identifier} {modality_b_identifier} not supported for TALI."
         )
 
     if not pretrained:
@@ -89,14 +102,20 @@ def build_model(
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    whisper_model_name: str = "openai/whisper-small",
+    model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+    checkpoint_identifier: str = "latest",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
     num_projection_features: Optional[int] = None,
 ):
     model_and_transform = build_model(
-        model_name=model_name,
+        clip_model_name=clip_model_name,
+        whisper_model_name=whisper_model_name,
+        model_repo_path=model_repo_path,
+        checkpoint_identifier=checkpoint_identifier,
         pretrained=pretrained,
         modality_a_identifier=modality_a_identifier,
         modality_b_identifier=modality_b_identifier,

@@ -81,9 +81,9 @@ def get_device():
 def get_similarities(
     modality_a_name: str,
     modality_b_name: str,
-    tensor_modality_a: torch.Tensor,
-    tensor_modality_b: torch.Tensor,
-    logit_scale: torch.Tensor,
+    modality_a_features: torch.Tensor,
+    modality_b_features: torch.Tensor,
+    temperature_parameter: torch.Tensor,
     return_loss: bool = False,
 ) -> torch.Tensor:
     """
@@ -92,13 +92,13 @@ def get_similarities(
         tensor_modality_b: Tensor, shape [batch_size, seq_len, embedding_dim]
     """
 
-    tensor_modality_a = tensor_modality_a.unsqueeze(0)
-    tensor_modality_b = tensor_modality_b.unsqueeze(0)
+    modality_a_features = modality_a_features.unsqueeze(0)
+    modality_b_features = modality_b_features.unsqueeze(0)
     similarities = {
         f"{modality_a_name}_to_{modality_b_name}_similarities": torch.einsum(
-            "ijk,ilk->ijl", tensor_modality_a, tensor_modality_b
+            "ijk,ilk->ijl", modality_a_features, modality_b_features
         )[0]
-        * logit_scale
+        * temperature_parameter
     }
 
     similarities[
