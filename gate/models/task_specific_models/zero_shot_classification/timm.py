@@ -8,6 +8,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
 from gate.models.backbones.clip import CLIPAdapter
+from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -27,7 +28,8 @@ from gate.models.task_adapters.duo_modal_zero_shot_classification import (
 
 
 def build_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
@@ -41,7 +43,11 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
+    backbone_model = TimmCLIPAdapter(
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
+        pretrained=pretrained,
+    )
     num_feature_dict = {
         "text": backbone_model.text_num_features,
         "image": backbone_model.image_num_features,
@@ -61,7 +67,7 @@ def build_model(
         )
     else:
         raise ValueError(
-            f"Modality combination of {modality_a_identifier} {modality_b_identifier} not supported for CLIP."
+            f"Modality combination of {modality_a_identifier} {modality_b_identifier} not supported for TimmCLIP."
         )
 
     if not pretrained:
@@ -89,14 +95,16 @@ def build_model(
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
     num_projection_features: Optional[int] = None,
 ):
     model_and_transform = build_model(
-        model_name=model_name,
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
         pretrained=pretrained,
         modality_a_identifier=modality_a_identifier,
         modality_b_identifier=modality_b_identifier,
