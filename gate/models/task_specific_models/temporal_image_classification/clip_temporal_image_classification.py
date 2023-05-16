@@ -73,7 +73,7 @@ def build_model(
     name="clip-temporal-classification",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-def build_gate_clip_model(
+def build_gate_model(
     model_name: str = "openai/clip-vit-base-patch16",
     modality: str = "image",
     pretrained: bool = True,

@@ -13,6 +13,8 @@ from transformers import (
     GPT2Tokenizer,
 )
 
+from gate.models.task_adapters import BaseModule
+
 
 def tokenize_with_start_end(text, tokenizer):
     output_dict = tokenizer(text, truncation=True, return_tensors="pt")
@@ -33,7 +35,7 @@ def tokenize_with_start_end(text, tokenizer):
     return output_dict
 
 
-class SimpleVQATransformer(nn.Module):
+class SimpleVQATransformer(BaseModule):
     """
     This class represents a simple Visual Question Answering (VQA) transformer model.
     It incorporates image and text encoders, and a text decoder for generating answers to visual questions.

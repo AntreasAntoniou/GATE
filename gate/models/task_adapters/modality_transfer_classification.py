@@ -4,6 +4,8 @@ from typing import Dict, List, Optional
 import torch.nn as nn
 import torch
 
+from gate.models.task_adapters import BaseModule
+
 # Possibilities:
 
 # 1. Image to text
@@ -22,7 +24,7 @@ import torch
 # This will serve as a small study for the GATE paper.
 
 
-class BaseVisionRootLayer(nn.Module):
+class BaseVisionRootLayer(BaseModule):
     # Adapted from the CLIPVisionEmbeddings class in the huggingface transformers library.
     def __init__(self, embed_dim, image_size, num_channels, patch_size):
         super().__init__()
@@ -62,7 +64,7 @@ class BaseVisionRootLayer(nn.Module):
         return embeddings
 
 
-class BaseTextRootLayer(nn.Module):
+class BaseTextRootLayer(BaseModule):
     # Adapted from the CLIPTextEmbeddings class in the huggingface transformers library.
     def __init__(self, embed_dim, vocab_size, max_position_embeddings):
         super().__init__()
@@ -94,7 +96,7 @@ class BaseTextRootLayer(nn.Module):
         return embeddings
 
 
-class BaseAudioRootLayer(nn.Module):
+class BaseAudioRootLayer(BaseModule):
     def __init__(
         self,
         embed_dim,
@@ -147,7 +149,7 @@ MODALITY_ROOT_LAYERS = {
 }
 
 
-class RootReplacedBackboneWithLinearExitLayer(nn.Module):
+class RootReplacedBackboneWithLinearExitLayer(BaseModule):
     def __init__(
         self,
         model: nn.Module,
