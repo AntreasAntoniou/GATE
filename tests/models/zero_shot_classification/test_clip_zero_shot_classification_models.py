@@ -39,7 +39,6 @@ def test_model_with_linear_forward(pretrained, num_projection_features):
 
     output = model.forward(**input_dict, return_loss=True)
 
-    print(output["loss"])
     output["loss"].backward()
     # assert output["logits"].shape == (2, 10, 5)
 
@@ -64,6 +63,7 @@ def test_model_gate_with_linear_forward(pretrained, num_projection_features):
     transform = model_and_transform.transform
 
     input_dict = transform({"image": image, "text": text})
+    input_dict["return_loss"] = True
 
     output = model.forward(input_dict)
 

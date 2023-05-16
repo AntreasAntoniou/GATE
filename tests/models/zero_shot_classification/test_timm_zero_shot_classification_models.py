@@ -39,9 +39,7 @@ def test_model_with_linear_forward(pretrained, num_projection_features):
 
     output = model.forward(**input_dict, return_loss=True)
 
-    # assert output["logits"].shape == (2, 10, 5)
-
-    # assert output["loss"].item() > 0
+    output["loss"].backward()
 
 
 @pytest.mark.parametrize(
@@ -63,11 +61,9 @@ def test_model_gate_with_linear_forward(pretrained, num_projection_features):
 
     input_dict = transform({"image": image, "text": text})
 
-    output = model.forward(input_dict)
+    output = model.forward(input_dict, return_loss=True)
 
-    # assert output["image"]["image"]["logits"].shape == (2, 10, 5)
-
-    # assert output["image"]["image"]["loss"].item() > 0
+    output["image_text"]["image_text"]["loss"].backward()
 
 
 if __name__ == "__main__":
