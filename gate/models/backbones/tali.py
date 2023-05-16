@@ -79,6 +79,8 @@ class TALINet(nn.Module):
         if hasattr(self.model, "audio_linear_layer"):
             self.audio_num_features = self.model.audio_linear_layer.in_features
 
+        self.to("cpu")
+
     def init_weights(self):
         reinit(self)
 
