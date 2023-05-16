@@ -12,12 +12,14 @@ from accelerate import Accelerator
 from rich import print
 
 from gate.boilerplate.utils import get_logger
+from gate.models.core import reinit
+from gate.models.task_adapters import BaseModule
 
 
 logger = get_logger(__name__)
 
 
-class PositionalEncoding(nn.Module):
+class PositionalEncoding(BaseModule):
     def __init__(
         self,
     ):
@@ -41,7 +43,7 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-class TransformerEncoder(nn.Module):
+class TransformerEncoder(BaseModule):
     def __init__(
         self,
         d_model: int,
@@ -51,7 +53,7 @@ class TransformerEncoder(nn.Module):
         num_layers: int,
         batch_first: bool = True,
         norm_first: bool = True,
-        activation: nn.Module = nn.GELU,
+        activation: nn.Module = nn.GELU(),
     ):
         super().__init__()
         self.d_model = d_model
@@ -88,7 +90,7 @@ class TransformerEncoder(nn.Module):
         return {"features": features, "raw_features": raw_features}
 
 
-class BackboneWithTemporalTransformerAndLinear(nn.Module):
+class BackboneWithTemporalTransformerAndLinear(BaseModule):
     def __init__(
         self,
         model: nn.Module,
@@ -108,6 +110,9 @@ class BackboneWithTemporalTransformerAndLinear(nn.Module):
         )
         self.linear = nn.Linear(num_backbone_features, num_classes)
 
+    def init_weights(self):
+        reinit(self)
+
     def forward(
         self,
         input_dict: Optional[Dict] = None,
@@ -117,20 +122,28 @@ class BackboneWithTemporalTransformerAndLinear(nn.Module):
         video: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
-            x = self.model(**input_dict)[self.modality]["features"]
+            x = {self.modality: input_dict[self.modality]}
 
         if image is not None:
-            x = self.model(image=image)["image"]["features"]
+            x = {"image": image}
 
         if text is not None:
-            x = self.model(text=text)["text"]["features"]
+            x = {"text": text}
 
         if audio is not None:
-            x = self.model(audio=audio)["audio"]["features"]
+            x = {"audio": audio}
 
         if video is not None:
-            x = self.model(video=video)["video"]["features"]
+            x = {"video": video}
 
+        input_shape = x[self.modality].shape
+
+        if len(input_shape) == 5:
+            x = x[self.modality].view(-1, *input_shape[-3:])
+
+        x = self.model(**{self.modality: x})[self.modality]
+        x = x["features"].view(*input_shape[:2], -1)
         x = self.temporal_encoder(x)["features"]
         x = self.linear(x)
+
         return x
