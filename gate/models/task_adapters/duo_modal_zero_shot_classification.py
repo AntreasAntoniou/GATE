@@ -103,7 +103,7 @@ class DuoModalZeroShotModel(BaseModule):
             modality_a_features = self.modality_a_linear(modality_a_features)
             modality_b_features = self.modality_b_linear(modality_b_features)
 
-        return get_similarities(
+        metrics_dict = get_similarities(
             modality_a_name=self.modality_a_identifier,
             modality_a_features=modality_a_features,
             modality_b_name=self.modality_b_identifier,
@@ -111,3 +111,11 @@ class DuoModalZeroShotModel(BaseModule):
             temperature_parameter=self.temperature_parameter,
             return_loss=return_loss,
         )
+
+        losses_list = [
+            value for key, value in metrics_dict.items() if "loss" in key
+        ]
+        if len(losses_list) > 0:
+            loss = torch.mean(torch.stack(losses_list))
+            metrics_dict["loss"] = loss
+        return metrics_dict
