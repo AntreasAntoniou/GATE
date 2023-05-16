@@ -9,6 +9,8 @@ from transformers import (
     BartForQuestionAnswering,
     BartTokenizer,
     BartTokenizerFast,
+    GPT2LMHeadModel,
+    GPT2Tokenizer,
 )
 
 
@@ -29,9 +31,6 @@ def tokenize_with_start_end(text, tokenizer):
     )
 
     return output_dict
-
-class BartWithCustomEncoder(BartForQuestionAnswering):
-
 
 
 class SimpleVQATransformer(nn.Module):
@@ -62,14 +61,11 @@ class SimpleVQATransformer(nn.Module):
         self.text_encoder_transforms = text_encoder_transforms
 
         # Existing tokenizer
-        self.text_decoder_tokenizer: BartTokenizer | BartTokenizerFast = (
-            AutoTokenizer.from_pretrained(
-                "valhalla/bart-large-finetuned-squadv1", use_fast=True
-            )
+        self.text_decoder_tokenizer = GPT2Tokenizer.from_pretrained(
+            "distilgpt2"
         )
-
-        self.text_decoder = BartForQuestionAnswering.from_pretrained(
-            "valhalla/bart-large-finetuned-squadv1"
+        self.text_decoder = GPT2LMHeadModel.from_pretrained(
+            "distilgpt2", add_cross_attention=True
         )
 
         self._setup_special_tokens()
@@ -268,18 +264,7 @@ class SimpleVQATransformer(nn.Module):
                     dim=1,
                 ),
             }
-            input_dict = {
-                "input_ids": question_answer_tokens["input_ids"][:, :-1],
-                "attention_mask": question_answer_tokens["attention_mask"][
-                    :, :-1
-                ],
-            }
-            label_dict = {
-                "input_ids": question_answer_tokens["input_ids"][:, 1:],
-                "attention_mask": question_answer_tokens["attention_mask"][
-                    :, 1:
-                ],
-            }
+
             # torch.set_printoptions(
             #     edgeitems=1000
             # )  # Adjust the number as needed
@@ -297,9 +282,9 @@ class SimpleVQATransformer(nn.Module):
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
             output = self.text_decoder(
-                **input_dict,
+                **question_answer_tokens,
                 encoder_hidden_states=combine_embeddings,
-                labels=label_dict["input_ids"],
+                labels=question_answer_tokens["input_ids"],
             )
         else:
             model_input = {
@@ -323,8 +308,11 @@ class SimpleVQATransformer(nn.Module):
         question_decoder_tokens: Optional[torch.Tensor] = None,
         image: Optional[Dict[str, torch.Tensor]] = None,
         text: Optional[Dict[str, torch.Tensor]] = None,
-        max_length: int = 100,
+        max_length: int = 50,
         do_sample: bool = True,
+        num_beams: int = 2,
+        temperature: float = 1.5,
+        no_repeat_ngram_size: int = 2,
     ) -> str:
         """
         This method generates a textual answer given the same inputs
@@ -407,15 +395,13 @@ class SimpleVQATransformer(nn.Module):
 
         answer_tokens = self.text_decoder.generate(
             input_ids=question_decoder_tokens,
-            attention_mask=torch.ones(question_decoder_tokens.shape).to(
-                question_decoder_tokens.device
-            ),
             encoder_hidden_states=combined_embeddings,
             max_length=max_length,
-            do_sample=do_sample,
+            # do_sample=do_sample,
+            # num_beams=num_beams,
+            # temperature=temperature,
+            no_repeat_ngram_size=no_repeat_ngram_size,
         )
-
-        # print(f"answer_tokens: {answer_tokens[0]}")
 
         return answer_tokens
 
@@ -427,8 +413,11 @@ class SimpleVQATransformer(nn.Module):
         question_decoder_tokens: Optional[torch.Tensor] = None,
         image: Optional[Dict[str, torch.Tensor]] = None,
         text: Optional[Dict[str, torch.Tensor]] = None,
-        max_length: int = 100,
-        do_sample: bool = True,
+        max_length: int = 50,
+        do_sample: bool = False,
+        num_beams: int = 2,
+        temperature: float = 1.5,
+        no_repeat_ngram_size: int = 2,
     ):
         decoded_tokens = self.generate_tokens(
             input_dict=input_dict,
@@ -438,7 +427,10 @@ class SimpleVQATransformer(nn.Module):
             image=image,
             text=text,
             max_length=max_length,
-            do_sample=do_sample,
+            # do_sample=do_sample,
+            # num_beams=num_beams,
+            # temperature=temperature,
+            # no_repeat_ngram_size=no_repeat_ngram_size,
         )
         # Decode the generated tokens into a string
         return [
