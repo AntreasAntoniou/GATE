@@ -83,7 +83,7 @@ class COCOStuff164K(BaseDataset):
             flip=flip,
         )
 
-    def _set_files(self):
+    def _setup_dataset_files(self):
         """
         Set the list of files for the dataset split. 🔍
         """

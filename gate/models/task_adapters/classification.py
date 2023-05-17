@@ -3,8 +3,10 @@ from typing import Dict, Optional
 import torch.nn as nn
 import torch
 
+from gate.models.task_adapters import BaseModule
 
-class BackboneWithLinear(nn.Module):
+
+class BackboneWithLinear(BaseModule):
     def __init__(
         self,
         model: nn.Module,

@@ -29,11 +29,8 @@ def get_dict_shapes(x):
 class StepOutput:
     output_metrics_dict: Dict
     loss: torch.Tensor
-    accuracy: torch.Tensor
-    accuracy_top_5: torch.Tensor
 
 
-@configurable(group="trainer", name="classification")
 class ClassificationTrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
@@ -41,31 +38,34 @@ class ClassificationTrainer(Trainer):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
         output_dict = model.forward(batch)
-        loss = F.cross_entropy(output_dict["image"]["image"], batch["labels"])
-        accuracy = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=1
-        )
-        accuracy_top_5 = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=5
-        )
-        output_metrics_dict = {
-            "loss": loss,
-            "accuracy_top_1": accuracy,
-            "accuracy_top_5": accuracy_top_5,
-        }
-        keys = list(output_metrics_dict.keys())
-
-        for key in keys:
-            if "loss" not in key and "accuracy" not in key:
-                del output_dict[key]
+        if "loss" not in output_dict:
+            loss = F.cross_entropy(
+                output_dict[self.target_modality][self.souce_modality],
+                batch["labels"],
+            )
+            accuracy = accuracy_top_k(
+                logits=output_dict[self.target_modality][self.souce_modality],
+                labels=batch["labels"],
+                k=1,
+            )
+            accuracy_top_5 = accuracy_top_k(
+                logits=output_dict[self.target_modality][self.souce_modality],
+                labels=batch["labels"],
+                k=5,
+            )
+            output_dict = {
+                "loss": loss,
+                "accuracy_top_1": accuracy,
+                "accuracy_top_5": accuracy_top_5,
+            }
+        else:
+            loss = output_dict["loss"]
 
         accelerator.backward(loss)
 
         return StepOutput(
             output_metrics_dict=output_dict,
             loss=loss,
-            accuracy=accuracy,
-            accuracy_top_5=accuracy_top_5,
         )
 
     @collect_metrics
@@ -78,11 +78,6 @@ class ClassificationTrainer(Trainer):
     ) -> TrainerOutput:
         model.train()
 
-        overall_loss = []
-        overall_accuracy = []
-        overall_accuracy_top_5 = []
-        overall_output_dict = {}
-
         self.optimizer.zero_grad()
 
         step_output: StepOutput = self.step(
@@ -92,38 +87,55 @@ class ClassificationTrainer(Trainer):
             accelerator=accelerator,
         )
 
-        if step_output is not None:
-            overall_output_dict |= step_output.output_metrics_dict
-            overall_loss.append(step_output.loss)
-            overall_accuracy.append(step_output.accuracy)
-            overall_accuracy_top_5.append(step_output.accuracy_top_5)
-
         self.optimizer.step()
 
-        if len(overall_loss) > 0:
-            metrics = {
-                "accuracy_top_1": torch.mean(torch.stack(overall_accuracy)),
-                "accuracy_top_5": torch.mean(
-                    torch.stack(overall_accuracy_top_5)
-                ),
-                "loss": torch.mean(torch.stack(overall_loss)),
-            }
-
-            for key, value in metrics.items():
-                self.state_dict.setdefault(key, []).append(value)
-
-            metrics |= overall_output_dict
-        else:
-            metrics = {}
-
+        metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
 
         return TrainerOutput(
             phase_name="training",
-            opt_loss=torch.mean(torch.stack(overall_loss))
-            if len(overall_loss) > 0
-            else None,
+            opt_loss=torch.mean(
+                torch.stack(step_output.output_metrics_dict["loss"])
+            ),
             global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,
+        )
+
+
+@configurable(group="trainer", name="image_classification")
+class ImageClassificationTrainer(ClassificationTrainer):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer,
+            scheduler,
+            scheduler_interval,
+            experiment_tracker,
+            source_modality="image",
+            target_modality="image",
+        )
+
+
+@configurable(group="trainer", name="image_to_text_zero_shot_classification")
+class ImageToTextZeroShotClassificationTrainer(ClassificationTrainer):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer,
+            scheduler,
+            scheduler_interval,
+            experiment_tracker,
+            source_modality="image_text",
+            target_modality="image",
         )

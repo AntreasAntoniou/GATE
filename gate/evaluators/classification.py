@@ -1,7 +1,5 @@
-from ast import Dict
-from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import torch
 import torch.nn.functional as F
@@ -11,178 +9,156 @@ from gate.metrics.core import accuracy_top_k
 
 from gate.boilerplate.decorators import collect_metrics
 from gate.boilerplate.decorators import configurable
-from gate.trainers.classification import StepOutput
 from gate.boilerplate.utils import get_logger
+from gate.evaluators import Evaluator, EvaluatorOutput
 
 logger = get_logger(__name__)
 
 
 def get_dict_shapes(x):
-    return (
-        {
-            key: value.shape if isinstance(value, torch.Tensor) else len(value)
-            for key, value in x.items()
-        }
-        if isinstance(x, dict)
-        else get_dict_shapes(x.__dict__)
-    )
-
-
-class Evaluator(object):
-    def __init__(self):
-        pass
+    print(x)
+    if not isinstance(x, dict):
+        return get_dict_shapes(x.__dict__)
+    return {
+        key: value.shape if isinstance(value, torch.Tensor) else len(value)
+        for key, value in x.items()
+    }
 
 
 @dataclass
-class EvaluatorOutput:
-    global_step: int
-    metrics: Dict
-    phase_name: str
-    experiment_tracker: Any = None
+class StepOutput:
+    output_metrics_dict: Dict
+    loss: torch.Tensor
 
 
-@configurable(group="evaluator", name="classification")
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        # print({key: value.shape for key, value in batch.items()})
         output_dict = model.forward(batch)
-        loss = F.cross_entropy(output_dict["image"]["image"], batch["labels"])
-        accuracy = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=1
-        )
-        accuracy_top_5 = accuracy_top_k(
-            logits=output_dict["image"]["image"], labels=batch["labels"], k=5
-        )
-        output_metrics_dict = {
-            "loss": loss,
-            "accuracy_top_1": accuracy,
-            "accuracy_top_5": accuracy_top_5,
-        }
-        keys = list(output_metrics_dict.keys())
+        if "loss" not in output_dict:
+            loss = F.cross_entropy(
+                output_dict[self.target_modality][self.souce_modality],
+                batch["labels"],
+            )
+            accuracy = accuracy_top_k(
+                logits=output_dict[self.target_modality][self.souce_modality],
+                labels=batch["labels"],
+                k=1,
+            )
+            accuracy_top_5 = accuracy_top_k(
+                logits=output_dict[self.target_modality][self.souce_modality],
+                labels=batch["labels"],
+                k=5,
+            )
+            output_dict = {
+                "loss": loss,
+                "accuracy_top_1": accuracy,
+                "accuracy_top_5": accuracy_top_5,
+            }
+        else:
+            loss = output_dict["loss"]
 
-        for key in keys:
-            if "loss" not in key and "accuracy" not in key:
-                del output_dict[key]
+        accelerator.backward(loss)
 
         return StepOutput(
-            output_metrics_dict=output_metrics_dict,
+            output_metrics_dict=output_dict,
             loss=loss,
-            accuracy=accuracy,
-            accuracy_top_5=accuracy_top_5,
         )
 
-    @torch.inference_mode()
+    @collect_metrics
     def validation_step(
         self,
         model,
         batch,
         global_step,
         accelerator: Accelerator,
-    ):
-        model.eval()
+    ) -> EvaluatorOutput:
+        model.train()
 
-        with torch.no_grad():
-            overall_loss = []
-            overall_accuracy = []
-            overall_accuracy_top_5 = []
-            overall_output_dict = {}
+        self.optimizer.zero_grad()
 
-            step_output: StepOutput = self.step(
-                model=model,
-                batch=batch,
-                global_step=global_step,
-                accelerator=accelerator,
-            )
+        step_output: StepOutput = self.step(
+            model=model,
+            batch=batch,
+            global_step=global_step,
+            accelerator=accelerator,
+        )
 
-            keys = list(step_output.output_metrics_dict.keys())
-            for key in keys:
-                if "loss" not in key and "accuracy" not in key:
-                    del step_output.output_metrics_dict[key]
+        self.optimizer.step()
 
-            if step_output is not None:
-                overall_output_dict |= step_output.output_metrics_dict
-                overall_loss.append(step_output.loss)
-                overall_accuracy.append(step_output.accuracy)
-                overall_accuracy_top_5.append(step_output.accuracy_top_5)
-
-            if len(overall_loss) > 0:
-                metrics = {
-                    "accuracy_top_1": torch.mean(
-                        torch.stack(overall_accuracy)
-                    ),
-                    "accuracy_top_5": torch.mean(
-                        torch.stack(overall_accuracy_top_5)
-                    ),
-                    "loss": torch.mean(torch.stack(overall_loss)),
-                }
-                metrics |= overall_output_dict
-            else:
-                metrics = {}
-
-            for key, value in metrics.items():
-                self.state_dict.setdefault(key, []).append(value)
+        metrics = step_output.output_metrics_dict
 
         return EvaluatorOutput(
-            global_step=global_step,
             phase_name="validation",
+            global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,
         )
 
-    @torch.inference_mode()
+    @collect_metrics
     def testing_step(
         self,
         model,
         batch,
         global_step,
         accelerator: Accelerator,
-    ):
-        model.eval()
+    ) -> EvaluatorOutput:
+        model.train()
 
-        with torch.no_grad():
-            overall_loss = []
-            overall_accuracy = []
-            overall_accuracy_top_5 = []
-            overall_output_dict = {}
+        self.optimizer.zero_grad()
 
-            step_output: StepOutput = self.step(
-                model=model,
-                batch=batch,
-                global_step=global_step,
-                accelerator=accelerator,
-            )
+        step_output: StepOutput = self.step(
+            model=model,
+            batch=batch,
+            global_step=global_step,
+            accelerator=accelerator,
+        )
 
-            keys = list(step_output.output_metrics_dict.keys())
-            for key in keys:
-                if "loss" not in key and "accuracy" not in key:
-                    del step_output.output_metrics_dict[key]
+        self.optimizer.step()
 
-            if step_output is not None:
-                overall_output_dict |= step_output.output_metrics_dict
-                overall_loss.append(step_output.loss)
-                overall_accuracy.append(step_output.accuracy)
-                overall_accuracy_top_5.append(step_output.accuracy_top_5)
-
-            if len(overall_loss) > 0:
-                metrics = {
-                    "accuracy_top_1": torch.mean(
-                        torch.stack(overall_accuracy)
-                    ),
-                    "accuracy_top_5": torch.mean(
-                        torch.stack(overall_accuracy_top_5)
-                    ),
-                    "loss": torch.mean(torch.stack(overall_loss)),
-                }
-
-                for key, value in metrics.items():
-                    self.state_dict.setdefault(key, []).append(value)
-
-                metrics |= overall_output_dict
-            else:
-                metrics = {}
+        metrics = step_output.output_metrics_dict
 
         return EvaluatorOutput(
+            phase_name="testing",
             global_step=global_step,
-            phase_name="test",
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,
+        )
+
+
+@configurable(group="evaluator", name="image_classification")
+class ImageClassificationEvaluator(ClassificationEvaluator):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer,
+            scheduler,
+            scheduler_interval,
+            experiment_tracker,
+            source_modality="image",
+            target_modality="image",
+        )
+
+
+@configurable(group="evaluator", name="image_to_text_zero_shot_classification")
+class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer,
+            scheduler,
+            scheduler_interval,
+            experiment_tracker,
+            source_modality="image_text",
+            target_modality="image",
         )
