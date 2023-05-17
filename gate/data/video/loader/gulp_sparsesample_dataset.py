@@ -555,7 +555,7 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         label = self._labels[index]
 
         return {
-            "pixel_values": frames,
+            "video": frames,
             "video_ids": video_id,
             "labels": label,
             "spatial_sample_indices": spatial_sample_index,
