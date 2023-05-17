@@ -1,9 +1,13 @@
 from collections import defaultdict
 from typing import Optional
+
 import torch
 import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
+
+from gate.models.backbones import image_dim_reshape
+from gate.models.core import reinit
 
 
 def forward_dict(self, x):
@@ -20,6 +24,7 @@ class CLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
+        self.tokenizer = self.preprocessor
         self.clip = CLIPModel.from_pretrained(model_name)
 
         if not pretrained:
@@ -43,6 +48,9 @@ class CLIPAdapter(nn.Module):
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
 
+    def init_weights(self):
+        reinit(self)
+
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
@@ -54,7 +62,6 @@ class CLIPAdapter(nn.Module):
                 f"Must provide at least one input modality"
                 f"to {self.__class__.__name__}"
             )
-
         output_dict = defaultdict(dict)
 
         # self.model.forward expects
@@ -78,8 +85,10 @@ class CLIPAdapter(nn.Module):
     def get_transforms(self):
         return {
             "image": lambda x: self.preprocessor(
-                images=x, return_tensors="pt"
-            ).pixel_values.squeeze(0),
+                images=image_dim_reshape(x), return_tensors="pt"
+            )
+            .pixel_values.squeeze(0)
+            .view(x.shape),
             "text": lambda x: self.preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0),

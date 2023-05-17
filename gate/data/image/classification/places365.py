@@ -1,6 +1,6 @@
 # places365.py
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
@@ -99,7 +99,6 @@ def build_gate_places365_dataset(
         dataset=build_places365_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
         transforms=transforms,
     )
@@ -108,7 +107,6 @@ def build_gate_places365_dataset(
         dataset=build_places365_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
         transforms=transforms,
     )
@@ -117,7 +115,6 @@ def build_gate_places365_dataset(
         dataset=build_places365_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         item_keys=["image", "labels"],
         transforms=transforms,
     )

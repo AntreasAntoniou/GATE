@@ -1,14 +1,18 @@
 from collections import defaultdict
 from typing import Optional
 from urllib.request import urlopen
+
+import PIL.Image as Image
+import timm
 import torch
 import torch.nn as nn
-from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
-import timm
-import PIL.Image as Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
+from transformers import CLIPModel, CLIPProcessor
+from transformers.models.clip.modeling_clip import CLIPOutput
+
+from gate.models.backbones import image_dim_reshape
+from gate.models.core import reinit
 
 
 class TimmModel(nn.Module):
@@ -48,7 +52,11 @@ class TimmModel(nn.Module):
         }
 
     def get_transforms(self):
-        return {"image": self.transforms}
+        return {
+            "image": lambda x: self.transforms(image_dim_reshape(x)).view(
+                x.shape
+            )
+        }
 
     def get_output_shape(self):
         img = Image.open(
@@ -71,6 +79,8 @@ class TimmCLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
+        self.tokenizer = self.preprocessor
+
         self.clip = CLIPModel.from_pretrained(clip_model_name)
 
         self.vision_model = TimmModel(
@@ -87,6 +97,9 @@ class TimmCLIPAdapter(nn.Module):
             else vision_model_output_shape[1]
         )
         self.text_num_features = self.clip.text_embed_dim
+
+    def init_weights(self):
+        reinit(self)
 
     def forward(
         self,
@@ -134,8 +147,10 @@ class TimmCLIPAdapter(nn.Module):
     def get_transforms(self):
         return {
             "image": lambda x: self.preprocessor(
-                images=x, return_tensors="pt"
-            ).pixel_values.squeeze(0),
+                images=image_dim_reshape(x), return_tensors="pt"
+            )
+            .pixel_values.squeeze(0)
+            .view(x.shape),
             "text": lambda x: self.preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0),

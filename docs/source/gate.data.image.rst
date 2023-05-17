@@ -7,9 +7,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   gate.data.image.classification
+   gate.data.image.task_specific_models.classification
    gate.data.image.segmentation
-   gate.data.image.visual_question_answering
+   gate.data.image.task_specific_models.visual_question_answering
 
 Module contents
 ---------------

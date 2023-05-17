@@ -1,53 +1,53 @@
-gate.data.image.classification package
+gate.data.image.task_specific_models.classification package
 ======================================
 
 Submodules
 ----------
 
-gate.data.image.classification.cifar100 module
+gate.data.image.task_specific_models.classification.cifar100 module
 ----------------------------------------------
 
-.. automodule:: gate.data.image.classification.cifar100
+.. automodule:: gate.data.image.task_specific_models.classification.cifar100
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.image.classification.food101 module
+gate.data.image.task_specific_models.classification.food101 module
 ---------------------------------------------
 
-.. automodule:: gate.data.image.classification.food101
+.. automodule:: gate.data.image.task_specific_models.classification.food101
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.image.classification.imagenet1k module
+gate.data.image.task_specific_models.classification.imagenet1k module
 ------------------------------------------------
 
-.. automodule:: gate.data.image.classification.imagenet1k
+.. automodule:: gate.data.image.task_specific_models.classification.imagenet1k
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.image.classification.places365 module
+gate.data.image.task_specific_models.classification.places365 module
 -----------------------------------------------
 
-.. automodule:: gate.data.image.classification.places365
+.. automodule:: gate.data.image.task_specific_models.classification.places365
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.image.classification.stl10 module
+gate.data.image.task_specific_models.classification.stl10 module
 -------------------------------------------
 
-.. automodule:: gate.data.image.classification.stl10
+.. automodule:: gate.data.image.task_specific_models.classification.stl10
    :members:
    :undoc-members:
    :show-inheritance:
 
-gate.data.image.classification.svhn module
+gate.data.image.task_specific_models.classification.svhn module
 ------------------------------------------
 
-.. automodule:: gate.data.image.classification.svhn
+.. automodule:: gate.data.image.task_specific_models.classification.svhn
    :members:
    :undoc-members:
    :show-inheritance:
@@ -55,7 +55,7 @@ gate.data.image.classification.svhn module
 Module contents
 ---------------
 
-.. automodule:: gate.data.image.classification
+.. automodule:: gate.data.image.task_specific_models.classification
    :members:
    :undoc-members:
    :show-inheritance:

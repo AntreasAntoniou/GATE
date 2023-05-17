@@ -1,7 +1,9 @@
+import collections
 import json
 from collections import defaultdict
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
+import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
@@ -106,6 +108,58 @@ def dataclass_collate(batch):
             f"{json.dumps(dict_to_summary(batch), indent=4)}"
         )
         raise e
+
+
+def pad_and_stack_tensors(tensor_list):
+    tensor_list = list(tensor_list)
+    for idx, tensor in enumerate(tensor_list):
+        if len(tensor.shape) == 2 and tensor.shape[0] == 1:
+            tensor = tensor.squeeze(0)
+            tensor_list[idx] = tensor
+
+    max_len = max(tensor.size(0) for tensor in tensor_list)
+    padded_list = []
+
+    for tensor in tensor_list:
+        if tensor.size(0) < max_len:
+            padding_size = max_len - tensor.size(0)
+            padding = (
+                torch.ones(
+                    (padding_size),
+                    dtype=tensor.dtype,
+                    device=tensor.device,
+                )
+                * -1
+            )  # use the last value (eos)
+            tensor = torch.cat([tensor, padding], dim=0)
+        padded_list.append(tensor)
+    # print(f"padded_list: {[tensor.shape for tensor in padded_list]}")
+    return torch.stack(padded_list)
+
+
+def collate_fn_with_token_pad(data):
+    batch = defaultdict(lambda: defaultdict(dict))
+
+    def process_value(value):
+        if isinstance(value[0], torch.Tensor):
+            # print(f"tensor: {value}")
+            return (
+                pad_and_stack_tensors(value)
+                if value[0].dtype == torch.long
+                else torch.stack(value)
+            )
+        elif isinstance(value[0], Mapping):
+            return collate_fn_with_token_pad(value)
+        elif isinstance(value[0], str):
+            return value
+        else:
+            return value
+
+    batch = {}
+    for key, values in zip(data[0].keys(), zip(*[d.values() for d in data])):
+        batch[key] = process_value(values)
+
+    return batch
 
 
 class GATEDataset(Dataset):

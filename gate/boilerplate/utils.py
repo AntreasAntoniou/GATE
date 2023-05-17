@@ -179,9 +179,10 @@ def pretty_config(
     return tree
 
 
+from typing import Any, Dict
+
 from rich import print as rprint
 from rich.pretty import Pretty
-from typing import Any, Dict
 
 
 def pretty_print_dictionary(dictionary: Dict[str, Any]) -> None:
@@ -367,7 +368,7 @@ def download_checkpoint(
 def create_hf_model_repo_and_download_maybe(
     cfg: Any,
 ) -> Tuple[Optional[pathlib.Path], str]:
-    repo_url = create_hf_model_repo(cfg)
+    create_hf_model_repo(cfg)
     create_directories(cfg)
     upload_config_files(cfg, cfg.hf_repo_path)
 
@@ -376,7 +377,7 @@ def create_hf_model_repo_and_download_maybe(
     ckpt_dict = get_checkpoint_dict(files)
 
     if len(ckpt_dict) == 0:
-        return None, repo_url
+        return None
 
     if cfg.resume_from_checkpoint:
         return download_checkpoint(
@@ -393,7 +394,7 @@ def create_hf_model_repo_and_download_maybe(
         )
     else:
         print(f"Created repo {cfg.hf_repo_path}, {cfg.hf_cache_dir}")
-        return None, repo_url
+        return None
 
 
 def download_model_checkpoint_from_hub(

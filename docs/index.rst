@@ -15,10 +15,10 @@ Welcome to GATE - Generalization After Transfer Evaluation Engine - An any-modal
    data
    data.image
    gate.boilerplate
-   gate.data.image.classification
+   gate.data.image.task_specific_models.classification
    gate.data.image
    gate.data.image.segmentation
-   gate.data.image.visual_question_answering
+   gate.data.image.task_specific_models.visual_question_answering
    gate.data
    gate.models
    gate
