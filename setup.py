@@ -6,6 +6,8 @@ main_requirements = [
     "torch",
     "torchvision",
     "torchaudio",
+    "torchgeometry",
+    "torchmetrics",
     "accelerate",
     "datasets",
     "transformers",

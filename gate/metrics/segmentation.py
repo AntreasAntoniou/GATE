@@ -1,93 +1,108 @@
 import torch
-import numpy as np
+import monai
 
 
-def dice_loss(predictions, labels, smooth=1.0):
-    """
-    Compute the Dice Loss for binary segmentation.
+def one_hot_encoding(tensor, num_classes, dim):
+    # Ensure the tensor is a LongTensor
+    tensor = tensor.long()
 
-    Args:
-        predictions (torch.Tensor): the network's predictions (B, Classes, H, W)
-        labels (torch.Tensor): the ground truth segmentation masks (B, 1, H, W)
-        smooth (float, optional): a smoothing constant to prevent division by zero. Defaults to 1.0.
+    # Get the size of the tensor
+    size = list(tensor.size())
 
-    Returns:
-        torch.Tensor: the computed Dice loss.
-    """
-    intersection = (predictions * labels).sum(dim=2).sum(dim=2)
-    loss = 1 - (
-        (2.0 * intersection + smooth)
-        / (
-            predictions.sum(dim=2).sum(dim=2)
-            + labels.sum(dim=2).sum(dim=2)
-            + smooth
+    # Insert the number of classes at the specified dimension
+    size.insert(dim, num_classes)
+
+    # Create a new tensor of zeros with the extended size
+    one_hot = torch.zeros(size, device=tensor.device)
+
+    # Use scatter to input the original tensor into the one-hot tensor
+    one_hot.scatter_(dim, tensor.unsqueeze(dim), 1)
+
+    return one_hot
+
+
+def loss_adapter(
+    loss_fn,
+    logits,
+    labels,
+    label_dim,
+    num_classes,
+    remove_dim: bool = True,
+):
+    if remove_dim:
+        return loss_fn(
+            logits,
+            one_hot_encoding(
+                labels.squeeze(label_dim),
+                num_classes=num_classes,
+                dim=label_dim,
+            ),
         )
-    )
-
-    return loss.mean()
-
-
-def compute_surface_distances(prediction, label):
-    """
-    Compute surface distances between predicted and ground truth masks using PyTorch.
-    """
-    prediction_dist = 1.0 - prediction
-    label_dist = 1.0 - label
-
-    pred_dist_to_border = torch.where(
-        prediction,
-        prediction_dist,
-        torch.tensor(float("inf")).to(prediction.device),
-    )
-    label_dist_to_border = torch.where(
-        label, label_dist, torch.tensor(float("inf")).to(label.device)
-    )
-
-    surface_distances_pred = torch.where(prediction, label_dist_to_border, 0)
-    surface_distances_label = torch.where(label, pred_dist_to_border, 0)
-
-    return surface_distances_pred, surface_distances_label
-
-
-def normalized_surface_dice(predictions, labels):
-    """
-    Compute the Normalized Surface Dice (NSD) between predicted and ground truth masks using PyTorch.
-    """
-    (
-        surface_distances_pred,
-        surface_distances_label,
-    ) = compute_surface_distances(predictions, labels)
-
-    numerator = 2 * torch.sum(surface_distances_pred + surface_distances_label)
-    denominator = torch.sum(predictions) + torch.sum(labels)
-
-    nsd = 1 - (numerator / denominator)
-
-    return nsd
-
-
-def miou_loss(predictions, labels, num_classes):
-    """
-    Compute the Mean Intersection Over Union (MIOU) loss for the given prediction and ground truth.
-    """
-    ious = []
-    predictions = predictions.view(-1)
-    labels = labels.view(-1)
-
-    for cls in range(num_classes):
-        pred_inds = predictions == cls
-        label_inds = labels == cls
-        intersection = (pred_inds[label_inds]).long().sum().data.cpu().item()
-        union = (
-            pred_inds.long().sum().data.cpu().item()
-            + label_inds.long().sum().data.cpu().item()
-            - intersection
+    else:
+        return loss_fn(
+            logits,
+            one_hot_encoding(
+                labels,
+                num_classes=num_classes,
+                dim=label_dim,
+            ),
         )
-        if union == 0:
-            ious.append(float("nan"))
-        else:
-            ious.append(float(intersection) / float(max(union, 1)))
 
-    return torch.tensor(
-        np.nanmean(ious)
-    )  # Return the average IoU over all classes
+
+def normalized_surface_dice_loss(
+    logits, labels, label_dim, num_classes, class_thresholds: list = [0.5]
+):
+    logits = logits.permute(0, 2, 3, 1).view(-1, num_classes)
+    labels = labels.permute(0, 2, 3, 1).view(-1)
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_surface_dice,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+        remove_dim=False,
+        class_thresholds=class_thresholds,
+    )
+
+
+def dice_loss(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_meandice,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+    )
+
+
+def miou_loss(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_meaniou,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+    )
+
+
+def generalized_dice(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_generalized_dice,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+    )
+
+
+def roc_auc_score(logits, labels, label_dim, num_classes):
+    logits = logits.permute(0, 2, 3, 1).view(-1, num_classes)
+    labels = labels.permute(0, 2, 3, 1).view(-1)
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_roc_auc,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+        remove_dim=False,
+    )

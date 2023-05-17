@@ -22,6 +22,9 @@ logger = get_logger(name=__name__, set_rich=True)
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 70236
 
 
+# TODO: Test the below code
+
+
 class HAM10KClassification(Dataset):
     def __init__(
         self, dataset_path: pathlib.Path, transform: Optional[Callable] = None
