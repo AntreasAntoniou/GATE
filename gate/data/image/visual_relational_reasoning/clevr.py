@@ -12,7 +12,7 @@ from gate.data import download_kaggle_dataset
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 70236
 
 
-class DiabeticRetinopathyClassification(data.Dataset):
+class CLEVRClassification(data.Dataset):
     def __init__(
         self, dataset_path: pathlib.Path, transform: Optional[Callable] = None
     ):
@@ -32,7 +32,7 @@ class DiabeticRetinopathyClassification(data.Dataset):
             dataset_name="clevr",
             dataset_path="timoboz/clevr-dataset",
             target_dir_path=dataset_path,
-            count_after_download_and_extract=FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT,
+            file_count_after_download_and_extract=FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT,
         )
 
     def __len__(self):
@@ -52,4 +52,19 @@ class DiabeticRetinopathyClassification(data.Dataset):
 
 
 if __name__ == "__main__":
-    pass
+    from rich import print as rprint
+    from rich.traceback import install
+
+    install()
+    dataset = (
+        CLEVRClassification(
+            dataset_path=pathlib.Path(os.environ["PYTEST_DIR"]), transform=None
+        ),
+    )
+
+    # print(len(dataset))
+    # print(dataset[0]["image"].shape)
+    # print(dataset[0]["label"])
+
+    # plt.imshow(dataset[0]["image"].permute(1, 2, 0))
+    # plt.show()
