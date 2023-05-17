@@ -22,9 +22,7 @@ class CLEVRClassification(data.Dataset):
         self.labels_frame = pd.read_csv(
             dataset_path_dict["dataset_download_path"] / "trainLabels.csv"
         )
-        self.img_dir = (
-            dataset_path_dict["dataset_download_path"] / "resized_train"
-        )
+        self.img_dir = dataset_path_dict["dataset_download_path"] / "resized_train"
         self.transform = transform
 
     def download_and_extract(self, dataset_path: pathlib.Path):
@@ -39,9 +37,7 @@ class CLEVRClassification(data.Dataset):
         return len(self.labels_frame)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(
-            self.img_dir, self.labels_frame.iloc[idx, 0] + ".jpeg"
-        )
+        img_name = os.path.join(self.img_dir, self.labels_frame.iloc[idx, 0] + ".jpeg")
         image = Image.open(img_name)
         label = self.labels_frame.iloc[idx, 1]
 
