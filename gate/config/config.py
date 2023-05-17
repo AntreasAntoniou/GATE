@@ -3,21 +3,19 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import hydra
-from omegaconf import OmegaConf
-from rich.syntax import Syntax
 import torch
 import yaml
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config
+from omegaconf import OmegaConf
+from rich import print
+from rich.syntax import Syntax
 from timm.scheduler import CosineLRScheduler
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
-from gate.boilerplate.decorators import (
-    register_configurables,
-)
-from rich import print
+from gate.boilerplate.decorators import register_configurables
 from gate.boilerplate.utils import (
     get_hydra_config,
     get_logger,
@@ -45,6 +43,7 @@ from gate.config.variables import (
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
 )
+from gate.data.core import collate_fn_with_token_pad
 
 hydra_logger = get_logger("hydra")
 
@@ -120,7 +119,10 @@ def collect_config_store():
     # Dataloader configs
 
     dataloader_config = builds(
-        DataLoader, dataset=None, populate_full_signature=True
+        DataLoader,
+        dataset=None,
+        populate_full_signature=True,
+        collate_fn=collate_fn_with_token_pad,
     )
 
     config_store.store(

@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Callable, Optional, Any
+from typing import Any, Callable, Optional
 
 import hydra
 import neptune
@@ -72,7 +72,11 @@ def run(cfg: Any) -> None:
     set_seed(seed=cfg.seed)
 
     ckpt_dict = create_hf_model_repo_and_download_maybe(cfg)
-    ckpt_path = ckpt_dict["root_filepath"]
+
+    if ckpt_dict is not None:
+        ckpt_path = ckpt_dict["root_filepath"]
+    else:
+        ckpt_path = None
 
     if ckpt_path is not None:
         logger.info(

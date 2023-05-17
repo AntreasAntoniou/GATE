@@ -5,11 +5,10 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics
-from gate.boilerplate.decorators import configurable
+from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
-from gate.trainers import Trainer, TrainerOutput
+from gate.trainers import Trainer, TrainerOutput, log_data_to_wandb_table
 
 logger = get_logger(__name__)
 
@@ -28,8 +27,9 @@ def get_dict_shapes(x):
 class StepOutput:
     output_metrics_dict: Dict
     loss: torch.Tensor
-    accuracy: torch.Tensor
-    accuracy_top_5: torch.Tensor
+
+
+# TODO: Make sure it's easier for user, with autocheck.
 
 
 @configurable(group="trainer", name="visual_question_answering")
@@ -37,59 +37,63 @@ class VQATrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        output_dict = model.forward(batch)
+    def step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        phase_name: Optional[str] = None,
+    ):
+        output_dict = model.forward(batch)["text"]["image_text"]
         loss = output_dict["loss"]
 
-        # Generate answers and get the ground truth
-        predicted_answers = model.generate_text(batch)
-        ground_truth_answers = batch[
-            "answers"
-        ]  # Assuming this is where the true answers are
-
-        # Prepare data for VQA evaluation
-        vqa_data = {
-            question_id: VQAItem(
-                answers=ground_truth_answers[i],
-                image_id=batch["image_ids"][i],
-                question=batch["questions"][i],
-                question_id=batch["question_ids"][i],
-                question_type=None,
-                answer_type=None,
-            )
-            for i, question_id in enumerate(batch["question_ids"])
-        }
-        vqa_predictions = {
-            question_id: AnswerData(answer=predicted_answer)
-            for question_id, predicted_answer in zip(
-                batch["question_ids"], predicted_answers
-            )
-        }
-
-        # Run the evaluation
-        result = vqa_metric(vqa_data, vqa_predictions)
-
-        output_metrics_dict = {
-            "loss": loss,
-            "vqa_score": torch.mean(
-                torch.tensor(result["overall"])
-            ),  # Use the mean VQA score here
-        }
-
-        keys = list(output_metrics_dict.keys())
-        for key in keys:
-            if "loss" not in key and "vqa_score" not in key:
-                del output_dict[key]
+        output_metrics = {"loss": loss}
 
         accelerator.backward(loss)
 
+        if torch.rand(1) > 0.95:
+            metrics = self.sample_answers_and_compute_vqa_score(
+                model=model,
+                batch=batch,
+                global_step=global_step,
+                phase_name=phase_name,
+            )
+            output_metrics |= metrics
+
         return StepOutput(
-            output_metrics_dict=output_metrics_dict,
+            output_metrics_dict=output_metrics,
             loss=loss,
-            vqa_score=output_metrics_dict[
-                "vqa_score"
-            ],  # Add the VQA score here
         )
+
+    def sample_answers_and_compute_vqa_score(
+        self, model, batch, global_step, phase_name
+    ):
+        with torch.no_grad():
+            # Generate answers and get the ground truth
+            predicted_answers = model.model.generate_text(**batch)
+
+        ground_truth_answers = batch["text"][
+            "answer_original"
+        ]  # Assuming this is where the true answers are
+
+        questions = batch["text"]["question_original"]
+
+        # Run the evaluation
+        result = vqa_metric(
+            answers=ground_truth_answers, predicted_answers=predicted_answers
+        )
+        if self.starting_train:
+            log_data_to_wandb_table(
+                questions=questions,
+                answers=ground_truth_answers,
+                predicted_answers=predicted_answers,
+                global_step=global_step,
+                phase_name=phase_name,
+            )
+            self.starting_train = False
+
+        return {"vqa_score": torch.mean(torch.tensor(result["overall"]))}
 
     @collect_metrics
     def training_step(
@@ -101,8 +105,6 @@ class VQATrainer(Trainer):
     ) -> TrainerOutput:
         model.train()
 
-        overall_loss = []
-        overall_vqa_score = []
         overall_output_dict = {}
 
         self.optimizer.zero_grad()
@@ -112,41 +114,18 @@ class VQATrainer(Trainer):
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
+            phase_name="training",
         )
-
-        if step_output is not None:
-            overall_output_dict |= step_output.output_metrics_dict
-            overall_loss.append(step_output.loss)
-            overall_vqa_score.append(step_output.vqa_score)
+        overall_output_dict |= step_output.output_metrics_dict
 
         self.optimizer.step()
 
-        keys = list(step_output.output_metrics_dict.keys())
-        for key in keys:
-            if (
-                "loss" not in key and "vqa_score" not in key
-            ):  # Consider vqa_score now
-                del step_output.output_metrics_dict[key]
-
-        if len(overall_loss) > 0:
-            metrics = {
-                "vqa_score": torch.mean(
-                    torch.stack(overall_vqa_score)
-                ),  # Include vqa_score here
-                "loss": torch.mean(torch.stack(overall_loss)),
-            }
-            metrics |= overall_output_dict
-        else:
-            metrics = {}
-
-        metrics["lr"] = self.optimizer.param_groups[0]["lr"]
+        overall_output_dict["lr"] = self.optimizer.param_groups[0]["lr"]
 
         return TrainerOutput(
             phase_name="training",
-            opt_loss=torch.mean(torch.stack(overall_loss))
-            if len(overall_loss) > 0
-            else None,
+            opt_loss=overall_output_dict["loss"],
             global_step=global_step,
-            metrics=metrics,
+            metrics=overall_output_dict,
             experiment_tracker=self.experiment_tracker,
         )

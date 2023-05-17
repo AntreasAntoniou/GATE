@@ -6,6 +6,8 @@ main_requirements = [
     "torch",
     "torchvision",
     "torchaudio",
+    "torchgeometry",
+    "torchmetrics",
     "accelerate",
     "datasets",
     "transformers",
@@ -23,15 +25,20 @@ main_requirements = [
     "opencv-python",
     "scipy",
     "soundfile",
-    "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "monai",
     "nibabel",
+    "decord",
+    "kaggle",
     "natsort",
+    "gdown",
+    "gpath",
+    "cython",
+    "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
 # "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
-
+# "learn2learn @ git+https://github.com/mlguild/learn2learn.git", For Few Shot Learning this one must be installed manually by git clone and pip install -e .
 dev_requirements = [
     "pytest",
     "isort",

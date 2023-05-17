@@ -5,8 +5,8 @@ from accelerate import Accelerator
 from huggingface_hub import snapshot_download
 from hydra_zen import store
 
-from .gulp.gulp_sparsesample_dataset import GulpSparsesampleDataset
-from .gulp.gulp_sparsesample_squeezed_dataset import (
+from ..loader.gulp_sparsesample_dataset import GulpSparsesampleDataset
+from ..loader.gulp_sparsesample_squeezed_dataset import (
     GulpSparsesampleSqueezedDataset,
 )
 

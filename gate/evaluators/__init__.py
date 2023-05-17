@@ -3,18 +3,26 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+import torch
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics
-import torch
 
 
 class Evaluator(ABC):
-    def __init__(self, experiment_tracker: Optional[Any] = None):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+        source_modality: Optional[str] = None,
+        target_modality: Optional[str] = None,
+    ):
         super().__init__()
         self.state_dict = {}
         self.epoch_metrics = defaultdict(list)
         self.experiment_tracker = experiment_tracker
+        self.starting_eval = True
+        self.source_modality = source_modality
+        self.target_modality = target_modality
 
     @abstractmethod
     def step(self, model, batch, global_step):
@@ -57,6 +65,7 @@ class Evaluator(ABC):
         global_step: int,
     ):
         self.state_dict = {}
+        self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",
@@ -70,6 +79,7 @@ class Evaluator(ABC):
         global_step: int,
     ):
         self.state_dict = {}
+        self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="testing",
@@ -84,6 +94,9 @@ class Evaluator(ABC):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
+            if "loss" not in key and "vqa_score" not in key:
+                continue
+
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
             self.epoch_metrics[f"{key}-epoch-mean"].append(
@@ -109,6 +122,8 @@ class Evaluator(ABC):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
+            if "loss" not in key and "vqa_score" not in key:
+                continue
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
