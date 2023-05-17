@@ -1,22 +1,18 @@
-from collections import defaultdict
 import pathlib
+from collections import defaultdict
 from typing import Any, Dict, Optional, Union
-from omegaconf import DictConfig
-from tali.utils import download_model_with_name
-
-import torch
-import torch.nn as nn
-
-from tali.models import TALIModel, MultiModalityConfig
-from transformers import CLIPProcessor, WhisperProcessor
 
 import accelerate
-from rich import print
+import torch
+import torch.nn as nn
 import yaml
+from omegaconf import DictConfig
+from rich import print
+from tali.models import MultiModalityConfig, TALIModel
+from tali.utils import download_model_with_name
+from transformers import CLIPProcessor, WhisperProcessor
 
-from gate.boilerplate.utils import (
-    download_model_checkpoint_from_hub,
-)
+from gate.boilerplate.utils import download_model_checkpoint_from_hub
 from gate.models.backbones import image_dim_reshape
 from gate.models.core import reinit
 

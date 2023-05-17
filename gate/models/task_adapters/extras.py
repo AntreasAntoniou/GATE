@@ -10,11 +10,9 @@ import torch.nn.functional
 import torch.nn.functional as F
 from accelerate import Accelerator
 from rich import print
-
 from transformers.models.clip.modeling_clip import contrastive_loss
 
 from gate.boilerplate.utils import get_logger
-
 
 logger = get_logger(__name__)
 

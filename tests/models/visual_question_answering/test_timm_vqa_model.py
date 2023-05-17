@@ -1,15 +1,14 @@
 from urllib.request import urlopen
+
+import PIL.Image as Image
 import torch
+from rich.traceback import install
+from tests.models.test_clip_vqa_model import pad_tokens
 
 from gate.models.task_specific_models.visual_question_answering.timm import (
     ModelAndTransform,
     build_model,
 )
-import PIL.Image as Image
-from rich.traceback import install
-
-from tests.models.test_clip_vqa_model import pad_tokens
-
 
 install()
 

@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
-import torch.nn as nn
 import torch
+import torch.nn as nn
 
 from gate.models.task_adapters import BaseModule
 

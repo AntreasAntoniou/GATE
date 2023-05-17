@@ -12,14 +12,6 @@ from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
-from gate.evaluators.classification import (
-    ClassificationEvaluator,
-    Evaluator,
-)
-from gate.trainers.classification import (
-    ClassificationTrainer,
-    Trainer,
-)
 from gate.boilerplate.utils import download_model_with_name, get_logger
 from gate.config.variables import (
     CURRENT_EXPERIMENT_DIR,
@@ -30,6 +22,8 @@ from gate.config.variables import (
     HYDRATED_TRAIN_ITERS,
     RESUME,
 )
+from gate.evaluators.classification import ClassificationEvaluator, Evaluator
+from gate.trainers.classification import ClassificationTrainer, Trainer
 
 logger = get_logger(__name__)
 
@@ -638,12 +632,13 @@ class Learner(nn.Module):
 if __name__ == "__main__":
     # a minimal example of how to use the Learner class
     import torch
-    from datasets import load_dataset
     from rich import print
     from torch.nn import CrossEntropyLoss
     from torch.optim import Adam
     from torch.utils.data import DataLoader
     from torchvision.transforms import Compose, Resize, ToTensor
+
+    from datasets import load_dataset
 
     train_dataset = load_dataset("beans", split="train")
     val_dataset = load_dataset("beans", split="validation")

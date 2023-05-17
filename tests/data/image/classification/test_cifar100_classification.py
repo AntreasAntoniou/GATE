@@ -3,9 +3,7 @@ import os
 
 import pytest
 
-from gate.data.image.classification.cifar100 import (
-    build_cifar100_dataset,
-)
+from gate.data.image.classification.cifar100 import build_cifar100_dataset
 
 
 def test_build_cifar100_dataset():

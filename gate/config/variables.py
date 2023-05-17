@@ -1,8 +1,8 @@
+import multiprocessing as mp
 import os
 from typing import Any
 
 from hydra_zen import hydra_list
-import multiprocessing as mp
 
 
 def get_env_var(key: str, default: Any) -> Any:

@@ -1,9 +1,11 @@
 import pathlib
-import torch.utils.data as data
+
 import tensorflow_datasets as tfds
-import datasets
-from transformers.tf_utils import tf
+import torch.utils.data as data
 from tqdm.auto import tqdm
+from transformers.tf_utils import tf
+
+import datasets
 
 
 class TFDatasetToHFDatasetAdapter(data.Dataset):

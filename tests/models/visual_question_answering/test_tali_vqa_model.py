@@ -1,14 +1,13 @@
 from urllib.request import urlopen
-import torch
 
+import PIL.Image as Image
+import torch
+from tests.models.test_clip_vqa_model import pad_tokens
 
 from gate.models.task_specific_models.visual_question_answering.tali import (
     ModelAndTransform,
     build_model,
 )
-import PIL.Image as Image
-
-from tests.models.test_clip_vqa_model import pad_tokens
 
 
 def test_build_model():

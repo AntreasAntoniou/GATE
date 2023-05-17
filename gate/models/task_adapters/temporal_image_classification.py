@@ -15,7 +15,6 @@ from gate.boilerplate.utils import get_logger
 from gate.models.core import reinit
 from gate.models.task_adapters import BaseModule
 
-
 logger = get_logger(__name__)
 
 

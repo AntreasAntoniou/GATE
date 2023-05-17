@@ -5,8 +5,7 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics
-from gate.boilerplate.decorators import configurable
+from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
 from gate.trainers import Trainer, TrainerOutput, log_data_to_wandb_table

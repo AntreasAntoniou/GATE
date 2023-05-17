@@ -3,14 +3,12 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
+
 from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-
-from gate.data.tasks.visual_question_answering import (
-    OKVQATask,
-)
+from gate.data.tasks.visual_question_answering import OKVQATask
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:

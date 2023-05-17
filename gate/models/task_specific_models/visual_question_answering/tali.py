@@ -1,6 +1,6 @@
+import random
 from collections import defaultdict
 from copy import copy
-import random
 from typing import Any, Dict, Union
 
 from gate.boilerplate.decorators import configurable

@@ -1,16 +1,17 @@
 from collections import defaultdict
 from typing import Optional
 from urllib.request import urlopen
+
+import PIL.Image as Image
+import timm
 import torch
 import torch.nn as nn
-from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
-import timm
-import PIL.Image as Image
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
-from gate.models.backbones import image_dim_reshape
+from transformers import CLIPModel, CLIPProcessor
+from transformers.models.clip.modeling_clip import CLIPOutput
 
+from gate.models.backbones import image_dim_reshape
 from gate.models.core import reinit
 
 

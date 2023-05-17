@@ -1,9 +1,10 @@
 import pytest
+
 from gate.models import ModelAndTransform
 from gate.models.core import GATEModel
 from gate.models.task_specific_models.classification.tali import (
-    build_model,
     build_gate_tali_model,
+    build_model,
 )
 
 

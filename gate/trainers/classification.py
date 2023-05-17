@@ -5,11 +5,9 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.metrics.core import accuracy_top_k
-
-from gate.boilerplate.decorators import collect_metrics
-from gate.boilerplate.decorators import configurable
+from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
+from gate.metrics.core import accuracy_top_k
 from gate.trainers import Trainer, TrainerOutput
 
 logger = get_logger(__name__)
