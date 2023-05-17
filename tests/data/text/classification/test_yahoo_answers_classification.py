@@ -3,7 +3,10 @@ import os
 
 import pytest
 
-from gate.data.text.classification.yahoo_answers import build_yahoo_answers_dataset
+from gate.data.text.classification.yahoo_answers import (
+    build_yahoo_answers_dataset,
+)
+
 
 def test_build_yahoo_answers_dataset():
     # Test if the function returns the correct dataset split
@@ -29,6 +32,6 @@ def test_build_yahoo_answers_dataset():
             "invalid_set_name", data_dir=os.environ.get("TEST_DIR")
         )
 
+
 if __name__ == "__main__":
     test_build_yahoo_answers_dataset()
-

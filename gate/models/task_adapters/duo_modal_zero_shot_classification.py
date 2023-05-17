@@ -1,12 +1,10 @@
 from typing import Dict, Optional
 
-import torch.nn as nn
 import torch
+import torch.nn as nn
 
 from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.extras import (
-    get_similarities,
-)
+from gate.models.task_adapters.extras import get_similarities
 
 
 class DuoModalZeroShotModel(BaseModule):

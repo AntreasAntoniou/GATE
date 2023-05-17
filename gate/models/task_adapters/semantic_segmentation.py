@@ -1,20 +1,14 @@
+from functools import partial
 from typing import Dict, Optional
 
 import numpy as np
-import torch.nn as nn
-import torch
-
-from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.extras import (
-    get_similarities,
-)
-from functools import partial
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from timm.models.vision_transformer import Block, PatchEmbed
 
-from timm.models.vision_transformer import PatchEmbed, Block
+from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters.extras import get_similarities
 
 
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):

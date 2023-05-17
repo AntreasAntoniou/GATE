@@ -1,21 +1,22 @@
-import pathlib
-from accelerate.utils import set_seed
-import pytest
 import os
+import pathlib
 
+import pytest
 import torch
+from accelerate.utils import set_seed
+
 from gate.data.few_shot import (
     AircraftFewShotClassificationDataset,
-    CUB200FewShotClassificationDataset,
     CIFARFewShotClassificationDataset,
+    CUB200FewShotClassificationDataset,
     DescribableTexturesFewShotClassificationDataset,
     FC100FewShotClassificationDataset,
     FungiFewShotClassificationDataset,
-    TieredImageNetFewShotClassificationDataset,
     MiniImageNetFewShotClassificationDataset,
     OmniglotFewShotClassificationDataset,
-    VGGFlowersFewShotClassificationDataset,
     QuickDrawFewShotClassificationDataset,
+    TieredImageNetFewShotClassificationDataset,
+    VGGFlowersFewShotClassificationDataset,
 )
 
 set_seed(42)

@@ -1,7 +1,8 @@
+import pytest
 import torch
+
 from gate.models.backbones.clip import CLIPAdapter
 from gate.models.task_adapters.semantic_segmentation import SegmentationViT
-import pytest
 
 
 def test_basic():

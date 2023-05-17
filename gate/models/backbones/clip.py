@@ -1,11 +1,12 @@
 from collections import defaultdict
 from typing import Optional
+
 import torch
 import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
-from gate.models.backbones import image_dim_reshape
 
+from gate.models.backbones import image_dim_reshape
 from gate.models.core import reinit
 
 

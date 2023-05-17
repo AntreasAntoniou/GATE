@@ -1,21 +1,22 @@
-from rich import print
-
-import torch
-from tqdm import tqdm
-
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
 from collections import defaultdict
 from typing import Optional
 from urllib.request import urlopen
+
+import PIL.Image as Image
+import timm
 import torch
 import torch.nn as nn
-from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
-import timm
-import PIL.Image as Image
+from rich import print
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
+from tqdm import tqdm
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    CLIPModel,
+    CLIPProcessor,
+)
+from transformers.models.clip.modeling_clip import CLIPOutput
 
 tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
 tokenizer.pad_token = tokenizer.eos_token
@@ -65,8 +66,8 @@ print(loss, logits.shape)
 
 from typing import Dict, Optional
 
-import torch.nn as nn
 import torch
+import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -174,8 +175,9 @@ class SimpleVQATransformer(nn.Module):
         }
 
 
-from gate.models.backbones.clip import CLIPAdapter
 import accelerate
+
+from gate.models.backbones.clip import CLIPAdapter
 
 accelerator = accelerate.Accelerator()
 

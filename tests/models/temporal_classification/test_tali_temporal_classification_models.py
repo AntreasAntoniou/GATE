@@ -3,8 +3,8 @@ import torch
 
 from gate.models.task_specific_models.temporal_image_classification.tali_temporal_image_classification import (
     ModelAndTransform,
-    build_model,
     build_gate_model,
+    build_model,
 )
 
 pytest_parameters = [(True, 512), (False, 512)]

@@ -2,10 +2,13 @@
 from typing import Optional
 
 import numpy as np
+
 from datasets import load_dataset
 
 
-def build_winogrande_debiased_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_winogrande_debiased_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
     """
     Build a winogrande dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/winogrande
@@ -21,19 +24,22 @@ def build_winogrande_debiased_dataset(set_name: str, data_dir: Optional[str] = N
     rng = np.random.RandomState(42)
 
     train_data = load_dataset(
-        'winogrande', 'winogrande_debiased',
+        "winogrande",
+        "winogrande_debiased",
         split="train",
         cache_dir=data_dir,
     )
 
     val_data = load_dataset(
-        'winogrande', 'winogrande_debiased',
+        "winogrande",
+        "winogrande_debiased",
         split="validation",
         cache_dir=data_dir,
     )
 
     test_data = load_dataset(
-        'winogrande', 'winogrande_debiased',
+        "winogrande",
+        "winogrande_debiased",
         split="test",
         cache_dir=data_dir,
     )

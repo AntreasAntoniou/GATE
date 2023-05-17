@@ -1,12 +1,13 @@
 from typing import List
 from urllib.request import urlopen
+
+import PIL.Image as Image
 import torch
 
 from gate.models.task_specific_models.visual_question_answering.clip import (
     ModelAndTransform,
     build_model,
 )
-import PIL.Image as Image
 
 
 def test_build_model():

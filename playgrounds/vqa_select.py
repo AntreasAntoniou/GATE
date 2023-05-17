@@ -1,12 +1,13 @@
 import os
+
 from rich import print
+
 from gate.data.image.task_specific_models.visual_question_answering.ok_vqa import (
     build_ok_vqa_dataset,
 )
 from gate.data.image.task_specific_models.visual_question_answering.vqa_v2 import (
     build_vqa_v2_dataset,
 )
-
 
 ok_train_set = build_ok_vqa_dataset(
     "train", data_dir=os.environ.get("PYTEST_DIR")

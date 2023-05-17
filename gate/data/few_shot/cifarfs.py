@@ -1,13 +1,12 @@
 import pathlib
 from typing import Any, Optional, Tuple, Union
+
 import learn2learn as l2l
 from torchvision import transforms
 
 from gate.boilerplate.utils import get_logger
 from gate.data.few_shot import bytes_to_string
-from gate.data.few_shot.core import (
-    FewShotClassificationMetaDataset,
-)
+from gate.data.few_shot.core import FewShotClassificationMetaDataset
 from gate.data.few_shot.utils import FewShotSuperSplitSetOptions
 
 logger = get_logger(

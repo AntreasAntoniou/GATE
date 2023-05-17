@@ -4,7 +4,6 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-
 # labels = torch.cat(self.epoch_labels_preds["labels"])
 # preds = torch.cat(self.epoch_labels_preds["preds"])
 # for metric_name, metric_fn in self._metrics.items():

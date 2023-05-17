@@ -1,7 +1,7 @@
+import random
 from collections import defaultdict
 from copy import deepcopy as copy
-import random
-from typing import Union, Any, Dict
+from typing import Any, Dict, Union
 
 import torch
 

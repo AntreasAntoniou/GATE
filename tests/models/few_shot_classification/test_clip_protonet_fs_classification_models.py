@@ -3,8 +3,8 @@ import torch
 
 from gate.models.task_specific_models.few_shot_classification.clip_protonet import (
     ModelAndTransform,
-    build_model,
     build_gate_model,
+    build_model,
 )
 
 pytest_parameters = [(True, 512), (False, 512), (True, None), (False, None)]
