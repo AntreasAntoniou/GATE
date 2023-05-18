@@ -71,6 +71,9 @@ def build_model(
         if "text" in inputs:
             output_dict["text"] = transform_dict["text"](inputs["text"])
 
+        if "labels" in inputs:
+            output_dict["labels"] = inputs["labels"]
+
         return output_dict
 
     return ModelAndTransform(model=model, transform=transform_wrapper)

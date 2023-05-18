@@ -29,39 +29,40 @@ def loss_adapter(
     label_dim,
     num_classes,
     remove_dim: bool = True,
+    **kwargs,
 ):
     if remove_dim:
-        return loss_fn(
-            logits,
-            one_hot_encoding(
-                labels.squeeze(label_dim),
-                num_classes=num_classes,
-                dim=label_dim,
-            ),
-        )
-    else:
-        return loss_fn(
-            logits,
-            one_hot_encoding(
-                labels,
-                num_classes=num_classes,
-                dim=label_dim,
-            ),
-        )
+        labels = labels.squeeze(label_dim)
+
+    labels_one_hot = one_hot_encoding(
+        labels,
+        num_classes=num_classes,
+        dim=label_dim,
+    )
+
+    # print(
+    #     f"labels_one_hot.shape: {labels_one_hot.shape}, logits.shape: {logits.shape}"
+    # )
+
+    return loss_fn(
+        logits,
+        labels_one_hot,
+        **kwargs,
+    )
 
 
 def normalized_surface_dice_loss(
     logits, labels, label_dim, num_classes, class_thresholds: list = [0.5]
 ):
-    logits = logits.permute(0, 2, 3, 1).view(-1, num_classes)
-    labels = labels.permute(0, 2, 3, 1).view(-1)
+    # logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
+    # labels = labels.permute(0, 2, 3, 1).reshape(-1)
     return loss_adapter(
         loss_fn=monai.metrics.compute_surface_dice,
         logits=logits,
         labels=labels,
         label_dim=label_dim,
         num_classes=num_classes,
-        remove_dim=False,
+        remove_dim=True,
         class_thresholds=class_thresholds,
     )
 
@@ -97,8 +98,8 @@ def generalized_dice_loss(logits, labels, label_dim, num_classes):
 
 
 def roc_auc_score(logits, labels, label_dim, num_classes):
-    logits = logits.permute(0, 2, 3, 1).view(-1, num_classes)
-    labels = labels.permute(0, 2, 3, 1).view(-1)
+    logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
+    labels = labels.permute(0, 2, 3, 1).reshape(-1)
     return loss_adapter(
         loss_fn=monai.metrics.compute_roc_auc,
         logits=logits,
@@ -121,6 +122,12 @@ def diff_dice_loss(inputs, targets):
     """
     inputs = inputs.sigmoid()
     inputs = inputs.flatten(1)
+    targets = one_hot_encoding(
+        targets,
+        num_classes=inputs.shape[1],
+        dim=1,
+    )
+
     numerator = 2 * (inputs * targets).sum(1)
     denominator = inputs.sum(-1) + targets.sum(-1)
     loss = 1 - (numerator + 1) / (denominator + 1)
@@ -145,6 +152,11 @@ def diff_sigmoid_focal_loss(
     Returns:
         Loss tensor
     """
+    targets = targets = one_hot_encoding(
+        targets,
+        num_classes=inputs.shape[1],
+        dim=1,
+    )
     prob = inputs.sigmoid()
     ce_loss = F.binary_cross_entropy_with_logits(
         inputs, targets, reduction="none"

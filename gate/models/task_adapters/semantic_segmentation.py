@@ -112,15 +112,16 @@ from gate.metrics.segmentation import (
 
 
 def metrics(logits, labels, label_dim, num_classes):
+    logits = logits.detach()
     return {
-        "roc_auc_score": roc_auc_score(logits, labels, label_dim),
-        "miou_loss": miou_loss(logits, labels, num_classes),
-        "dice_loss": dice_loss(logits, labels, num_classes),
-        "normalized_surface_dice_loss": normalized_surface_dice_loss(
-            logits, labels, num_classes
-        ),
+        "roc_auc_score": roc_auc_score(logits, labels, label_dim, num_classes),
+        "miou_loss": miou_loss(logits, labels, label_dim, num_classes),
+        "dice_loss": dice_loss(logits, labels, label_dim, num_classes),
+        # "normalized_surface_dice_loss": normalized_surface_dice_loss(
+        #     logits, labels, label_dim, num_classes
+        # ),
         "generalized_dice_loss": generalized_dice_loss(
-            logits, labels, num_classes
+            logits, labels, label_dim, num_classes
         ),
     }
 
@@ -260,7 +261,6 @@ class SegmentationViT(nn.Module):
         Returns:
             torch.Tensor: Segmentation map.
         """
-
         batch, _, height, width = image.shape
 
         features = self.encoder(image)["image"]["raw_features"]
