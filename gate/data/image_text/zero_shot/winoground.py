@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import os
 from typing import Any, Optional
 
-import numpy as np
 
 from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
@@ -29,7 +28,6 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
 
     logger.info(
         f"Loading Winoground dataset, will download to {data_dir} if necessary."
