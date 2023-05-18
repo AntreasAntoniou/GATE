@@ -69,6 +69,7 @@ class TALINet(nn.Module):
 
         if hasattr(self.model, "image_linear_layer"):
             self.image_num_features = self.model.image_linear_layer.in_features
+            self.image_num_patches = 14 * 14
 
         if hasattr(self.model, "text_linear_layer"):
             self.text_num_features = self.model.text_linear_layer.in_features

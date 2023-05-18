@@ -55,7 +55,11 @@ def build_model(
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
+        num_patches=backbone_model.vision_model_output_shape[1],
     )
+
+    # forward features for conv nets, and get the patches for the transformer manually
+    # do the same for all others? sounds like the most general way to do this
 
     if not pretrained:
         model.init_weights()
