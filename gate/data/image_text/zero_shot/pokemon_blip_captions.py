@@ -35,7 +35,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     )
 
     dataset = load_dataset(
-        path=HF_DATASET_PATH, cache_dir=data_dir, split="test"
+        path=HF_DATASET_PATH, cache_dir=data_dir, split="train"
     )
 
     train_val_test_data = dataset.train_test_split(test_size=0.20)
