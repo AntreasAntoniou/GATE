@@ -35,10 +35,8 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     dataset = load_dataset(
         path="nlphuji/flickr30k",
         cache_dir=data_dir,
+        split="test",
     )
-
-    split_names = list(dataset.keys())
-    print(f"Split names: {split_names} {dataset[split_names[0]]}")
 
     train_val_data = dataset.train_test_split(test_size=0.1)
     train_set = train_val_data["train"]
