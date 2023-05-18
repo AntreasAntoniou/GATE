@@ -13,20 +13,9 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.duo_modal_zero_shot_classification import (
-    DuoModalZeroShotModel,
-)
 from gate.models.task_adapters.visual_relational_reasoning_classification import (
     DuoModalFusionModel,
 )
-
-# modality_a_model: nn.Module,
-# modality_b_model: nn.Module,
-# modality_a_identifier: str,
-# modality_b_identifier: str,
-# modality_a_num_features: int,
-# modality_b_num_features: int,
-# projection_num_features: Optional[int] = None,
 
 
 def build_model(

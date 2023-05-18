@@ -32,7 +32,7 @@ def build_model(
     decoder_depth: int = 2,
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
-    num_classes: int = HYDRATED_NUM_CLASSES,
+    num_classes: int = 10,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -84,7 +84,7 @@ def build_gate_model(
     decoder_depth: int = 2,
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
-    num_classes: int = HYDRATED_NUM_CLASSES,
+    num_classes: int = 10,
 ):
     model_and_transform = build_model(
         model_name=model_name,

@@ -158,5 +158,5 @@ class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
             scheduler_interval,
             experiment_tracker,
             source_modality="image_text",
-            target_modality="image",
+            target_modality="image_text",
         )
