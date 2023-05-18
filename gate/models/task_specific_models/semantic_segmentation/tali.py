@@ -64,6 +64,8 @@ def build_model(
         num_patches=backbone_model.image_num_patches,
     )
 
+    dummy_out = model.forward(x)
+
     if not pretrained:
         model.init_weights()
 
@@ -115,7 +117,7 @@ def build_gate_model(
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
-        image_text=[SourceModalityConfig(image=True, text=True)]
+        image=[SourceModalityConfig(image=True)]
     )
 
     model_key_remapper_dict_config = {

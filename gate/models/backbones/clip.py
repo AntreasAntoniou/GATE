@@ -1,5 +1,7 @@
 from collections import defaultdict
 from typing import Optional
+from urllib.request import urlopen
+from PIL import Image
 
 import torch
 import torch.nn as nn

@@ -34,14 +34,23 @@ class TimmModel(nn.Module):
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
         output_shape = self.get_output_shape()["raw_features"]
-        self.num_output_features = (
-            output_shape[-1] if len(output_shape) == 3 else output_shape[1]
-        )
+        print(f"{model_identifier} output shape: {output_shape}")
+        self.num_output_features = output_shape[2]
+        self.num_patches = output_shape[1]
 
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
 
         raw_features = self.model.forward_features(x)
+        if len(raw_features.shape) == 4:
+            feature_shape = raw_features.shape
+            if (
+                len(feature_shape) == 4
+            ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
+                raw_features = raw_features.permute([0, 2, 3, 1]).reshape(
+                    feature_shape[0], -1, feature_shape[1]
+                )  # output should have shape (batch_size, num_patches, num_features)
+
         features = self.model.forward_head(raw_features, pre_logits=True)
         predictions = self.model.forward_head(raw_features)
 
@@ -65,7 +74,8 @@ class TimmModel(nn.Module):
             )
         )
         output_dict = self.forward(self.transforms(img).unsqueeze(0))
-        return {k: v.shape for k, v in output_dict.items()}
+        shape_dict = {k: v.shape for k, v in output_dict.items()}
+        return shape_dict
 
 
 class TimmCLIPAdapter(nn.Module):
@@ -91,11 +101,7 @@ class TimmCLIPAdapter(nn.Module):
         self.vision_model_output_shape = self.vision_model.get_output_shape()[
             "raw_features"
         ]
-        self.image_num_features = (
-            self.vision_model_output_shape[-1]
-            if len(self.vision_model_output_shape) == 3
-            else self.vision_model_output_shape[1]
-        )
+        self.image_num_features = self.vision_model_output_shape[2]
         self.text_num_features = self.clip.text_embed_dim
 
     def init_weights(self):
@@ -127,25 +133,6 @@ class TimmCLIPAdapter(nn.Module):
 
         if image is not None:
             output_dict["image"] = self.vision_model.forward(image)
-
-            if output_dict["image"]["raw_features"].dim() == 4:
-                output_shape = output_dict["image"]["raw_features"].shape
-
-                if (
-                    len(output_shape) == 4
-                ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
-                    output_dict["image"]["raw_features"] = (
-                        output_dict["image"]["raw_features"]
-                        .permute([0, 2, 3, 1])
-                        .reshape(output_shape[0], -1, output_shape[1])
-                    )  # output should have shape (batch_size, num_patches, num_features)
-
-                # output_dict["image"]["raw_features"] = output_dict["image"][
-                #     "raw_features"
-                # ].view(output_shape[0], output_shape[1], -1)
-                # output_dict["image"]["raw_features"] = output_dict["image"][
-                #     "raw_features"
-                # ].permute([0, 2, 1])
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
