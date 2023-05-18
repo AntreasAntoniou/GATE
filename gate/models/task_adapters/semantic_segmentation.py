@@ -111,6 +111,20 @@ from gate.metrics.segmentation import (
 )
 
 
+def metrics(logits, labels, label_dim, num_classes):
+    return {
+        "roc_auc_score": roc_auc_score(logits, labels, label_dim),
+        "miou_loss": miou_loss(logits, labels, num_classes),
+        "dice_loss": dice_loss(logits, labels, num_classes),
+        "normalized_surface_dice_loss": normalized_surface_dice_loss(
+            logits, labels, num_classes
+        ),
+        "generalized_dice_loss": generalized_dice_loss(
+            logits, labels, num_classes
+        ),
+    }
+
+
 def optimization_loss(logits, labels):
     """
     📝 Optimization Loss
@@ -122,8 +136,10 @@ def optimization_loss(logits, labels):
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
     cross_entropy_loss = F.cross_entropy(logits, labels)
-    dice_loss = dice_loss_fn(logits, labels)
-    focal_loss = focal_loss_fn(logits, labels)
+    dice_loss = diff_dice_loss(logits, labels)
+    focal_loss = diff_sigmoid_focal_loss(logits, labels)
+
+    loss = cross_entropy_loss + dice_loss + focal_loss
 
     return loss
 
@@ -161,6 +177,7 @@ class SegmentationViT(nn.Module):
 
         self.encoder = encoder_model
         self.patch_embedding = self.encoder.vision_model.embeddings
+        self.num_classes = num_classes
 
         self.decoder_embedding_dimension = decoder_embed_dim
         self.decoder = nn.Linear(
@@ -233,7 +250,7 @@ class SegmentationViT(nn.Module):
             nn.init.constant_(module.bias, 0)
             nn.init.constant_(module.weight, 1.0)
 
-    def forward(self, image):
+    def forward(self, image, labels: torch.Tensor = None):
         """
             Forward pass for the segmentation model.
 
@@ -272,5 +289,19 @@ class SegmentationViT(nn.Module):
             decoder_inputs, size=(height, width), mode="bilinear"
         )
         output = self.class_decoder(decoder_inputs)
+
+        if labels is not None:
+            output = {
+                "loss": optimization_loss(output, labels),
+                "logits": output,
+            }
+            output |= metrics(
+                output["logits"],
+                labels,
+                label_dim=1,
+                num_classes=self.num_classes,
+            )
+        else:
+            output = {"logits": output}
 
         return output

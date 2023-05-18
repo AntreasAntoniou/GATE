@@ -86,7 +86,7 @@ def miou_loss(logits, labels, label_dim, num_classes):
     )
 
 
-def generalized_dice(logits, labels, label_dim, num_classes):
+def generalized_dice_loss(logits, labels, label_dim, num_classes):
     return loss_adapter(
         loss_fn=monai.metrics.compute_generalized_dice,
         logits=logits,
@@ -109,7 +109,7 @@ def roc_auc_score(logits, labels, label_dim, num_classes):
     )
 
 
-def diff_dice_loss(inputs, targets, num_boxes):
+def diff_dice_loss(inputs, targets):
     """
     Compute the DICE loss, similar to generalized IOU for masks
     Args:
@@ -124,11 +124,11 @@ def diff_dice_loss(inputs, targets, num_boxes):
     numerator = 2 * (inputs * targets).sum(1)
     denominator = inputs.sum(-1) + targets.sum(-1)
     loss = 1 - (numerator + 1) / (denominator + 1)
-    return loss.sum() / num_boxes
+    return loss.mean()
 
 
 def diff_sigmoid_focal_loss(
-    inputs, targets, num_boxes, alpha: float = 0.25, gamma: float = 2
+    inputs, targets, alpha: float = 0.25, gamma: float = 2
 ):
     """
     Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
@@ -156,4 +156,4 @@ def diff_sigmoid_focal_loss(
         alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
         loss = alpha_t * loss
 
-    return loss.mean(1).sum() / num_boxes
+    return loss.mean()
