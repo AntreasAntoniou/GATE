@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from gate.data.image_text.zero_shot.newyorker_caption_contest import (
+from gate.data.image_text.zero_shot.imagenet1k import (
     build_dataset,
     build_gate_dataset,
 )
@@ -35,3 +35,9 @@ def test_build_gate_dataset():
     assert gate_dataset["train"] is not None, "Train set should not be None"
     assert gate_dataset["val"] is not None, "Validation set should not be None"
     assert gate_dataset["test"] is not None, "Test set should not be None"
+
+    for item in gate_dataset["train"]:
+        assert item["text"] is not None, "Text should not be None"
+        assert item["image"] is not None, "Image should not be None"
+        assert item["label"] is not None, "Label should not be None"
+        break

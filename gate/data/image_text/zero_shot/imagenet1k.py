@@ -23,7 +23,7 @@ from gate.data.tasks.zero_shot_classification import (
     name="imagenet1k-zero-shot",
     defaults=dict(data_dir=DATASET_DIR),
 )
-def build_gate_imagenet1k_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=1000,
