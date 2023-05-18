@@ -47,7 +47,7 @@ def build_yahoo_answers_dataset(set_name: str, data_dir: Optional[str] = None) -
     return dataset_dict[set_name]
 
 @configurable(
-    group="dataset", name="imdb", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="yaho_answers", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_yahoo_answers_dataset(
     data_dir: Optional[str] = None,
