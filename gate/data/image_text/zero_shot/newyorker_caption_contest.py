@@ -38,9 +38,11 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         split="test",
     )
 
-    train_val_data = dataset.train_test_split(test_size=0.1)
-    train_set = train_val_data["train"]
-    val_set = train_val_data["test"]
+    train_val_test_data = dataset.train_test_split(test_size=0.20)
+    train_set = train_val_test_data["train"]
+    val_test_set = train_val_test_data["test"].train_test_split(test_size=0.75)
+    val_set = val_test_set["train"]
+    test_set = val_test_set["test"]
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
