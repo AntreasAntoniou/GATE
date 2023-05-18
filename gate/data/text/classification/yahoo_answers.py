@@ -80,10 +80,13 @@ def build_gate_yahoo_answers_dataset(
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
 
+# For debugging and testing purposes
 if __name__ == '__main__':
     print("BEFORE TRANSFORMING THE DATASET")
     train_data = build_yahoo_answers_dataset("train")
     print(train_data[0])
     print("GATE DATASET")
-    train_data = build_gate_yahoo_answers_dataset("train")
-    print(train_data["train"][0])
+    data = build_gate_yahoo_answers_dataset()
+    print(data["train"][0])
+    print(data["val"][0])
+    print(data["test"][0])
