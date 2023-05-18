@@ -32,7 +32,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     rng = np.random.RandomState(42)
 
     logger.info(
-        f"Loading Flickr dataset, will download to {data_dir} if necessary."
+        f"Loading Winoground dataset, will download to {data_dir} if necessary."
     )
 
     train_data = load_dataset(
@@ -40,8 +40,6 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         cache_dir=data_dir,
         use_auth_token=os.environ["HF_TOKEN"],
     )
-
-    print(train_data.keys())
 
     train_val_test_data = train_data.train_test_split(test_size=0.20)
     train_set = train_val_test_data["train"]
