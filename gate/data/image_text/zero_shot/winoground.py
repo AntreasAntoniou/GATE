@@ -38,7 +38,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     train_data = load_dataset(
         path=HF_DATASET_PATH,
         cache_dir=data_dir,
-        use_auth_token=os.environ["HF_AUTH_TOKEN"],
+        use_auth_token=os.environ["HF_TOKEN"],
     )
 
     print(train_data.keys())
