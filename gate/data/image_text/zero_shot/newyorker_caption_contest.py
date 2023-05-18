@@ -29,7 +29,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     rng = np.random.RandomState(42)
 
     logger.info(
-        f"Loading Flickr dataset, will download to {data_dir} if necessary."
+        f"Loading NewYorker Caption Contest dataset, will download to {data_dir} if necessary."
     )
 
     dataset = load_dataset(
