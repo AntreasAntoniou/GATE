@@ -8,7 +8,7 @@ class ZeroShotViaLabelDescriptionTask:
         self.label_map = label_map
 
     def __call__(self, inputs) -> Any:
-        image = inputs["pixel_values"]
+        image = inputs["image"]
         labels = inputs["labels"]
         label_description = self.label_map[labels]
 
