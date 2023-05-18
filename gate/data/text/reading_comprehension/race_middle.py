@@ -49,7 +49,7 @@ def build_race_middle_dataset(set_name: str, data_dir: Optional[str] = None) -> 
     return dataset_dict[set_name]
 
 @configurable(
-    group="dataset", name="race", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="race_middle", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_race_middle_dataset(
     data_dir: Optional[str] = None,
