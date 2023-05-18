@@ -34,7 +34,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
     dataset = load_dataset(
         path="nlphuji/flickr30k",
-        split="train",
+        split="test",
         cache_dir=data_dir,
     )
 

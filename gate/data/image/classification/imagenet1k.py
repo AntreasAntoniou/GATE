@@ -11,9 +11,7 @@ from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
 
-def build_imagenet1k_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a SVHN dataset using the Hugging Face datasets library.
 
@@ -51,7 +49,9 @@ def build_imagenet1k_dataset(
 
 
 @configurable(
-    group="dataset", name="imagenet1k", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset",
+    name="imagenet1k-classification",
+    defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_imagenet1k_dataset(
     data_dir: Optional[str] = None,
@@ -59,7 +59,7 @@ def build_gate_imagenet1k_dataset(
     num_classes=1000,
 ) -> dict:
     train_set = GATEDataset(
-        dataset=build_imagenet1k_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
@@ -67,7 +67,7 @@ def build_gate_imagenet1k_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_imagenet1k_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
@@ -75,7 +75,7 @@ def build_gate_imagenet1k_dataset(
     )
 
     test_set = GATEDataset(
-        dataset=build_imagenet1k_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
