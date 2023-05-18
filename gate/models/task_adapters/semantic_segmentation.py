@@ -1,4 +1,5 @@
 from functools import partial
+import math
 from typing import Dict, Optional
 
 import numpy as np
@@ -145,6 +146,30 @@ def optimization_loss(logits, labels):
     return loss
 
 
+class PositionalEncoding(nn.Module):
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            x: Tensor, shape [batch_size, seq_len, embedding_dim]
+        """
+        max_len = x.shape[1]
+        d_model = x.shape[2]
+        position = torch.arange(max_len).unsqueeze(1).to(x.device)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
+        ).to(x.device)
+        pe = torch.zeros(1, max_len, d_model).to(x.device)
+        pe[0, :, 0::2] = torch.sin(position * div_term).to(x.device)
+        pe[0, :, 1::2] = torch.cos(position * div_term).to(x.device)
+        x = x + pe[: x.size(0)]
+        return x
+
+
 class SegmentationViT(nn.Module):
     """
     Vision Transformer for Semantic Segmentation.
@@ -153,6 +178,7 @@ class SegmentationViT(nn.Module):
     def __init__(
         self,
         encoder_model: nn.Module,
+        model_type: str = "vit",
         embed_dim: int = 768,
         decoder_embed_dim: int = 768,
         decoder_depth: int = 2,
@@ -180,6 +206,7 @@ class SegmentationViT(nn.Module):
         self.encoder = encoder_model
         self.num_patches = num_patches
         self.num_classes = num_classes
+        self.positional_encoding = PositionalEncoding()
 
         self.decoder_embedding_dimension = decoder_embed_dim
         self.decoder = nn.Linear(
@@ -198,7 +225,12 @@ class SegmentationViT(nn.Module):
             ]
         )
 
-        self.pre_upsample_projection = nn.Conv1d(198, 196, kernel_size=1)
+        self.pre_upsample_projection = nn.Conv1d(
+            self.num_patches + 1,
+            int(math.floor(math.sqrt(self.num_patches))) ** 2,
+            kernel_size=1,
+        )
+
         self.upsample_blocks = nn.ModuleList(
             [
                 ResidualConvBlock(
@@ -208,7 +240,7 @@ class SegmentationViT(nn.Module):
                 for _ in range(decoder_depth)
             ]
         )
-
+        self.additional_projection = None
         self.decoder_normalization = norm_layer(
             self.decoder_embedding_dimension
         )
@@ -217,27 +249,10 @@ class SegmentationViT(nn.Module):
         )
 
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.decoder_position_embedding = nn.Parameter(
-            torch.zeros(
-                1,
-                num_patches + 1,
-                self.decoder_embedding_dimension,
-            ),
-            requires_grad=False,
-        )
 
         self.init_weights()
 
     def init_weights(self):
-        decoder_pos_embed = get_2d_sincos_pos_embed(
-            self.decoder_position_embedding.shape[-1],
-            int(self.num_patches**0.5),
-            cls_token=True,
-        )
-        self.decoder_position_embedding.data.copy_(
-            torch.from_numpy(decoder_pos_embed).float().unsqueeze(0)
-        )
-
         torch.nn.init.normal_(self.class_token, std=0.02)
         self.apply(self._init_weights)
 
@@ -266,13 +281,22 @@ class SegmentationViT(nn.Module):
         decoder_inputs = self.decoder(features)
 
         class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
-        decoder_inputs += self.decoder_position_embedding
+        decoder_inputs = self.positional_encoding(decoder_inputs)
         decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
 
         for block in self.decoder_blocks:
             decoder_inputs = block(decoder_inputs)
 
         decoder_inputs = self.decoder_normalization(decoder_inputs)
+        if decoder_inputs.shape[1] != self.num_patches + 1:
+            if self.additional_projection is None:
+                self.additional_projection = nn.Conv1d(
+                    decoder_inputs.shape[1],
+                    self.num_patches + 1,
+                    kernel_size=1,
+                ).to(decoder_inputs.device)
+            decoder_inputs = self.additional_projection(decoder_inputs)
+
         decoder_inputs = self.pre_upsample_projection(decoder_inputs)
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape

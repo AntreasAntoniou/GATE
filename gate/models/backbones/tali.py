@@ -216,7 +216,7 @@ if __name__ == "__main__":
         checkpoint_identifier="latest",
     )
 
-    print(model)
+    # print(model)
     # TODO:
     # 1. Get a way to build the right TALI model given config (10m) (DONE)
     # 2. Add a timm model with clip text encoder as another (15m) (DONE)

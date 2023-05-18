@@ -55,8 +55,10 @@ def build_model(
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
-        num_patches=backbone_model.vision_model_output_shape[1],
+        num_patches=backbone_model.vision_model.num_patches,
     )
+
+    dummy_out = model.forward(x)
 
     # forward features for conv nets, and get the patches for the transformer manually
     # do the same for all others? sounds like the most general way to do this
@@ -108,7 +110,7 @@ def build_gate_model(
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
-        image_text=[SourceModalityConfig(image=True, text=True)]
+        image=[SourceModalityConfig(image=True)]
     )
 
     model_key_remapper_dict_config = {

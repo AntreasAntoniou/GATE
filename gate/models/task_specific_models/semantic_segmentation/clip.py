@@ -54,6 +54,8 @@ def build_model(
         num_classes=num_classes,
         num_patches=backbone_model.vision_model.embeddings.num_patches,
     )
+    x = torch.randn(2, 3, 224, 224)
+    dummy_out = model.forward(x)
 
     if not pretrained:
         model.init_weights()

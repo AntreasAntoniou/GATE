@@ -13,4 +13,4 @@ def test_basic():
     model = SegmentationViT(encoder_model=encoder_model, num_classes=100)
 
     out = model(x)
-    print(out.shape)
+    print(out["logits"].shape)
