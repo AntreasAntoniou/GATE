@@ -61,6 +61,7 @@ def build_model(
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
+        num_patches=backbone_model.image_num_patches,
     )
 
     if not pretrained:

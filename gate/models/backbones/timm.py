@@ -88,13 +88,13 @@ class TimmCLIPAdapter(nn.Module):
         )
         self.text_model = self.clip.text_model
 
-        vision_model_output_shape = self.vision_model.get_output_shape()[
+        self.vision_model_output_shape = self.vision_model.get_output_shape()[
             "raw_features"
         ]
         self.image_num_features = (
-            vision_model_output_shape[-1]
-            if len(vision_model_output_shape) == 3
-            else vision_model_output_shape[1]
+            self.vision_model_output_shape[-1]
+            if len(self.vision_model_output_shape) == 3
+            else self.vision_model_output_shape[1]
         )
         self.text_num_features = self.clip.text_embed_dim
 
@@ -130,12 +130,22 @@ class TimmCLIPAdapter(nn.Module):
 
             if output_dict["image"]["raw_features"].dim() == 4:
                 output_shape = output_dict["image"]["raw_features"].shape
-                output_dict["image"]["raw_features"] = output_dict["image"][
-                    "raw_features"
-                ].view(output_shape[0], output_shape[1], -1)
-                output_dict["image"]["raw_features"] = output_dict["image"][
-                    "raw_features"
-                ].permute([0, 2, 1])
+
+                if (
+                    len(output_shape) == 4
+                ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
+                    output_dict["image"]["raw_features"] = (
+                        output_dict["image"]["raw_features"]
+                        .permute([0, 2, 3, 1])
+                        .reshape(output_shape[0], -1, output_shape[1])
+                    )  # output should have shape (batch_size, num_patches, num_features)
+
+                # output_dict["image"]["raw_features"] = output_dict["image"][
+                #     "raw_features"
+                # ].view(output_shape[0], output_shape[1], -1)
+                # output_dict["image"]["raw_features"] = output_dict["image"][
+                #     "raw_features"
+                # ].permute([0, 2, 1])
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
