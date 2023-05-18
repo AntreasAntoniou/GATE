@@ -35,13 +35,14 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         f"Loading Winoground dataset, will download to {data_dir} if necessary."
     )
 
-    train_data = load_dataset(
+    dataset = load_dataset(
         path=HF_DATASET_PATH,
         cache_dir=data_dir,
+        split="test",
         use_auth_token=os.environ["HF_TOKEN"],
     )
 
-    train_val_test_data = train_data.train_test_split(test_size=0.20)
+    train_val_test_data = dataset.train_test_split(test_size=0.20)
     train_set = train_val_test_data["train"]
     val_test_set = train_val_test_data["test"].train_test_split(test_size=0.75)
     val_set = val_test_set["train"]
