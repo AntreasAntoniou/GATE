@@ -153,13 +153,14 @@ class SegmentationViT(nn.Module):
     def __init__(
         self,
         encoder_model: nn.Module,
-        embed_dim=768,
-        decoder_embed_dim=768,
-        decoder_depth=2,
-        decoder_num_heads=8,
-        mlp_ratio=4.0,
-        norm_layer=nn.LayerNorm,
-        num_classes=100,
+        embed_dim: int = 768,
+        decoder_embed_dim: int = 768,
+        decoder_depth: int = 2,
+        decoder_num_heads: int = 8,
+        mlp_ratio: int = 4.0,
+        norm_layer: int = nn.LayerNorm,
+        num_classes: int = 100,
+        num_patches: int = 14,
     ):
         """
         Construct a Vision Transformer for Semantic Segmentation.
@@ -177,7 +178,7 @@ class SegmentationViT(nn.Module):
         super().__init__()
 
         self.encoder = encoder_model
-        self.patch_embedding = self.encoder.vision_model.embeddings
+        self.num_patches = num_patches
         self.num_classes = num_classes
 
         self.decoder_embedding_dimension = decoder_embed_dim
@@ -219,7 +220,7 @@ class SegmentationViT(nn.Module):
         self.decoder_position_embedding = nn.Parameter(
             torch.zeros(
                 1,
-                self.patch_embedding.num_patches + 1,
+                num_patches + 1,
                 self.decoder_embedding_dimension,
             ),
             requires_grad=False,
@@ -230,15 +231,13 @@ class SegmentationViT(nn.Module):
     def init_weights(self):
         decoder_pos_embed = get_2d_sincos_pos_embed(
             self.decoder_position_embedding.shape[-1],
-            int(self.patch_embedding.num_patches**0.5),
+            int(self.num_patches**0.5),
             cls_token=True,
         )
         self.decoder_position_embedding.data.copy_(
             torch.from_numpy(decoder_pos_embed).float().unsqueeze(0)
         )
 
-        w = self.patch_embedding.position_embedding.weight.data
-        torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
         torch.nn.init.normal_(self.class_token, std=0.02)
         self.apply(self._init_weights)
 
