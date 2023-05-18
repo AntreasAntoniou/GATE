@@ -1,3 +1,4 @@
+# food101.py
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -12,10 +13,12 @@ from gate.data.tasks.classification import ClassificationTask
 
 logger = get_logger(name=__name__, set_rich=True)
 
+HF_DATASET_PATH = "facebook/winoground"
+
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
-    Build a CLEVR Math dataset using the Hugging Face datasets library.
+    Build a Flickr30K dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -28,45 +31,34 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     rng = np.random.RandomState(42)
 
     logger.info(
-        f"Loading CLEVR Math dataset, will download to {data_dir} if necessary."
+        f"Loading Flickr dataset, will download to {data_dir} if necessary."
     )
 
-    if set_name not in ["train", "val", "test"]:
-        raise KeyError(f"Invalid set name {set_name}.")
-
-    train_set = load_dataset(
-        path="dali-does/clevr-math",
-        split="train",
+    train_data = load_dataset(
+        path=HF_DATASET_PATH,
         cache_dir=data_dir,
     )
 
-    validation_set = load_dataset(
-        path="dali-does/clevr-math",
-        split="validation",
-        cache_dir=data_dir,
-    )
-    test_set = load_dataset(
-        path="dali-does/clevr-math",
-        split="test",
-        cache_dir=data_dir,
-    )
+    print(train_data.keys())
 
-    dataset_dict = {
-        "train": train_set,
-        "val": validation_set,
-        "test": test_set,
-    }
+    train_val_test_data = train_data.train_test_split(test_size=0.20)
+    train_set = train_val_test_data["train"]
+    val_test_set = train_val_test_data["test"].train_test_split(test_size=0.75)
+    val_set = val_test_set["train"]
+    test_set = val_test_set["test"]
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
     return dataset_dict[set_name]
 
 
 @configurable(
-    group="dataset", name="clevr_math", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="flickr30k", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=10,
+    num_classes=101,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
@@ -96,7 +88,7 @@ def build_gate_dataset(
     return dataset_dict
 
 
-def build_dummy_food101_dataset(transforms: Optional[Any] = None) -> dict:
+def build_dummy_dataset(transforms: Optional[Any] = None) -> dict:
     # Create a dummy dataset that emulates food-101's shape and modality
     pass
 

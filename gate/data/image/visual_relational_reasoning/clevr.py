@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 import os
-from typing import Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
+import numpy as np
 import orjson as json
 from pathlib import Path
 
@@ -7,7 +9,10 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 from rich import print
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
+from gate.data.core import GATEDataset
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 
@@ -132,53 +137,68 @@ class CLEVRClassificationDataset(Dataset):
         }
 
 
-if __name__ == "__main__":
-    from rich import print as rprint
-    from rich.traceback import install
-    from tqdm.auto import tqdm
-    import datasets
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+    """
+    Build a OK VQA dataset using the Hugging Face datasets library.
 
-    install()
+    Args:
+        data_dir: The directory where the dataset cache is stored.
+        set_name: The name of the dataset split to return
+        ("train", "val", or "test").
 
-    train_dataset = (
-        CLEVRClassificationDataset(
-            root_dir=Path(os.environ["PYTEST_DIR"]),
-            transform=None,
-            split="train",
-        ),
+    Returns:
+        A dictionary containing the dataset split.
+    """
+    torch.manual_seed(42)
+
+    if set_name not in ["train", "val", "test"]:
+        raise KeyError(f"Invalid set name: {set_name}")
+
+    train_set = CLEVRClassificationDataset(root_dir=data_dir, split="train")
+
+    val_set = CLEVRClassificationDataset(root_dir=data_dir, split="val")
+
+    test_set = CLEVRClassificationDataset(root_dir=data_dir, split="test")
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+
+    return dataset_dict[set_name]
+
+
+@configurable(
+    group="dataset", name="clevr", defaults=dict(data_dir=DATASET_DIR)
+)
+def build_gate_dataset(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+):
+    train_set = GATEDataset(
+        dataset=build_dataset("train", data_dir=data_dir),
+        infinite_sampling=True,
+        transforms=transforms,
     )
 
-    val_dataset = (
-        CLEVRClassificationDataset(
-            root_dir=Path(os.environ["PYTEST_DIR"]),
-            transform=None,
-            split="val",
-        ),
+    val_set = GATEDataset(
+        dataset=build_dataset("val", data_dir=data_dir),
+        infinite_sampling=False,
+        transforms=transforms,
     )
 
-    test_dataset = (
-        CLEVRClassificationDataset(
-            root_dir=Path(os.environ["PYTEST_DIR"]),
-            transform=None,
-            split="test",
-        ),
+    test_set = GATEDataset(
+        dataset=build_dataset("test", data_dir=data_dir),
+        infinite_sampling=False,
+        transforms=transforms,
     )
 
-    def train_dataset_generator():
-        for item in tqdm(train_dataset):
-            yield item
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict
 
-    def val_dataset_generator():
-        for item in tqdm(val_dataset):
-            yield item
 
-    def test_dataset_generator():
-        for item in tqdm(test_dataset):
-            yield item
+def build_dummy_dataset(transforms: Optional[Any] = None):
+    pass
 
-    train_data = datasets.Dataset.from_generator(train_dataset_generator)
-    train_data.push_to_hub("antreas/clevr", private=True, split="train")
-    val_data = datasets.Dataset.from_generator(val_dataset_generator)
-    val_data.push_to_hub("antreas/clevr", private=True, split="val")
-    test_data = datasets.Dataset.from_generator(test_dataset_generator)
-    test_data.push_to_hub("antreas/clevr", private=True, split="test")
+
+@dataclass
+class DefaultHyperparameters:
+    train_batch_size: int = 256
+    eval_batch_size: int = 512
