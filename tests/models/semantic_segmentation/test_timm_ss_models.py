@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from gate.models.task_specific_models.semantic_segmentation.clip import (
+from gate.models.task_specific_models.semantic_segmentation.timm import (
     ModelAndTransform,
     build_gate_model,
     build_model,
