@@ -32,6 +32,7 @@ main_requirements = [
     "natsort",
     "gdown",
     "gpath",
+    "zstandard",
     "cython",
     "gulpio2 @ git+https://github.com/kiyoon/GulpIO2",
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
