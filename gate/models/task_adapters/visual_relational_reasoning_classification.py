@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.extras import get_similarities
 
 
 class DuoModalFusionModel(BaseModule):
@@ -46,17 +45,15 @@ class DuoModalFusionModel(BaseModule):
             if self.projection_num_features is not None
             else modality_a_num_features + modality_b_num_features
         )
-
+        # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
         self.fusion_post_processing = nn.Sequential(
-            [
-                nn.Linear(self.fusion_in_features, 512),
-                nn.GELU(),
-                nn.Dropout(dropout_fusion_prob),
-                nn.Linear(512, 512),
-                nn.GELU(),
-                nn.Dropout(dropout_fusion_prob),
-                nn.Linear(512, num_classes),
-            ]
+            nn.Linear(self.fusion_in_features, 512),
+            nn.GELU(),
+            nn.Dropout(dropout_fusion_prob),
+            nn.Linear(512, 512),
+            nn.GELU(),
+            nn.Dropout(dropout_fusion_prob),
+            nn.Linear(512, num_classes),
         )
 
     def forward(
@@ -137,9 +134,7 @@ class DuoModalFusionModel(BaseModule):
             loss = F.cross_entropy(logits, labels)
             output_dict["loss"] = loss
             output_dict["accuracy"] = (
-                (logits.detach().argmax(dim=1).squeeze(1) == labels)
-                .float()
-                .mean()
+                (logits.detach().argmax(dim=1) == labels).float().mean()
             )
 
         return output_dict
