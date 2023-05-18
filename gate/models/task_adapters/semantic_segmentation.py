@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from timm.models.vision_transformer import Block, PatchEmbed
 
 from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.extras import get_similarities
+from gate.models.task_adapters.utils import get_similarities
 
 
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
@@ -99,6 +99,33 @@ class ResidualConvBlock(nn.Module):
         out = self.activation2(out)
         out = self.up(out + residual)
         return out
+
+
+from gate.metrics.segmentation import diff_dice_loss, diff_sigmoid_focal_loss
+from gate.metrics.segmentation import (
+    miou_loss,
+    dice_loss,
+    normalized_surface_dice_loss,
+    generalized_dice_loss,
+    roc_auc_score,
+)
+
+
+def optimization_loss(logits, labels):
+    """
+    📝 Optimization Loss
+    Args:
+        logits: (B, C, H, W)
+        labels: (B, 1, H, W)
+    """
+
+    logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
+    labels = labels.reshape(-1)
+    cross_entropy_loss = F.cross_entropy(logits, labels)
+    dice_loss = dice_loss_fn(logits, labels)
+    focal_loss = focal_loss_fn(logits, labels)
+
+    return loss
 
 
 class SegmentationViT(nn.Module):

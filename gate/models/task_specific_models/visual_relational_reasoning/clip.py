@@ -33,7 +33,7 @@ def build_model(
     modality_b_identifier: str = "text",
     num_projection_features: Optional[int] = None,
     dropout_fusion_prob: float = 0.1,
-    num_classes: int = HYDRATED_NUM_CLASSES,
+    num_classes: int = 10,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -60,7 +60,7 @@ def build_model(
             modality_a_num_features=num_feature_dict[modality_a_identifier],
             modality_b_num_features=num_feature_dict[modality_b_identifier],
             projection_num_features=num_projection_features,
-            fusion_dropout_prob=dropout_fusion_prob,
+            dropout_fusion_prob=dropout_fusion_prob,
             num_classes=num_classes,
         )
     else:
@@ -82,6 +82,9 @@ def build_model(
         if "text" in inputs:
             output_dict["text"] = transform_dict["text"](inputs["text"])
 
+        if "labels" in inputs:
+            output_dict["labels"] = inputs["labels"]
+
         return output_dict
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
@@ -99,7 +102,7 @@ def build_gate_model(
     modality_b_identifier: str = "text",
     num_projection_features: Optional[int] = None,
     dropout_fusion_prob: float = 0.1,
-    num_classes: int = HYDRATED_NUM_CLASSES,
+    num_classes: int = 10,
 ):
     model_and_transform = build_model(
         model_name=model_name,
