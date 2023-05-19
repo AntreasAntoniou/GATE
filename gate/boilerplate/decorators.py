@@ -101,6 +101,7 @@ def collect_metrics(func: Callable) -> Callable:
         if experiment_tracker is not None:
             for metric_key, computed_value in metrics_dict.items():
                 if computed_value is not None:
+                    print(f"{phase_name}/{metric_key}: {computed_value}")
                     value = (
                         computed_value.detach().item()
                         if isinstance(computed_value, torch.Tensor)
