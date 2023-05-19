@@ -136,6 +136,8 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
             experiment_tracker,
             source_modality="image",
             target_modality="image",
+            model_selection_metric_name="accuracy_top_1",
+            model_selection_metric_higher_is_better=True,
         )
 
 
@@ -149,6 +151,8 @@ class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
             experiment_tracker,
             source_modality="image_text",
             target_modality="image_text",
+            model_selection_metric_name="accuracy_top_1",
+            model_selection_metric_higher_is_better=True,
         )
 
 
@@ -163,6 +167,8 @@ class MultiClassClassificationEvaluator(Evaluator):
             experiment_tracker,
             source_modality="image",
             target_modality="image",
+            model_selection_metric_name="macro-auc",
+            model_selection_metric_higher_is_better=True,
         )
         self.label_idx_to_class_name = label_idx_to_class_name
 
