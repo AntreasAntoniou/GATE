@@ -44,6 +44,7 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
             x = T.ToPILImage()(x)
 
         x = transforms(x)
+        print(x.shape)
 
     if (
         input_shape is not None
