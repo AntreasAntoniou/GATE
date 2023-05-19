@@ -31,8 +31,8 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
 
     if isinstance(x, torch.Tensor) and modality == Modality.image:
         input_shape = x.shape
+        is_5d_tensor = len(x.shape) == 5
         x = image_dim_reshape(x)
-        is_5d_tensor = True
 
     if transforms is not None:
         x = transforms(x)
