@@ -10,7 +10,7 @@ from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.core import accuracy_top_k
 from gate.metrics.segmentation import roc_auc_score
-from gate.trainers import Trainer, TrainerOutput
+from gate.orchestration.trainers import Trainer, TrainerOutput
 
 logger = get_logger(__name__)
 
@@ -141,6 +141,7 @@ class ImageToTextZeroShotClassificationTrainer(ClassificationTrainer):
         )
 
 
+@configurable(group="trainer", name="multi_class_classification")
 class MultiClassClassificationTrainer(Trainer):
     def __init__(
         self,
@@ -160,6 +161,7 @@ class MultiClassClassificationTrainer(Trainer):
         )
         self.label_idx_to_class_name = label_idx_to_class_name
 
+    @property
     def metrics(self):
         return {
             "auc": roc_auc_score,
@@ -167,7 +169,40 @@ class MultiClassClassificationTrainer(Trainer):
             "bs": brier_score_loss,
         }
 
-    def compute_metrics(self, output_dict, batch, loss):
+    def compute_epoch_metrics(
+        self, phase_metrics: Dict[str, float], global_step: int
+    ):
+        for key, value in self.state_dict.items():
+            if key not in ["labels", "logits"]:
+                phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
+                phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
+
+        labels = torch.cat(self.state_dict["labels"])
+        logits = torch.cat(self.state_dict["logits"])
+        for metric_name, metric_fn in self.metrics.items():
+            for c_idx, class_name in enumerate(self.classes):
+                if metric_name == "bs":
+                    phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
+                        y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
+                    )
+                else:
+                    phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
+                        y_true=labels[:, c_idx], y_score=logits[:, c_idx]
+                    )
+            phase_metrics[f"{metric_name}-macro"] = np.mean(
+                [
+                    phase_metrics[f"{class_name}-{metric_name}"]
+                    for class_name in self.classes
+                ]
+            )
+            for key, value in phase_metrics.items():
+                if key not in self.state_dict:
+                    self.state_dict[key] = {global_step: phase_metrics[key]}
+                else:
+                    self.state_dict[key][global_step] = phase_metrics[key]
+        return phase_metrics
+
+    def compute_step_metrics(self, output_dict, batch, loss):
         # fallback to numbering classes if no class names are provided
         if self.label_idx_to_class_name is None:
             self.label_idx_to_class_name = [
@@ -267,29 +302,7 @@ class MultiClassClassificationTrainer(Trainer):
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
-        labels = torch.cat(self.state_dict["labels"])
-        logits = torch.cat(self.state_dict["logits"])
-        for metric_name, metric_fn in self._metrics.items():
-            for c_idx, class_name in enumerate(self.classes):
-                if metric_name == "bs":
-                    phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
-                        y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
-                    )
-                else:
-                    phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
-                        y_true=labels[:, c_idx], y_score=logits[:, c_idx]
-                    )
-            phase_metrics[f"{metric_name}-macro"] = np.mean(
-                [
-                    phase_metrics[f"{class_name}-{metric_name}"]
-                    for class_name in self.classes
-                ]
-            )
-            for key, value in phase_metrics.items():
-                if key not in self.state_dict:
-                    self.state_dict[key] = {global_step: phase_metrics[key]}
-                else:
-                    self.state_dict[key][global_step] = phase_metrics[key]
+        phase_metrics = self.compute_epoch_metrics(phase_metrics, global_step)
 
         return TrainerOutput(
             opt_loss=None,

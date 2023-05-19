@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from sklearn.metrics import average_precision_score, brier_score_loss
-import numpy as np
+
 import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
@@ -9,8 +8,12 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.core import accuracy_top_k
-from gate.metrics.segmentation import roc_auc_score
-from gate.trainers import Trainer, TrainerOutput
+from gate.orchestration.evaluators import Evaluator, EvaluatorOutput
+from gate.metrics.multi_class_classification import (
+    roc_auc_score,
+    average_precision_score,
+    brier_score_loss,
+)
 
 logger = get_logger(__name__)
 
@@ -27,14 +30,13 @@ def get_dict_shapes(x):
 
 @dataclass
 class StepOutput:
-    output_metrics_dict: Dict
+    metrics: Dict
     loss: torch.Tensor
+    experiment_tracker: Optional[Any] = None
+    global_step: Optional[int] = None
 
 
-class ClassificationTrainer(Trainer):
-    def get_optimizer(self):
-        return self.optimizer
-
+class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
         output_dict = model.forward(batch)
@@ -64,18 +66,18 @@ class ClassificationTrainer(Trainer):
         accelerator.backward(loss)
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            metrics=output_dict,
             loss=loss,
         )
 
     @collect_metrics
-    def training_step(
+    def validation_step(
         self,
         model,
         batch,
         global_step,
         accelerator: Accelerator,
-    ) -> TrainerOutput:
+    ) -> EvaluatorOutput:
         model.train()
 
         self.optimizer.zero_grad()
@@ -89,22 +91,48 @@ class ClassificationTrainer(Trainer):
 
         self.optimizer.step()
 
-        metrics = step_output.output_metrics_dict
-        metrics["lr"] = self.optimizer.param_groups[0]["lr"]
+        metrics = step_output.metrics
 
-        return TrainerOutput(
-            phase_name="training",
-            opt_loss=torch.mean(
-                torch.stack(step_output.output_metrics_dict["loss"])
-            ),
+        return EvaluatorOutput(
+            phase_name="validation",
+            global_step=global_step,
+            metrics=metrics,
+            experiment_tracker=self.experiment_tracker,
+        )
+
+    @collect_metrics
+    def testing_step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+    ) -> EvaluatorOutput:
+        model.train()
+
+        self.optimizer.zero_grad()
+
+        step_output: StepOutput = self.step(
+            model=model,
+            batch=batch,
+            global_step=global_step,
+            accelerator=accelerator,
+        )
+
+        self.optimizer.step()
+
+        metrics = step_output.metrics
+
+        return EvaluatorOutput(
+            phase_name="testing",
             global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,
         )
 
 
-@configurable(group="trainer", name="image_classification")
-class ImageClassificationTrainer(ClassificationTrainer):
+@configurable(group="evaluator", name="image_classification")
+class ImageClassificationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
@@ -122,8 +150,8 @@ class ImageClassificationTrainer(ClassificationTrainer):
         )
 
 
-@configurable(group="trainer", name="image_to_text_zero_shot_classification")
-class ImageToTextZeroShotClassificationTrainer(ClassificationTrainer):
+@configurable(group="evaluator", name="image_to_text_zero_shot_classification")
+class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
@@ -137,11 +165,12 @@ class ImageToTextZeroShotClassificationTrainer(ClassificationTrainer):
             scheduler_interval,
             experiment_tracker,
             source_modality="image_text",
-            target_modality="image",
+            target_modality="image_text",
         )
 
 
-class MultiClassClassificationTrainer(Trainer):
+@configurable(group="evaluator", name="multi_class_classification")
+class MultiClassClassificationEvaluator(Evaluator):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
@@ -167,101 +196,9 @@ class MultiClassClassificationTrainer(Trainer):
             "bs": brier_score_loss,
         }
 
-    def compute_metrics(self, output_dict, batch, loss):
-        # fallback to numbering classes if no class names are provided
-        if self.label_idx_to_class_name is None:
-            self.label_idx_to_class_name = [
-                f"class-{idx}" for idx in range(batch["labels"].shape[1])
-            ]
-
-        metrics = {"loss": loss.mean()}
-        for c_idx, class_name in enumerate(self.classes):
-            metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
-
-        for key, value in metrics.items():
-            self.epoch_metrics.setdefault(key, []).append(value.detach().cpu())
-
-        # we need to round the labels because they might be soft labels due to mixup/label smoothing
-        self.state_dict.setdefault("labels", []).append(
-            batch["labels"].cpu().round()
-        )
-        self.state_dict.setdefault("logits", []).append(
-            output_dict[self.target_modality][self.souce_modality]["logits"]
-            .cpu()
-            .sigmoid_()
-        )
-
-    def get_optimizer(self):
-        return self.optimizer
-
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
-        output_dict = model.forward(batch)
-        if "loss" not in output_dict:
-            loss = F.binary_cross_entropy_with_logits(
-                output_dict[self.target_modality][self.souce_modality][
-                    "logits"
-                ],
-                batch["labels"],
-                reduction="none",
-            )
-
-            self.compute_metrics(output_dict, batch, loss)
-
-            output_dict = {
-                "loss": loss,
-            }
-        else:
-            loss = output_dict["loss"]
-
-        accelerator.backward(loss)
-
-        return StepOutput(
-            output_metrics_dict=output_dict,
-            loss=loss,
-        )
-
-    @collect_metrics
-    def training_step(
-        self,
-        model,
-        batch,
-        global_step,
-        accelerator: Accelerator,
-    ) -> TrainerOutput:
-        model.train()
-
-        self.optimizer.zero_grad()
-
-        step_output: StepOutput = self.step(
-            model=model,
-            batch=batch,
-            global_step=global_step,
-            accelerator=accelerator,
-        )
-
-        self.optimizer.step()
-
-        metrics = step_output.output_metrics_dict
-        metrics["lr"] = self.optimizer.param_groups[0]["lr"]
-
-        return TrainerOutput(
-            phase_name="training",
-            opt_loss=torch.mean(
-                torch.stack(step_output.output_metrics_dict["loss"])
-            ),
-            global_step=global_step,
-            metrics=metrics,
-            experiment_tracker=self.experiment_tracker,
-        )
-
-    @collect_metrics
-    def end_training(
-        self,
-        global_step: int,
+    def compute_epoch_metrics(
+        self, phase_metrics: Dict[str, float], global_step: int
     ):
-        phase_metrics = {}
-
         for key, value in self.state_dict.items():
             if key not in ["labels", "logits"]:
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
@@ -290,11 +227,135 @@ class MultiClassClassificationTrainer(Trainer):
                     self.state_dict[key] = {global_step: phase_metrics[key]}
                 else:
                     self.state_dict[key][global_step] = phase_metrics[key]
+        return phase_metrics
 
-        return TrainerOutput(
-            opt_loss=None,
+    def compute_step_metrics(self, output_dict, batch, loss):
+        # fallback to numbering classes if no class names are provided
+        if self.label_idx_to_class_name is None:
+            self.label_idx_to_class_name = [
+                f"class-{idx}" for idx in range(batch["labels"].shape[1])
+            ]
+
+        metrics = {"loss": loss.mean()}
+        for c_idx, class_name in enumerate(self.classes):
+            metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
+
+        for key, value in metrics.items():
+            self.epoch_metrics.setdefault(key, []).append(value.detach().cpu())
+
+        # we need to round the labels because they might be soft labels due to mixup/label smoothing
+        self.state_dict.setdefault("labels", []).append(
+            batch["labels"].cpu().round()
+        )
+        self.state_dict.setdefault("logits", []).append(
+            output_dict[self.target_modality][self.souce_modality]["logits"]
+            .cpu()
+            .sigmoid_()
+        )
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        # print({key: value.shape for key, value in batch.items()})
+        output_dict = model.forward(batch)
+        if "loss" not in output_dict:
+            loss = F.binary_cross_entropy_with_logits(
+                output_dict[self.target_modality][self.souce_modality][
+                    "logits"
+                ],
+                batch["labels"],
+                reduction="none",
+            )
+
+            self.compute_metrics(output_dict, batch, loss)
+
+            output_dict = {
+                "loss": loss,
+            }
+        else:
+            loss = output_dict["loss"]
+
+        return StepOutput(
+            metrics=output_dict,
+            loss=loss,
+        )
+
+    def validation_step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+    ) -> StepOutput:
+        model.eval()
+
+        step_output: StepOutput = self.step(
+            model=model,
+            batch=batch,
+            global_step=global_step,
+            accelerator=accelerator,
+        )
+
+        metrics = step_output.metrics
+
+        return EvaluatorOutput(
+            phase_name="validation",
+            metrics=metrics,
+            global_step=global_step,
+            experiment_tracker=self.experiment_tracker,
+        )
+
+    def testing_step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+    ) -> StepOutput:
+        model.eval()
+
+        step_output: StepOutput = self.step(
+            model=model,
+            batch=batch,
+            global_step=global_step,
+            accelerator=accelerator,
+        )
+
+        metrics = step_output.metrics
+
+        return EvaluatorOutput(
+            phase_name="testing",
+            metrics=metrics,
+            global_step=global_step,
+            experiment_tracker=self.experiment_tracker,
+        )
+
+    @collect_metrics
+    def end_validation(
+        self,
+        global_step: int,
+    ):
+        phase_metrics = {}
+
+        phase_metrics = self.compute_epoch_metrics(phase_metrics, global_step)
+
+        return StepOutput(
             global_step=global_step,
             metrics=phase_metrics,
-            phase_name="training",
+            phase_name="validation",
+            experiment_tracker=self.experiment_tracker,
+        )
+
+    @collect_metrics
+    def end_testing(
+        self,
+        global_step: int,
+    ):
+        phase_metrics = {}
+
+        phase_metrics = self.compute_epoch_metrics(phase_metrics, global_step)
+
+        return StepOutput(
+            global_step=global_step,
+            metrics=phase_metrics,
+            phase_name="testing",
             experiment_tracker=self.experiment_tracker,
         )
