@@ -20,8 +20,7 @@ def apply_preprocessing_transforms(transforms, x):
         x = image_dim_reshape(x)
 
     if transforms is not None:
-        for transform in transforms:
-            x = transform(x)
+        x = transforms(x)
 
     if input_shape is not None:
         x = x.reshape(input_shape)
