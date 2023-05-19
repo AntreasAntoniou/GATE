@@ -533,7 +533,7 @@ class Learner(nn.Module):
         experiment_hyperparameters = dict(
             step_idx=self.step_idx,
             global_step=self.global_step,
-            state_dict={
+            current_epoch_dict={
                 "train": [
                     trainer.current_epoch_dict for trainer in self.trainers
                 ],
@@ -542,7 +542,7 @@ class Learner(nn.Module):
                     for evaluator in self.evaluators
                 ],
             },
-            epoch_metrics={
+            per_epoch_metrics={
                 "eval": [
                     evaluator.per_epoch_metrics
                     for evaluator in self.evaluators
@@ -585,30 +585,30 @@ class Learner(nn.Module):
         )
         self.step_idx = trainer_state["step_idx"]
         self.global_step = trainer_state["global_step"]
-        state_dict = trainer_state["state_dict"]
-        epoch_metrics = trainer_state["epoch_metrics"]
+        current_epoch_dict = trainer_state["current_epoch_dict"]
+        per_epoch_metrics = trainer_state["per_epoch_metrics"]
 
-        print(f"State dict: {state_dict}")
-        print(f"Epoch metrics: {epoch_metrics}")
+        print(f"current_epoch_dict: {current_epoch_dict}")
+        print(f"per_epoch_metrics: {per_epoch_metrics}")
 
         for trainer in self.trainers:
             setattr(
                 trainer,
-                "state_dict",
-                state_dict["train"][self.trainers.index(trainer)],
+                "current_epoch_dict",
+                current_epoch_dict["train"][self.trainers.index(trainer)],
             )
             print(f"Loaded trainer {trainer.__dict__}")
 
         for evaluator in self.evaluators:
             setattr(
                 evaluator,
-                "state_dict",
-                state_dict["eval"][self.evaluators.index(evaluator)],
+                "current_epoch_dict",
+                current_epoch_dict["eval"][self.evaluators.index(evaluator)],
             )
             setattr(
                 evaluator,
-                "epoch_metrics",
-                epoch_metrics["eval"][self.evaluators.index(evaluator)],
+                "per_epoch_metrics",
+                per_epoch_metrics["eval"][self.evaluators.index(evaluator)],
             )
             print(f"Loaded evaluator {evaluator.__dict__}")
 
