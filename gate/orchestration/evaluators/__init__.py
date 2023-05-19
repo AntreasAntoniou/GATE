@@ -96,9 +96,6 @@ class Evaluator(ABC):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
-            if "loss" not in key and "vqa_score" not in key:
-                continue
-
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
             self.epoch_metrics[f"{key}-epoch-mean"].append(
@@ -124,8 +121,6 @@ class Evaluator(ABC):
     ):
         phase_metrics = {}
         for key, value in self.state_dict.items():
-            if "loss" not in key and "vqa_score" not in key:
-                continue
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 

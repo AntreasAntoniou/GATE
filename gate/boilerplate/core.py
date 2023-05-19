@@ -594,6 +594,7 @@ class Learner(nn.Module):
                 "state_dict",
                 state_dict["train"][self.trainers.index(trainer)],
             )
+            print(f"Loaded trainer {trainer.__dict__}")
 
         for evaluator in self.evaluators:
             setattr(
@@ -606,6 +607,7 @@ class Learner(nn.Module):
                 "epoch_metrics",
                 epoch_metrics["eval"][self.evaluators.index(evaluator)],
             )
+            print(f"Loaded evaluator {evaluator.__dict__}")
 
         self.accelerator.load_state(checkpoint_path)
 
