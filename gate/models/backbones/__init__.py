@@ -37,6 +37,6 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
         x = transforms(x)
 
     if input_shape is not None and isinstance(x, torch.Tensor):
-        x = x.view(input_shape)
+        x = x.view(input_shape[0], input_shape[1], *x.shape[1:])
 
     return x
