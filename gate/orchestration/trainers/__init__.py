@@ -78,7 +78,7 @@ class Trainer(ABC):
         self,
         global_step: int,
     ):
-        self.current_epoch_dict = {}
+        self.current_epoch_dict = defaultdict(list)
         self.starting_train = True
         return TrainerOutput(
             opt_loss=None,

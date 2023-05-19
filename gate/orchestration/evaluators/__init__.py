@@ -65,7 +65,7 @@ class Evaluator(ABC):
         self,
         global_step: int,
     ):
-        self.current_epoch_dict = {}
+        self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
@@ -79,7 +79,7 @@ class Evaluator(ABC):
         self,
         global_step: int,
     ):
-        self.current_epoch_dict = {}
+        self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
