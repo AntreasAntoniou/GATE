@@ -65,6 +65,9 @@ class ClassificationTrainer(Trainer):
             loss = output_dict["loss"]
 
         accelerator.backward(loss)
+        for name, param in model.named_parameters():
+            if param.grad is None:
+                print(f"None gradient for {name}")
 
         return StepOutput(
             output_metrics_dict=output_dict,
