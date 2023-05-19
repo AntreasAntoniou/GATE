@@ -184,29 +184,30 @@ class MultiClassClassificationTrainer(Trainer):
         logits = torch.cat(self.current_epoch_dict["logits"])
         for metric_name, metric_fn in self.metrics.items():
             for c_idx, class_name in enumerate(self.classes):
+                y_true = labels[:, c_idx]
+                y_score = logits[:, c_idx]
                 if metric_name == "bs":
                     phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
-                        y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
+                        y_true, y_prob=y_score
                     )
                 else:
                     phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
-                        y_true=labels[:, c_idx], y_score=logits[:, c_idx]
+                        y_true, y_score
                     )
+
             phase_metrics[f"{metric_name}-macro"] = np.mean(
                 [
                     phase_metrics[f"{class_name}-{metric_name}"]
                     for class_name in self.classes
                 ]
             )
-            for key, value in phase_metrics.items():
-                if key not in self.current_epoch_dict:
-                    self.current_epoch_dict[key] = {
-                        global_step: phase_metrics[key]
-                    }
-                else:
-                    self.current_epoch_dict[key][global_step] = phase_metrics[
-                        key
-                    ]
+
+        for key, value in phase_metrics.items():
+            if key not in self.current_epoch_dict:
+                self.current_epoch_dict[key] = {global_step: value}
+            else:
+                self.current_epoch_dict[key][global_step] = value
+
         return phase_metrics
 
     def compute_step_metrics(self, output_dict, batch, loss):
