@@ -55,8 +55,8 @@ def build_model(
         backbone_model, num_features, num_classes, modality
     )
 
-    # if not pretrained:
-    #     model.init_weights()
+    if not pretrained:
+        model.init_weights()
 
     transform_dict = backbone_model.get_transforms()
 
