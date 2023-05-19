@@ -165,7 +165,7 @@ class TALINet(nn.Module):
         def image_transforms(x):
             return self.image_text_preprocessor(
                 images=x, return_tensors="pt"
-            ).pixel_values
+            ).pixel_values.squeeze(0)
 
         def text_transforms(x):
             return self.image_text_preprocessor(
