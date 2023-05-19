@@ -97,9 +97,7 @@ class ClassificationTrainer(Trainer):
 
         return TrainerOutput(
             phase_name="training",
-            opt_loss=torch.mean(
-                torch.stack(step_output.output_metrics_dict["loss"])
-            ),
+            opt_loss=step_output.output_metrics_dict["loss"],
             global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,
