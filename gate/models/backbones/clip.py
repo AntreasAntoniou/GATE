@@ -8,7 +8,10 @@ import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
-from gate.models.backbones import image_dim_reshape
+from gate.models.backbones import (
+    apply_preprocessing_transforms,
+    image_dim_reshape,
+)
 from gate.models.core import reinit
 
 
@@ -85,11 +88,19 @@ class CLIPAdapter(nn.Module):
         return output_dict
 
     def get_transforms(self):
-        return {
-            "image": lambda x: self.preprocessor(
-                images=x, return_tensors="pt"
-            ).pixel_values.squeeze(0),
-            "text": lambda x: self.preprocessor(
+        def image_transforms(x):
+            return self.preprocessor(images=x, return_tensors="pt")
+
+        def text_transforms(x):
+            return self.preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0),
+            ).input_ids.squeeze(0)
+
+        return {
+            "image": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=image_transforms
+            ),
+            "text": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=text_transforms
+            ),
         }

@@ -13,7 +13,10 @@ from tali.utils import download_model_with_name
 from transformers import CLIPProcessor, WhisperProcessor
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
-from gate.models.backbones import image_dim_reshape
+from gate.models.backbones import (
+    apply_preprocessing_transforms,
+    image_dim_reshape,
+)
 from gate.models.core import reinit
 
 
@@ -149,16 +152,16 @@ class TALINet(nn.Module):
         return output_dict
 
     def get_transforms(self):
-        return {
-            "image": lambda x: self.image_text_preprocessor(
-                images=x, return_tensors="pt"
-            )
-            .pixel_values.squeeze(1)
-            .view(x.shape),
-            "text": lambda x: self.image_text_preprocessor(
+        def image_transforms(x):
+            return self.image_text_preprocessor(images=x, return_tensors="pt")
+
+        def text_transforms(x):
+            return self.image_text_preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids,
-            "audio": lambda x: torch.cat(
+            ).input_ids.squeeze(0)
+
+        def audio_transforms(x):
+            return torch.cat(
                 [
                     self.audio_preprocessor(
                         item.view(-1),
@@ -167,15 +170,33 @@ class TALINet(nn.Module):
                     ).input_features
                     for item in x.unbind(0)
                 ]
+            )
+
+        def video_transforms(x):
+            return (
+                torch.stack(
+                    [
+                        self.image_text_preprocessor(
+                            images=image, return_tensors="pt"
+                        ).pixel_values
+                        for image in x
+                    ],
+                    dim=0,
+                ),
+            )
+
+        return {
+            "image": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=image_transforms
             ),
-            "video": lambda x: torch.stack(
-                [
-                    self.image_text_preprocessor(
-                        images=image, return_tensors="pt"
-                    ).pixel_values
-                    for image in x
-                ],
-                dim=0,
+            "text": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=text_transforms
+            ),
+            "audio": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=audio_transforms
+            ),
+            "video": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=video_transforms
             ),
         }
 
