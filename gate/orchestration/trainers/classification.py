@@ -66,7 +66,7 @@ class ClassificationTrainer(Trainer):
 
         accelerator.backward(loss)
         for key, value in output_dict.items():
-            self.state_dict[key] = value.detach().mean().cpu()
+            self.state_dict[key].append(value.detach().mean().cpu())
 
         return StepOutput(
             output_metrics_dict=output_dict,
