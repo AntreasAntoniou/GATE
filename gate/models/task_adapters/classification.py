@@ -66,6 +66,6 @@ class BackboneWithLinear(BaseModule):
         x = self.linear(x)
 
         if labels is not None:
-            return self.compute_metrics(x, labels)
+            return self.compute_metrics(x, labels) | {"logits": x}
 
         return x

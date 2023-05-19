@@ -39,7 +39,9 @@ class StepOutput:
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
-        output_dict = model.forward(batch)
+        output_dict = model.forward(batch)[self.target_modality][
+            self.souce_modality
+        ]
         if "loss" not in output_dict:
             loss = F.cross_entropy(
                 output_dict[self.target_modality][self.souce_modality],
