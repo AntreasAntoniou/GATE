@@ -11,7 +11,7 @@ def image_dim_reshape(x):
 
 def apply_preprocessing_transforms(transforms, x):
     input_shape = None
-    if isinstance(x, PIL.Image):
+    if isinstance(x, PIL.Image.Image):
         x = transforms.ToTensor()(x)
 
     if isinstance(x, torch.Tensor):
