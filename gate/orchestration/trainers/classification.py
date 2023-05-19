@@ -65,11 +65,8 @@ class ClassificationTrainer(Trainer):
             loss = output_dict["loss"]
 
         accelerator.backward(loss)
-        # if self.starting_train:
-        #     self.starting_train = False
-        #     for name, param in model.named_parameters():
-        #         if param.grad is None:
-        #             print(f"None gradient for {name}")
+        for key, value in output_dict.items():
+            self.state_dict[key] = value.detach().mean().cpu()
 
         return StepOutput(
             output_metrics_dict=output_dict,
@@ -220,7 +217,7 @@ class MultiClassClassificationTrainer(Trainer):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
-            self.epoch_metrics.setdefault(key, []).append(value.detach().cpu())
+            self.state_dict.setdefault(key, []).append(value.detach().cpu())
 
         # we need to round the labels because they might be soft labels due to mixup/label smoothing
         self.state_dict.setdefault("labels", []).append(
