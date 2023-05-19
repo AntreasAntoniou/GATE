@@ -105,7 +105,6 @@ class Evaluator(ABC):
             )
 
         self.epoch_metrics["global_step"].append(global_step)
-        print(self)
 
         return EvaluatorOutput(
             global_step=global_step,
