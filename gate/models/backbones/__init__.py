@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import PIL
 import torch
 import torchvision.transforms as T
@@ -10,19 +11,27 @@ def image_dim_reshape(x):
     return x
 
 
-def apply_preprocessing_transforms(transforms, x):
+@dataclass
+class Modality:
+    image: str = "image"
+    text: str = "text"
+    audio: str = "audio"
+    video: str = "video"
+
+
+def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     input_shape = None
-    if isinstance(x, PIL.Image.Image):
+    if isinstance(x, PIL.Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
 
-    if isinstance(x, torch.Tensor):
+    if isinstance(x, torch.Tensor) and modality == Modality.image:
         input_shape = x.shape
         x = image_dim_reshape(x)
 
     if transforms is not None:
         x = transforms(x)
 
-    if input_shape is not None:
-        x = x.reshape(input_shape)
+    if input_shape is not None and isinstance(x, torch.Tensor):
+        x = x.view(input_shape)
 
     return x

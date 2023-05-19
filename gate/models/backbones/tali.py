@@ -14,6 +14,7 @@ from transformers import CLIPProcessor, WhisperProcessor
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
 from gate.models.backbones import (
+    Modality,
     apply_preprocessing_transforms,
     image_dim_reshape,
 )
@@ -187,16 +188,16 @@ class TALINet(nn.Module):
 
         return {
             "image": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=image_transforms
+                x=x, transforms=image_transforms, modality=Modality.image
             ),
             "text": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=text_transforms
+                x=x, transforms=text_transforms, modality=Modality.text
             ),
             "audio": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=audio_transforms
+                x=x, transforms=audio_transforms, modality=Modality.audio
             ),
             "video": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=video_transforms
+                x=x, transforms=video_transforms, modality=Modality.video
             ),
         }
 

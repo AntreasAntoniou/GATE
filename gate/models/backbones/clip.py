@@ -9,6 +9,7 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.models.backbones import (
+    Modality,
     apply_preprocessing_transforms,
     image_dim_reshape,
 )
@@ -98,9 +99,9 @@ class CLIPAdapter(nn.Module):
 
         return {
             "image": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=image_transforms
+                x=x, transforms=image_transforms, modality=Modality.image
             ),
             "text": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=text_transforms
+                x=x, transforms=text_transforms, modality=Modality.text
             ),
         }
