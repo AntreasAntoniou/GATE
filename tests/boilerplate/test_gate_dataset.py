@@ -1,17 +1,19 @@
 import os
 
 from torch.utils.data import DataLoader, Dataset
+from gate.data.core import GATEDataset
 
-from gate.data import GATEDataset
-from gate.data.data import build_dataset
+from gate.data.image.classification.cifar100 import build_cifar100_dataset
 from gate.models.task_specific_models.classification.clip import build_model
 
 
 def test_GATEDataset():
-    dataset_name = "beans"
     data_dir = os.path.expanduser("~/.cache/huggingface/")
     set_name = "train"
-    beans_dataset = build_dataset(dataset_name, data_dir, set_name)
+    beans_dataset = build_cifar100_dataset(
+        set_name,
+        data_dir,
+    )
     model_and_transforms = build_model()
     transforms = model_and_transforms.transform
 

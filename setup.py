@@ -38,8 +38,8 @@ main_requirements = [
     "timm @ git+https://github.com/huggingface/pytorch-image-models.git",
     "tali @ git+https://github.com/AntreasAntoniou/TALI.git",
 ]
-# "segmentation-models-pytorch @ git+https://github.com/qubvel/segmentation_models.pytorch.git",
-# "learn2learn @ git+https://github.com/mlguild/learn2learn.git", For Few Shot Learning this one must be installed manually by git clone and pip install -e .
+
+# "learn2learn @ git+https://github.com/mlguild/learn2learn.git#egg=package[dev]",
 dev_requirements = [
     "pytest",
     "isort",
@@ -58,7 +58,7 @@ print(f"Installing {find_packages()}")
 # TODO: Automate pip install for pytorch deps depending on platform and GPU availability --extra-index-url https://download.pytorch.org/whl/cu118
 setup(
     name="gate",
-    version="0.8.0",
+    version="0.8.5",
     description="A minimal, stateless, machine learning research template for PyTorch",
     author="Antreas Antoniou",
     author_email="iam@antreas.io",
