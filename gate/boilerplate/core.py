@@ -588,6 +588,9 @@ class Learner(nn.Module):
         state_dict = trainer_state["state_dict"]
         epoch_metrics = trainer_state["epoch_metrics"]
 
+        print(f"State dict: {state_dict}")
+        print(f"Epoch metrics: {epoch_metrics}")
+
         for trainer in self.trainers:
             setattr(
                 trainer,
