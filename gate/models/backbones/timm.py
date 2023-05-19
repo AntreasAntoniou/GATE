@@ -73,6 +73,7 @@ class TimmModel(nn.Module):
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
+        print(f"{model_identifier} transforms: {self.transforms}")
         output_shape = self.get_output_shape()["raw_features"]
         print(f"{model_identifier} output shape: {output_shape}")
         self.num_output_features = output_shape[2]
