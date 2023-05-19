@@ -84,12 +84,15 @@ class TimmModel(nn.Module):
         # output is a (1, num_features) shaped tensor
 
         raw_features = self.model.forward_features(x)
+        raw_features_as_sequence = raw_features
         if len(raw_features.shape) == 4:
             feature_shape = raw_features.shape
             if (
                 len(feature_shape) == 4
             ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
-                raw_features = raw_features.permute([0, 2, 3, 1]).reshape(
+                raw_features_as_sequence = raw_features.permute(
+                    [0, 2, 3, 1]
+                ).reshape(
                     feature_shape[0], -1, feature_shape[1]
                 )  # output should have shape (batch_size, num_patches, num_features)
 
@@ -99,7 +102,7 @@ class TimmModel(nn.Module):
         return {
             "classifier": predictions,
             "features": features,
-            "raw_features": raw_features,
+            "raw_features": raw_features_as_sequence,
         }
 
     def get_transforms(self):
