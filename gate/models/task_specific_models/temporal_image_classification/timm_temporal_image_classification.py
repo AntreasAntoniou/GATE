@@ -25,7 +25,7 @@ def build_model(
     timm_model_name: str = "resnet50.a1_in1k",
     modality: str = "image",
     pretrained: bool = True,
-    num_output_features: int = 100,
+    num_classes: int = 100,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -47,7 +47,7 @@ def build_model(
                 "text": backbone_model.text_num_features,
                 "image": backbone_model.image_num_features,
             }[modality],
-            num_classes=num_output_features,
+            num_classes=num_classes,
             modality=modality,
         )
     else:
@@ -93,13 +93,13 @@ def build_gate_model(
     timm_model_name: str = "resnet50.a1_in1k",
     modality: str = "image",
     pretrained: bool = True,
-    num_output_features: int = 512,
+    num_classes: int = 512,
 ):
     model_and_transform = build_model(
         clip_model_name=clip_model_name,
         timm_model_name=timm_model_name,
         pretrained=pretrained,
-        num_output_features=num_output_features,
+        num_classes=num_classes,
         modality=modality,
     )
     if modality == "image":
