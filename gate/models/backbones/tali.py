@@ -172,31 +172,6 @@ class TALINet(nn.Module):
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0)
 
-        def audio_transforms(x):
-            return torch.cat(
-                [
-                    self.audio_preprocessor(
-                        item.view(-1),
-                        sampling_rate=16000,
-                        return_tensors="pt",
-                    ).input_features
-                    for item in x.unbind(0)
-                ]
-            )
-
-        def video_transforms(x):
-            return (
-                torch.stack(
-                    [
-                        self.image_text_preprocessor(
-                            images=image, return_tensors="pt"
-                        ).pixel_values
-                        for image in x
-                    ],
-                    dim=0,
-                ),
-            )
-
         return {
             "image": lambda x: apply_preprocessing_transforms(
                 x=x, transforms=image_transforms, modality=Modality.image
@@ -204,13 +179,58 @@ class TALINet(nn.Module):
             "text": lambda x: apply_preprocessing_transforms(
                 x=x, transforms=text_transforms, modality=Modality.text
             ),
-            "audio": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=audio_transforms, modality=Modality.audio
-            ),
-            "video": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=video_transforms, modality=Modality.video
-            ),
         }
+
+    # def get_transforms(self):
+    #     def image_transforms(x):
+    #         return self.image_text_preprocessor(
+    #             images=x, return_tensors="pt"
+    #         ).pixel_values
+
+    #     def text_transforms(x):
+    #         return self.image_text_preprocessor(
+    #             text=x, return_tensors="pt", padding=True, truncation=True
+    #         ).input_ids.squeeze(0)
+
+    #     def audio_transforms(x):
+    #         return torch.cat(
+    #             [
+    #                 self.audio_preprocessor(
+    #                     item.view(-1),
+    #                     sampling_rate=16000,
+    #                     return_tensors="pt",
+    #                 ).input_features
+    #                 for item in x.unbind(0)
+    #             ]
+    #         )
+
+    #     def video_transforms(x):
+    #         return (
+    #             torch.stack(
+    #                 [
+    #                     self.image_text_preprocessor(
+    #                         images=image, return_tensors="pt"
+    #                     ).pixel_values
+    #                     for image in x
+    #                 ],
+    #                 dim=0,
+    #             ),
+    #         )
+
+    #     return {
+    #         "image": lambda x: apply_preprocessing_transforms(
+    #             x=x, transforms=image_transforms, modality=Modality.image
+    #         ),
+    #         "text": lambda x: apply_preprocessing_transforms(
+    #             x=x, transforms=text_transforms, modality=Modality.text
+    #         ),
+    #         "audio": lambda x: apply_preprocessing_transforms(
+    #             x=x, transforms=audio_transforms, modality=Modality.audio
+    #         ),
+    #         "video": lambda x: apply_preprocessing_transforms(
+    #             x=x, transforms=video_transforms, modality=Modality.video
+    #         ),
+    #     }
 
     def load_from_hub(
         self, model_repo_path: str, checkpoint_identifier: str, **kwargs
