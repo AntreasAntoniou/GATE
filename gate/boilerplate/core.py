@@ -52,8 +52,6 @@ accelerate_logger = get_logger("accelerate", logging_level="ERROR")
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
-        model_selection_metric_name="accuracy_top_1-epoch-mean",
-        model_selection_metric_higher_is_better=True,
         hf_cache_dir=HYDRATED_HF_CACHE_DIR,
         hf_repo_path=HYDRATED_HF_REPO_PATH,
     ),
