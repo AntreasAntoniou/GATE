@@ -124,7 +124,6 @@ class TALINet(nn.Module):
         # 💡 Using dictionary comprehension to simplify code and
         # improve readability
         if isinstance(image, Dict):
-            print(image)
             image = image["image"]
         if isinstance(text, Dict):
             text = text["text"]
