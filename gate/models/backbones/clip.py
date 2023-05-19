@@ -86,9 +86,7 @@ class CLIPAdapter(nn.Module):
 
     def get_transforms(self):
         return {
-            "image": lambda x: self.preprocessor(
-                images=image_dim_reshape(x), return_tensors="pt"
-            )
+            "image": lambda x: self.preprocessor(images=x, return_tensors="pt")
             .pixel_values.squeeze(0)
             .view(x.shape),
             "text": lambda x: self.preprocessor(
