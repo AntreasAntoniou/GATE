@@ -23,11 +23,13 @@ class BackboneWithLinear(BaseModule):
         self.num_classes = num_classes
 
     def compute_metrics(self, logits, labels):
+        if not isinstance(logits, torch.Tensor):
+            logits = torch.tensor(logits)
         accuracy_top_1 = accuracy_top_k(logits, labels, k=1)
         accuracy_top_5 = accuracy_top_k(
             logits, labels, k=min(5, self.num_classes)
         )
-        print(labels)
+
         loss = F.cross_entropy(logits, labels)
         return {
             "loss": loss,
