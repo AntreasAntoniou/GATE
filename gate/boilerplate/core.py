@@ -552,7 +552,8 @@ class Learner(nn.Module):
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
-        print(experiment_hyperparameters)
+        print(self.trainers, self.evaluators)
+
         torch.save(
             obj=experiment_hyperparameters,
             f=ckpt_save_path / "trainer_state.pt",
