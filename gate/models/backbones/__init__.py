@@ -3,6 +3,8 @@ import PIL
 import torch
 import torchvision.transforms as T
 
+single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+
 
 def image_dim_reshape(x):
     if len(x.shape) == 5:
@@ -17,9 +19,6 @@ class Modality:
     text: str = "text"
     audio: str = "audio"
     video: str = "video"
-
-
-single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 
 
 def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
