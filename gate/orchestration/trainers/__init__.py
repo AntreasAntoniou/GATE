@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
 from accelerate import Accelerator
+import wandb
 
 from gate.boilerplate.decorators import collect_metrics
 
@@ -103,9 +103,6 @@ class Trainer(ABC):
             phase_name="training",
             experiment_tracker=self.experiment_tracker,
         )
-
-
-import wandb
 
 
 def log_data_to_wandb_table(
