@@ -48,6 +48,7 @@ class Evaluator(ABC):
 
         metrics = self.epoch_metrics[metric_name]
         global_steps = self.epoch_metrics["global_step"]
+        print(metrics.shape)
 
         if higher_is_better:
             best_metric_idx = torch.argmax(torch.tensor(metrics))
