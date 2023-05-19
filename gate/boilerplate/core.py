@@ -540,14 +540,18 @@ class Learner(nn.Module):
             step_idx=self.step_idx,
             global_step=self.global_step,
             state_dict={
-                "train": [trainer.state_dict for trainer in self.trainers],
+                "train": [
+                    trainer.current_epoch_dict for trainer in self.trainers
+                ],
                 "eval": [
-                    evaluator.state_dict for evaluator in self.evaluators
+                    evaluator.current_epoch_dict
+                    for evaluator in self.evaluators
                 ],
             },
             epoch_metrics={
                 "eval": [
-                    evaluator.epoch_metrics for evaluator in self.evaluators
+                    evaluator.per_epoch_metrics
+                    for evaluator in self.evaluators
                 ],
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,

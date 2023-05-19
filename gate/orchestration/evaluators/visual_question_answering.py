@@ -120,7 +120,7 @@ class VQAEvaluator(Evaluator):
             )
 
             for key, value in step_output.output_metrics_dict.items():
-                self.state_dict.setdefault(key, []).append(value)
+                self.current_epoch_dict.setdefault(key, []).append(value)
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -150,7 +150,7 @@ class VQAEvaluator(Evaluator):
             )
 
             for key, value in step_output.output_metrics_dict.items():
-                self.state_dict.setdefault(key, []).append(value)
+                self.current_epoch_dict.setdefault(key, []).append(value)
 
         return EvaluatorOutput(
             global_step=global_step,

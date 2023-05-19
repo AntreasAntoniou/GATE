@@ -66,7 +66,7 @@ class ClassificationEvaluator(Evaluator):
             loss = output_dict["loss"]
 
         for key, value in output_dict.items():
-            self.state_dict[key].append(value.detach().mean().cpu())
+            self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
         return StepOutput(
             metrics=output_dict,
@@ -176,13 +176,13 @@ class MultiClassClassificationEvaluator(Evaluator):
     def compute_epoch_metrics(
         self, phase_metrics: Dict[str, float], global_step: int
     ):
-        for key, value in self.state_dict.items():
+        for key, value in self.current_epoch_dict.items():
             if key not in ["labels", "logits"]:
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
-        labels = torch.cat(self.state_dict["labels"])
-        logits = torch.cat(self.state_dict["logits"])
+        labels = torch.cat(self.current_epoch_dict["labels"])
+        logits = torch.cat(self.current_epoch_dict["logits"])
         for metric_name, metric_fn in self._metrics.items():
             for c_idx, class_name in enumerate(self.classes):
                 if metric_name == "bs":
@@ -200,10 +200,14 @@ class MultiClassClassificationEvaluator(Evaluator):
                 ]
             )
             for key, value in phase_metrics.items():
-                if key not in self.state_dict:
-                    self.state_dict[key] = {global_step: phase_metrics[key]}
+                if key not in self.current_epoch_dict:
+                    self.current_epoch_dict[key] = {
+                        global_step: phase_metrics[key]
+                    }
                 else:
-                    self.state_dict[key][global_step] = phase_metrics[key]
+                    self.current_epoch_dict[key][global_step] = phase_metrics[
+                        key
+                    ]
         return phase_metrics
 
     def compute_step_metrics(self, output_dict, batch, loss):
@@ -218,13 +222,15 @@ class MultiClassClassificationEvaluator(Evaluator):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
-            self.epoch_metrics.setdefault(key, []).append(value.detach().cpu())
+            self.per_epoch_metrics.setdefault(key, []).append(
+                value.detach().cpu()
+            )
 
         # we need to round the labels because they might be soft labels due to mixup/label smoothing
-        self.state_dict.setdefault("labels", []).append(
+        self.current_epoch_dict.setdefault("labels", []).append(
             batch["labels"].cpu().round()
         )
-        self.state_dict.setdefault("logits", []).append(
+        self.current_epoch_dict.setdefault("logits", []).append(
             output_dict[self.target_modality][self.source_modality]["logits"]
             .cpu()
             .sigmoid_()

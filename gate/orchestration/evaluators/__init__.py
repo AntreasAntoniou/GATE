@@ -17,8 +17,8 @@ class Evaluator(ABC):
         target_modality: Optional[str] = None,
     ):
         super().__init__()
-        self.state_dict = {}
-        self.epoch_metrics = defaultdict(list)
+        self.current_epoch_dict = defaultdict(list)
+        self.per_epoch_metrics = defaultdict(list)
         self.experiment_tracker = experiment_tracker
         self.starting_eval = True
         self.source_modality = source_modality
@@ -45,8 +45,8 @@ class Evaluator(ABC):
     ):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
-        metrics = self.epoch_metrics[metric_name]
-        global_steps = self.epoch_metrics["global_step"]
+        metrics = self.per_epoch_metrics[metric_name]
+        global_steps = self.per_epoch_metrics["global_step"]
         if isinstance(metrics, List):
             metrics = torch.stack(metrics)
 
@@ -65,12 +65,12 @@ class Evaluator(ABC):
         self,
         global_step: int,
     ):
-        self.state_dict = {}
+        self.current_epoch_dict = {}
         self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",
-            metrics=self.state_dict,
+            metrics=self.current_epoch_dict,
             experiment_tracker=self.experiment_tracker,
         )
 
@@ -79,12 +79,12 @@ class Evaluator(ABC):
         self,
         global_step: int,
     ):
-        self.state_dict = {}
+        self.current_epoch_dict = {}
         self.starting_eval = True
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="testing",
-            metrics=self.state_dict,
+            metrics=self.current_epoch_dict,
             experiment_tracker=self.experiment_tracker,
         )
 
@@ -94,17 +94,17 @@ class Evaluator(ABC):
         global_step: int,
     ):
         phase_metrics = {}
-        for key, value in self.state_dict.items():
+        for key, value in self.current_epoch_dict.items():
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
-            self.epoch_metrics[f"{key}-epoch-mean"].append(
+            self.per_epoch_metrics[f"{key}-epoch-mean"].append(
                 phase_metrics[f"{key}-epoch-mean"]
             )
-            self.epoch_metrics[f"{key}-epoch-std"].append(
+            self.per_epoch_metrics[f"{key}-epoch-std"].append(
                 phase_metrics[f"{key}-epoch-std"]
             )
 
-        self.epoch_metrics["global_step"].append(global_step)
+        self.per_epoch_metrics["global_step"].append(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -119,7 +119,7 @@ class Evaluator(ABC):
         global_step: int,
     ):
         phase_metrics = {}
-        for key, value in self.state_dict.items():
+        for key, value in self.current_epoch_dict.items():
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
