@@ -21,10 +21,7 @@ from gate.data.tasks.classification import ClassificationTask
 
 logger = get_logger(name=__name__, set_rich=True)
 
-FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 70236
-
-
-# TODO: Test the below code
+FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 20035
 
 
 class HAM10KClassification(Dataset):
@@ -38,7 +35,9 @@ class HAM10KClassification(Dataset):
             transform (Optional[Callable], optional): _description_. Defaults to None.
         """
         super().__init__()
-        dataset_path = pathlib.Path(dataset_path) / "ham10k"
+        dataset_path_dict = self.download_and_extract(dataset_path)
+
+        dataset_path = dataset_path_dict["dataset_download_path"]
         self.dataset_path = dataset_path
         self.meta_data_path = dataset_path / "HAM10000_metadata.csv"
         self.image_paths = [
