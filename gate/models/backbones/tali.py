@@ -123,14 +123,14 @@ class TALINet(nn.Module):
         # and merge the results into output_dict
         # 💡 Using dictionary comprehension to simplify code and
         # improve readability
-        if isinstance(image, Dict):
-            image = image["image"]
-        if isinstance(text, Dict):
-            text = text["text"]
-        if isinstance(audio, Dict):
-            audio = audio["audio"]
-        if isinstance(video, Dict):
-            video = video["video"]
+        # if isinstance(image, Dict):
+        #     image = image["image"]
+        # if isinstance(text, Dict):
+        #     text = text["text"]
+        # if isinstance(audio, Dict):
+        #     audio = audio["audio"]
+        # if isinstance(video, Dict):
+        #     video = video["video"]
 
         if image is not None:
             output_dict |= {
@@ -163,7 +163,9 @@ class TALINet(nn.Module):
 
     def get_transforms(self):
         def image_transforms(x):
-            return self.image_text_preprocessor(images=x, return_tensors="pt")
+            return self.image_text_preprocessor(
+                images=x, return_tensors="pt"
+            ).pixel_values
 
         def text_transforms(x):
             return self.image_text_preprocessor(

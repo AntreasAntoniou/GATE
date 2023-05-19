@@ -90,7 +90,9 @@ class CLIPAdapter(nn.Module):
 
     def get_transforms(self):
         def image_transforms(x):
-            return self.preprocessor(images=x, return_tensors="pt")
+            return self.preprocessor(
+                images=x, return_tensors="pt"
+            ).pixel_values
 
         def text_transforms(x):
             return self.preprocessor(
