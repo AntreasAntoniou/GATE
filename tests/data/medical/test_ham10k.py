@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from gate.data.medical.classification.diabetic_retinopathy import (
+from gate.data.medical.classification.ham10k import (
     build_gate_dataset,
     build_dataset,
 )
@@ -25,7 +25,6 @@ def test_build_gate_dataset():
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
     for item in gate_dataset["train"]:
-        print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
-        assert item["label"] is not None, "Label should not be None"
+        assert item["labels"] is not None, "Label should not be None"
         break
