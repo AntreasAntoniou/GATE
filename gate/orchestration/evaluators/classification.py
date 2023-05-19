@@ -80,7 +80,7 @@ class ClassificationEvaluator(Evaluator):
         global_step,
         accelerator: Accelerator,
     ) -> EvaluatorOutput:
-        model.train()
+        model.eval()
 
         step_output: StepOutput = self.step(
             model=model,
@@ -106,7 +106,7 @@ class ClassificationEvaluator(Evaluator):
         global_step,
         accelerator: Accelerator,
     ) -> EvaluatorOutput:
-        model.train()
+        model.eval()
 
         step_output: StepOutput = self.step(
             model=model,
