@@ -35,7 +35,7 @@ class Trainer(ABC):
         self.experiment_tracker = experiment_tracker
         self.state_dict = {}
         self.starting_train = True
-        self.source = source_modality
+        self.source_modality = source_modality
         self.target_modality = target_modality
 
         if self.scheduler is not None:
