@@ -25,7 +25,7 @@ class BackboneWithLinear(BaseModule):
     def compute_metrics(self, logits, labels):
         if not isinstance(labels, torch.Tensor):
             labels = torch.tensor(labels).to(logits.device)
-        print(labels)
+        print(logits)
         accuracy_top_1 = accuracy_top_k(logits, labels, k=1)
         accuracy_top_5 = accuracy_top_k(
             logits, labels, k=min(5, self.num_classes)
