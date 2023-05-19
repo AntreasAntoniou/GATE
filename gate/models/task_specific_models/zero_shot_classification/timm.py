@@ -91,8 +91,7 @@ def build_model(
 
 @configurable(
     group="model",
-    name="clip-zero-shot-classification",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+    name="timm-zero-shot-classification",
 )
 def build_gate_model(
     timm_model_name: str = "resnet50.a1_in1k",
