@@ -89,7 +89,11 @@ class DefaultHyperparameters:
 
 # For debugging purposes
 if __name__ == "__main__":
-    x = build_gate_imdb_dataset()
-    print(x["train"][0])
-    print(x["val"][0])
-    print(x["test"][0])
+    print("BEFORE TRANSFORMING THE DATASET")
+    train_data = build_imdb_dataset("train")
+    print(train_data[0])
+    print("GATE DATASET")
+    data = build_gate_imdb_dataset()
+    print(data["train"][0])
+    print(data["val"][0])
+    print(data["test"][0])
