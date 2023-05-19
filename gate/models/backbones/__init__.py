@@ -20,6 +20,7 @@ class Modality:
 
 
 def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
+    print(x)
     input_shape = None
     if isinstance(x, PIL.Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
