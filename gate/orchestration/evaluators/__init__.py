@@ -53,6 +53,7 @@ class Evaluator(ABC):
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
+        print(self.per_epoch_metrics)
         if isinstance(metrics, List):
             metrics = torch.stack(metrics)
 
