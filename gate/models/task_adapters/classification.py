@@ -27,6 +27,7 @@ class BackboneWithLinear(BaseModule):
         accuracy_top_5 = accuracy_top_k(
             logits, labels, k=min(5, self.num_classes)
         )
+        print(labels)
         loss = F.cross_entropy(logits, labels)
         return {
             "loss": loss,
