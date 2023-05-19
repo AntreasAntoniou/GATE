@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import torch
 from accelerate import Accelerator
@@ -48,7 +48,8 @@ class Evaluator(ABC):
 
         metrics = self.epoch_metrics[metric_name]
         global_steps = self.epoch_metrics["global_step"]
-        print(metrics.shape)
+        if isinstance(metrics, List):
+            metrics = torch.stack(metrics)
 
         if higher_is_better:
             best_metric_idx = torch.argmax(torch.tensor(metrics))
