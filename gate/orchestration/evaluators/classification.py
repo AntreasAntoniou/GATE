@@ -135,15 +135,9 @@ class ClassificationEvaluator(Evaluator):
 class ImageClassificationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
     ):
         super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
             experiment_tracker,
             source_modality="image",
             target_modality="image",
@@ -154,15 +148,9 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
 class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
     ):
         super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
             experiment_tracker,
             source_modality="image_text",
             target_modality="image_text",
@@ -173,16 +161,10 @@ class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
 class MultiClassClassificationEvaluator(Evaluator):
     def __init__(
         self,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
-        label_idx_to_class_name: Dict[int, str] = None,
+        label_idx_to_class_name: Optional[Dict[int, str]] = None,
     ):
         super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
             experiment_tracker,
             source_modality="image",
             target_modality="image",
