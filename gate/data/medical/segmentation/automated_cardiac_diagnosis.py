@@ -1,13 +1,18 @@
 import os
 import pathlib
 import zipfile
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import nibabel as nib
 import requests
 import torch
 from torch.utils.data import Dataset, random_split
 from tqdm import tqdm
+
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
+from gate.data.core import GATEDataset
+from gate.data.tasks.classification import ClassificationTask
 
 
 def download_and_extract_file(extract_to: str) -> pathlib.Path:
@@ -104,9 +109,7 @@ class ACDCDataset(Dataset):
         return {"four_d_img": four_d_img_tensor, "frame_data": frame_data}
 
 
-def build_acdc_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> Dataset:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
     """
     Build an ACDC dataset.
 
@@ -138,6 +141,42 @@ def build_acdc_dataset(
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
 
     return dataset_dict[set_name]
+
+
+@configurable(
+    group="dataset",
+    name="automated_cardiac_diagnosis_challenge",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_dataset(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=4,
+) -> dict:
+    dataset_dict = build_dataset(data_dir=data_dir)
+    train_set = GATEDataset(
+        dataset=dataset_dict["train"],
+        infinite_sampling=True,
+        task=ClassificationTask(),
+        transforms=transforms,
+    )
+
+    val_set = GATEDataset(
+        dataset=dataset_dict["val"],
+        infinite_sampling=False,
+        task=ClassificationTask(),
+        transforms=transforms,
+    )
+
+    test_set = GATEDataset(
+        dataset=dataset_dict["test"],
+        infinite_sampling=False,
+        task=ClassificationTask(),
+        transforms=transforms,
+    )
+
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict
 
 
 def main():
