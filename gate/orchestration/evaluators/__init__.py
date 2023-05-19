@@ -15,6 +15,8 @@ class Evaluator(ABC):
         experiment_tracker: Optional[Any] = None,
         source_modality: Optional[str] = None,
         target_modality: Optional[str] = None,
+        model_selection_metric_name: Optional[str] = None,
+        model_selection_metric_higher_is_better: Optional[bool] = None,
     ):
         super().__init__()
         self.current_epoch_dict = defaultdict(list)
@@ -23,6 +25,10 @@ class Evaluator(ABC):
         self.starting_eval = True
         self.source_modality = source_modality
         self.target_modality = target_modality
+        self.model_selection_metric_name = model_selection_metric_name
+        self.model_selection_metric_higher_is_better = (
+            model_selection_metric_higher_is_better
+        )
 
     @abstractmethod
     def step(self, model, batch, global_step):
@@ -81,6 +87,7 @@ class Evaluator(ABC):
     ):
         self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
+
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="testing",

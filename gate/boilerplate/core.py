@@ -76,8 +76,6 @@ class Learner(nn.Module):
         test_dataloader: Union[List[DataLoader], DataLoader] = None,
         trainers: Union[List[Trainer], Trainer] = None,
         evaluators: Union[List[Evaluator], Evaluator] = None,
-        model_selection_metric_name: str = None,
-        model_selection_metric_higher_is_better: bool = True,
         callbacks: Union[List[Callback], Callback] = None,
         print_model_parameters: bool = False,
         hf_cache_dir: str = None,
@@ -126,10 +124,6 @@ class Learner(nn.Module):
         self.checkpoint_after_validation = checkpoint_after_validation
         self.step_idx = 0
         self.global_step = 0
-        self.model_selection_metric_name = model_selection_metric_name
-        self.model_selection_metric_higher_is_better = (
-            model_selection_metric_higher_is_better
-        )
 
         self.limit_train_iters = limit_train_iters
         self.limit_val_iters = limit_val_iters
@@ -409,10 +403,12 @@ class Learner(nn.Module):
             self.test_dataloader = test_dataloader
 
         if model is None:
-            if self.model_selection_metric_name is not None:
+            if self.evaluators[0].model_selection_metric_name is not None:
                 self.load_best_model(
-                    metric_name=self.model_selection_metric_name,
-                    higher_is_better=self.model_selection_metric_higher_is_better,
+                    metric_name=self.evaluators[0].model_selection_metric_name,
+                    higher_is_better=self.evaluators[
+                        0
+                    ].model_selection_metric_higher_is_better,
                 )
             model = self.accelerator.prepare(self.model)
 
