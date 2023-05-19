@@ -40,6 +40,9 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
         is_5d_tensor = len(x.shape) == 5
 
     if transforms is not None:
+        if isinstance(x, torch.Tensor):
+            x = T.ToPILImage()(x)
+
         x = transforms(x)
 
     if (
@@ -48,9 +51,6 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
         and is_5d_tensor
     ):
         x = x.view(input_shape[0], input_shape[1], *x.shape[1:])
-
-    if isinstance(x, torch.Tensor):
-        x = T.ToPILImage()(x)
 
     return x
 
