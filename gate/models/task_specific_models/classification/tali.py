@@ -105,6 +105,7 @@ def build_gate_tali_model(
         "text": "image",
         "audio": "audio",
         "video": "video",
+        "pixel_values": "pixel_values",
     }
 
     gate_model = GATEModel(
