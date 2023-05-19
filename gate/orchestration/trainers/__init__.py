@@ -94,9 +94,6 @@ class Trainer(ABC):
         global_step: int,
     ):
         phase_metrics = {}
-        for key, value in self.current_epoch_dict.items():
-            phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
-            phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
         return TrainerOutput(
             opt_loss=None,
