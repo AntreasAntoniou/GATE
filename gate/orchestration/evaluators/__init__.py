@@ -54,6 +54,7 @@ class Evaluator(ABC):
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
         print(self.per_epoch_metrics)
+        print(self.current_epoch_dict)
         if isinstance(metrics, List):
             metrics = torch.stack(metrics)
 
