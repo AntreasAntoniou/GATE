@@ -19,11 +19,16 @@ class Modality:
     video: str = "video"
 
 
+single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+
+
 def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     print(x)
     input_shape = None
     if isinstance(x, PIL.Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
+        if x.shape[0] == 1:
+            x = single_to_three_channel(x)
 
     if isinstance(x, torch.Tensor) and modality == Modality.image:
         input_shape = x.shape
