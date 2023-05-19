@@ -40,23 +40,23 @@ class TALINet(nn.Module):
         super().__init__()
 
         # Initialize TALIModel with specified image, text and audio models
-        if pretrained:
-            if checkpoint_identifier is not None:
-                self.load_from_hub(
-                    model_repo_path=model_repo_path,
-                    checkpoint_identifier=checkpoint_identifier,
-                )
-            else:
-                self.load_from_hub(
-                    model_repo_path=model_repo_path,
-                    checkpoint_identifier="latest",
-                )
-        else:
-            self.model = TALIModel(
-                image_text_model_name=clip_model_name,
-                audio_model_name=whisper_model_name,
-                multi_modality_config=MultiModalityConfig(),
-            )
+        # if pretrained:
+        #     if checkpoint_identifier is not None:
+        #         self.load_from_hub(
+        #             model_repo_path=model_repo_path,
+        #             checkpoint_identifier=checkpoint_identifier,
+        #         )
+        #     else:
+        #         self.load_from_hub(
+        #             model_repo_path=model_repo_path,
+        #             checkpoint_identifier="latest",
+        #         )
+        # else:
+        self.model = TALIModel(
+            image_text_model_name=clip_model_name,
+            audio_model_name=whisper_model_name,
+            multi_modality_config=MultiModalityConfig(),
+        )
 
         self.image_text_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
