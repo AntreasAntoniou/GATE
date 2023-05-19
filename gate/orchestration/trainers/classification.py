@@ -38,21 +38,21 @@ class ClassificationTrainer(Trainer):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
         output_dict = model.forward(batch)[self.target_modality][
-            self.souce_modality
+            self.source_modality
         ]
 
         if "loss" not in output_dict:
             loss = F.cross_entropy(
-                output_dict[self.target_modality][self.souce_modality],
+                output_dict[self.target_modality][self.source_modality],
                 batch["labels"],
             )
             accuracy = accuracy_top_k(
-                logits=output_dict[self.target_modality][self.souce_modality],
+                logits=output_dict[self.target_modality][self.source_modality],
                 labels=batch["labels"],
                 k=1,
             )
             accuracy_top_5 = accuracy_top_k(
-                logits=output_dict[self.target_modality][self.souce_modality],
+                logits=output_dict[self.target_modality][self.source_modality],
                 labels=batch["labels"],
                 k=5,
             )
@@ -222,7 +222,7 @@ class MultiClassClassificationTrainer(Trainer):
             batch["labels"].cpu().round()
         )
         self.state_dict.setdefault("logits", []).append(
-            output_dict[self.target_modality][self.souce_modality]["logits"]
+            output_dict[self.target_modality][self.source_modality]["logits"]
             .cpu()
             .sigmoid_()
         )
@@ -235,7 +235,7 @@ class MultiClassClassificationTrainer(Trainer):
         output_dict = model.forward(batch)
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
-                output_dict[self.target_modality][self.souce_modality][
+                output_dict[self.target_modality][self.source_modality][
                     "logits"
                 ],
                 batch["labels"],
