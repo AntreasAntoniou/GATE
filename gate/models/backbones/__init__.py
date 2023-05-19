@@ -31,12 +31,19 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)
 
-    # if isinstance(x, torch.Tensor) and modality == Modality.image:
-    #     input_shape = x.shape
-    #     is_5d_tensor = len(x.shape) == 5
-    #     x = image_dim_reshape(x)
+    if isinstance(x, torch.Tensor) and modality == Modality.image:
+        input_shape = x.shape
+        is_5d_tensor = len(x.shape) == 5
+        x = image_dim_reshape(x)
 
     if transforms is not None:
         x = transforms(x)
+
+    if (
+        input_shape is not None
+        and isinstance(x, torch.Tensor)
+        and is_5d_tensor
+    ):
+        x = x.view(input_shape[0], input_shape[1], *x.shape[1:])
 
     return x

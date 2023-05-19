@@ -33,6 +33,7 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
         x = T.ToTensor()(x)
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
+        x = T.ToPILImage()(x)
 
     if isinstance(x, torch.Tensor) and modality == Modality.image:
         input_shape = x.shape
