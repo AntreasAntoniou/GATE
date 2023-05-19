@@ -98,8 +98,7 @@ def build_model(
 
 @configurable(
     group="model",
-    name="clip-zero-shot-classification",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+    name="tali-zero-shot-classification",
 )
 def build_gate_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
