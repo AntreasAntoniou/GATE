@@ -82,16 +82,12 @@ class ClassificationEvaluator(Evaluator):
     ) -> EvaluatorOutput:
         model.train()
 
-        self.optimizer.zero_grad()
-
         step_output: StepOutput = self.step(
             model=model,
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
         )
-
-        self.optimizer.step()
 
         metrics = step_output.metrics
 
@@ -112,16 +108,12 @@ class ClassificationEvaluator(Evaluator):
     ) -> EvaluatorOutput:
         model.train()
 
-        self.optimizer.zero_grad()
-
         step_output: StepOutput = self.step(
             model=model,
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
         )
-
-        self.optimizer.step()
 
         metrics = step_output.metrics
 
