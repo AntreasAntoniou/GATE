@@ -7,8 +7,12 @@ from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
-from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
-from gate.trainers import Trainer, TrainerOutput, log_data_to_wandb_table
+from gate.metrics.vqa_eval import vqa_metric
+from gate.orchestration.trainers import (
+    Trainer,
+    TrainerOutput,
+    log_data_to_wandb_table,
+)
 
 logger = get_logger(__name__)
 

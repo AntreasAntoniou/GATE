@@ -1,19 +1,17 @@
 from ast import Dict
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
-import torch.nn.functional as F
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.orchestration.evaluators import Evaluator
-from gate.metrics.vqa_eval import AnswerData, VQAItem, vqa_metric
+from gate.metrics.vqa_eval import vqa_metric
 from gate.models.core import GATEModel
-from gate.trainers import log_data_to_wandb_table
-from gate.trainers.classification import StepOutput
+from gate.orchestration.trainers import log_data_to_wandb_table
+from gate.orchestration.trainers.classification import StepOutput
 
 logger = get_logger(__name__)
 
