@@ -22,8 +22,14 @@ from gate.config.variables import (
     HYDRATED_TRAIN_ITERS,
     RESUME,
 )
-from gate.evaluators.classification import ClassificationEvaluator, Evaluator
-from gate.trainers.classification import ClassificationTrainer, Trainer
+from gate.orchestration.evaluators.classification import (
+    ClassificationEvaluator,
+    Evaluator,
+)
+from gate.orchestration.trainers.classification import (
+    ClassificationTrainer,
+    Trainer,
+)
 
 logger = get_logger(__name__)
 

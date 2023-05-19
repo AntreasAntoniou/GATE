@@ -3,7 +3,6 @@ from hydra.core.config_store import ConfigStore
 from hydra_zen import instantiate
 from numpy import insert
 
-import gate
 from gate.boilerplate.decorators import configurable, register_configurables
 
 
