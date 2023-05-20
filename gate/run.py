@@ -78,13 +78,10 @@ def log_checkpoint_path(ckpt_path: Optional[str], cfg: Any) -> None:
     if ckpt_path is not None:
         logger.info(
             f"ckpt_path: {ckpt_path}, exists: {ckpt_path.exists()}, "
-            f"resume: {cfg.resume}, not resume: {not cfg.resume}"
+            f"resume: {cfg.resume}"
         )
     else:
-        logger.info(
-            f"ckpt_path: {ckpt_path}, resume: {cfg.resume}, "
-            f"not resume: {not cfg.resume}"
-        )
+        logger.info(f"ckpt_path: {ckpt_path}, resume: {cfg.resume},")
 
 
 def log_experiment_parameters(
