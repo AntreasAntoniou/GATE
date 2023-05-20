@@ -61,12 +61,16 @@ def build_gate_imagenet1k_dataset(
 ) -> dict:
     rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
 
+    def train_augment(input_dict):
+        input_dict["image"] = rand_augment(input_dict["image"])
+        return input_dict
+
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=[transforms, rand_augment],
+        transforms=[transforms, train_augment],
     )
 
     val_set = GATEDataset(
