@@ -61,9 +61,16 @@ def build_gate_imagenet1k_dataset(
     num_classes=1000,
 ) -> dict:
     rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
+    single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 
     def train_augment(input_dict):
-        input_dict["image"] = rand_augment(input_dict["image"])
+        x = input_dict["image"]
+        x = T.ToTensor()(x)
+        # print(x.shape)
+        if x.shape[0] == 1:
+            x = single_to_three_channel(x)
+        x = T.ToPILImage()(x)
+        input_dict["image"] = rand_augment(x)
 
         return input_dict
 
