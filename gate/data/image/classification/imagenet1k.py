@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
+import torchvision.transforms as T
 
 from datasets import load_dataset
 from timm.data import rand_augment_transform
@@ -62,8 +63,8 @@ def build_gate_imagenet1k_dataset(
     rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
 
     def train_augment(input_dict):
-        print("Rand augmenting")
-        input_dict["image"] = rand_augment(input_dict["image"])
+        input_dict["image"] = T.ToPILImage()(rand_augment(input_dict["image"]))
+
         return input_dict
 
     train_set = GATEDataset(
