@@ -5,6 +5,7 @@ from typing import Any, Optional
 import numpy as np
 
 from datasets import load_dataset
+from timm.data import rand_augment_transform
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
@@ -58,12 +59,14 @@ def build_gate_imagenet1k_dataset(
     transforms: Optional[Any] = None,
     num_classes=1000,
 ) -> dict:
+    rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
+
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transforms, rand_augment],
     )
 
     val_set = GATEDataset(
