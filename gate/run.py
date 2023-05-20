@@ -287,3 +287,7 @@ def run(cfg: Any) -> None:
 
     if cfg.test:
         learner.test(test_dataloader=test_dataloader)
+
+
+if __name__ == "__main__":
+    run()
