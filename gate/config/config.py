@@ -94,7 +94,7 @@ class Any:
     dataset_dir: str = DATASET_DIR
     current_experiment_dir: str = "${experiments_root_dir}/${exp_name}"
     hf_repo_path: str = "${hf_username}/${exp_name}"
-    hf_cache_dir: str = "${current_experiment_dir}/hf_cache"
+    hf_cache_dir: str = "${current_experiment_dir}/${exp_name}/hf_cache"
     code_dir: str = CODE_DIR
 
 
