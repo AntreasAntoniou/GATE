@@ -63,7 +63,7 @@ def build_gate_imagenet1k_dataset(
     rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
 
     def train_augment(input_dict):
-        input_dict["image"] = T.ToPILImage()(rand_augment(input_dict["image"]))
+        input_dict["image"] = rand_augment(input_dict["image"])
 
         return input_dict
 
