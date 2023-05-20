@@ -53,9 +53,11 @@ class Evaluator(ABC):
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
-        print(self.per_epoch_metrics)
-        print(self.current_epoch_dict)
+
         if isinstance(metrics, List):
+            if len(metrics) == 0:
+                raise ValueError(f"No epoch values found for {metric_name}")
+
             metrics = torch.stack(metrics)
 
         if higher_is_better:
