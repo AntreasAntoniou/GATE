@@ -72,7 +72,7 @@ def build_gate_imagenet1k_dataset(
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=[transforms, train_augment],
+        transforms=[train_augment, transforms],
     )
 
     val_set = GATEDataset(
