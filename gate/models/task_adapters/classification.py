@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+from timm.data.auto_augment import rand_augment_transform
 
 import torch
 import torch.nn as nn
@@ -69,3 +70,8 @@ class BackboneWithLinear(BaseModule):
             return self.compute_metrics(x, labels) | {"logits": x}
 
         return x
+
+    def get_transforms(self):
+        return {
+            "image": rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
+        }
