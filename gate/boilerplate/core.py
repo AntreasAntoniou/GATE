@@ -349,7 +349,7 @@ class Learner(nn.Module):
         if self.checkpoint_after_validation:
             logger.info("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
-        print(self.evaluators[0].__dict__)
+
         logger.info("Validation finished 🎉")
 
     def start_testing(self):
@@ -550,7 +550,6 @@ class Learner(nn.Module):
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
-        print(self.trainers[0].__dict__, self.evaluators[0].__dict__)
 
         torch.save(
             obj=experiment_hyperparameters,
@@ -588,8 +587,8 @@ class Learner(nn.Module):
         current_epoch_dict = trainer_state["current_epoch_dict"]
         per_epoch_metrics = trainer_state["per_epoch_metrics"]
 
-        print(f"current_epoch_dict: {current_epoch_dict}")
-        print(f"per_epoch_metrics: {per_epoch_metrics}")
+        # print(f"current_epoch_dict: {current_epoch_dict}")
+        # print(f"per_epoch_metrics: {per_epoch_metrics}")
 
         for trainer in self.trainers:
             setattr(
