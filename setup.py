@@ -58,7 +58,7 @@ print(f"Installing {find_packages()}")
 # TODO: Automate pip install for pytorch deps depending on platform and GPU availability --extra-index-url https://download.pytorch.org/whl/cu118
 setup(
     name="gate",
-    version="0.8.5",
+    version="0.8.6",
     description="A minimal, stateless, machine learning research template for PyTorch",
     author="Antreas Antoniou",
     author_email="iam@antreas.io",
