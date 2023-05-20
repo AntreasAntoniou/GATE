@@ -105,6 +105,7 @@ class Learner(nn.Module):
             if isinstance(experiment_dir, Path)
             else Path(experiment_dir)
         )
+        self.experiment_dir = self.experiment_dir / experiment_name
         self.hf_cache_dir = hf_cache_dir
         self.hf_repo_path = hf_repo_path
         self.background_threads = []

@@ -36,12 +36,15 @@ RUN apt-get install git -y
 RUN git lfs install
 RUN git config --global credential.helper store
 RUN git clone https://github.com/mlguild/learn2learn.git
-RUN cd learn2learn && pip install -e .[dev]
 
 RUN mkdir /app/
 ADD gate/ /app/gate
 ADD setup.py /app/
 
 RUN echo y | pip install /app/[dev]
+
+RUN pip install -e learn2learn
+
+
 
 ENTRYPOINT ["/bin/bash"]
