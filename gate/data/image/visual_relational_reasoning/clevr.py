@@ -15,6 +15,7 @@ from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
 from gate.data.transforms.tiny_image_transforms import pad_image
+import torchvision.transforms as T
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 
@@ -196,7 +197,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     # print(list(inputs.keys()))
     # print(inputs["image"])
     return {
-        "image": T.Resize(inputs["image"], size=(target_size, target_size)),
+        "image": T.Resize(size=(target_size, target_size))(inputs["image"]),
         "text": inputs["text"],
         "labels": torch.tensor(int(inputs["labels"])).long(),
     }
