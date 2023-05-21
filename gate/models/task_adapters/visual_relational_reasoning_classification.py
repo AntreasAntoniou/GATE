@@ -47,13 +47,13 @@ class DuoModalFusionModel(BaseModule):
         )
         # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
         self.fusion_post_processing = nn.Sequential(
-            nn.Linear(self.fusion_in_features, 512),
+            nn.Linear(self.fusion_in_features, 2048),
             nn.GELU(),
-            nn.Linear(512, 512),
+            nn.Linear(2048, 2048),
             nn.GELU(),
-            nn.Linear(512, 512),
+            nn.Linear(2048, 2048),
             nn.GELU(),
-            nn.Linear(512, num_classes),
+            nn.Linear(2048, num_classes),
         )
 
     def forward(
