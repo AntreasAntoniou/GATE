@@ -197,7 +197,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
         "text": inputs["text"],
-        "labels": torch.tensor(int(inputs["labels"])),
+        "labels": torch.tensor(int(inputs["labels"])).long(),
     }
 
 
