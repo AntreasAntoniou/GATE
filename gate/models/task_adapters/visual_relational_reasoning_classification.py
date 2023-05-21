@@ -132,9 +132,9 @@ class DuoModalFusionModel(BaseModule):
         output_dict = {"logits": logits}
 
         if labels is not None:
-            print(
-                f"shape of logits: {logits.shape}, shape of labels: {labels.shape}, max of labels: {labels.max()}"
-            )
+            print(f"shape of logits: {logits.shape}")
+            print(f"shape of labels: {labels.shape},")
+            print(f"max of labels: {labels.max()}")
             loss = F.cross_entropy(logits, labels)
             output_dict["loss"] = loss
             output_dict["accuracy"] = (
