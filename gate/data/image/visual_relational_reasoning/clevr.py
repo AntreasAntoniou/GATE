@@ -9,6 +9,7 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 from rich import print
+from torch.utils.data.dataset import random_split
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
@@ -169,11 +170,21 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     if set_name not in ["train", "val", "test"]:
         raise KeyError(f"Invalid set name: {set_name}")
 
-    train_set = CLEVRClassificationDataset(root_dir=data_dir, split="train")
+    train_val_set = CLEVRClassificationDataset(
+        root_dir=data_dir, split="train"
+    )
+    dataset_length = len(train_val_set)
+    val_split = 0.1  # Fraction for the validation set (e.g., 10%)
 
-    val_set = CLEVRClassificationDataset(root_dir=data_dir, split="val")
+    # Calculate the number of samples for train and validation sets
+    val_length = int(dataset_length * val_split)
+    train_length = dataset_length - val_length
 
-    test_set = CLEVRClassificationDataset(root_dir=data_dir, split="test")
+    train_set, val_set = random_split(
+        dataset=train_val_set, lengths=[train_length, val_length]
+    )
+
+    test_set = CLEVRClassificationDataset(root_dir=data_dir, split="val")
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
