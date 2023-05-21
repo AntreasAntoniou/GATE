@@ -131,7 +131,7 @@ class CLEVRClassificationDataset(Dataset):
         if not img_name.is_file():
             raise FileNotFoundError(f"{img_name} does not exist.")
 
-        image = Image.open(img_name)
+        image = Image.open(img_name).convert("RGB")
         question = self.questions[idx]["question"]
         question_idx = self.questions[idx]["question_index"]
         image_idx = self.questions[idx]["image_index"]
