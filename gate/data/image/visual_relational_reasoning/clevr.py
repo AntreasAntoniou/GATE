@@ -136,7 +136,7 @@ class CLEVRClassificationDataset(Dataset):
         split = self.questions[idx]["split"]
         image_filename = self.questions[idx]["image_filename"]
         answer = self.questions[idx]["answer"]
-        labels = torch.tensor(self.answer_to_index[answer])
+        labels = self.answer_to_index[answer]
 
         if self.transform:
             image = self.transform(image)
