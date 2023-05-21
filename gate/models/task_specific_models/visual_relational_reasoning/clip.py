@@ -74,18 +74,16 @@ def build_model(
     transform_dict = backbone_model.get_transforms()
 
     def transform_wrapper(inputs: Union[Dict, Any]):
-        output_dict = {}
-
         if "image" in inputs:
-            output_dict["image"] = transform_dict["image"](inputs["image"])
+            inputs["image"] = transform_dict["image"](inputs["image"])
 
         if "text" in inputs:
-            output_dict["text"] = transform_dict["text"](inputs["text"])
+            inputs["text"] = transform_dict["text"](inputs["text"])
 
         if "labels" in inputs:
-            output_dict["labels"] = inputs["labels"]
+            inputs["labels"] = inputs["labels"]
 
-        return output_dict
+        return inputs
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
