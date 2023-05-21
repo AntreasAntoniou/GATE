@@ -140,9 +140,17 @@ class DuoModalFusionModel(BaseModule):
 
         modality_a_features = self.modality_a_linear(
             modality_a_features.view(-1, modality_a_features.shape[-1])
+        ).view(
+            modality_a_features.shape[0],
+            modality_a_features.shape[1],
+            self.projection_num_features,
         )
         modality_b_features = self.modality_b_linear(
             modality_b_features.view(-1, modality_b_features.shape[-1])
+        ).view(
+            modality_b_features.shape[0],
+            modality_b_features.shape[1],
+            self.projection_num_features,
         )
 
         # Fusion of the two modalities and post processing
@@ -155,11 +163,11 @@ class DuoModalFusionModel(BaseModule):
         logits = self.classifier(raw_features[:, 0, :])
         output_dict = {"logits": logits}
 
-        if labels is not None:
-            loss = F.cross_entropy(logits, labels)
-            output_dict["loss"] = loss
-            output_dict["accuracy"] = (
-                (logits.detach().argmax(dim=1) == labels).float().mean()
-            )
+        # if labels is not None:
+        #     loss = F.cross_entropy(logits, labels)
+        #     output_dict["loss"] = loss
+        #     output_dict["accuracy"] = (
+        #         (logits.detach().argmax(dim=1) == labels).float().mean()
+        #     )
 
         return output_dict
