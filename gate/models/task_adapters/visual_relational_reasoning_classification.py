@@ -91,6 +91,10 @@ class DuoModalFusionModel(BaseModule):
                     for key, n in num_classes.items()
                 }
             )
+        else:
+            raise ValueError(
+                f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
+            )
 
     def forward(
         self,
