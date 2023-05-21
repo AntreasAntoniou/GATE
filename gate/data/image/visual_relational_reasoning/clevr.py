@@ -196,7 +196,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     # print(list(inputs.keys()))
     # print(inputs["image"])
     return {
-        "image": inputs["image"],
+        "image": T.Resize(inputs["image"], size=(target_size, target_size)),
         "text": inputs["text"],
         "labels": torch.tensor(int(inputs["labels"])).long(),
     }
