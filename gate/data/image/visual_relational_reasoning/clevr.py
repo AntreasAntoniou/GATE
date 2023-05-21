@@ -58,15 +58,25 @@ class CLEVRClassificationDataset(Dataset):
         with questions_file.open() as f:
             self.questions = json.loads(f.read())["questions"]
 
-        # for idx, question in enumerate(self.questions):
-        #     print(question)
-        #     if idx == 10:
-        #         break
-
         # Set the image directory
         self.images_dir = (
             dataset_path_dict["dataset_download_path"] / "images" / split
         )
+
+        self.answer_to_index = self.create_answer_mapping()
+
+    def create_answer_mapping(self) -> dict:
+        """
+        Create a mapping from answers to indices.
+
+        Returns:
+            dict: A dictionary mapping answers to indices.
+        """
+        # Collect all unique answers
+        answers = set(question["answer"] for question in self.questions)
+
+        # Map each answer to a unique index
+        return {answer: idx for idx, answer in enumerate(sorted(answers))}
 
     def download_and_extract(self, dataset_path: Path) -> dict:
         """
@@ -124,6 +134,8 @@ class CLEVRClassificationDataset(Dataset):
         image_idx = self.questions[idx]["image_index"]
         split = self.questions[idx]["split"]
         image_filename = self.questions[idx]["image_filename"]
+        answer = self.questions[idx]["answer"]
+        labels = torch.tensor(self.answer_to_index[answer])
 
         if self.transform:
             image = self.transform(image)
@@ -135,6 +147,8 @@ class CLEVRClassificationDataset(Dataset):
             "image_idx": image_idx,
             "split": split,
             "image_filename": image_filename,
+            "answer": answer,
+            "labels": labels,
         }
 
 
@@ -171,6 +185,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     print(inputs["image"])
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
+        "text": inputs["text"],
         "labels": inputs["labels"],
     }
 
