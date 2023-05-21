@@ -2,11 +2,12 @@ import collections
 import json
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
+import PIL
 
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
-
+import numpy as np
 from gate.boilerplate.decorators import configurable
 
 
@@ -245,11 +246,27 @@ class GATEDataset(Dataset):
             item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
 
         item = self.task(item) if self.task is not None else item
-
-        for key, value in item.items():
+        dict_items = (
+            item
+            if isinstance(item, dict)
+            else {idx: item for idx, item in enumerate(item)}
+        )
+        for key, value in dict_items.items():
             if isinstance(value, torch.Tensor):
                 print(
                     f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
+                )
+            if isinstance(value, PIL.Image.Image):
+                # Convert the PIL Image to a NumPy array
+                numpy_img = np.array(value)
+
+                # Convert the NumPy array to a PyTorch tensor
+                tensor_img = torch.from_numpy(numpy_img)
+
+                # The tensor is in the shape of HxWxC and we need to change it to CxHxW
+                tensor_img = tensor_img.permute(2, 0, 1)
+                print(
+                    f"{key}: {tensor_img.shape}, mean: {tensor_img.float().mean()}, std: {tensor_img.float().std()}, min: {tensor_img.float().min()}, max: {tensor_img.float().max()}"
                 )
 
         item = self._apply_transforms(item)
