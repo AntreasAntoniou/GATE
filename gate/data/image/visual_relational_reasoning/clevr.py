@@ -56,6 +56,8 @@ size_dict = {
     "small": 1,
 }
 
+material_dict = {"metal": 0, "rubber": 1}
+
 yes_no_dict = {"no": 0, "yes": 1}
 
 
@@ -114,9 +116,6 @@ class CLEVRClassificationDataset(Dataset):
         self.images_dir = (
             dataset_path_dict["dataset_download_path"] / "images" / split
         )
-
-        self.answer_to_index = self.create_answer_mapping()
-        print(self.answer_to_index)
 
     def create_answer_mapping(self) -> dict:
         """
@@ -188,7 +187,7 @@ class CLEVRClassificationDataset(Dataset):
         split = self.questions[idx]["split"]
         image_filename = self.questions[idx]["image_filename"]
         answer = self.questions[idx]["answer"]
-
+        print(answer)
         if answer in yes_no_dict.keys():
             labels = torch.tensor(yes_no_dict[answer])
             answer_type = "yes_no"
@@ -204,6 +203,9 @@ class CLEVRClassificationDataset(Dataset):
         elif answer in size_dict.keys():
             labels = torch.tensor(size_dict[answer])
             answer_type = "size"
+        elif answer in material_dict.keys():
+            labels = torch.tensor(material_dict[answer])
+            answer_type = "material"
 
         if self.transform:
             image = self.transform(image)

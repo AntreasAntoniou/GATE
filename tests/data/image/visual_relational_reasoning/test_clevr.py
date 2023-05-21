@@ -36,4 +36,17 @@ def test_build_gate_dataset():
     assert gate_dataset["val"] is not None, "Validation set should not be None"
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
-    print(gate_dataset["train"][0])
+    for idx, item in enumerate(gate_dataset["train"]):
+        print(item)
+        if idx == 10:
+            break
+
+    for idx, item in enumerate(gate_dataset["val"]):
+        print(item)
+        if idx == 10:
+            break
+
+    for idx, item in enumerate(gate_dataset["test"]):
+        print(item)
+        if idx == 10:
+            break
