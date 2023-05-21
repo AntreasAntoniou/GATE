@@ -35,5 +35,3 @@ def test_build_gate_dataset():
     assert gate_dataset["train"] is not None, "Train set should not be None"
     assert gate_dataset["val"] is not None, "Validation set should not be None"
     assert gate_dataset["test"] is not None, "Test set should not be None"
-
-    print(gate_dataset["train"].__getitem__(0))

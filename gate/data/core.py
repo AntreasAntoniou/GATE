@@ -221,11 +221,8 @@ class GATEDataset(Dataset):
         if self.transforms is not None:
             if isinstance(self.transforms, list):
                 for transform in self.transforms:
-                    item = transform(item)
-                    # if hasattr(item["image"], "shape"):
-                    #     print(f"image shape: {item['image'].shape}")
-                    # else:
-                    #     print(f"image shape: {item['image']}")
+                    if transform is not None:
+                        item = transform(item)
             else:
                 item = self.transforms(item)
         return item
@@ -258,6 +255,7 @@ class GATEDataset(Dataset):
                 )
             if isinstance(value, PIL.Image.Image):
                 # Convert the PIL Image to a NumPy array
+
                 numpy_img = np.array(value)
 
                 # Convert the NumPy array to a PyTorch tensor
