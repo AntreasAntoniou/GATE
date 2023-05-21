@@ -64,7 +64,6 @@ class CLEVRClassificationDataset(Dataset):
         )
 
         self.answer_to_index = self.create_answer_mapping()
-        print(f"possible labels {len(self.answer_to_index)}")
 
     def create_answer_mapping(self) -> dict:
         """
@@ -197,7 +196,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes: int = 10,
+    num_classes: int = 28,
 ):
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
