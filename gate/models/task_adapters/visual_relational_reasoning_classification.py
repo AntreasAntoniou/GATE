@@ -198,24 +198,24 @@ class DuoModalFusionModel(BaseModule):
             output_dict = {}
             overall_loss = []
             overall_accuracy_top_1 = []
-            for answer_type in self.classifier.keys():
-                temp_features = features[answer_type == answer_type]
-                temp_logits = self.classifier[answer_type](temp_features)
-                temp_labels = labels[answer_type == answer_type]
+            for answer in self.classifier.keys():
+                temp_features = features[answer_type == answer]
+                temp_logits = self.classifier[answer](temp_features)
+                temp_labels = labels[answer_type == answer]
                 print(
                     f"temp_labels {temp_labels.shape}, temp_logits {temp_logits.shape}"
                 )
-                output_dict[f"loss_{answer_type}"] = F.cross_entropy(
+                output_dict[f"loss_{answer}"] = F.cross_entropy(
                     temp_logits, temp_labels
                 )
-                output_dict[f"accuracy_top_1_{answer_type}"] = accuracy_top_k(
+                output_dict[f"accuracy_top_1_{answer}"] = accuracy_top_k(
                     temp_logits, temp_labels, top_k=1
                 )
-                output_dict[f"logits_{answer_type}"] = temp_logits
+                output_dict[f"logits_{answer}"] = temp_logits
 
-                overall_loss.append(output_dict[f"loss_{answer_type}"])
+                overall_loss.append(output_dict[f"loss_{answer}"])
                 overall_accuracy_top_1.append(
-                    output_dict[f"accuracy_top_1_{answer_type}"]
+                    output_dict[f"accuracy_top_1_{answer}"]
                 )
             output_dict["loss"] = torch.mean(torch.stack(overall_loss))
             output_dict["accuracy_top_1"] = torch.mean(
