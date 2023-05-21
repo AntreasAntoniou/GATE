@@ -248,24 +248,24 @@ class GATEDataset(Dataset):
             if isinstance(item, dict)
             else {idx: item for idx, item in enumerate(item)}
         )
-        for key, value in dict_items.items():
-            if isinstance(value, torch.Tensor):
-                print(
-                    f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
-                )
-            if isinstance(value, PIL.Image.Image):
-                # Convert the PIL Image to a NumPy array
+        # for key, value in dict_items.items():
+        #     if isinstance(value, torch.Tensor):
+        #         print(
+        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
+        #         )
+        #     if isinstance(value, PIL.Image.Image):
+        #         # Convert the PIL Image to a NumPy array
 
-                numpy_img = np.array(value)
+        #         numpy_img = np.array(value)
 
-                # Convert the NumPy array to a PyTorch tensor
-                tensor_img = torch.from_numpy(numpy_img)
+        #         # Convert the NumPy array to a PyTorch tensor
+        #         tensor_img = torch.from_numpy(numpy_img)
 
-                # The tensor is in the shape of HxWxC and we need to change it to CxHxW
-                tensor_img = tensor_img.permute(2, 0, 1)
-                print(
-                    f"{key}: {tensor_img.shape}, mean: {tensor_img.float().mean()}, std: {tensor_img.float().std()}, min: {tensor_img.float().min()}, max: {tensor_img.float().max()}"
-                )
+        #         # The tensor is in the shape of HxWxC and we need to change it to CxHxW
+        #         tensor_img = tensor_img.permute(2, 0, 1)
+        #         print(
+        #             f"{key}: {tensor_img.shape}, mean: {tensor_img.float().mean()}, std: {tensor_img.float().std()}, min: {tensor_img.float().min()}, max: {tensor_img.float().max()}"
+        #         )
 
         item = self._apply_transforms(item)
 
@@ -275,11 +275,11 @@ class GATEDataset(Dataset):
             else item
         )
 
-        for key, value in item.items():
-            if isinstance(value, torch.Tensor):
-                print(
-                    f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
-                )
+        # for key, value in item.items():
+        #     if isinstance(value, torch.Tensor):
+        #         print(
+        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
+        #         )
 
         # Apply the task to the item if it exists
         return item
