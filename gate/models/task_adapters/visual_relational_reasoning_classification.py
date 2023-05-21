@@ -78,8 +78,6 @@ class DuoModalFusionModel(BaseModule):
         modality_a_features = None
         modality_b_features = None
         text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
-        print(text)
-        print(image)
 
         if image is not None:
             if self.modality_a_identifier == "image":
@@ -135,14 +133,10 @@ class DuoModalFusionModel(BaseModule):
         output_dict = {"logits": logits}
 
         if labels is not None:
-            print(f"shape of logits: {logits.shape}")
-            print(f"shape of labels: {labels.shape},")
-            print(labels)
-            print(f"max of labels: {labels.max()}")
             loss = F.cross_entropy(logits, labels)
             output_dict["loss"] = loss
-            # output_dict["accuracy"] = (
-            #     (logits.detach().argmax(dim=1) == labels).float().mean()
-            # )
+            output_dict["accuracy"] = (
+                (logits.detach().argmax(dim=1) == labels).float().mean()
+            )
 
         return output_dict
