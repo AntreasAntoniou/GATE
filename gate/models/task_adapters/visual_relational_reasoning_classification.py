@@ -8,6 +8,7 @@ from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.temporal_image_classification import (
     VariableSequenceTransformerEncoder,
 )
+from rich import print
 
 
 class SkipConnectionModule(nn.Module):
