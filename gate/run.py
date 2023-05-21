@@ -220,7 +220,13 @@ def run(cfg: Any) -> None:
     # Set the seed for reproducibility
     set_seed(seed=cfg.seed)
 
-    ckpt_dict = create_hf_model_repo_and_download_maybe(cfg)
+    ckpt_dict = create_hf_model_repo_and_download_maybe(
+        cfg=cfg,
+        hf_repo_path=cfg.hf_repo_path,
+        hf_cache_dir=cfg.hf_cache_dir,
+        resume_from_checkpoint=cfg.resume_from_checkpoint,
+        resume=cfg.resume,
+    )
     ckpt_path = ckpt_dict["root_filepath"] if ckpt_dict else None
 
     # Log checkpoint path
