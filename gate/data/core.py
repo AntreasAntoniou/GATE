@@ -142,6 +142,8 @@ def collate_fn_with_token_pad(data):
 
     def process_value(value):
         if isinstance(value[0], torch.Tensor):
+            if value[0].dim() == 0:
+                return torch.stack(value)
             # print(f"tensor: {value}")
             return (
                 pad_and_stack_tensors(value)
