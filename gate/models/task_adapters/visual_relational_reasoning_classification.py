@@ -138,8 +138,8 @@ class DuoModalFusionModel(BaseModule):
             print(f"max of labels: {labels.max()}")
             loss = F.cross_entropy(logits, labels)
             output_dict["loss"] = loss
-            output_dict["accuracy"] = (
-                (logits.detach().argmax(dim=1) == labels).float().mean()
-            )
+            # output_dict["accuracy"] = (
+            #     (logits.detach().argmax(dim=1) == labels).float().mean()
+            # )
 
         return output_dict
