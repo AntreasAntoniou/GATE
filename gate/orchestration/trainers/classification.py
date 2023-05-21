@@ -37,22 +37,24 @@ class ClassificationTrainer(Trainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
+        print(f"batch: {list(batch.keys())}")
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        print(f"output_dict: {list(output_dict.keys())}")
 
         if "loss" not in output_dict:
             loss = F.cross_entropy(
-                output_dict[self.target_modality][self.source_modality],
+                output_dict["logits"],
                 batch["labels"],
             )
             accuracy = accuracy_top_k(
-                logits=output_dict[self.target_modality][self.source_modality],
+                logits=output_dict["logits"],
                 labels=batch["labels"],
                 k=1,
             )
             accuracy_top_5 = accuracy_top_k(
-                logits=output_dict[self.target_modality][self.source_modality],
+                logits=output_dict["logits"],
                 labels=batch["labels"],
                 k=5,
             )
