@@ -44,16 +44,16 @@ class ClassificationEvaluator(Evaluator):
         ]
         if "loss" not in output_dict:
             loss = F.cross_entropy(
-                output_dict[self.target_modality][self.source_modality],
+                output_dict,
                 batch["labels"],
             )
             accuracy = accuracy_top_k(
-                logits=output_dict[self.target_modality][self.source_modality],
+                logits=output_dict,
                 labels=batch["labels"],
                 k=1,
             )
             accuracy_top_5 = accuracy_top_k(
-                logits=output_dict[self.target_modality][self.source_modality],
+                logits=output_dict,
                 labels=batch["labels"],
                 k=5,
             )
