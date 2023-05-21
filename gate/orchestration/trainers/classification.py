@@ -99,6 +99,7 @@ class ClassificationTrainer(Trainer):
         )
 
         self.optimizer.step()
+        self.scheduler.step()
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
@@ -311,6 +312,7 @@ class MultiClassClassificationTrainer(Trainer):
         )
 
         self.optimizer.step()
+        self.scheduler.step()
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]

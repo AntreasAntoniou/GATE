@@ -1,92 +1,181 @@
+import pathlib
 from typing import Any, Dict, Optional
 
 import accelerate
+from hydra_zen import instantiate
+import neptune
 import torch
 import torch.nn as nn
+from torch.utils.data import Subset
+import wandb
 
 from gate.boilerplate.utils import get_logger
+from gate.data.core import GATEDataset
+from gate.models.core import GATEModel
 
 logger = get_logger(__name__)
 
 
-def set_batch_size(batch: Dict[str, Any], batch_size: int) -> Dict[str, Any]:
+def setup(ckpt_path: Optional[str], cfg: Any) -> tuple:
     """
-    Sets the batch size for a given input batch.
+    Function to set up and return the global step and experiment tracker
 
     Args:
-        batch (Dict[str, Any]): The input batch.
-        batch_size (int): The desired batch size.
+        ckpt_path (str): The path to the checkpoint file
+        cfg (Any): The configuration parameters
 
     Returns:
-        Dict[str, Any]: The input batch with the specified batch size.
+        tuple: global step and experiment tracker
     """
-    return {
-        key: value[0]
-        .unsqueeze(0)
-        .repeat([batch_size, *[1] * (value.dim() - 1)])
-        if isinstance(value, torch.Tensor)
-        else [value[0]] * batch_size
-        for key, value in batch.items()
-    }
-
-
-def get_max_supported_batch_size(
-    model: nn.Module,
-    batch: Dict[str, Any],
-    accelerator: Optional[accelerate.Accelerator] = None,
-    train_mode: bool = False,
-) -> int:
-    """
-    Finds the maximum supported batch size for the given model and batch.
-
-    Args:
-        model (nn.Module): The model to test.
-        batch (Dict[str, Any]): The input batch.
-        accelerator (Optional[accelerate.Accelerator], optional):
-        The accelerator for model and batch preparation. Defaults to None.
-        train_mode (bool, optional): If True, use training mode.
-        Defaults to False.
-
-    Returns:
-        int: The maximum supported batch size.
-    """
-    # Create accelerator if not provided 🚀
-    if accelerator is None:
-        accelerator = accelerate.Accelerator()
-
-    # Set model mode based on train_mode flag 🚦
-    if train_mode:
-        model.train()
+    if ckpt_path is not None and cfg.resume is True:
+        trainer_state = torch.load(
+            pathlib.Path(ckpt_path) / "trainer_state.pt"
+        )
+        global_step = trainer_state["global_step"]
+        experiment_tracker = neptune.init_run(
+            source_files=["gate/*.py", "kubernetes/*.py"]
+        )
     else:
-        model.eval()
+        global_step = 0
+        experiment_tracker = neptune.init_run(
+            source_files=["gate/*.py", "kubernetes/*.py"]
+        )
 
-    batch_size = 16
-    crashed = False
+    return global_step, experiment_tracker
 
-    for key, value in batch.items():
-        print(key, value.shape if isinstance(value, torch.Tensor) else value)
 
-    # Iterate and test different batch sizes until crash 🛠️
-    while not crashed:
-        logger.debug(f"Trying batch size {batch_size}... 👾")
-        try:
-            if batch is not None:
-                cur_batch = set_batch_size(batch, batch_size)
+def log_checkpoint_path(ckpt_path: Optional[str], cfg: Any) -> None:
+    """
+    Log the checkpoint path.
 
-                # Perform dummy forward and backward passes with the current batch size 📊
-                if not train_mode:
-                    with torch.no_grad():
-                        dummy_fprop_bprop(model, cur_batch, accelerator)
-                else:
-                    dummy_fprop_bprop(
-                        model, cur_batch, accelerator, do_bprop=True
-                    )
-        except Exception as e:
-            crashed = True
-            batch_size = batch_size // 2
-            logger.debug(f"Batch size {batch_size} crashed with error: {e} 🤯")
-            logger.info(f"Max supported batch size: {batch_size} 🎉")
-            return batch_size
+    Args:
+        ckpt_path (str): The path to the checkpoint file
+        cfg (Any): The configuration parameters
+    """
+    if ckpt_path is not None:
+        logger.info(
+            f"ckpt_path: {ckpt_path}, exists: {ckpt_path.exists()}, "
+            f"resume: {cfg.resume}"
+        )
+    else:
+        logger.info(f"ckpt_path: {ckpt_path}, resume: {cfg.resume},")
 
-        # Double the batch size for the next iteration 📈
-        batch_size = batch_size * 2
+
+def log_experiment_parameters(
+    experiment_tracker: Any, config_dict: dict, global_step: int
+) -> None:
+    """
+    Log parameters to the experiment tracker and Weights & Biases.
+
+    Args:
+        experiment_tracker (Any): The experiment tracker
+        config_dict (dict): The configuration dictionary
+        global_step (int): The global step
+    """
+    from neptune.utils import stringify_unsupported
+
+    experiment_tracker["config"] = stringify_unsupported(config_dict)
+    experiment_tracker["init_global_step"] = global_step
+
+
+def log_wandb_parameters(config_dict: dict, global_step: int) -> None:
+    """
+    Log parameters to Weights & Biases.
+
+    Args:
+        config_dict (dict): The configuration dictionary
+        global_step (int): The global step
+    """
+    wandb.config.update(config_dict)
+    wandb.config.update({"init_global_step": global_step})
+
+
+def get_datasets(dataset: GATEDataset, global_step: int):
+    """
+    Get training, validation, and test datasets.
+
+    Args:
+        dataset (GATEDataset): The main dataset.
+        global_step (int): The global training step.
+
+    Returns:
+        tuple: Training, validation, and test datasets.
+    """
+    train_dataset = dataset["train"]
+    val_dataset = dataset["val"]
+    test_dataset = dataset["test"]
+
+    if global_step > 0:
+        train_dataset = Subset(
+            train_dataset, range(global_step, len(train_dataset))
+        )
+
+    return train_dataset, val_dataset, test_dataset
+
+
+def instantiate_dataloader(
+    cfg: Any, dataset: GATEDataset, batch_size: int, shuffle: bool
+):
+    """
+    Instantiate a data loader.
+
+    Args:
+        cfg (Any): The configuration parameters.
+        dataset (GATEDataset): The dataset.
+        batch_size (int): The batch size.
+        shuffle (bool): Whether to shuffle the data.
+
+    Returns:
+        DataLoader: The instantiated data loader.
+    """
+    return instantiate(
+        cfg.dataloader, dataset=dataset, batch_size=batch_size, shuffle=shuffle
+    )
+
+
+def count_model_parameters(model: GATEModel):
+    """
+    Count the number of parameters in a model.
+
+    Args:
+        model (GATEModel): The model.
+
+    Returns:
+        int: The number of parameters.
+    """
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def instantiate_optimizer(cfg: Any, model: GATEModel):
+    """
+    Instantiate an optimizer.
+
+    Args:
+        cfg (Any): The configuration parameters.
+        model (GATEModel): The model.
+
+    Returns:
+        Optimizer: The instantiated optimizer.
+    """
+    return instantiate(
+        cfg.optimizer, params=model.parameters(), _partial_=False
+    )
+
+
+def instantiate_scheduler(cfg: Any, optimizer):
+    """
+    Instantiate a scheduler.
+
+    Args:
+        cfg (Any): The configuration parameters.
+        optimizer (Optimizer): The optimizer.
+
+    Returns:
+        _LRScheduler: The instantiated scheduler.
+    """
+    return instantiate(
+        cfg.scheduler,
+        optimizer=optimizer,
+        t_initial=cfg.learner.train_iters,
+        _partial_=False,
+    )
