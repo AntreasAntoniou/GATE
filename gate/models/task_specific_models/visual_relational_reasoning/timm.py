@@ -37,7 +37,7 @@ def build_model(
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
     num_projection_features: Optional[int] = None,
-    dropout_fusion_prob: float = 0.1,
+    dropout_fusion_prob: float = 0.0,
     num_classes: int = 10,
 ) -> ModelAndTransform:
     """
@@ -111,7 +111,7 @@ def build_gate_model(
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
     num_projection_features: Optional[int] = None,
-    dropout_fusion_prob: float = 0.1,
+    dropout_fusion_prob: float = 0.0,
     num_classes: int = 10,
 ):
     model_and_transform = build_model(
