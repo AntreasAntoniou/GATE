@@ -172,6 +172,8 @@ size_dict = {
 
 yes_no_dict = {"no": 0, "yes": 1}
 
+material_dict = {"metal": 0, "rubber": 1}
+
 
 @configurable(
     group="model",
@@ -190,6 +192,7 @@ def build_gate_model(
         "count": len(count_dict),
         "size": len(size_dict),
         "yes_no": len(yes_no_dict),
+        "material": len(material_dict),
     },
 ):
     model_and_transform = build_model(
