@@ -5,6 +5,8 @@ import numpy as np
 
 from datasets import load_dataset
 import torch
+import torchvision.transforms as T
+
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
@@ -19,7 +21,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     # print(list(inputs.keys()))
     # print(inputs["label"])
     return {
-        "image": inputs["image"],
+        "image": T.Resize(inputs["image"], size=(target_size, target_size)),
         "text": inputs["question"],
         "labels": torch.tensor(int(inputs["label"])).long(),
     }
