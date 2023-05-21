@@ -18,7 +18,8 @@ def transform_wrapper(inputs: Dict, target_size=224):
     print(list(inputs.keys()))
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
-        "labels": inputs["labels"],
+        "question": inputs["question"],
+        "labels": inputs["label"],
     }
 
 
