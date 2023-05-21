@@ -102,7 +102,95 @@ def build_gate_model(
     modality_b_identifier: str = "text",
     num_projection_features: int = 512,
     dropout_fusion_prob: float = 0.0,
-    num_classes: int = 10,
+    num_classes: Dict = 10,
+):
+    model_and_transform = build_model(
+        model_name=model_name,
+        pretrained=pretrained,
+        modality_a_identifier=modality_a_identifier,
+        modality_b_identifier=modality_b_identifier,
+        num_projection_features=num_projection_features,
+        dropout_fusion_prob=dropout_fusion_prob,
+        num_classes=num_classes,
+    )
+
+    model_modality_config_image_classification = TargetModalityConfig(
+        image_text=[SourceModalityConfig(image=True, text=True)]
+    )
+
+    model_key_remapper_dict_config = {
+        "image": "image",
+        "text": "text",
+    }
+
+    gate_model = GATEModel(
+        config=model_modality_config_image_classification,
+        model=model_and_transform.model,
+        key_remapper_dict=model_key_remapper_dict_config,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
+
+
+colour_dict = {
+    "blue": 0,
+    "brown": 1,
+    "cyan": 2,
+    "gray": 3,
+    "green": 4,
+    "purple": 5,
+    "red": 6,
+    "yellow": 7,
+}
+
+shape_dict = {
+    "cube": 0,
+    "cylinder": 1,
+    "sphere": 2,
+}
+
+count_dict = {
+    "0": 0,
+    "1": 1,
+    "10": 2,
+    "2": 3,
+    "3": 4,
+    "4": 5,
+    "5": 6,
+    "6": 7,
+    "7": 8,
+    "8": 9,
+    "9": 10,
+}
+
+size_dict = {
+    "large": 0,
+    "small": 1,
+}
+
+yes_no_dict = {"no": 0, "yes": 1}
+
+
+@configurable(
+    group="model",
+    name="clip-relational-reasoning-multi-task",
+)
+def build_gate_model(
+    model_name: str = "openai/clip-vit-base-patch16",
+    pretrained: bool = True,
+    modality_a_identifier: str = "image",
+    modality_b_identifier: str = "text",
+    num_projection_features: int = 512,
+    dropout_fusion_prob: float = 0.0,
+    num_classes: Dict = {
+        "colour": len(colour_dict),
+        "shape": len(shape_dict),
+        "count": len(count_dict),
+        "size": len(size_dict),
+        "yes_no": len(yes_no_dict),
+    },
 ):
     model_and_transform = build_model(
         model_name=model_name,

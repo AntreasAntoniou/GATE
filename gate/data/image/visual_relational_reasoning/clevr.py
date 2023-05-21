@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import os
 from typing import Any, Callable, Dict, Optional, Tuple, Union
+import datasets
 import numpy as np
 import orjson as json
 from pathlib import Path
@@ -18,6 +19,44 @@ from gate.data.transforms.tiny_image_transforms import pad_image
 import torchvision.transforms as T
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
+
+colour_dict = {
+    "blue": 0,
+    "brown": 1,
+    "cyan": 2,
+    "gray": 3,
+    "green": 4,
+    "purple": 5,
+    "red": 6,
+    "yellow": 7,
+}
+
+shape_dict = {
+    "cube": 0,
+    "cylinder": 1,
+    "sphere": 2,
+}
+
+count_dict = {
+    "0": 0,
+    "1": 1,
+    "10": 2,
+    "2": 3,
+    "3": 4,
+    "4": 5,
+    "5": 6,
+    "6": 7,
+    "7": 8,
+    "8": 9,
+    "9": 10,
+}
+
+size_dict = {
+    "large": 0,
+    "small": 1,
+}
+
+yes_no_dict = {"no": 0, "yes": 1}
 
 
 class CLEVRClassificationDataset(Dataset):
@@ -45,20 +84,31 @@ class CLEVRClassificationDataset(Dataset):
         dataset_path_dict["dataset_download_path"] = (
             dataset_path_dict["dataset_download_path"] / "CLEVR_v1.0"
         )
+        self.hf_dataset_dir = (
+            dataset_path_dict["dataset_download_path"]
+            / "huggingface_dataset"
+            / split
+        )
 
         self.transform = transform
         self.split = split
 
-        # Load the questions
-        questions_file = (
-            dataset_path_dict["dataset_download_path"]
-            / "questions"
-            / f"CLEVR_{split}_questions.json"
-        )
-        if not questions_file.is_file():
-            raise FileNotFoundError(f"{questions_file} does not exist.")
-        with questions_file.open() as f:
-            self.questions = json.loads(f.read())["questions"]
+        if not self.hf_dataset_dir.exists():
+            # Load the questions
+            questions_file = (
+                dataset_path_dict["dataset_download_path"]
+                / "questions"
+                / f"CLEVR_{split}_questions.json"
+            )
+            if not questions_file.is_file():
+                raise FileNotFoundError(f"{questions_file} does not exist.")
+            with questions_file.open() as f:
+                questions = json.loads(f.read())["questions"]
+
+            self.questions = datasets.Dataset.from_list(questions)
+            self.questions.save_to_disk(self.hf_dataset_dir)
+        else:
+            self.questions = datasets.load_from_disk(self.hf_dataset_dir)
 
         # Set the image directory
         self.images_dir = (
@@ -138,7 +188,22 @@ class CLEVRClassificationDataset(Dataset):
         split = self.questions[idx]["split"]
         image_filename = self.questions[idx]["image_filename"]
         answer = self.questions[idx]["answer"]
-        labels = int(self.answer_to_index[answer])
+
+        if answer in yes_no_dict.keys():
+            labels = torch.tensor(yes_no_dict[answer])
+            answer_type = "yes_no"
+        elif answer in colour_dict.keys():
+            labels = torch.tensor(colour_dict[answer])
+            answer_type = "colour"
+        elif answer in shape_dict.keys():
+            labels = torch.tensor(shape_dict[answer])
+            answer_type = "shape"
+        elif answer in count_dict.keys():
+            labels = torch.tensor(count_dict[answer])
+            answer_type = "count"
+        elif answer in size_dict.keys():
+            labels = torch.tensor(size_dict[answer])
+            answer_type = "size"
 
         if self.transform:
             image = self.transform(image)
@@ -147,10 +212,14 @@ class CLEVRClassificationDataset(Dataset):
             "image": image,
             "text": question,
             "question_idx": question_idx,
+            "question_family_idx": self.questions[idx][
+                "question_family_index"
+            ],
             "image_idx": image_idx,
             "split": split,
             "image_filename": image_filename,
             "answer": answer,
+            "answer_type": answer_type,
             "labels": labels,
         }
 
@@ -194,13 +263,12 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
 
 def transform_wrapper(inputs: Dict, target_size=224):
-    # print(list(inputs.keys()))
-    # print(inputs["image"])
-    # T.Resize(size=(target_size, target_size))
     return {
         "image": T.Resize(size=(target_size, target_size))(inputs["image"]),
         "text": inputs["text"],
         "labels": torch.tensor(int(inputs["labels"])).long(),
+        "answer_type": inputs["answer_type"],
+        "question_family_idx": inputs["question_family_idx"],
     }
 
 

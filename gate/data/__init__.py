@@ -19,7 +19,7 @@ def download_kaggle_dataset(
     if (
         pathlib.Path(dataset_download_path).exists()
         and count_files_recursive(dataset_download_path)
-        == file_count_after_download_and_extract
+        >= file_count_after_download_and_extract
     ):
         logger.info(f"Dataset directory {target_dir_path} already exists.")
         return {"dataset_download_path": dataset_download_path}

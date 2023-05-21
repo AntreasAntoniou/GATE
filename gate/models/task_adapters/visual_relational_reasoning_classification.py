@@ -1,8 +1,9 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from gate.metrics.core import accuracy_top_k
 
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.temporal_image_classification import (
@@ -45,7 +46,7 @@ class DuoModalFusionModel(BaseModule):
         modality_b_num_features: int,
         projection_num_features: int = 512,
         dropout_fusion_prob: float = 0.0,
-        num_classes: int = 10,
+        num_classes: Union[List[int], int, Dict[str, int]] = 10,
     ):
         super().__init__()
         self.modality_a_model = modality_a_model
@@ -77,7 +78,19 @@ class DuoModalFusionModel(BaseModule):
             dropout=0.0,
             num_layers=4,
         )
-        self.classifier = nn.Linear(self.fusion_in_features, num_classes)
+        if isinstance(num_classes, int):
+            self.classifier = nn.Linear(self.fusion_in_features, num_classes)
+        elif isinstance(num_classes, list):
+            self.classifier = nn.ModuleList(
+                [nn.Linear(self.fusion_in_features, n) for n in num_classes]
+            )
+        elif isinstance(num_classes, dict):
+            self.classifier = nn.ModuleDict(
+                {
+                    key: nn.Linear(self.fusion_in_features, n)
+                    for key, n in num_classes.items()
+                }
+            )
 
     def forward(
         self,
@@ -86,6 +99,8 @@ class DuoModalFusionModel(BaseModule):
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
+        answer_type: Optional[str] = None,
+        question_family_idx: Optional[int] = None,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
         modalities = [image, text, audio, video]
@@ -167,7 +182,33 @@ class DuoModalFusionModel(BaseModule):
         )
 
         features = self.fusion_post_processing(fused_features)["features"]
-        logits = self.classifier(features)
-        output_dict = {"logits": logits}
+        if isinstance(self.classifier, nn.ModuleDict):
+            output_dict = {}
+            overall_loss = []
+            overall_accuracy_top_1 = []
+            for answer_type in self.classifier.keys():
+                temp_features = features[answer_type == answer_type]
+                temp_logits = self.classifier[answer_type](temp_features)
+                temp_labels = labels[answer_type == answer_type]
+                output_dict[f"loss_{answer_type}"] = F.cross_entropy(
+                    temp_logits, temp_labels
+                )
+                output_dict[f"accuracy_top_1_{answer_type}"] = accuracy_top_k(
+                    temp_logits, temp_labels, top_k=1
+                )
+                output_dict[f"logits_{answer_type}"] = temp_logits
+
+                overall_loss.append(output_dict[f"loss_{answer_type}"])
+                overall_accuracy_top_1.append(
+                    output_dict[f"accuracy_top_1_{answer_type}"]
+                )
+            output_dict["loss"] = torch.mean(torch.stack(overall_loss))
+            output_dict["accuracy_top_1"] = torch.mean(
+                torch.stack(overall_accuracy_top_1)
+            )
+
+        else:
+            logits = self.classifier(features)
+            output_dict = {"logits": logits}
 
         return output_dict
