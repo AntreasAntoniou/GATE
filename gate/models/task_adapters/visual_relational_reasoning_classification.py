@@ -8,6 +8,19 @@ import torch.nn.functional as F
 from gate.models.task_adapters import BaseModule
 
 
+class SkipConnectionModule(nn.Module):
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.module = module
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.module(x)
+
+        if out.shape[1] != x.shape[1]:
+            out = F.pad(out, (0, 0, 0, 0, 0, out.shape[1] - x.shape[1]))
+        return out + x
+
+
 class DuoModalFusionModel(BaseModule):
     def __init__(
         self,
@@ -47,11 +60,17 @@ class DuoModalFusionModel(BaseModule):
         )
         # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
         self.fusion_post_processing = nn.Sequential(
-            nn.Linear(self.fusion_in_features, 2048),
+            SkipConnectionModule(
+                nn.Linear(self.fusion_in_features, 2048),
+            ),
             nn.GELU(),
-            nn.Linear(2048, 2048),
+            SkipConnectionModule(
+                nn.Linear(2048, 2048),
+            ),
             nn.GELU(),
-            nn.Linear(2048, 2048),
+            SkipConnectionModule(
+                nn.Linear(2048, 2048),
+            ),
             nn.GELU(),
             nn.Linear(2048, num_classes),
         )
