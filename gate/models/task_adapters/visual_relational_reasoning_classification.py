@@ -16,8 +16,18 @@ class SkipConnectionModule(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.module(x)
 
-        if out.shape[1] != x.shape[1]:
-            out = F.pad(out, (0, 0, 0, 0, 0, out.shape[1] - x.shape[1]))
+        b, f = x.shape
+        _, k = out.shape
+
+        # calculate the padding size
+        padding_size = k - f
+
+        # use the F.pad function
+        # as we want to pad the last dimension, we provide the padding size as (0, padding_size)
+        # (each pair in the padding argument pads the corresponding dimension in the input tensor)
+        if padding_size > 0:
+            x = F.pad(x, (0, padding_size))
+
         return out + x
 
 
