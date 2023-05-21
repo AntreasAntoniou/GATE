@@ -123,6 +123,7 @@ class VQATrainer(Trainer):
         overall_output_dict |= step_output.output_metrics_dict
 
         self.optimizer.step()
+        self.scheduler.step()
 
         overall_output_dict["lr"] = self.optimizer.param_groups[0]["lr"]
 
