@@ -1,4 +1,5 @@
 from typing import Dict, List, Optional, Union
+from omegaconf import DictConfig
 
 import torch
 import torch.nn as nn
@@ -85,6 +86,13 @@ class DuoModalFusionModel(BaseModule):
                 [nn.Linear(self.fusion_in_features, n) for n in num_classes]
             )
         elif isinstance(num_classes, dict):
+            self.classifier = nn.ModuleDict(
+                {
+                    key: nn.Linear(self.fusion_in_features, n)
+                    for key, n in num_classes.items()
+                }
+            )
+        elif isinstance(num_classes, DictConfig):
             self.classifier = nn.ModuleDict(
                 {
                     key: nn.Linear(self.fusion_in_features, n)
