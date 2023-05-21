@@ -192,8 +192,8 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
 
 def transform_wrapper(inputs: Dict, target_size=224):
-    print(list(inputs.keys()))
-    print(inputs["image"])
+    # print(list(inputs.keys()))
+    # print(inputs["image"])
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
         "text": inputs["text"],
