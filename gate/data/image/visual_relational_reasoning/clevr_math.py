@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -9,8 +9,16 @@ from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
+from gate.data.transforms.tiny_image_transforms import pad_image
 
 logger = get_logger(name=__name__, set_rich=True)
+
+
+def transform_wrapper(inputs: Dict, target_size=224):
+    return {
+        "image": pad_image(inputs["image"], target_size=target_size),
+        "labels": inputs["labels"],
+    }
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -73,7 +81,7 @@ def build_gate_dataset(
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
@@ -81,7 +89,7 @@ def build_gate_dataset(
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
@@ -89,7 +97,7 @@ def build_gate_dataset(
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
