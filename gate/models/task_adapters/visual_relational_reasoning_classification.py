@@ -42,7 +42,7 @@ class DuoModalFusionModel(BaseModule):
         modality_b_identifier: str,
         modality_a_num_features: int,
         modality_b_num_features: int,
-        projection_num_features: Optional[int] = None,
+        projection_num_features: int = 512,
         dropout_fusion_prob: float = 0.0,
         num_classes: int = 10,
     ):

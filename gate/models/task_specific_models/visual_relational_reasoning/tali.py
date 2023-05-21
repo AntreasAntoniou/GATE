@@ -26,7 +26,7 @@ def build_model(
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
-    num_projection_features: Optional[int] = None,
+    num_projection_features: int = 512,
     dropout_fusion_prob: float = 0.0,
     num_classes: int = 10,
 ) -> ModelAndTransform:
@@ -108,7 +108,7 @@ def build_gate_model(
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
-    num_projection_features: Optional[int] = None,
+    num_projection_features: int = 512,
     dropout_fusion_prob: float = 0.0,
     num_classes: int = 10,
 ):
