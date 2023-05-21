@@ -159,8 +159,8 @@ class DuoModalFusionModel(BaseModule):
             [modality_a_features, modality_b_features], dim=1
         )
 
-        raw_features = self.fusion_post_processing(fused_features)
-        logits = self.classifier(raw_features[:, 0, :])
+        features = self.fusion_post_processing(fused_features)["features"]
+        logits = self.classifier(features)
         output_dict = {"logits": logits}
 
         # if labels is not None:
