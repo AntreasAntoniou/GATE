@@ -77,6 +77,8 @@ class DuoModalFusionModel(BaseModule):
 
         modality_a_features = None
         modality_b_features = None
+        print(text)
+        print(image)
 
         if image is not None:
             if self.modality_a_identifier == "image":
