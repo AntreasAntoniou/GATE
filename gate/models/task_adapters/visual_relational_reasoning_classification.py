@@ -134,6 +134,7 @@ class DuoModalFusionModel(BaseModule):
         if labels is not None:
             print(f"shape of logits: {logits.shape}")
             print(f"shape of labels: {labels.shape},")
+            print(labels)
             print(f"max of labels: {labels.max()}")
             loss = F.cross_entropy(logits, labels)
             output_dict["loss"] = loss
