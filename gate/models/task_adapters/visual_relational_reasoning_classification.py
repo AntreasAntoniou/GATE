@@ -163,11 +163,4 @@ class DuoModalFusionModel(BaseModule):
         logits = self.classifier(features)
         output_dict = {"logits": logits}
 
-        # if labels is not None:
-        #     loss = F.cross_entropy(logits, labels)
-        #     output_dict["loss"] = loss
-        #     output_dict["accuracy"] = (
-        #         (logits.detach().argmax(dim=1) == labels).float().mean()
-        #     )
-
         return output_dict
