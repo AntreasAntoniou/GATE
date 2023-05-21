@@ -197,7 +197,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
         "text": inputs["text"],
-        "labels": np.array(inputs["labels"]),
+        "labels": int(inputs["labels"]),
     }
 
 
