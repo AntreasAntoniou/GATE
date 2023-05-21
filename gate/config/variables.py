@@ -36,6 +36,7 @@ DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
 GPU_MEMORY = 24  # in GB
 
 ## Define yaml variable access codes here
+HYDRATED_EXPERIMENT_NAME = "${exp_name}"
 HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
 HYDRATED_NUM_CLASSES = "${dataset.num_classes}"

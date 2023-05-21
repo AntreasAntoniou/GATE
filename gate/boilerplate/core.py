@@ -14,9 +14,9 @@ from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name, get_logger
 from gate.config.variables import (
-    CURRENT_EXPERIMENT_DIR,
+    HYDRATED_CURRENT_EXPERIMENT_DIR,
     DUMMY_BATCH_MODE,
-    EXPERIMENT_NAME,
+    HYDRATED_EXPERIMENT_NAME,
     HYDRATED_HF_CACHE_DIR,
     HYDRATED_HF_REPO_PATH,
     HYDRATED_TRAIN_ITERS,
@@ -42,8 +42,8 @@ accelerate_logger = get_logger("accelerate", logging_level="ERROR")
     name="default",
     defaults=dict(
         model=None,
-        experiment_name=EXPERIMENT_NAME,
-        experiment_dir=CURRENT_EXPERIMENT_DIR,
+        experiment_name=HYDRATED_EXPERIMENT_NAME,
+        root_dir=HYDRATED_CURRENT_EXPERIMENT_DIR,
         resume=RESUME,
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
@@ -60,7 +60,7 @@ class Learner(nn.Module):
     def __init__(
         self,
         experiment_name: str,
-        experiment_dir: Union[str, Path],
+        root_dir: Union[str, Path],
         model: torch.nn.Module,
         resume: Union[bool, str] = False,
         evaluate_every_n_steps: int = None,
@@ -100,12 +100,10 @@ class Learner(nn.Module):
         """
         super().__init__()
         self.experiment_name = experiment_name
-        self.experiment_dir = (
-            experiment_dir
-            if isinstance(experiment_dir, Path)
-            else Path(experiment_dir)
+        self.root_dir = (
+            root_dir if isinstance(root_dir, Path) else Path(root_dir)
         )
-        self.experiment_dir = self.experiment_dir / experiment_name
+        self.experiment_dir = self.root_dir / experiment_name
         self.hf_cache_dir = hf_cache_dir
         self.hf_repo_path = hf_repo_path
         self.background_threads = []
@@ -719,7 +717,7 @@ if __name__ == "__main__":
 
     experiment = Learner(
         experiment_name="debug_checkpointing",
-        experiment_dir="experiments/debug_checkpointing",
+        root_dir="experiments/debug_checkpointing",
         model=bean_resnet,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
