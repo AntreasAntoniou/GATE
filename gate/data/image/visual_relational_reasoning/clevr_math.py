@@ -21,7 +21,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
         "text": inputs["question"],
-        "labels": torch.tensor(int(inputs["label"])),
+        "labels": torch.tensor(int(inputs["label"])).long(),
     }
 
 
@@ -78,7 +78,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=10,
+    num_classes=11,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
