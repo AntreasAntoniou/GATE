@@ -17,6 +17,7 @@ logger = get_logger(name=__name__, set_rich=True)
 
 def transform_wrapper(inputs: Dict, target_size=224):
     # print(list(inputs.keys()))
+    print(inputs["label"])
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
         "text": inputs["question"],
