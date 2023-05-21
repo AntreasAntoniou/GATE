@@ -52,7 +52,6 @@ class DuoModalFusionModel(BaseModule):
             nn.Dropout(dropout_fusion_prob),
             nn.Linear(512, 512),
             nn.GELU(),
-            nn.Dropout(dropout_fusion_prob),
             nn.Linear(512, num_classes),
         )
 
