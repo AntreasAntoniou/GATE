@@ -213,6 +213,10 @@ def run(cfg: Any) -> None:
     # Pretty print the configuration
     print(pretty_config(cfg, resolve=True))
 
+    os.environ["HF_REPO_PATH"] = cfg.hf_repo_path
+    os.environ["HF_CACHE_DIR"] = cfg.hf_cache_dir
+    os.environ["CURRENT_EXPERIMENT_DIR"] = cfg.current_experiment_dir
+
     # Set the seed for reproducibility
     set_seed(seed=cfg.seed)
 

@@ -49,7 +49,7 @@ hydra_logger = get_logger("hydra")
 
 
 @dataclass
-class Any:
+class Config:
     """
     A dataclass for storing the base configuration for the application.
     🛠 Contains all necessary configurations for model, dataset, dataloader,
@@ -208,7 +208,7 @@ def collect_config_store():
     # 🌐 Hydra Zen global configs
     zen_config = []
 
-    for value in Any.__dataclass_fields__.values():
+    for value in Config.__dataclass_fields__.values():
         item = (
             ZenField(name=value.name, hint=value.type, default=value.default)
             if value.default is not MISSING

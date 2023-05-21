@@ -117,6 +117,7 @@ class Learner(nn.Module):
 
         if not self.checkpoints_dir.exists():
             self.checkpoints_dir.mkdir(parents=True)
+
         self.model = model
         self.evaluate_every_n_steps = evaluate_every_n_steps
         self.checkpoint_every_n_steps = checkpoint_every_n_steps or 99999999999
