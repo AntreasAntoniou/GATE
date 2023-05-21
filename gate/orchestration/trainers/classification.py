@@ -37,7 +37,11 @@ class ClassificationTrainer(Trainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
-        print(f"batch: {list(batch.keys())}")
+        for key, value in batch.items():
+            if isinstance(value, torch.Tensor):
+                print(f"{key}: {value.shape}")
+            else:
+                print(f"{key}: {value}")
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]

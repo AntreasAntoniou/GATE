@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import os
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 import numpy as np
 import orjson as json
 from pathlib import Path
@@ -13,6 +13,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
+from gate.data.transforms.tiny_image_transforms import pad_image
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 
@@ -165,6 +166,14 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+def transform_wrapper(inputs: Dict, target_size=224):
+    print(list(inputs.keys()))
+    return {
+        "image": pad_image(inputs["image"], target_size=target_size),
+        "labels": inputs["labels"],
+    }
+
+
 @configurable(
     group="dataset", name="clevr", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -176,19 +185,19 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
