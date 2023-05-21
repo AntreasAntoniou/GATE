@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 from datasets import load_dataset
+import torch
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
@@ -19,7 +20,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
         "text": inputs["question"],
-        "labels": inputs["label"],
+        "labels": torch.Tensor(inputs["label"]),
     }
 
 
