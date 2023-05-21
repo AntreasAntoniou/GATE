@@ -64,6 +64,7 @@ class CLEVRClassificationDataset(Dataset):
         )
 
         self.answer_to_index = self.create_answer_mapping()
+        print(f"possible labels {len(self.answer_to_index)}")
 
     def create_answer_mapping(self) -> dict:
         """
