@@ -77,6 +77,7 @@ class DuoModalFusionModel(BaseModule):
 
         modality_a_features = None
         modality_b_features = None
+        text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
         print(text)
         print(image)
 
