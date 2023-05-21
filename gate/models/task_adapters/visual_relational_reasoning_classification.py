@@ -65,6 +65,9 @@ class DuoModalFusionModel(BaseModule):
         )
 
         self.fusion_in_features = self.projection_num_features
+        self.image_instance_norm = nn.InstanceNorm1d(
+            3, affine=True, track_running_stats=False
+        )
         # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
         self.fusion_post_processing = VariableSequenceTransformerEncoder(
             d_model=self.fusion_in_features,
@@ -99,6 +102,7 @@ class DuoModalFusionModel(BaseModule):
         text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
 
         if image is not None:
+            image = self.image_instance_norm(image)
             if self.modality_a_identifier == "image":
                 modality_a_features = self.modality_a_model(image=image)[
                     self.modality_a_identifier
@@ -118,6 +122,7 @@ class DuoModalFusionModel(BaseModule):
                 modality_b_features = self.modality_b_model(text=text)[
                     self.modality_b_identifier
                 ]["raw_features"]
+
         if audio is not None:
             if self.modality_a_identifier == "audio":
                 modality_a_features = self.modality_a_model(audio=audio)[
