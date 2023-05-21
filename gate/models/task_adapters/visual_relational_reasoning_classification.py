@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from _pytest.stash import D
 
 import torch
@@ -90,6 +90,7 @@ class DuoModalFusionModel(BaseModule):
 
         if text is not None:
             if self.modality_a_identifier == "text":
+                text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
                 modality_a_features = self.modality_a_model(text=text)[
                     self.modality_a_identifier
                 ]["features"]
@@ -131,6 +132,8 @@ class DuoModalFusionModel(BaseModule):
         output_dict = {"logits": logits}
 
         if labels is not None:
+            if isinstance(logits, List):
+                logits = torch.stack(logits).mean(dim=0)
             loss = F.cross_entropy(logits, labels)
             output_dict["loss"] = loss
             output_dict["accuracy"] = (
