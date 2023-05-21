@@ -196,8 +196,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 def transform_wrapper(inputs: Dict, target_size=224):
     # print(list(inputs.keys()))
     # print(inputs["image"])
+    # T.Resize(size=(target_size, target_size))
     return {
-        "image": T.Resize(size=(target_size, target_size))(inputs["image"]),
+        "image": inputs["image"],
         "text": inputs["text"],
         "labels": torch.tensor(int(inputs["labels"])).long(),
     }
