@@ -199,8 +199,8 @@ class DuoModalFusionModel(BaseModule):
             overall_loss = []
             overall_accuracy_top_1 = []
             for answer in self.classifier.keys():
-                print(answer_type)
-                print(answer_type == answer)
+                # print(answer_type)
+                print(answer)
                 temp_features = features[answer_type == answer]
                 temp_logits = self.classifier[answer](temp_features)
                 temp_labels = labels[answer_type == answer]
