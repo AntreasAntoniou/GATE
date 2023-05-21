@@ -95,7 +95,9 @@ def log_experiment_parameters(
         config_dict (dict): The configuration dictionary
         global_step (int): The global step
     """
-    experiment_tracker["config"] = config_dict
+    from neptune.utils import stringify_unsupported
+
+    experiment_tracker["config"] = stringify_unsupported(config_dict)
     experiment_tracker["init_global_step"] = global_step
 
 
