@@ -18,7 +18,7 @@ class DuoModalFusionModel(BaseModule):
         modality_a_num_features: int,
         modality_b_num_features: int,
         projection_num_features: Optional[int] = None,
-        dropout_fusion_prob: float = 0.1,
+        dropout_fusion_prob: float = 0.0,
         num_classes: int = 10,
     ):
         super().__init__()
