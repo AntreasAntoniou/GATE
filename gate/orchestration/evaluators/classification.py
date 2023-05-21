@@ -141,6 +141,21 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
         )
 
 
+@configurable(group="evaluator", name="visual_relational_reasoning")
+class VisualRelationalClassificationTrainer(ClassificationEvaluator):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            experiment_tracker,
+            source_modality="image_text",
+            target_modality="image_text",
+            model_selection_metric_name="accuracy_top_1-epoch-mean",
+            model_selection_metric_higher_is_better=True,
+        )
+
+
 @configurable(group="evaluator", name="image_to_text_zero_shot_classification")
 class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
     def __init__(
