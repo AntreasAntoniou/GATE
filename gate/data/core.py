@@ -257,7 +257,7 @@ class GATEDataset(Dataset):
         for key, value in item.items():
             if isinstance(value, torch.Tensor):
                 print(
-                    f"{key}: {value.shape}, mean: {value.mean()}, std: {value.std()}, min: {value.min()}, max: {value.max()}"
+                    f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
                 )
 
         # Apply the task to the item if it exists
