@@ -42,7 +42,7 @@ class PositionalEncoding(BaseModule):
         return x
 
 
-class TransformerEncoder(BaseModule):
+class VariableSequenceTransformerEncoder(BaseModule):
     def __init__(
         self,
         d_model: int,
@@ -100,7 +100,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         super().__init__()
         self.model = model
         self.modality = modality
-        self.temporal_encoder = TransformerEncoder(
+        self.temporal_encoder = VariableSequenceTransformerEncoder(
             d_model=num_backbone_features,
             nhead=8,
             dim_feedforward=2048,
