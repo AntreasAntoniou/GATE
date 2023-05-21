@@ -1,11 +1,13 @@
 from typing import Dict, List, Optional
-from _pytest.stash import D
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters.temporal_image_classification import (
+    VariableSequenceTransformerEncoder,
+)
 
 
 class SkipConnectionModule(nn.Module):
@@ -55,35 +57,23 @@ class DuoModalFusionModel(BaseModule):
 
         self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
 
-        if self.projection_num_features is not None:
-            self.modality_a_linear = nn.Linear(
-                modality_a_num_features, projection_num_features, bias=False
-            )
-            self.modality_b_linear = nn.Linear(
-                modality_b_num_features, projection_num_features, bias=False
-            )
+        self.modality_a_linear = nn.Linear(
+            modality_a_num_features, projection_num_features, bias=False
+        )
+        self.modality_b_linear = nn.Linear(
+            modality_b_num_features, projection_num_features, bias=False
+        )
 
-        self.fusion_in_features = (
-            2 * self.projection_num_features
-            if self.projection_num_features is not None
-            else modality_a_num_features + modality_b_num_features
-        )
+        self.fusion_in_features = self.projection_num_features
         # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
-        self.fusion_post_processing = nn.Sequential(
-            SkipConnectionModule(
-                nn.Linear(self.fusion_in_features, 2048),
-            ),
-            nn.GELU(),
-            SkipConnectionModule(
-                nn.Linear(2048, 2048),
-            ),
-            nn.GELU(),
-            SkipConnectionModule(
-                nn.Linear(2048, 2048),
-            ),
-            nn.GELU(),
-            nn.Linear(2048, num_classes),
+        self.fusion_post_processing = VariableSequenceTransformerEncoder(
+            d_model=self.fusion_in_features,
+            nhead=8,
+            dim_feedforward=2048,
+            dropout=0.0,
+            num_layers=4,
         )
+        self.classifier = nn.Linear(self.fusion_in_features, num_classes)
 
     def forward(
         self,
@@ -112,45 +102,48 @@ class DuoModalFusionModel(BaseModule):
             if self.modality_a_identifier == "image":
                 modality_a_features = self.modality_a_model(image=image)[
                     self.modality_a_identifier
-                ]["features"]
+                ]["raw_features"]
             elif self.modality_b_identifier == "image":
                 modality_b_features = self.modality_b_model(image=image)[
                     self.modality_b_identifier
-                ]["features"]
+                ]["raw_features"]
 
         if text is not None:
             if self.modality_a_identifier == "text":
                 text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
                 modality_a_features = self.modality_a_model(text=text)[
                     self.modality_a_identifier
-                ]["features"]
+                ]["raw_features"]
             elif self.modality_b_identifier == "text":
                 modality_b_features = self.modality_b_model(text=text)[
                     self.modality_b_identifier
-                ]["features"]
+                ]["raw_features"]
         if audio is not None:
             if self.modality_a_identifier == "audio":
                 modality_a_features = self.modality_a_model(audio=audio)[
                     self.modality_a_identifier
-                ]["features"]
+                ]["raw_features"]
             elif self.modality_b_identifier == "audio":
                 modality_b_features = self.modality_b_model(audio=audio)[
                     self.modality_b_identifier
-                ]["features"]
+                ]["raw_features"]
 
         if video is not None:
             if self.modality_a_identifier == "video":
                 modality_a_features = self.modality_a_model(video=video)[
                     self.modality_a_identifier
-                ]["features"]
+                ]["raw_features"]
             elif self.modality_b_identifier == "video":
                 modality_b_features = self.modality_b_model(video=video)[
                     self.modality_b_identifier
-                ]["features"]
+                ]["raw_features"]
 
-        if self.projection_num_features is not None:
-            modality_a_features = self.modality_a_linear(modality_a_features)
-            modality_b_features = self.modality_b_linear(modality_b_features)
+        modality_a_features = self.modality_a_linear(
+            modality_a_features.view(-1, modality_a_features.shape[-1])
+        )
+        modality_b_features = self.modality_b_linear(
+            modality_b_features.view(-1, modality_b_features.shape[-1])
+        )
 
         # Fusion of the two modalities and post processing
 
@@ -158,7 +151,8 @@ class DuoModalFusionModel(BaseModule):
             [modality_a_features, modality_b_features], dim=1
         )
 
-        logits = self.fusion_post_processing(fused_features)
+        raw_features = self.fusion_post_processing(fused_features)
+        logits = self.classifier(raw_features[:, 0, :])
         output_dict = {"logits": logits}
 
         if labels is not None:
