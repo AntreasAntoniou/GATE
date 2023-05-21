@@ -171,6 +171,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
+    num_classes: int = 10,
 ):
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
