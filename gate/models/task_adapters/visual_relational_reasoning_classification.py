@@ -102,7 +102,7 @@ class DuoModalFusionModel(BaseModule):
         text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
 
         if image is not None:
-            print(image.shape)
+            print(f"pre input shape {image.shape}")
             image = self.image_instance_norm(image)
             if self.modality_a_identifier == "image":
                 modality_a_features = self.modality_a_model(image=image)[
