@@ -49,7 +49,8 @@ class DuoModalFusionModel(BaseModule):
         self.fusion_post_processing = nn.Sequential(
             nn.Linear(self.fusion_in_features, 512),
             nn.GELU(),
-            nn.Dropout(dropout_fusion_prob),
+            nn.Linear(512, 512),
+            nn.GELU(),
             nn.Linear(512, 512),
             nn.GELU(),
             nn.Linear(512, num_classes),
