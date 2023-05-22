@@ -148,6 +148,7 @@ class DuoModalFusionModel(BaseModule):
                     self.modality_a_identifier
                 ]["raw_features"]
             elif self.modality_b_identifier == "text":
+                text[text == -1] = self.modality_b_model.tokenizer.eos_token_id
                 modality_b_features = self.modality_b_model(text=text)[
                     self.modality_b_identifier
                 ]["raw_features"]
