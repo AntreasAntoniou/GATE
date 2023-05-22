@@ -407,7 +407,7 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Assign the data to the support and query sets."""
         print(
-            f"num_support_samples_per_class: {num_support_samples_per_class}"
+            f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
         )
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
