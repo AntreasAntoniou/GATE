@@ -67,7 +67,7 @@ def build_model(
             ]
         )
 
-        output_dict = {}
+        output_dict = {"image": {}}
 
         output_dict["image"]["support_set_inputs"] = inputs["image"]["image"][
             "support_set"
