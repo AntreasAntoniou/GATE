@@ -126,7 +126,6 @@ class FewShotClassificationMetaDataset(Dataset):
         self.input_target_annotation_keys = input_target_annotation_keys
         self.num_episodes = num_episodes
         self.split_config = split_config
-        self.logger.debug_info = True
         self.preprocess_transform = preprocess_transforms
 
         self._validate_samples_and_classes(
