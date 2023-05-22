@@ -268,7 +268,7 @@ def strided_frame_indices(
             if sample_span % num_video_frames == 0
             else sample_span // num_video_frames + 1
         )
-        #logger.debug(
+        logger.debug(
             f"Cannot sample {sample_span:d} frames from {num_video_frames:d}. Duplicating the frames {num_repeats} times."
         )
         video_frame_indices = list(
@@ -324,7 +324,7 @@ def dense_frame_indices(
             if sample_span % num_video_frames == 0
             else sample_span // num_video_frames + 1
         )
-        #logger.debug(
+        logger.debug(
             f"Cannot sample {sample_span:d} frames from {num_video_frames:d}. Duplicating the frames {num_repeats} times."
         )
         video_frame_indices = list(
@@ -386,7 +386,7 @@ def sparse_frame_indices(
             if num_output_frames % num_input_frames_wo_neighbour_length == 0
             else num_output_frames // num_input_frames_wo_neighbour_length + 1
         )
-        #logger.debug(
+        logger.debug(
             f"Cannot sample {num_output_frames:d} frames with {num_neighbours} neighbouring frames from {num_input_frames:d}. Duplicating frames {num_repeats} times."
         )
         video_frame_indices = list(
