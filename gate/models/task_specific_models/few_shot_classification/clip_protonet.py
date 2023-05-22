@@ -56,17 +56,25 @@ def build_model(
         output_dict = {}
 
         for modality in inputs.keys():
-            temp_shape = inputs[modality]["support_set"].shape
-            inputs[modality]["support_set"] = transform_dict[modality](
-                inputs[modality]["support_set"].view(-1, *temp_shape[-3:])
+            temp_shape = inputs[modality][modality]["support_set"].shape
+            inputs[modality][modality]["support_set"] = transform_dict[
+                modality
+            ](
+                inputs[modality][modality]["support_set"].view(
+                    -1, *temp_shape[-3:]
+                )
+            ).view(
+                temp_shape
+            )
+
+            temp_shape = inputs[modality][modality]["query_set"].shape
+            inputs[modality][modality]["query_set"] = transform_dict[modality](
+                inputs[modality][modality]["query_set"].view(
+                    -1, *temp_shape[-3:]
+                )
             ).view(temp_shape)
 
-            temp_shape = inputs[modality]["query_set"].shape
-            inputs[modality]["query_set"] = transform_dict[modality](
-                inputs[modality]["query_set"].view(-1, *temp_shape[-3:])
-            ).view(temp_shape)
-
-            output_dict[modality] = inputs[modality]
+            output_dict[modality] = inputs[modality][modality]
 
         return output_dict
 
