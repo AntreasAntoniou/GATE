@@ -236,9 +236,9 @@ class FewShotClassificationMetaDataset(Dataset):
                 sample[
                     "label"
                 ] = f"{subset_split_name_list[idx]}{sample['label']}"
-                print(
-                    f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
-                )
+                # print(
+                #     f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
+                # )
                 datapoints.append(sample)
 
         dataset = datasets.Dataset.from_list(datapoints)
@@ -266,18 +266,18 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_dict_based_on_split_percentage(self):
         """Get current class to address dict based on split percentage."""
         start_idx, end_idx = self._get_start_end_indices()
-        print(f"start_idx: {start_idx}, end_idx: {end_idx}")
-        print(
-            f"len(self.class_to_address_dict): {len(self.class_to_address_dict)}"
-        )
-        temp_dict = {
-            key: value
-            for idx, (key, value) in enumerate(
-                self.class_to_address_dict.items()
-            )
-            if start_idx <= idx < end_idx
-        }
-        print(f"test {temp_dict}")
+        # print(f"start_idx: {start_idx}, end_idx: {end_idx}")
+        # print(
+        #     f"len(self.class_to_address_dict): {len(self.class_to_address_dict)}"
+        # )
+        # temp_dict = {
+        #     key: value
+        #     for idx, (key, value) in enumerate(
+        #         self.class_to_address_dict.items()
+        #     )
+        #     if start_idx <= idx < end_idx
+        # }
+        # print(f"test {temp_dict}")
         return {
             key: value
             for idx, (key, value) in enumerate(
