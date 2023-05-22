@@ -74,6 +74,14 @@ class CLEVRClassificationDataset(Dataset):
     ):
         """
         Initialize the dataset.
+        super().__init__()
+        self.dataset_path = dataset_path
+        dataset_path_dict = self.download_and_extract(dataset_path)
+        self.labels_frame = pd.read_csv(
+            dataset_path_dict["dataset_download_path"] / "trainLabels.csv"
+        )
+        self.img_dir = dataset_path_dict["dataset_download_path"] / "resized_train"
+        self.transform = transform
 
         Args:
             root_dir (Union[str, Path]): Root directory of the dataset.
