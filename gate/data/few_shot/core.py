@@ -126,7 +126,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.input_target_annotation_keys = input_target_annotation_keys
         self.num_episodes = num_episodes
         self.split_config = split_config
-        self.print_info = True
+        self.logger.debug_info = True
         self.preprocess_transform = preprocess_transforms
 
         self._validate_samples_and_classes(
@@ -223,7 +223,9 @@ class FewShotClassificationMetaDataset(Dataset):
             for subset_name in subset_split_name_list
         ]
         datapoints = []
-        print(f"Loading and preprocessing {self.dataset_name} dataset...")
+        logger.debug(
+            f"Loading and preprocessing {self.dataset_name} dataset..."
+        )
         for subset in tqdm(subsets):
             for sample in tqdm(subset):
                 datapoints.append(self._process_sample(sample))
@@ -245,7 +247,7 @@ class FewShotClassificationMetaDataset(Dataset):
         if self.split_config is None:
             return self._get_dict_based_on_split_percentage()
         else:
-            if self.print_info:
+            if self.logger.debug_info:
                 logger.debug(self.split_config)
             return {
                 label_name: self.class_to_address_dict[label_name]
@@ -408,7 +410,7 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Assign the data to the support and query sets."""
 
-        print(
+        logger.debug(
             f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
         )
 
@@ -583,7 +585,7 @@ class FewShotClassificationMetaDataset(Dataset):
             data_inputs, data_labels = self._shuffle_data(
                 data_inputs, data_labels, rng
             )
-            print(f"num query samples {num_query_samples_per_class}")
+            logger.debug(f"num query samples {num_query_samples_per_class}")
             # Assign data to support and query sets
             (
                 support_set_inputs,
@@ -704,7 +706,7 @@ class FewShotClassificationMetaDataset(Dataset):
 #         self.variable_num_queries_per_class = variable_num_queries_per_class
 #         self.variable_num_classes_per_set = variable_num_classes_per_set
 #         self.split_config = split_config
-#         self.print_info = True
+#         self.logger.debug_info = True
 
 #         self.support_set_input_transform = (
 #             hydra.utils.instantiate(support_set_input_transform)
@@ -753,7 +755,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
 #             self.subsets.append(list(subset.as_numpy_iterator()))
 
-#             if self.print_info:
+#             if self.logger.debug_info:
 #                 log.info(f"Loaded two subsets with info: {subset_info}")
 
 #         self.class_to_address_dict = get_class_to_image_idx_and_bbox(
@@ -817,13 +819,13 @@ class FewShotClassificationMetaDataset(Dataset):
 #                     + split_percentage[FewShotSuperSplitSetOptions.TEST]
 #                 }
 #         else:
-#             if self.print_info:
+#             if self.logger.debug_info:
 #                 log.info(self.split_config)
 #             self.current_class_to_address_dict = {
 #                 label_name: self.class_to_address_dict[label_name]
 #                 for idx, label_name in enumerate(self.split_config[split_name])
 #             }
-#         self.print_info = False
+#         self.logger.debug_info = False
 
 #     def __len__(self):
 #         return self.num_episodes
