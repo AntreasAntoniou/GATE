@@ -314,7 +314,7 @@ class FewShotClassificationMetaDataset(Dataset):
         )
         num_query_samples_per_class = int(np.floor(min_available_shots * 0.5))
         num_query_samples_per_class = max(num_query_samples_per_class, 1)
-        return min(num_query_samples_per_class, 10)
+        return min(num_query_samples_per_class, self.num_query_samples_per_class)
 
     def _prepare_support_and_query_sets(
         self,
@@ -398,6 +398,7 @@ class FewShotClassificationMetaDataset(Dataset):
     def _assign_data_to_sets(
         self,
         num_support_samples_per_class,
+        num_query_samples_per_class,
         data_inputs,
         data_labels,
         support_set_inputs,
@@ -407,7 +408,8 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Assign the data to the support and query sets."""
         print(
-            f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
+            f"num_support_samples_per_class: {num_support_samples_per_class}, 
+            data input length: {len(data_inputs)}"
         )
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
@@ -417,10 +419,10 @@ class FewShotClassificationMetaDataset(Dataset):
                 data_labels[:num_support_samples_per_class]
             )
             query_set_inputs.extend(
-                data_inputs[num_support_samples_per_class:]
+                data_inputs[num_support_samples_per_class:num_support_samples_per_class+num_query_samples_per_class]
             )
             query_set_labels.extend(
-                data_labels[num_support_samples_per_class:]
+                data_labels[num_support_samples_per_class:num_support_samples_per_class+num_query_samples_per_class]
             )
         else:
             support_set_inputs.extend(data_inputs[:-1])
@@ -583,6 +585,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 query_set_labels,
             ) = self._assign_data_to_sets(
                 num_support_samples_per_class,
+                num_query_samples_per_class,
                 data_inputs,
                 data_labels,
                 support_set_inputs,
