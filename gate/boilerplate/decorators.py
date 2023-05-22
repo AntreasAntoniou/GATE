@@ -78,7 +78,7 @@ def register_configurables(
                         node=obj.__config__(populate_full_signature=True),
                     )
                 else:
-                    #logger.debug(
+                    logger.debug(
                         f"Excluding {name} from config store, as it does not have a group or name."
                     )
 
