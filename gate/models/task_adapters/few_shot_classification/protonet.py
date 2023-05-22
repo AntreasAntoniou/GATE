@@ -129,6 +129,7 @@ class PrototypicalNetwork(nn.Module):
             The output tensor after being processed by the model and the linear layer.
         """
         x = None
+        print(f"image: {image.shape}")
         if input_dict is not None:
             x = self.model(**input_dict)[self.modality]["features"]
         if image is not None:
