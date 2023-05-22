@@ -1,12 +1,12 @@
 from typing import Dict, Optional
-from timm.data.auto_augment import rand_augment_transform
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from timm.data.auto_augment import rand_augment_transform
 
-from gate.models.task_adapters import BaseModule
 from gate.metrics import accuracy_top_k
+from gate.models.task_adapters import BaseModule
 
 
 class BackboneWithLinear(BaseModule):

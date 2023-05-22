@@ -1,16 +1,12 @@
-import torch
-import requests
-from PIL import Image
-import matplotlib.pyplot as plt
-from io import BytesIO
-import torch
-import requests
-from PIL import Image
-from torchvision.transforms import Compose, ToPILImage
-from timm.data.auto_augment import rand_augment_transform
-import numpy as np
 from io import BytesIO
 
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+import torch
+from PIL import Image
+from timm.data.auto_augment import rand_augment_transform
+from torchvision.transforms import Compose, ToPILImage
 
 # Download an image from the internet
 url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"

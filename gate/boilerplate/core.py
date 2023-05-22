@@ -14,8 +14,8 @@ from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name, get_logger
 from gate.config.variables import (
-    HYDRATED_CURRENT_EXPERIMENT_DIR,
     DUMMY_BATCH_MODE,
+    HYDRATED_CURRENT_EXPERIMENT_DIR,
     HYDRATED_EXPERIMENT_NAME,
     HYDRATED_HF_CACHE_DIR,
     HYDRATED_HF_REPO_PATH,

@@ -38,7 +38,6 @@ from gate.config.config import collect_config_store
 from gate.data.core import GATEDataset
 from gate.models.core import GATEModel
 
-
 # Install rich tracebacks for better visibility during debugging
 install()
 

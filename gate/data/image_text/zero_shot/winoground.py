@@ -1,8 +1,7 @@
 # food101.py
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Any, Optional
-
 
 from datasets import load_dataset
 from gate.boilerplate.decorators import configurable

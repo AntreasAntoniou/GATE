@@ -1,10 +1,10 @@
 from collections import defaultdict
 from typing import Optional
 from urllib.request import urlopen
-from PIL import Image
 
 import torch
 import torch.nn as nn
+from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 

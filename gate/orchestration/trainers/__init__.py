@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
-from accelerate import Accelerator
 import wandb
+from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics
 
