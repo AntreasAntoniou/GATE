@@ -5,6 +5,7 @@ import pytest
 
 from gate.data.text.classification.imdb import build_imdb_dataset
 
+
 def test_build_imdb_dataset():
     # Test if the function returns the correct dataset split
 
@@ -13,14 +14,10 @@ def test_build_imdb_dataset():
     )
     assert train_set is not None, "Train set should not be None"
 
-    val_set = build_imdb_dataset(
-        "val", data_dir=os.environ.get("TEST_DIR")
-    )
+    val_set = build_imdb_dataset("val", data_dir=os.environ.get("TEST_DIR"))
     assert val_set is not None, "Validation set should not be None"
 
-    test_set = build_imdb_dataset(
-        "test", data_dir=os.environ.get("TEST_DIR")
-    )
+    test_set = build_imdb_dataset("test", data_dir=os.environ.get("TEST_DIR"))
     assert test_set is not None, "Test set should not be None"
 
     # Test if the function raises an error when an invalid set_name is given
@@ -29,6 +26,6 @@ def test_build_imdb_dataset():
             "invalid_set_name", data_dir=os.environ.get("TEST_DIR")
         )
 
+
 if __name__ == "__main__":
     test_build_imdb_dataset()
-

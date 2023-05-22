@@ -1,14 +1,16 @@
 # test_food101.py
 import os
-from gate.models.task_specific_models.visual_question_answering.clip import (
-    build_model,
-)
 
 import pytest
 
 from gate.data.image.visual_question_answering.vqa_v2 import (
     build_dataset as build_vqa_v2_dataset,
+)
+from gate.data.image.visual_question_answering.vqa_v2 import (
     build_gate_dataset as build_vqa_v2_gate_dataset,
+)
+from gate.models.task_specific_models.visual_question_answering.clip import (
+    build_model,
 )
 
 

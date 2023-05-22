@@ -1,8 +1,7 @@
 import pytest
 import torch
-from gate.models.backbones.tali import (
-    TALINet,
-)
+
+from gate.models.backbones.tali import TALINet
 
 
 def test_talinet_forward():

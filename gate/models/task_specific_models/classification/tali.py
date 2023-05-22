@@ -9,10 +9,7 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.classification import (
-    BackboneWithLinear,
-)
-
+from gate.models.task_adapters.classification import BackboneWithLinear
 
 SUPPORTED_MODALITIES = ["image", "text", "audio", "video"]
 
@@ -34,6 +31,8 @@ def create_model_with_linear(
 def build_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     whisper_model_name: str = "openai/whisper-small",
+    model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+    checkpoint_identifier: str = "latest",
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
@@ -41,6 +40,8 @@ def build_model(
     backbone_model = TALINet(
         clip_model_name=clip_model_name,
         whisper_model_name=whisper_model_name,
+        model_repo_path=model_repo_path,
+        checkpoint_identifier=checkpoint_identifier,
         pretrained=pretrained,
     )
 
@@ -78,6 +79,8 @@ def build_model(
 def build_gate_tali_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     whisper_model_name: str = "openai/whisper-small",
+    model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+    checkpoint_identifier: str = "latest",
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
@@ -85,6 +88,8 @@ def build_gate_tali_model(
     model_and_transform = build_model(
         clip_model_name=clip_model_name,
         whisper_model_name=whisper_model_name,
+        model_repo_path=model_repo_path,
+        checkpoint_identifier=checkpoint_identifier,
         pretrained=pretrained,
         num_classes=num_classes,
         modality=modality,

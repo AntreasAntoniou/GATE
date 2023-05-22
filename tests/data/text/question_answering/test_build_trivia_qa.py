@@ -5,6 +5,7 @@ import pytest
 
 from gate.data.text.question_answering.trivia_qa import build_trivia_qa_dataset
 
+
 def test_build_trivia_qa_dataset():
     # Test if the function returns the correct dataset split
 
@@ -29,6 +30,6 @@ def test_build_trivia_qa_dataset():
             "invalid_set_name", data_dir=os.environ.get("TEST_DIR")
         )
 
+
 if __name__ == "__main__":
     test_build_trivia_qa_dataset()
-

@@ -1,6 +1,6 @@
 # places365.py
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
@@ -10,9 +10,7 @@ from torch.utils.data import random_split
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import (
-    ClassificationTask,
-)
+from gate.data.tasks.classification import ClassificationTask
 
 
 def build_places365_dataset(

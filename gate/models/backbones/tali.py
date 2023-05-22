@@ -1,22 +1,19 @@
-from collections import defaultdict
 import pathlib
+from collections import defaultdict
 from typing import Any, Dict, Optional, Union
-from omegaconf import DictConfig
-from tali.utils import download_model_with_name
-
-import torch
-import torch.nn as nn
-
-from tali.models import TALIModel, MultiModalityConfig
-from transformers import CLIPProcessor, WhisperProcessor
 
 import accelerate
-from rich import print
+import torch
+import torch.nn as nn
 import yaml
+from omegaconf import DictConfig
+from rich import print
+from tali.models import MultiModalityConfig, TALIModel
+from tali.utils import download_model_with_name
+from transformers import CLIPProcessor, WhisperProcessor
 
-from gate.boilerplate.utils import (
-    download_model_checkpoint_from_hub,
-)
+from gate.boilerplate.utils import download_model_checkpoint_from_hub
+from gate.models.backbones import image_dim_reshape
 from gate.models.core import reinit
 
 
@@ -78,6 +75,8 @@ class TALINet(nn.Module):
 
         if hasattr(self.model, "audio_linear_layer"):
             self.audio_num_features = self.model.audio_linear_layer.in_features
+
+        self.to("cpu")
 
     def init_weights(self):
         reinit(self)
@@ -151,8 +150,10 @@ class TALINet(nn.Module):
     def get_transforms(self):
         return {
             "image": lambda x: self.image_text_preprocessor(
-                images=x, return_tensors="pt"
-            ).pixel_values.squeeze(1),
+                images=image_dim_reshape(x), return_tensors="pt"
+            )
+            .pixel_values.squeeze(1)
+            .view(x.shape),
             "text": lambda x: self.image_text_preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids,

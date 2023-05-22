@@ -179,9 +179,10 @@ def pretty_config(
     return tree
 
 
+from typing import Any, Dict
+
 from rich import print as rprint
 from rich.pretty import Pretty
-from typing import Any, Dict
 
 
 def pretty_print_dictionary(dictionary: Dict[str, Any]) -> None:

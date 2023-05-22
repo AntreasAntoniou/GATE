@@ -1411,12 +1411,14 @@ def _collect_dict(path, split, replace_videos):
     split_videos = {str(p.stem)[:11]: p for p in split_videos}
     # replace paths for corrupted videos
     match_dict = {
-        k: replace_videos[k] for k in split_videos.keys() & replace_videos.keys()
+        k: replace_videos[k]
+        for k in split_videos.keys() & replace_videos.keys()
     }
     split_videos.update(match_dict)
     # collect videos with labels from csv: dict with {video_path: class}
     split_final = {
-        split_videos[k]: split_csv[k] for k in split_csv.keys() & split_videos.keys()
+        split_videos[k]: split_csv[k]
+        for k in split_csv.keys() & split_videos.keys()
     }
     return split_final
 
@@ -1430,7 +1432,9 @@ def arrange_by_classes(dataset_rootdir: str | Path):
     assert path.exists(), f"Provided path:{path} does not exist"
 
     # collect videos in replacement
-    replace = list((path / "replacement/replacement_for_corrupted_k400").glob("*.mp4"))
+    replace = list(
+        (path / "replacement/replacement_for_corrupted_k400").glob("*.mp4")
+    )
     replace_videos = {str(p.stem)[:11]: p for p in replace}
 
     video_parent = path / "videos"
@@ -1449,7 +1453,9 @@ def arrange_by_classes(dataset_rootdir: str | Path):
             label_pth = split_video_path / label
             label_pth.mkdir(exist_ok=True, parents=True)
         # symlink videos to respective labels
-        for vid_pth, label in tqdm(split_final.items(), desc=f"Progress {split}"):
+        for vid_pth, label in tqdm(
+            split_final.items(), desc=f"Progress {split}"
+        ):
             label = label.replace(" ", "_")
             dst_vid = split_video_path / label / vid_pth.name
             if dst_vid.is_symlink():
@@ -1472,7 +1478,9 @@ def check_num_files_each_class(dataset_rootdir: str | Path):
             )
 
         for class_dir in (videos_dir / split).iterdir():
-            num_files_each_class[class_dir.name] = len(list(class_dir.iterdir()))
+            num_files_each_class[class_dir.name] = len(
+                list(class_dir.iterdir())
+            )
 
         if num_files_each_class != NUM_FILES_EACH_CLASS[split]:
             raise FileNotFoundError(
@@ -1513,7 +1521,10 @@ def prepare_kinetics_400(
             ):
                 # Same disk
                 disk_space = shutil.disk_usage(download_dataset_rootdir).free
-                if disk_space < (DOWNLOAD_GB + EXTRACT_GB) * 1024 * 1024 * 1024:
+                if (
+                    disk_space
+                    < (DOWNLOAD_GB + EXTRACT_GB) * 1024 * 1024 * 1024
+                ):
                     raise RuntimeError(
                         f"Insufficient disk space. At least {DOWNLOAD_GB+EXTRACT_GB}GB is required, but only {disk_space / 1024 / 1024 / 1024:.1f} GB available"
                     )
@@ -1558,4 +1569,6 @@ if __name__ == "__main__":
     # arrange_by_classes("/disk/scratch_fast1/datasets")
     # check_num_files_each_class("/disk/scratch_fast1/datasets")
 
-    prepare_kinetics_400("/disk/scratch2/datasets", "/disk/scratch_fast1/datasets")
+    prepare_kinetics_400(
+        "/disk/scratch2/datasets", "/disk/scratch_fast1/datasets"
+    )
