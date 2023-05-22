@@ -1,5 +1,3 @@
-
-
 For the GATE paper:
 
 1. Image classification -> Done

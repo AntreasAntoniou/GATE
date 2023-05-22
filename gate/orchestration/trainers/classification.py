@@ -45,7 +45,9 @@ class ClassificationTrainer(Trainer):
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-        # print(f"output_dict: {list(output_dict.keys())}") # uncomment for debugging
+
+        # model(image, text) -> image_preds -- source: image_text and target: image
+        # model(image) -> image_preds -- source: image and target: image
 
         if "loss" not in output_dict:
             loss = F.cross_entropy(
