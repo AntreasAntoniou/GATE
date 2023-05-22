@@ -186,6 +186,9 @@ class FewShotClassificationMetaDataset(Dataset):
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
+        logger.info(
+            f"Current class to address dict: {self.current_class_to_address_dict}"
+        )
 
     def _validate_samples_and_classes(
         self,
@@ -254,6 +257,7 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_dict_based_on_split_percentage(self):
         """Get current class to address dict based on split percentage."""
         start_idx, end_idx = self._get_start_end_indices()
+        print(f"start_idx: {start_idx}, end_idx: {end_idx}")
         return {
             key: value
             for idx, (key, value) in enumerate(
@@ -308,6 +312,9 @@ class FewShotClassificationMetaDataset(Dataset):
         self, class_to_num_available_samples
     ):
         """Calculate the number of query samples per class."""
+        logger.info(
+            f"Class to num available samples: {class_to_num_available_samples}"
+        )
         min_available_shots = min(
             [value for value in class_to_num_available_samples.values()]
         )
