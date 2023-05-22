@@ -14,16 +14,22 @@ from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name, get_logger
 from gate.config.variables import (
-    CURRENT_EXPERIMENT_DIR,
     DUMMY_BATCH_MODE,
-    EXPERIMENT_NAME,
+    HYDRATED_CURRENT_EXPERIMENT_DIR,
+    HYDRATED_EXPERIMENT_NAME,
     HYDRATED_HF_CACHE_DIR,
     HYDRATED_HF_REPO_PATH,
     HYDRATED_TRAIN_ITERS,
     RESUME,
 )
-from gate.evaluators.classification import ClassificationEvaluator, Evaluator
-from gate.trainers.classification import ClassificationTrainer, Trainer
+from gate.orchestration.evaluators.classification import (
+    ClassificationEvaluator,
+    Evaluator,
+)
+from gate.orchestration.trainers.classification import (
+    ClassificationTrainer,
+    Trainer,
+)
 
 logger = get_logger(__name__)
 
@@ -36,8 +42,8 @@ accelerate_logger = get_logger("accelerate", logging_level="ERROR")
     name="default",
     defaults=dict(
         model=None,
-        experiment_name=EXPERIMENT_NAME,
-        experiment_dir=CURRENT_EXPERIMENT_DIR,
+        experiment_name=HYDRATED_EXPERIMENT_NAME,
+        root_dir=HYDRATED_CURRENT_EXPERIMENT_DIR,
         resume=RESUME,
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
@@ -46,8 +52,6 @@ accelerate_logger = get_logger("accelerate", logging_level="ERROR")
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
-        model_selection_metric_name="accuracy_top_1-epoch-mean",
-        model_selection_metric_higher_is_better=True,
         hf_cache_dir=HYDRATED_HF_CACHE_DIR,
         hf_repo_path=HYDRATED_HF_REPO_PATH,
     ),
@@ -56,7 +60,7 @@ class Learner(nn.Module):
     def __init__(
         self,
         experiment_name: str,
-        experiment_dir: Union[str, Path],
+        root_dir: Union[str, Path],
         model: torch.nn.Module,
         resume: Union[bool, str] = False,
         evaluate_every_n_steps: int = None,
@@ -70,8 +74,6 @@ class Learner(nn.Module):
         test_dataloader: Union[List[DataLoader], DataLoader] = None,
         trainers: Union[List[Trainer], Trainer] = None,
         evaluators: Union[List[Evaluator], Evaluator] = None,
-        model_selection_metric_name: str = None,
-        model_selection_metric_higher_is_better: bool = True,
         callbacks: Union[List[Callback], Callback] = None,
         print_model_parameters: bool = False,
         hf_cache_dir: str = None,
@@ -98,11 +100,10 @@ class Learner(nn.Module):
         """
         super().__init__()
         self.experiment_name = experiment_name
-        self.experiment_dir = (
-            experiment_dir
-            if isinstance(experiment_dir, Path)
-            else Path(experiment_dir)
+        self.root_dir = (
+            root_dir if isinstance(root_dir, Path) else Path(root_dir)
         )
+        self.experiment_dir = self.root_dir / experiment_name
         self.hf_cache_dir = hf_cache_dir
         self.hf_repo_path = hf_repo_path
         self.background_threads = []
@@ -114,16 +115,13 @@ class Learner(nn.Module):
 
         if not self.checkpoints_dir.exists():
             self.checkpoints_dir.mkdir(parents=True)
+
         self.model = model
         self.evaluate_every_n_steps = evaluate_every_n_steps
         self.checkpoint_every_n_steps = checkpoint_every_n_steps or 99999999999
         self.checkpoint_after_validation = checkpoint_after_validation
         self.step_idx = 0
         self.global_step = 0
-        self.model_selection_metric_name = model_selection_metric_name
-        self.model_selection_metric_higher_is_better = (
-            model_selection_metric_higher_is_better
-        )
 
         self.limit_train_iters = limit_train_iters
         self.limit_val_iters = limit_val_iters
@@ -179,9 +177,9 @@ class Learner(nn.Module):
 
         # use if you want to debug unused parameter errors in DDP
         self.accelerator = Accelerator(
-            kwargs_handlers=[
-                DistributedDataParallelKwargs(find_unused_parameters=True)
-            ]
+            # kwargs_handlers=[
+            #     DistributedDataParallelKwargs(find_unused_parameters=True)
+            # ]
         )
 
         self.model = self.accelerator.prepare(self.model)
@@ -403,10 +401,12 @@ class Learner(nn.Module):
             self.test_dataloader = test_dataloader
 
         if model is None:
-            if self.model_selection_metric_name is not None:
+            if self.evaluators[0].model_selection_metric_name is not None:
                 self.load_best_model(
-                    metric_name=self.model_selection_metric_name,
-                    higher_is_better=self.model_selection_metric_higher_is_better,
+                    metric_name=self.evaluators[0].model_selection_metric_name,
+                    higher_is_better=self.evaluators[
+                        0
+                    ].model_selection_metric_higher_is_better,
                 )
             model = self.accelerator.prepare(self.model)
 
@@ -533,19 +533,24 @@ class Learner(nn.Module):
         experiment_hyperparameters = dict(
             step_idx=self.step_idx,
             global_step=self.global_step,
-            state_dict={
-                "train": [trainer.state_dict for trainer in self.trainers],
+            current_epoch_dict={
+                "train": [
+                    trainer.current_epoch_dict for trainer in self.trainers
+                ],
                 "eval": [
-                    evaluator.state_dict for evaluator in self.evaluators
+                    evaluator.current_epoch_dict
+                    for evaluator in self.evaluators
                 ],
             },
-            epoch_metrics={
+            per_epoch_metrics={
                 "eval": [
-                    evaluator.epoch_metrics for evaluator in self.evaluators
+                    evaluator.per_epoch_metrics
+                    for evaluator in self.evaluators
                 ],
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
+
         torch.save(
             obj=experiment_hyperparameters,
             f=ckpt_save_path / "trainer_state.pt",
@@ -579,27 +584,32 @@ class Learner(nn.Module):
         )
         self.step_idx = trainer_state["step_idx"]
         self.global_step = trainer_state["global_step"]
-        state_dict = trainer_state["state_dict"]
-        epoch_metrics = trainer_state["epoch_metrics"]
+        current_epoch_dict = trainer_state["current_epoch_dict"]
+        per_epoch_metrics = trainer_state["per_epoch_metrics"]
+
+        # print(f"current_epoch_dict: {current_epoch_dict}")
+        # print(f"per_epoch_metrics: {per_epoch_metrics}")
 
         for trainer in self.trainers:
             setattr(
                 trainer,
-                "state_dict",
-                state_dict["train"][self.trainers.index(trainer)],
+                "current_epoch_dict",
+                current_epoch_dict["train"][self.trainers.index(trainer)],
             )
+            # print(f"Loaded trainer {trainer.__dict__}")
 
         for evaluator in self.evaluators:
             setattr(
                 evaluator,
-                "state_dict",
-                state_dict["eval"][self.evaluators.index(evaluator)],
+                "current_epoch_dict",
+                current_epoch_dict["eval"][self.evaluators.index(evaluator)],
             )
             setattr(
                 evaluator,
-                "epoch_metrics",
-                epoch_metrics["eval"][self.evaluators.index(evaluator)],
+                "per_epoch_metrics",
+                per_epoch_metrics["eval"][self.evaluators.index(evaluator)],
             )
+            # print(f"Loaded evaluator {evaluator.__dict__}")
 
         self.accelerator.load_state(checkpoint_path)
 
@@ -632,13 +642,12 @@ class Learner(nn.Module):
 if __name__ == "__main__":
     # a minimal example of how to use the Learner class
     import torch
+    from datasets import load_dataset
     from rich import print
     from torch.nn import CrossEntropyLoss
     from torch.optim import Adam
     from torch.utils.data import DataLoader
     from torchvision.transforms import Compose, Resize, ToTensor
-
-    from datasets import load_dataset
 
     train_dataset = load_dataset("beans", split="train")
     val_dataset = load_dataset("beans", split="validation")
@@ -707,7 +716,7 @@ if __name__ == "__main__":
 
     experiment = Learner(
         experiment_name="debug_checkpointing",
-        experiment_dir="experiments/debug_checkpointing",
+        root_dir="experiments/debug_checkpointing",
         model=bean_resnet,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,

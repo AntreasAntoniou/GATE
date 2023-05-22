@@ -1,4 +1,3 @@
-# gate/example_module.py
 from gate.boilerplate.decorators import configurable
 
 

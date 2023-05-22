@@ -33,7 +33,9 @@ class DiabeticRetinopathyClassification(Dataset):
             dataset_path_dict["dataset_download_path"] / "trainLabels.csv"
         )
         self.img_dir = (
-            dataset_path_dict["dataset_download_path"] / "resized_train"
+            dataset_path_dict["dataset_download_path"]
+            / "resized_train"
+            / "resized_train"
         )
         self.transform = transform
 
@@ -42,7 +44,7 @@ class DiabeticRetinopathyClassification(Dataset):
             dataset_name="diabetic-retinopathy",
             dataset_path="tanlikesmath/diabetic-retinopathy-resized",
             target_dir_path=dataset_path,
-            count_after_download_and_extract=FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT,
+            file_count_after_download_and_extract=FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT,
         )
 
     def __len__(self):

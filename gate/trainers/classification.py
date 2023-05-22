@@ -8,7 +8,7 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.metrics.core import accuracy_top_k
-from gate.trainers import Trainer, TrainerOutput
+from gate.orchestration.trainers import Trainer, TrainerOutput
 
 logger = get_logger(__name__)
 

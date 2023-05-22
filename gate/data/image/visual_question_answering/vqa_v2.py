@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
-
 from datasets import load_dataset
+
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset

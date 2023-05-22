@@ -305,29 +305,31 @@ def download_model_with_name(
     return downloaded_files
 
 
-def create_hf_model_repo(cfg: Any) -> str:
+def create_hf_model_repo(hf_repo_path: str) -> str:
     login(token=os.environ["HF_TOKEN"], add_to_git_credential=True)
-    print(f"Creating repo {cfg.hf_repo_path}")
+    print(f"Creating repo {hf_repo_path}")
     return create_repo(
-        cfg.hf_repo_path, repo_type="model", exist_ok=True, private=True
+        hf_repo_path, repo_type="model", exist_ok=True, private=True
     )
 
 
-def create_directories(cfg: Any) -> None:
-    pathlib.Path(cfg.hf_cache_dir).mkdir(parents=True, exist_ok=True)
-    (pathlib.Path(cfg.hf_cache_dir) / "checkpoints").mkdir(
+def create_directories(hf_cache_dir: str) -> None:
+    pathlib.Path(hf_cache_dir).mkdir(parents=True, exist_ok=True)
+    (pathlib.Path(hf_cache_dir) / "checkpoints").mkdir(
         parents=True, exist_ok=True
     )
 
 
-def upload_config_files(cfg: Any, hf_repo_path: str) -> None:
+def upload_config_files(
+    cfg: Any, hf_cache_dir: str, hf_repo_path: str
+) -> None:
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     config_json_path = save_json(
-        pathlib.Path(cfg.hf_cache_dir) / "config.json",
+        pathlib.Path(hf_cache_dir) / "config.json",
         config_dict,
         overwrite=True,
     )
-    config_yaml_path = pathlib.Path(cfg.hf_cache_dir) / "config.yaml"
+    config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
     with open(config_yaml_path, "w") as file:
@@ -367,33 +369,39 @@ def download_checkpoint(
 
 def create_hf_model_repo_and_download_maybe(
     cfg: Any,
+    hf_cache_dir: str,
+    hf_repo_path: str,
+    resume_from_checkpoint: str,
+    resume: bool,
 ) -> Tuple[Optional[pathlib.Path], str]:
-    create_hf_model_repo(cfg)
-    create_directories(cfg)
-    upload_config_files(cfg, cfg.hf_repo_path)
+    create_hf_model_repo(hf_repo_path)
+    create_directories(hf_cache_dir)
+    upload_config_files(
+        cfg=cfg, hf_repo_path=hf_repo_path, hf_cache_dir=hf_cache_dir
+    )
 
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
-    files = hf_api.list_repo_files(repo_id=cfg.hf_repo_path)
+    files = hf_api.list_repo_files(repo_id=hf_repo_path)
     ckpt_dict = get_checkpoint_dict(files)
 
     if len(ckpt_dict) == 0:
         return None
 
-    if cfg.resume_from_checkpoint:
+    if resume_from_checkpoint:
         return download_checkpoint(
-            hf_cache_dir=cfg.hf_cache_dir,
-            hf_repo_path=cfg.hf_repo_path,
-            ckpt_identifier=cfg.resume_from_checkpoint,
+            hf_cache_dir=hf_cache_dir,
+            hf_repo_path=hf_repo_path,
+            ckpt_identifier=resume_from_checkpoint,
         )
-    elif cfg.resume:
+    elif resume:
         latest_ckpt = ckpt_dict[max(ckpt_dict.keys())].split("/")[-1]
         return download_checkpoint(
-            hf_cache_dir=cfg.hf_cache_dir,
-            hf_repo_path=cfg.hf_repo_path,
+            hf_cache_dir=hf_cache_dir,
+            hf_repo_path=hf_repo_path,
             ckpt_identifier=latest_ckpt,
         )
     else:
-        print(f"Created repo {cfg.hf_repo_path}, {cfg.hf_cache_dir}")
+        print(f"Created repo {hf_repo_path}, {hf_cache_dir}")
         return None
 
 

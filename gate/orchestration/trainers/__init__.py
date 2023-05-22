@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
+import wandb
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics
@@ -33,9 +34,10 @@ class Trainer(ABC):
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.experiment_tracker = experiment_tracker
-        self.state_dict = {}
+        self.current_epoch_dict = defaultdict(list)
+        self.per_epoch_metrics = defaultdict(list)
         self.starting_train = True
-        self.souce_modality = source_modality
+        self.source_modality = source_modality
         self.target_modality = target_modality
 
         if self.scheduler is not None:
@@ -76,7 +78,7 @@ class Trainer(ABC):
         self,
         global_step: int,
     ):
-        self.state_dict = {}
+        self.current_epoch_dict = defaultdict(list)
         self.starting_train = True
         return TrainerOutput(
             opt_loss=None,
@@ -92,9 +94,6 @@ class Trainer(ABC):
         global_step: int,
     ):
         phase_metrics = {}
-        for key, value in self.state_dict.items():
-            phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
-            phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
         return TrainerOutput(
             opt_loss=None,
@@ -103,9 +102,6 @@ class Trainer(ABC):
             phase_name="training",
             experiment_tracker=self.experiment_tracker,
         )
-
-
-import wandb
 
 
 def log_data_to_wandb_table(
