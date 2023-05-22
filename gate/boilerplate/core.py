@@ -642,13 +642,12 @@ class Learner(nn.Module):
 if __name__ == "__main__":
     # a minimal example of how to use the Learner class
     import torch
+    from datasets import load_dataset
     from rich import print
     from torch.nn import CrossEntropyLoss
     from torch.optim import Adam
     from torch.utils.data import DataLoader
     from torchvision.transforms import Compose, Resize, ToTensor
-
-    from datasets import load_dataset
 
     train_dataset = load_dataset("beans", split="train")
     val_dataset = load_dataset("beans", split="validation")
