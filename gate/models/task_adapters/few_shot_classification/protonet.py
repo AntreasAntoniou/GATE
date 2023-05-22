@@ -76,7 +76,7 @@ class PrototypicalNetwork(nn.Module):
             audio = FewShotLearningClassificationEpisode(**audio)
         if isinstance(video, Dict):
             video = FewShotLearningClassificationEpisode(**video)
-        if text is not None:
+        if isinstance(text, Dict):
             text = FewShotLearningClassificationEpisode(**text)
 
         if image is not None:
