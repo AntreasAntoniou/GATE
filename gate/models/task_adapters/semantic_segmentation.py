@@ -266,7 +266,7 @@ class SegmentationViT(nn.Module):
             nn.init.constant_(module.bias, 0)
             nn.init.constant_(module.weight, 1.0)
 
-    def forward(self, image, labels: torch.Tensor = None):
+    def forward(self, image, labels: Optional[torch.Tensor] = None):
         """
             Forward pass for the segmentation model.
 
