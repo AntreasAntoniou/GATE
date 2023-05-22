@@ -215,7 +215,7 @@ class PrototypicalNetwork(nn.Module):
             }
         )
         query_set_embedding = query_set_features.view(
-            num_tasks, num_examples, -1
+            num_tasks, -1, query_set_features.shape[-1]
         )
 
         # Get the prototypes
