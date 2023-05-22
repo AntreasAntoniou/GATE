@@ -188,9 +188,9 @@ class FewShotClassificationMetaDataset(Dataset):
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
-        logger.info(
-            f"Current class to address dict: {self.current_class_to_address_dict}"
-        )
+        # logger.info(
+        #     f"Current class to address dict: {self.current_class_to_address_dict}"
+        # )
 
     def _validate_samples_and_classes(
         self,
@@ -332,9 +332,9 @@ class FewShotClassificationMetaDataset(Dataset):
         self, class_to_num_available_samples
     ):
         """Calculate the number of query samples per class."""
-        logger.info(
-            f"Class to num available samples: {class_to_num_available_samples}"
-        )
+        # logger.info(
+        #     f"Class to num available samples: {class_to_num_available_samples}"
+        # )
         min_available_shots = min(
             [value for value in class_to_num_available_samples.values()]
         )
