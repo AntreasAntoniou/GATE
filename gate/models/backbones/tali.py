@@ -13,15 +13,11 @@ from tali.utils import download_model_with_name
 from transformers import CLIPProcessor, WhisperProcessor
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
-<<<<<<< HEAD
 from gate.models.backbones import (
     Modality,
     apply_preprocessing_transforms,
     image_dim_reshape,
 )
-=======
-from gate.models.backbones import image_dim_reshape
->>>>>>> ed12a1f90eedf5b0151d747500bc8856c84c1919
 from gate.models.core import reinit
 
 
