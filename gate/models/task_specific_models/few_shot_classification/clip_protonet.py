@@ -59,11 +59,6 @@ def build_model(
                 for item in inputs["image"]["image"]["support_set"]
             ]
         )
-        output_dict = {
-            "image": {
-                "support_set_inputs": inputs["image"]["image"]["support_set"]
-            }
-        }
 
         inputs["image"]["image"]["query_set"] = torch.stack(
             [
@@ -71,6 +66,12 @@ def build_model(
                 for item in inputs["image"]["image"]["query_set"]
             ]
         )
+
+        output_dict = {}
+
+        output_dict["image"]["support_set_inputs"] = inputs["image"]["image"][
+            "support_set"
+        ]
 
         output_dict["image"]["query_set_inputs"] = inputs["image"]["image"][
             "query_set"
