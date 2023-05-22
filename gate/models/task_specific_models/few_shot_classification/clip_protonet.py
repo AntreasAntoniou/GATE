@@ -53,30 +53,30 @@ def build_model(
     transform_dict = backbone_model.get_transforms()
 
     def transform_wrapper(inputs: Union[Dict, Any]):
-        output_dict = {}
+        inputs["image"]["image"]["support_set"] = torch.stack(
+            [
+                transform_dict["image"](item)
+                for item in inputs["image"]["image"]["support_set"]
+            ]
+        )
+        output_dict = {
+            "image": {"support_set": inputs["image"]["image"]["support_set"]}
+        }
 
-        for modality in inputs.keys():
-            temp_shape = inputs[modality][modality]["support_set"].shape
-            inputs[modality][modality]["support_set"] = transform_dict[
-                modality
-            ](
-                inputs[modality][modality]["support_set"].view(
-                    -1, *temp_shape[-3:]
-                )
-            ).view(
-                temp_shape
-            )
+        inputs["image"]["image"]["query_set"] = torch.stack(
+            [
+                transform_dict["image"](item)
+                for item in inputs["image"]["image"]["query_set"]
+            ]
+        )
 
-            temp_shape = inputs[modality][modality]["query_set"].shape
-            inputs[modality][modality]["query_set"] = transform_dict[modality](
-                inputs[modality][modality]["query_set"].view(
-                    -1, *temp_shape[-3:]
-                )
-            ).view(temp_shape)
+        output_dict["image"]["query_set"] = inputs["image"]["image"][
+            "query_set"
+        ]
 
-            output_dict[modality] = inputs[modality][modality]
+        output_dict["labels"] = inputs["labels"]["image"]
 
-        return output_dict
+        return inputs
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
