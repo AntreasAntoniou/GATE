@@ -49,8 +49,19 @@ def test_hmdb51_skeleton_dataloader():
         assert batch["video_ids"].shape == (batch_size,)
         assert batch["skeleton_num_persons"].shape == (batch_size,)
         assert batch["skeleton_num_frames"].shape == (batch_size,)
-        assert batch["skeleton_keypoints"].shape == (batch_size, 26, 1061, 17, 2)
-        assert batch["skeleton_keypoints_scores"].shape == (batch_size, 26, 1061, 17)
+        assert batch["skeleton_keypoints"].shape == (
+            batch_size,
+            26,
+            1061,
+            17,
+            2,
+        )
+        assert batch["skeleton_keypoints_scores"].shape == (
+            batch_size,
+            26,
+            1061,
+            17,
+        )
         break
 
 
