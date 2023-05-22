@@ -78,7 +78,6 @@ def build_model(
 @configurable(
     group="model",
     name="clip-protonet-few-shot-classification",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_model(
     model_name: str = "openai/clip-vit-base-patch16",
