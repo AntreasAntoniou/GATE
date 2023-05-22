@@ -1,11 +1,13 @@
 import json
 import pathlib
 from typing import Any, Counter, Dict, List, Optional
+import PIL.Image as Image
 
 import datasets
 import numpy as np
 import torch
 from omegaconf import DictConfig
+import torchvision.transforms as T
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
 
@@ -492,7 +494,16 @@ class FewShotClassificationMetaDataset(Dataset):
 
     def _convert_to_tensor(self, inputs, labels):
         """Convert input data and labels to tensors."""
-        inputs = [torch.tensor(input_) for input_ in inputs]
+        inputs = [
+            torch.tensor(input_)
+            if isinstance(input_, np.array)
+            else T.ToTensor()(Image.open(input_))
+            if isinstance(input_, str)
+            else input_
+            if isinstance(input_, torch.Tensor)
+            else None
+            for input_ in inputs
+        ]
         inputs = (
             torch.stack(inputs, dim=0) if isinstance(inputs, list) else inputs
         )
