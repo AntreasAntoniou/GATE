@@ -124,6 +124,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
             x = {self.modality: input_dict[self.modality]}
 
         if image is not None:
+            # e.g. image.shape = [batch_size, seq_len, 3, 224, 224]
             x = {"image": image}
 
         if text is not None:
@@ -140,9 +141,15 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         if len(input_shape) == 5:
             x = x[self.modality].view(-1, *input_shape[-3:])
 
-        x = self.model(**{self.modality: x})[self.modality]
-        x = x["features"].view(*input_shape[:2], -1)
-        x = self.temporal_encoder(x)["features"]
-        x = self.linear(x)
+        x = self.model(**{self.modality: x})[
+            self.modality
+        ]  # [batch_size * seq_len, 3, 224, 224] -> model -> [batch_size * seq_len, num_backbone_features]
+        x = x["features"].view(
+            *input_shape[:2], -1
+        )  # [batch_size, seq_len, num_backbone_features]
+        x = self.temporal_encoder(x)[
+            "features"
+        ]  # [batch_size, num_backbone_features]
+        x = self.linear(x)  # [batch_size, num_classes]
 
         return x
