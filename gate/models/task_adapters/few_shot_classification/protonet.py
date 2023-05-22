@@ -195,6 +195,7 @@ class PrototypicalNetwork(nn.Module):
         num_tasks, num_examples = support_set_inputs.shape[:2]
 
         # Compute the support set features and embeddings
+        print(f"support_set_inputs: {support_set_inputs.shape}")
         support_set_features = self.forward_features(
             **{
                 self.modality: support_set_inputs.view(
@@ -208,6 +209,7 @@ class PrototypicalNetwork(nn.Module):
         )
 
         # Compute the query set features and embeddings
+        print(f"query_set_inputs: {query_set_inputs.shape}")
         query_set_features = self.forward_features(
             **{
                 self.modality: query_set_inputs.view(
