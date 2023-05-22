@@ -1466,6 +1466,11 @@ def check_num_files_each_class(dataset_rootdir: str | Path):
 
     num_files_each_class = {}
     for split in ["train", "val", "test"]:
+        if not (videos_dir / split).exists():
+            raise FileNotFoundError(
+                "Dataset is not prepared correctly. There are missing files."
+            )
+
         for class_dir in (videos_dir / split).iterdir():
             num_files_each_class[class_dir.name] = len(list(class_dir.iterdir()))
 
@@ -1489,6 +1494,7 @@ def prepare_kinetics_400(
         # Not prepared, so prepare it
         if extract_dataset_rootdir is None:
             download_dataset_rootdir = Path(download_dataset_rootdir)
+            download_dataset_rootdir.mkdir(parents=True, exist_ok=True)
             disk_space = shutil.disk_usage(download_dataset_rootdir).free
             if disk_space < (DOWNLOAD_GB + EXTRACT_GB) * 1024 * 1024 * 1024:
                 raise RuntimeError(
