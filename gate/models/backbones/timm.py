@@ -4,8 +4,13 @@ from urllib.request import urlopen
 
 import PIL.Image as Image
 import timm
+
+import PIL.Image as Image
+import timm
 import torch
 import torch.nn as nn
+from timm.data import resolve_data_config
+from timm.data.transforms_factory import create_transform
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor

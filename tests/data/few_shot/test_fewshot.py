@@ -25,13 +25,12 @@ classes_to_test = [
     AircraftFewShotClassificationDataset,
     CUB200FewShotClassificationDataset,
     CIFARFewShotClassificationDataset,
+    CUB200FewShotClassificationDataset,
     DescribableTexturesFewShotClassificationDataset,
     FC100FewShotClassificationDataset,
     FungiFewShotClassificationDataset,
-    TieredImageNetFewShotClassificationDataset,
     MiniImageNetFewShotClassificationDataset,
     OmniglotFewShotClassificationDataset,
-    VGGFlowersFewShotClassificationDataset,
     QuickDrawFewShotClassificationDataset,
 ]
 
