@@ -314,7 +314,9 @@ class FewShotClassificationMetaDataset(Dataset):
         )
         num_query_samples_per_class = int(np.floor(min_available_shots * 0.5))
         num_query_samples_per_class = max(num_query_samples_per_class, 1)
-        return min(num_query_samples_per_class, self.num_query_samples_per_class)
+        return min(
+            num_query_samples_per_class, self.num_query_samples_per_class
+        )
 
     def _prepare_support_and_query_sets(
         self,
@@ -407,10 +409,11 @@ class FewShotClassificationMetaDataset(Dataset):
         query_set_labels,
     ):
         """Assign the data to the support and query sets."""
+
         print(
-            f"num_support_samples_per_class: {num_support_samples_per_class}, 
-            data input length: {len(data_inputs)}"
+            f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
         )
+
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
                 data_inputs[:num_support_samples_per_class]
@@ -419,10 +422,16 @@ class FewShotClassificationMetaDataset(Dataset):
                 data_labels[:num_support_samples_per_class]
             )
             query_set_inputs.extend(
-                data_inputs[num_support_samples_per_class:num_support_samples_per_class+num_query_samples_per_class]
+                data_inputs[
+                    num_support_samples_per_class : num_support_samples_per_class
+                    + num_query_samples_per_class
+                ]
             )
             query_set_labels.extend(
-                data_labels[num_support_samples_per_class:num_support_samples_per_class+num_query_samples_per_class]
+                data_labels[
+                    num_support_samples_per_class : num_support_samples_per_class
+                    + num_query_samples_per_class
+                ]
             )
         else:
             support_set_inputs.extend(data_inputs[:-1])
