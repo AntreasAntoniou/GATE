@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from gate.data.few_shot.omniglot import (
+from gate.data.few_shot.mini_imagenet import (
     build_dataset,
     build_gate_dataset,
 )

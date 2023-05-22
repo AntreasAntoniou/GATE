@@ -3,6 +3,7 @@ import pathlib
 from typing import Any, Optional, Tuple, Union
 
 import learn2learn as l2l
+import torch
 from torchvision import transforms as T
 from gate.boilerplate.decorators import configurable
 
@@ -12,6 +13,7 @@ from gate.data.core import GATEDataset
 from gate.data.few_shot import bytes_to_string
 from gate.data.few_shot.core import FewShotClassificationMetaDataset
 from gate.data.few_shot.utils import FewShotSuperSplitSetOptions
+from gate.data.transforms.tiny_image_transforms import pad_image
 
 logger = get_logger(
     __name__,
@@ -98,6 +100,10 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
+
+    if set_name not in ["train", "val", "test"]:
+        raise KeyError(f"Invalid set name: {set_name}")
+
     dataset_root = pathlib.Path(data_dir)
     data_set = OmniglotFewShotClassificationDataset(
         dataset_root=dataset_root,
@@ -124,13 +130,27 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
 
 from rich import print
 
+single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+
 
 def key_mapper(input_dict):
-    print(list(input_dict.keys()))
+    input_dict["image"]["image"]["support_set"] = torch.stack(
+        [
+            pad_image(single_to_three_channel(item), target_size=(224, 224))
+            for item in input_dict["image"]["image"]["support_set"]
+        ]
+    )
+
+    input_dict["image"]["image"]["query_set"] = torch.stack(
+        [
+            pad_image(single_to_three_channel(item), target_size=(224, 224))
+            for item in input_dict["image"]["image"]["query_set"]
+        ]
+    )
+
     return {
-        "inputs": input_dict["image"],
-        "targets": input_dict["label"],
-        "target_annotations": input_dict["label"],
+        "image": input_dict["image"],
+        "labels": input_dict["labels"],
     }
 
 
@@ -158,21 +178,24 @@ def build_gate_dataset(
     #     return input_dict
 
     train_set = GATEDataset(
-        dataset=build_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        transforms=[transforms],
+        item_keys=["image", "labels"],
+        transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
-        dataset=build_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        transforms=transforms,
+        item_keys=["image", "labels"],
+        transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
-        dataset=build_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        transforms=transforms,
+        item_keys=["image", "labels"],
+        transforms=[key_mapper, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
