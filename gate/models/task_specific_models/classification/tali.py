@@ -96,15 +96,29 @@ def build_gate_tali_model(
     )
 
     # Create Modality Config based on input modality
-    model_modality_config = TargetModalityConfig(
-        **{modality: [SourceModalityConfig(**{modality: True})]}
-    )
+    if modality == "image":
+        model_modality_config = TargetModalityConfig(
+            image=[SourceModalityConfig(image=True)]
+        )
+    elif modality == "text":
+        model_modality_config = TargetModalityConfig(
+            text=[SourceModalityConfig(text=True)]
+        )
+    elif modality == "audio":
+        model_modality_config = TargetModalityConfig(
+            audio=[SourceModalityConfig(audio=True)]
+        )
+    elif modality == "video":
+        model_modality_config = TargetModalityConfig(
+            video=[SourceModalityConfig(video=True)]
+        )
 
     model_key_remapper_dict_config = {
         "image": "image",
         "text": "image",
         "audio": "audio",
         "video": "video",
+        "pixel_values": "image",
     }
 
     gate_model = GATEModel(

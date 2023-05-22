@@ -1,18 +1,54 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Optional
 from urllib.request import urlopen
 
+import PIL
 import PIL.Image as Image
 import timm
 import torch
 import torch.nn as nn
+import torchvision.transforms as T
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
-from gate.models.backbones import image_dim_reshape
+from gate.models.backbones import Modality, image_dim_reshape
 from gate.models.core import reinit
+
+single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+
+
+def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
+    input_shape = None
+    is_5d_tensor = False
+    if isinstance(x, PIL.Image.Image) and modality == Modality.image:
+        x = T.ToTensor()(x)
+        if x.shape[0] == 1:
+            x = single_to_three_channel(x)
+        x = T.ToPILImage()(x)
+
+    if isinstance(x, torch.Tensor) and modality == Modality.image:
+        input_shape = x.shape
+        x = image_dim_reshape(x)
+        is_5d_tensor = len(x.shape) == 5
+
+    if transforms is not None:
+        if isinstance(x, torch.Tensor):
+            x = T.ToPILImage()(x)
+
+        x = transforms(x)
+        # print(x.shape)
+
+    if (
+        input_shape is not None
+        and isinstance(x, torch.Tensor)
+        and is_5d_tensor
+    ):
+        x = x.view(input_shape[0], input_shape[1], *x.shape[1:])
+
+    return x
 
 
 class TimmModel(nn.Module):
@@ -33,30 +69,39 @@ class TimmModel(nn.Module):
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
+        print(f"{model_identifier} transforms: {self.transforms}")
         output_shape = self.get_output_shape()["raw_features"]
-        self.num_output_features = (
-            output_shape[-1] if len(output_shape) == 3 else output_shape[1]
-        )
+        print(f"{model_identifier} output shape: {output_shape}")
+        self.num_output_features = output_shape[2]
+        self.num_patches = output_shape[1]
 
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
 
         raw_features = self.model.forward_features(x)
+        raw_features_as_sequence = raw_features
+        if len(raw_features.shape) == 4:
+            feature_shape = raw_features.shape
+            if (
+                len(feature_shape) == 4
+            ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
+                raw_features_as_sequence = raw_features.permute(
+                    [0, 2, 3, 1]
+                ).reshape(
+                    feature_shape[0], -1, feature_shape[1]
+                )  # output should have shape (batch_size, num_patches, num_features)
+
         features = self.model.forward_head(raw_features, pre_logits=True)
         predictions = self.model.forward_head(raw_features)
 
         return {
             "classifier": predictions,
             "features": features,
-            "raw_features": raw_features,
+            "raw_features": raw_features_as_sequence,
         }
 
     def get_transforms(self):
-        return {
-            "image": lambda x: self.transforms(image_dim_reshape(x)).view(
-                x.shape
-            )
-        }
+        return {"image": lambda x: self.transforms(x)}
 
     def get_output_shape(self):
         img = Image.open(
@@ -65,7 +110,8 @@ class TimmModel(nn.Module):
             )
         )
         output_dict = self.forward(self.transforms(img).unsqueeze(0))
-        return {k: v.shape for k, v in output_dict.items()}
+        shape_dict = {k: v.shape for k, v in output_dict.items()}
+        return shape_dict
 
 
 class TimmCLIPAdapter(nn.Module):
@@ -88,14 +134,10 @@ class TimmCLIPAdapter(nn.Module):
         )
         self.text_model = self.clip.text_model
 
-        vision_model_output_shape = self.vision_model.get_output_shape()[
+        self.vision_model_output_shape = self.vision_model.get_output_shape()[
             "raw_features"
         ]
-        self.image_num_features = (
-            vision_model_output_shape[-1]
-            if len(vision_model_output_shape) == 3
-            else vision_model_output_shape[1]
-        )
+        self.image_num_features = self.vision_model_output_shape[2]
         self.text_num_features = self.clip.text_embed_dim
 
     def init_weights(self):
@@ -128,15 +170,6 @@ class TimmCLIPAdapter(nn.Module):
         if image is not None:
             output_dict["image"] = self.vision_model.forward(image)
 
-            if output_dict["image"]["raw_features"].dim() == 4:
-                output_shape = output_dict["image"]["raw_features"].shape
-                output_dict["image"]["raw_features"] = output_dict["image"][
-                    "raw_features"
-                ].view(output_shape[0], output_shape[1], -1)
-                output_dict["image"]["raw_features"] = output_dict["image"][
-                    "raw_features"
-                ].permute([0, 2, 1])
-
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
             output_dict["text"]["features"] = text.pooler_output
@@ -145,13 +178,19 @@ class TimmCLIPAdapter(nn.Module):
         return output_dict
 
     def get_transforms(self):
-        return {
-            "image": lambda x: self.preprocessor(
-                images=image_dim_reshape(x), return_tensors="pt"
-            )
-            .pixel_values.squeeze(0)
-            .view(x.shape),
-            "text": lambda x: self.preprocessor(
+        def image_transforms(x):
+            return self.vision_model.transforms(x)
+
+        def text_transforms(x):
+            return self.preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0),
+            ).input_ids.squeeze(0)
+
+        return {
+            "image": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=image_transforms, modality=Modality.image
+            ),
+            "text": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=text_transforms, modality=Modality.text
+            ),
         }

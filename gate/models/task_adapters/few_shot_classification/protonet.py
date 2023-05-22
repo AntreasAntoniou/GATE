@@ -76,7 +76,7 @@ class PrototypicalNetwork(nn.Module):
             audio = FewShotLearningClassificationEpisode(**audio)
         if isinstance(video, Dict):
             video = FewShotLearningClassificationEpisode(**video)
-        if text is not None:
+        if isinstance(text, Dict):
             text = FewShotLearningClassificationEpisode(**text)
 
         if image is not None:
@@ -129,6 +129,7 @@ class PrototypicalNetwork(nn.Module):
             The output tensor after being processed by the model and the linear layer.
         """
         x = None
+        print(f"image: {image.shape}")
         if input_dict is not None:
             x = self.model(**input_dict)[self.modality]["features"]
         if image is not None:
@@ -194,6 +195,7 @@ class PrototypicalNetwork(nn.Module):
         num_tasks, num_examples = support_set_inputs.shape[:2]
 
         # Compute the support set features and embeddings
+        print(f"support_set_inputs: {support_set_inputs.shape}")
         support_set_features = self.forward_features(
             **{
                 self.modality: support_set_inputs.view(
@@ -207,6 +209,7 @@ class PrototypicalNetwork(nn.Module):
         )
 
         # Compute the query set features and embeddings
+        print(f"query_set_inputs: {query_set_inputs.shape}")
         query_set_features = self.forward_features(
             **{
                 self.modality: query_set_inputs.view(
@@ -215,7 +218,7 @@ class PrototypicalNetwork(nn.Module):
             }
         )
         query_set_embedding = query_set_features.view(
-            num_tasks, num_examples, -1
+            num_tasks, -1, query_set_features.shape[-1]
         )
 
         # Get the prototypes

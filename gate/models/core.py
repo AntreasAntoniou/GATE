@@ -121,6 +121,7 @@ class GATEModel(nn.Module):
             # )  # 📋 Print the input modalities
             if extra_arg_items is not None:
                 input_modalities.update(extra_arg_items)
+            # print(input_modalities)
             return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported modality: {key}")

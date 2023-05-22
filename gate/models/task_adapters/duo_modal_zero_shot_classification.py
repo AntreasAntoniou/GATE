@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.extras import get_similarities
+from gate.models.task_adapters.utils import get_similarities
 
 
 class DuoModalZeroShotModel(BaseModule):

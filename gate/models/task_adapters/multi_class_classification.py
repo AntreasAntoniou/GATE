@@ -30,16 +30,20 @@ class MultiClassBackboneWithLinear(BaseModule):
         loss = loss.detach()
         logits = logits.detach()
 
-        metrics = {"mixed_loss": loss.mean(), "loss": opt_loss, "predictions": logits, "targets": targets}
-        
+        metrics = {
+            "mixed_loss": loss.mean(),
+            "loss": opt_loss,
+            "predictions": logits,
+            "targets": targets,
+        }
+
         for c_idx, class_name in enumerate(self.classes):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
-        
+
         return metrics
-        
-    
+
     def forward(
-        self,,
+        self,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
@@ -47,7 +51,6 @@ class MultiClassBackboneWithLinear(BaseModule):
         labels: Optional[torch.Tensor] = None,
         return_loss: bool = False,
     ) -> Dict[str, torch.Tensor]:
-        
         if image is not None:
             x = self.model(image=image)["image"]["features"]
 
@@ -61,9 +64,9 @@ class MultiClassBackboneWithLinear(BaseModule):
             x = self.model(video=video)["video"]["features"]
 
         x = self.linear(x)
-        
+
         if return_loss and labels is not None:
             loss = self.compute_multi_class_loss(x, labels)
             return loss
-        
+
         return x

@@ -49,8 +49,19 @@ def test_ucf101_skeleton_dataloader():
         assert batch["video_ids"].shape == (batch_size,)
         assert batch["skeleton_num_persons"].shape == (batch_size,)
         assert batch["skeleton_num_frames"].shape == (batch_size,)
-        assert batch["skeleton_keypoints"].shape == (batch_size, 30, 1775, 17, 2)
-        assert batch["skeleton_keypoints_scores"].shape == (batch_size, 30, 1775, 17)
+        assert batch["skeleton_keypoints"].shape == (
+            batch_size,
+            30,
+            1775,
+            17,
+            2,
+        )
+        assert batch["skeleton_keypoints_scores"].shape == (
+            batch_size,
+            30,
+            1775,
+            17,
+        )
         break
 
 

@@ -1,17 +1,31 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
-from zstandard import train_dictionary
-
+import torch
+import torchvision.transforms as T
 from datasets import load_dataset
+
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
+from gate.data.transforms.tiny_image_transforms import pad_image
 
 logger = get_logger(name=__name__, set_rich=True)
+
+
+def transform_wrapper(inputs: Dict, target_size=224):
+    # print(list(inputs.keys()))
+    # print(inputs["label"])
+    return {
+        "image": T.Resize(size=(target_size, target_size))(
+            inputs["image"].convert("RGB")
+        ),
+        "text": inputs["question"],
+        "labels": torch.tensor(int(inputs["label"])).long(),
+    }
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -32,27 +46,24 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         f"Loading CLEVR Math dataset, will download to {data_dir} if necessary."
     )
 
+    if set_name not in ["train", "val", "test"]:
+        raise KeyError(f"Invalid set name {set_name}.")
+
     train_set = load_dataset(
         path="dali-does/clevr-math",
         split="train",
-        subset="general",
         cache_dir=data_dir,
-        task="image-classification",
     )
 
     validation_set = load_dataset(
         path="dali-does/clevr-math",
         split="validation",
-        subset="general",
         cache_dir=data_dir,
-        task="image-classification",
     )
     test_set = load_dataset(
         path="dali-does/clevr-math",
-        split="testing",
-        subset="general",
+        split="test",
         cache_dir=data_dir,
-        task="image-classification",
     )
 
     dataset_dict = {
@@ -70,14 +81,14 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=10,
+    num_classes=11,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
@@ -85,7 +96,7 @@ def build_gate_dataset(
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
@@ -93,7 +104,7 @@ def build_gate_dataset(
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[transform_wrapper, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

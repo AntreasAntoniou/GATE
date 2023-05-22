@@ -3,17 +3,17 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
-
+import torchvision.transforms as T
 from datasets import load_dataset
+from timm.data import rand_augment_transform
+
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
 
-def build_imagenet1k_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a SVHN dataset using the Hugging Face datasets library.
 
@@ -51,23 +51,39 @@ def build_imagenet1k_dataset(
 
 
 @configurable(
-    group="dataset", name="imagenet1k", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset",
+    name="imagenet1k-classification",
+    defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_imagenet1k_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=1000,
 ) -> dict:
+    rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
+    single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+
+    def train_augment(input_dict):
+        x = input_dict["image"]
+        x = T.ToTensor()(x)
+        # print(x.shape)
+        if x.shape[0] == 1:
+            x = single_to_three_channel(x)
+        x = T.ToPILImage()(x)
+        input_dict["image"] = rand_augment(x)
+
+        return input_dict
+
     train_set = GATEDataset(
-        dataset=build_imagenet1k_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[train_augment, transforms],
     )
 
     val_set = GATEDataset(
-        dataset=build_imagenet1k_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},
@@ -75,7 +91,7 @@ def build_gate_imagenet1k_dataset(
     )
 
     test_set = GATEDataset(
-        dataset=build_imagenet1k_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         task=ClassificationTask(),
         key_remapper_dict={"pixel_values": "image"},

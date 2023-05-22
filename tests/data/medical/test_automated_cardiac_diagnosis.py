@@ -2,7 +2,10 @@ import os
 
 import pytest
 
-from gate.data.medical.acdc import ACDCDataset, download_and_extract_file
+from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
+    ACDCDataset,
+    download_and_extract_file,
+)
 
 # You can set this to the path where you have the dataset stored on your machine
 DATASET_PATH = os.environ.get("PYTEST_DIR")

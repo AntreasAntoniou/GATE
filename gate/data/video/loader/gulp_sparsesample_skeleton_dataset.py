@@ -430,7 +430,11 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             )
             keypoint_score = np.pad(
                 keypoint_score,
-                ((0, self.max_num_persons - skeleton_num_persons), (0, 0), (0, 0)),
+                (
+                    (0, self.max_num_persons - skeleton_num_persons),
+                    (0, 0),
+                    (0, 0),
+                ),
                 "constant",
                 constant_values=0,
             )
@@ -448,7 +452,11 @@ class GulpSparsesampleSkeletonDataset(torch.utils.data.Dataset):
             )
             keypoint_score = np.pad(
                 keypoint_score,
-                ((0, 0), (0, self.max_num_frames - skeleton_num_frames), (0, 0)),
+                (
+                    (0, 0),
+                    (0, self.max_num_frames - skeleton_num_frames),
+                    (0, 0),
+                ),
                 "constant",
                 constant_values=0,
             )
