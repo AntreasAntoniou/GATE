@@ -244,11 +244,11 @@ class GATEDataset(Dataset):
             item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
 
         item = self.task(item) if self.task is not None else item
-        dict_items = (
-            item
-            if isinstance(item, dict)
-            else {idx: item for idx, item in enumerate(item)}
-        )
+        # dict_items = (
+        #     item
+        #     if isinstance(item, dict)
+        #     else {idx: item for idx, item in enumerate(item)}
+        # )
         # for key, value in dict_items.items():
         #     if isinstance(value, torch.Tensor):
         #         print(

@@ -16,18 +16,6 @@ from gate.data.transforms.tiny_image_transforms import pad_image
 logger = get_logger(name=__name__, set_rich=True)
 
 
-def transform_wrapper(inputs: Dict, target_size=224):
-    # print(list(inputs.keys()))
-    # print(inputs["label"])
-    return {
-        "image": T.Resize(size=(target_size, target_size))(
-            inputs["image"].convert("RGB")
-        ),
-        "text": inputs["question"],
-        "labels": torch.tensor(int(inputs["label"])).long(),
-    }
-
-
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a CLEVR Math dataset using the Hugging Face datasets library.
@@ -73,6 +61,16 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     }
 
     return dataset_dict[set_name]
+
+
+def transform_wrapper(inputs: Dict, target_size=224):
+    return {
+        "image": T.Resize(size=(target_size, target_size))(
+            inputs["image"].convert("RGB")
+        ),
+        "text": inputs["question"],
+        "labels": torch.tensor(int(inputs["label"])).long(),
+    }
 
 
 @configurable(
