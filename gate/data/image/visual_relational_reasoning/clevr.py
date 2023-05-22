@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
+import datasets
 import numpy as np
 import orjson as json
 import torch
@@ -12,7 +13,6 @@ from rich import print
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import random_split
 
-import datasets
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
