@@ -3,10 +3,7 @@ import os
 
 import pytest
 
-from gate.data.few_shot.omniglot import (
-    build_dataset,
-    build_gate_dataset,
-)
+from gate.data.few_shot.omniglot import build_dataset, build_gate_dataset
 
 
 def test_build_dataset():

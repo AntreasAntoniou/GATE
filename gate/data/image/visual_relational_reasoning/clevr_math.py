@@ -2,8 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import numpy as np
-
-from datasets import load_dataset
 import torch
 import torchvision.transforms as T
 

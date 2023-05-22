@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from sklearn.metrics import average_precision_score, brier_score_loss
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
+from sklearn.metrics import average_precision_score, brier_score_loss
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
