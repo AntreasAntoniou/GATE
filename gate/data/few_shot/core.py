@@ -231,6 +231,9 @@ class FewShotClassificationMetaDataset(Dataset):
         for idx, subset in tqdm(enumerate(subsets)):
             for sample in tqdm(subset):
                 sample = self._process_sample(sample)
+                sample[
+                    "label"
+                ] = f"{subset_split_name_list[idx]}{sample['label']}"
                 print(
                     f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
                 )
