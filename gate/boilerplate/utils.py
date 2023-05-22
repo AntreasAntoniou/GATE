@@ -139,7 +139,7 @@ def demo_logger():
     logger = get_logger(__name__)
 
     logger.info("Hello World")
-    logger.debug("Debugging")
+    # logger.debug("Debugging")
     logger.warning("Warning")
     logger.error("Error")
     logger.critical("Critical")

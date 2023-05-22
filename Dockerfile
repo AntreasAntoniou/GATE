@@ -23,7 +23,7 @@ RUN conda create -n main python=3.10 -y
 SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 
 RUN conda install -c conda-forge mamba -y
-RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh -y
+RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat -y
 RUN mamba install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
 
 RUN echo y | pip install nvitop --upgrade
