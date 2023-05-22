@@ -97,7 +97,7 @@ class MiniImageNetFewShotClassificationDataset(
             },
             # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
             subset_split_name_list=["train", "validation", "test"],
-            label_extractor_fn=lambda x: int(bytes_to_string(x)),
+            label_extractor_fn=lambda x: int(float(bytes_to_string(x))),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
