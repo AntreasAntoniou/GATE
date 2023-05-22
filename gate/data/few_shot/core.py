@@ -501,7 +501,7 @@ class FewShotClassificationMetaDataset(Dataset):
             if isinstance(input_, str)
             else input_
             if isinstance(input_, torch.Tensor)
-            else None
+            else T.ToTensor()(input_)
             for input_ in inputs
         ]
         inputs = (
