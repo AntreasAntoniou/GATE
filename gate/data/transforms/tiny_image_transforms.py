@@ -1,6 +1,6 @@
 from typing import List, Tuple, Union
-import PIL
 
+import PIL
 from torchvision import transforms
 
 
