@@ -496,7 +496,7 @@ class FewShotClassificationMetaDataset(Dataset):
         """Convert input data and labels to tensors."""
         inputs = [
             torch.tensor(input_)
-            if isinstance(input_, np.array)
+            if isinstance(input_, np.ndarray)
             else T.ToTensor()(Image.open(input_))
             if isinstance(input_, str)
             else input_
