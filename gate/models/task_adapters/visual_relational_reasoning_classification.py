@@ -207,9 +207,6 @@ class DuoModalFusionModel(BaseModule):
                 temp_features = features[answer_specific_idx]
                 temp_logits = self.classifier[answer](temp_features)
                 temp_labels = labels[answer_specific_idx]
-                # print(
-                #     f"temp_labels {temp_labels.shape}, temp_logits {temp_logits.shape}"
-                # )
                 output_dict[f"loss_{answer}"] = F.cross_entropy(
                     temp_logits, temp_labels
                 )
