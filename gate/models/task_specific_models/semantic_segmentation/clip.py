@@ -13,9 +13,7 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import (
-    SegmentationViT,
-)
+from gate.models.task_adapters.semantic_segmentation import SegmentationViT
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,

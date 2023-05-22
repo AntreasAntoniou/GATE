@@ -1,16 +1,16 @@
 from typing import Dict, List, Optional, Union
-from omegaconf import DictConfig
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from gate.metrics.core import accuracy_top_k
+from omegaconf import DictConfig
+from rich import print
 
+from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.temporal_image_classification import (
     VariableSequenceTransformerEncoder,
 )
-from rich import print
 
 
 class SkipConnectionModule(nn.Module):

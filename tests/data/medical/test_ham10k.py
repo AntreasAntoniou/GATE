@@ -4,8 +4,8 @@ import os
 import pytest
 
 from gate.data.medical.classification.ham10k import (
-    build_gate_dataset,
     build_dataset,
+    build_gate_dataset,
 )
 
 

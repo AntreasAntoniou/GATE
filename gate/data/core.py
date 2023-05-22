@@ -2,12 +2,13 @@ import collections
 import json
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
-import PIL
 
+import numpy as np
+import PIL
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
-import numpy as np
+
 from gate.boilerplate.decorators import configurable
 
 

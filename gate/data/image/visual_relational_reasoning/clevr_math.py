@@ -2,12 +2,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import numpy as np
-
-from datasets import load_dataset
 import torch
 import torchvision.transforms as T
-
 from datasets import load_dataset
+
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR

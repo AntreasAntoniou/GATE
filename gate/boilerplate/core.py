@@ -14,8 +14,8 @@ from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name, get_logger
 from gate.config.variables import (
-    HYDRATED_CURRENT_EXPERIMENT_DIR,
     DUMMY_BATCH_MODE,
+    HYDRATED_CURRENT_EXPERIMENT_DIR,
     HYDRATED_EXPERIMENT_NAME,
     HYDRATED_HF_CACHE_DIR,
     HYDRATED_HF_REPO_PATH,
@@ -642,13 +642,12 @@ class Learner(nn.Module):
 if __name__ == "__main__":
     # a minimal example of how to use the Learner class
     import torch
+    from datasets import load_dataset
     from rich import print
     from torch.nn import CrossEntropyLoss
     from torch.optim import Adam
     from torch.utils.data import DataLoader
     from torchvision.transforms import Compose, Resize, ToTensor
-
-    from datasets import load_dataset
 
     train_dataset = load_dataset("beans", split="train")
     val_dataset = load_dataset("beans", split="validation")

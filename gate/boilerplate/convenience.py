@@ -2,12 +2,12 @@ import pathlib
 from typing import Any, Dict, Optional
 
 import accelerate
-from hydra_zen import instantiate
 import neptune
 import torch
 import torch.nn as nn
-from torch.utils.data import Subset
 import wandb
+from hydra_zen import instantiate
+from torch.utils.data import Subset
 
 from gate.boilerplate.utils import get_logger
 from gate.data.core import GATEDataset

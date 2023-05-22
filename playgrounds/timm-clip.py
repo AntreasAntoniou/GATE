@@ -1,7 +1,8 @@
 from urllib.request import urlopen
-from PIL import Image
+
 import timm
 import torch
+from PIL import Image
 
 img = Image.open(
     urlopen(
