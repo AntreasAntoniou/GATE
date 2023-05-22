@@ -122,6 +122,7 @@ def run(cfg: Any) -> None:
     evaluator = instantiate(
         cfg.evaluator, experiment_tracker=experiment_tracker
     )
+    # TODO: allow losses and task adapters to be defined at this level
 
     learner: Learner = instantiate(
         cfg.learner,
