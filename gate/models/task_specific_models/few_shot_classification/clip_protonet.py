@@ -84,7 +84,7 @@ def build_model(
             "query_set"
         ]
 
-        return inputs
+        return output_dict
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
