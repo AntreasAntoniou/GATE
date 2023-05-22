@@ -246,7 +246,7 @@ class FewShotClassificationMetaDataset(Dataset):
             return self._get_dict_based_on_split_percentage()
         else:
             if self.print_info:
-                logger.info(self.split_config)
+                logger.debug(self.split_config)
             return {
                 label_name: self.class_to_address_dict[label_name]
                 for label_name in self.split_config[self.split_name]
@@ -300,7 +300,7 @@ class FewShotClassificationMetaDataset(Dataset):
             class_name: len(self.current_class_to_address_dict[class_name])
             for class_name in selected_classes_for_set
         }
-        logger.info(
+        logger.debug(
             f"Class to num available samples: {class_to_num_available_samples}"
         )
         return class_to_num_available_samples
@@ -462,10 +462,12 @@ class FewShotClassificationMetaDataset(Dataset):
         query_label_frequency_dict = Counter(
             [int(label) for label in query_set_labels]
         )
-        logger.info(
+        logger.debug(
             f"Support set label frequency: {support_label_frequency_dict}"
         )
-        logger.info(f"Query set label frequency: {query_label_frequency_dict}")
+        logger.debug(
+            f"Query set label frequency: {query_label_frequency_dict}"
+        )
 
     def _format_input_and_label_data(
         self,
@@ -610,7 +612,7 @@ class FewShotClassificationMetaDataset(Dataset):
         )
 
         # Log the sizes of the support and query sets
-        logger.info(
+        logger.debug(
             f"Size of support set: {support_set_inputs.shape},"
             f"Size of query set: {query_set_inputs.shape}"
         )
