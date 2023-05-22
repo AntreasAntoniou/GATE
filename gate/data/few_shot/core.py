@@ -326,7 +326,7 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Prepare the support and query sets."""
 
-        max_support_set_size = 500
+        max_support_set_size = 370
         max_per_class_support_set_size = 100
         available_support_set_size = (
             max_support_set_size - len(support_set_inputs) - idx
