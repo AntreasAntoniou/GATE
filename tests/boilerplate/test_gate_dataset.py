@@ -1,8 +1,8 @@
 import os
 
 from torch.utils.data import DataLoader, Dataset
-from gate.data.core import GATEDataset
 
+from gate.data.core import GATEDataset
 from gate.data.image.classification.cifar100 import build_cifar100_dataset
 from gate.models.task_specific_models.classification.clip import build_model
 

@@ -1,5 +1,5 @@
-from functools import partial
 import math
+from functools import partial
 from typing import Dict, Optional
 
 import numpy as np
@@ -102,12 +102,13 @@ class ResidualConvBlock(nn.Module):
         return out
 
 
-from gate.metrics.segmentation import diff_dice_loss, diff_sigmoid_focal_loss
 from gate.metrics.segmentation import (
-    miou_loss,
     dice_loss,
-    normalized_surface_dice_loss,
+    diff_dice_loss,
+    diff_sigmoid_focal_loss,
     generalized_dice_loss,
+    miou_loss,
+    normalized_surface_dice_loss,
     roc_auc_score,
 )
 

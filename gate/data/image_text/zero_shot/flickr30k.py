@@ -2,15 +2,17 @@
 from dataclasses import dataclass
 from typing import Any, Optional
 
-# Removed unused import statement
-# import numpy as np
-
 from datasets import load_dataset
+
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
+
+# Removed unused import statement
+# import numpy as np
+
 
 logger = get_logger(name=__name__, set_rich=True)
 
