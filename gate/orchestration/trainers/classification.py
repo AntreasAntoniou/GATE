@@ -16,7 +16,6 @@ logger = get_logger(__name__)
 
 
 def get_dict_shapes(x):
-    print(x)
     if not isinstance(x, dict):
         return get_dict_shapes(x.__dict__)
     return {
@@ -37,15 +36,15 @@ class ClassificationTrainer(Trainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
-        for key, value in batch.items():
-            if isinstance(value, torch.Tensor):
-                print(f"{key}: {value.shape}")
-            else:
-                print(f"{key}: {value}")
+        # for key, value in batch.items():
+        #     if isinstance(value, torch.Tensor):
+        #         print(f"{key}: {value.shape}")
+        #     else:
+        #         print(f"{key}: {value}") # uncomment for debugging
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-        print(f"output_dict: {list(output_dict.keys())}")
+        # print(f"output_dict: {list(output_dict.keys())}") # uncomment for debugging
 
         if "loss" not in output_dict:
             loss = F.cross_entropy(
