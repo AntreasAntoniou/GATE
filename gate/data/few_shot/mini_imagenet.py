@@ -97,7 +97,7 @@ class MiniImageNetFewShotClassificationDataset(
             },
             # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
             subset_split_name_list=["train", "validation", "test"],
-            label_extractor_fn=lambda x: bytes_to_string(x),
+            label_extractor_fn=lambda x: int(bytes_to_string(x)),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -148,20 +148,6 @@ from rich import print
 
 
 def key_mapper(input_dict):
-    # input_dict["image"]["image"]["support_set"] = torch.stack(
-    #     [
-    #         pad_image(single_to_three_channel(item), target_size=(224, 224))
-    #         for item in input_dict["image"]["image"]["support_set"]
-    #     ]
-    # )
-
-    # input_dict["image"]["image"]["query_set"] = torch.stack(
-    #     [
-    #         pad_image(single_to_three_channel(item), target_size=(224, 224))
-    #         for item in input_dict["image"]["image"]["query_set"]
-    #     ]
-    # )
-
     return {
         "image": input_dict["image"],
         "labels": input_dict["labels"],
@@ -177,20 +163,6 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
 ) -> dict:
-    # rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
-    # single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
-
-    # def train_augment(input_dict):
-    #     x = input_dict["image"]
-    #     x = T.ToTensor()(x)
-    #     # print(x.shape)
-    #     if x.shape[0] == 1:
-    #         x = single_to_three_channel(x)
-    #     x = T.ToPILImage()(x)
-    #     input_dict["image"] = rand_augment(x)
-
-    #     return input_dict
-
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
