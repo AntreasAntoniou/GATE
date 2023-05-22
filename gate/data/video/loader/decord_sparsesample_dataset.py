@@ -118,7 +118,9 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
+        assert os.path.exists(self._csv_file), "{} not found".format(
+            self._csv_file
+        )
 
         self._path_to_videos = []
         self._video_ids = []
@@ -151,7 +153,9 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
                     label = int(label)
 
                 for idx in range(self._num_clips):
-                    self._path_to_videos.append(os.path.join(self._path_prefix, path))
+                    self._path_to_videos.append(
+                        os.path.join(self._path_prefix, path)
+                    )
                     self._video_ids.append(int(video_id))
                     self._labels.append(label)
                     self._start_frames.append(int(start_frame))
@@ -176,10 +180,14 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
             x for x, v in enumerate(self._video_ids) if v in video_ids
         ]
 
-        self._path_to_videos = [self._path_to_videos[x] for x in indices_of_video_ids]
+        self._path_to_videos = [
+            self._path_to_videos[x] for x in indices_of_video_ids
+        ]
         self._video_ids = [self._video_ids[x] for x in indices_of_video_ids]
         self._labels = [self._labels[x] for x in indices_of_video_ids]
-        self._start_frames = [self._start_frames[x] for x in indices_of_video_ids]
+        self._start_frames = [
+            self._start_frames[x] for x in indices_of_video_ids
+        ]
         self._end_frames = [self._end_frames[x] for x in indices_of_video_ids]
         self._widths = [self._widths[x] for x in indices_of_video_ids]
         self._heights = [self._heights[x] for x in indices_of_video_ids]
@@ -221,11 +229,15 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
             assert len({min_scale, max_scale}) == 1
             sample_uniform = True
         else:
-            raise NotImplementedError("Does not support {} mode".format(self.mode))
+            raise NotImplementedError(
+                "Does not support {} mode".format(self.mode)
+            )
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
+        num_video_frames = (
+            self._end_frames[index] - self._start_frames[index] + 1
+        )
         if self.sample_index_code == "pyvideoai":
             frame_indices = utils.sparse_frame_indices(
                 num_video_frames, self.num_frames, uniform=sample_uniform
@@ -242,7 +254,10 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
             idx + self._start_frames[index] for idx in frame_indices
         ]  # add offset (frame number start)
 
-        new_width, new_height = transform.get_size_random_short_side_scale_jitter(
+        (
+            new_width,
+            new_height,
+        ) = transform.get_size_random_short_side_scale_jitter(
             self._widths[index], self._heights[index], min_scale, max_scale
         )
         vr = VideoReader(

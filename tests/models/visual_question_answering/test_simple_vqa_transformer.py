@@ -1,13 +1,15 @@
 from urllib.request import urlopen
-import pytest
+
 import accelerate
 import PIL.Image as Image
+import pytest
 import torch
+from tests.models.test_clip_vqa_model import pad_tokens
+
 from gate.models.backbones.clip import CLIPAdapter
 from gate.models.task_adapters.simple_vqa_transformer import (
     SimpleVQATransformer,
 )
-from tests.models.test_clip_vqa_model import pad_tokens
 
 
 def test_generate():

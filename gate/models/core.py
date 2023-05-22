@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-import torch
 
+import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
@@ -28,6 +28,16 @@ class TargetModalityConfig:
     text: Optional[List[SourceModalityConfig]] = None
     audio: Optional[List[SourceModalityConfig]] = None
     video: Optional[List[SourceModalityConfig]] = None
+    image_text: Optional[List[SourceModalityConfig]] = None
+    text_image: Optional[List[SourceModalityConfig]] = None
+    audio_text: Optional[List[SourceModalityConfig]] = None
+    text_audio: Optional[List[SourceModalityConfig]] = None
+    audio_image: Optional[List[SourceModalityConfig]] = None
+    image_audio: Optional[List[SourceModalityConfig]] = None
+    video_text: Optional[List[SourceModalityConfig]] = None
+    text_video: Optional[List[SourceModalityConfig]] = None
+    video_audio: Optional[List[SourceModalityConfig]] = None
+    audio_video: Optional[List[SourceModalityConfig]] = None
 
 
 class GATEModel(nn.Module):
@@ -79,7 +89,10 @@ class GATEModel(nn.Module):
         # print(self.supported_input_modalities)
 
     def process_modalities(
-        self, target_modality_name: str, input_modalities: Dict[str, Any]
+        self,
+        target_modality_name: str,
+        input_modalities: Dict[str, Any],
+        extra_arg_items: Dict[str, Any] = None,
     ):
         """
         🔄 Process the input modalities and generate the output in the
@@ -106,6 +119,8 @@ class GATEModel(nn.Module):
             # print(
             #     f"pre model {list(input_modalities.keys())}"
             # )  # 📋 Print the input modalities
+            if extra_arg_items is not None:
+                input_modalities.update(extra_arg_items)
             return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported modality: {key}")
@@ -131,20 +146,28 @@ class GATEModel(nn.Module):
                 as the value.
         """
         output_dict = {}
+        non_data_related_items = {
+            key: value
+            for key, value in input_dict.items()
+            if key not in self.supported_input_modalities
+        }
         for (
             supported_modalities,
             target_modality_name,
         ) in self.get_valid_combinations():
-            input_modalities = {
+            model_inputs = {
                 modality: input_dict[modality]
                 for modality in supported_modalities
             }
+
             # 📞 Call the process_modalities method with the
             # target_modality_name and input_modalities
             # print(f"{supported_modalities} -> {target_modality_name}")
             try:
                 output = self.process_modalities(
-                    target_modality_name, input_modalities
+                    target_modality_name=target_modality_name,
+                    input_modalities=model_inputs,
+                    extra_arg_items=non_data_related_items,
                 )
                 # 💾 Store the output in the output_dict
                 if target_modality_name not in output_dict:

@@ -1,12 +1,13 @@
-from typing import List
 from urllib.request import urlopen
-import torch
 
-from gate.models.task_specific_models.visual_question_answering.clip import (
+import PIL.Image as Image
+import torch
+from tests.models.test_clip_vqa_model import pad_tokens
+
+from gate.models.task_specific_models.visual_question_answering.tali import (
     ModelAndTransform,
     build_model,
 )
-import PIL.Image as Image
 
 
 def test_build_model():
@@ -19,7 +20,7 @@ def test_build_model():
 
 def test_model_forward():
     model_and_transform = build_model()
-    model = model_and_transform.model
+    model = model_and_transform.model.to("cpu")
     transforms_dict = model.get_transforms()
 
     img = Image.open(
@@ -65,25 +66,9 @@ def test_model_forward():
     assert output["loss"] > 0
 
 
-def pad_tokens(token_list: List):
-    token_list = [torch.tensor(token).squeeze() for token in token_list]
-    max_len = max([len(question) for question in token_list])
-
-    encoder_questions_tensor = torch.zeros(
-        (len(token_list), max_len), dtype=torch.long
-    )
-    print(f"encoder_questions_tensor: {encoder_questions_tensor.shape}")
-
-    for i, question in enumerate(token_list):
-        print("question: ", question.shape)
-        encoder_questions_tensor[i, : len(question)] = question
-
-    return encoder_questions_tensor
-
-
 def test_model_forward_loss():
     model_and_transform = build_model()
-    model = model_and_transform.model
+    model = model_and_transform.model.to("cpu")
     transforms_dict = model.get_transforms()
 
     img = Image.open(

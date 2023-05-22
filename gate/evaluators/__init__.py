@@ -3,19 +3,26 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+import torch
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics
-import torch
 
 
 class Evaluator(ABC):
-    def __init__(self, experiment_tracker: Optional[Any] = None):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+        source_modality: Optional[str] = None,
+        target_modality: Optional[str] = None,
+    ):
         super().__init__()
         self.state_dict = {}
         self.epoch_metrics = defaultdict(list)
         self.experiment_tracker = experiment_tracker
         self.starting_eval = True
+        self.source_modality = source_modality
+        self.target_modality = target_modality
 
     @abstractmethod
     def step(self, model, batch, global_step):

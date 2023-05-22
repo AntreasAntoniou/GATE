@@ -10,7 +10,9 @@ from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
 from ..loader.gulp_sparsesample_dataset import GulpSparsesampleDataset
-from ..loader.gulp_sparsesample_squeezed_dataset import GulpSparsesampleSqueezedDataset
+from ..loader.gulp_sparsesample_squeezed_dataset import (
+    GulpSparsesampleSqueezedDataset,
+)
 
 
 @store(
@@ -102,32 +104,50 @@ def build_gulp_dataset(
         if dataset_name == "hmdb51-gulprgb":
             if set_name == "train":
                 mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "ucf-101-gulprgb":
             if set_name == "train":
                 mode = "train"
                 csv_path = (
-                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"trainlist{split_num:02d}.txt"
                 )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
+                csv_path = (
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"testlist{split_num:02d}.txt"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
             if set_name == "train":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "train"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial90.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial90.csv"
+                )
             elif set_name == "val":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "test"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial10.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial10.csv"
+                )
             elif set_name == "test":
                 gulp_dir_path = gulp_dir_path / "val"
                 mode = "test"
@@ -242,32 +262,50 @@ def build_squeezed_gulp_dataset(
         if dataset_name == "hmdb51-gulprgb":
             if set_name == "train":
                 mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "ucf-101-gulprgb":
             if set_name == "train":
                 mode = "train"
                 csv_path = (
-                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"trainlist{split_num:02d}.txt"
                 )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
+                csv_path = (
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"testlist{split_num:02d}.txt"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
             if set_name == "train":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "train"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial90.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial90.csv"
+                )
             elif set_name == "val":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "test"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial10.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial10.csv"
+                )
             elif set_name == "test":
                 gulp_dir_path = gulp_dir_path / "val"
                 mode = "test"

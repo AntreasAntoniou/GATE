@@ -2,14 +2,12 @@
 from typing import Any, Dict, Optional
 
 import numpy as np
-from datasets import load_dataset
 
+from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import (
-    ClassificationTask,
-)
+from gate.data.tasks.classification import ClassificationTask
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 

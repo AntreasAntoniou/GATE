@@ -2,8 +2,8 @@ import collections
 import json
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
-import torch
 
+import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 

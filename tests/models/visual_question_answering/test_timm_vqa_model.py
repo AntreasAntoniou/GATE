@@ -1,14 +1,16 @@
 from urllib.request import urlopen
+
+import PIL.Image as Image
 import torch
+from rich.traceback import install
+from tests.models.test_clip_vqa_model import pad_tokens
 
-
-from gate.models.task_specific_models.visual_question_answering.tali import (
+from gate.models.task_specific_models.visual_question_answering.timm import (
     ModelAndTransform,
     build_model,
 )
-import PIL.Image as Image
 
-from tests.models.test_clip_vqa_model import pad_tokens
+install()
 
 
 def test_build_model():
@@ -21,7 +23,7 @@ def test_build_model():
 
 def test_model_forward():
     model_and_transform = build_model()
-    model = model_and_transform.model.to("cpu")
+    model = model_and_transform.model
     transforms_dict = model.get_transforms()
 
     img = Image.open(
@@ -69,7 +71,7 @@ def test_model_forward():
 
 def test_model_forward_loss():
     model_and_transform = build_model()
-    model = model_and_transform.model.to("cpu")
+    model = model_and_transform.model
     transforms_dict = model.get_transforms()
 
     img = Image.open(
