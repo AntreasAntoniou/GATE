@@ -228,10 +228,12 @@ class FewShotClassificationMetaDataset(Dataset):
         # #logger.debug(
         #     f"Loading and preprocessing {self.dataset_name} dataset..."
         # )
-        for subset in tqdm(subsets):
+        for idx, subset in tqdm(enumerate(subsets)):
             for sample in tqdm(subset):
                 sample = self._process_sample(sample)
-                print(f"sample: {sample}, subset name: {subset}")
+                print(
+                    f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
+                )
                 datapoints.append(sample)
 
         dataset = datasets.Dataset.from_list(datapoints)
