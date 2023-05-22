@@ -208,7 +208,7 @@ class DuoModalFusionModel(BaseModule):
                 temp_logits = self.classifier[answer](temp_features)
                 temp_labels = labels[answer_specific_idx]
                 loss = F.cross_entropy(
-                    temp_logits, temp_labels, reduction="None"
+                    temp_logits, temp_labels, reduction="none"
                 )
                 output_dict[f"loss_{answer}"] = torch.mean(loss)
                 output_dict[f"accuracy_top_1_{answer}"] = accuracy_top_k(
