@@ -313,10 +313,10 @@ class FewShotClassificationMetaDataset(Dataset):
             [value for value in class_to_num_available_samples.values()]
         )
         num_query_samples_per_class = int(np.floor(min_available_shots * 0.5))
-        num_query_samples_per_class = max(num_query_samples_per_class, 1)
-        return min(
-            num_query_samples_per_class, self.num_query_samples_per_class
+        num_query_samples_per_class = max(
+            num_query_samples_per_class, self.min_num_queries_per_class
         )
+        return min(num_query_samples_per_class, self.num_queries_per_class)
 
     def _prepare_support_and_query_sets(
         self,
