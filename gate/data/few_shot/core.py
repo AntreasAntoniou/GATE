@@ -529,15 +529,18 @@ class FewShotClassificationMetaDataset(Dataset):
 
         # Determine the number of classes per set
         num_classes_per_set = self._calculate_num_classes_per_set(rng)
+        logger.info(f"Number of classes per set: {num_classes_per_set}")
 
         # Select the classes for the current set
         available_class_labels = list(
             self.current_class_to_address_dict.keys()
         )
+        logger.info(f"Available class labels: {available_class_labels}")
         selected_classes_for_set = rng.choice(
             available_class_labels,
             size=min(num_classes_per_set, len(available_class_labels)),
         )
+        logger.info(f"Selected classes for set: {selected_classes_for_set}")
 
         # Generate mapping from label to local index and prepare for
         # sample selection
@@ -545,8 +548,14 @@ class FewShotClassificationMetaDataset(Dataset):
             label_name: i
             for i, label_name in enumerate(selected_classes_for_set)
         }
+        logger.info(
+            f"Label index to local label index: {label_idx_to_local_label_idx}"
+        )
         self.class_to_num_available_samples = (
             self._prepare_for_sample_selection(selected_classes_for_set)
+        )
+        logger.info(
+            f"Class to number of available samples: {self.class_to_num_available_samples}"
         )
 
         # Determine the number of query samples per class
@@ -555,9 +564,13 @@ class FewShotClassificationMetaDataset(Dataset):
                 self.class_to_num_available_samples
             )
         )
+        logger.info(
+            f"Number of query samples per class: {num_query_samples_per_class}"
+        )
 
         # Generate support and query sets for each class
         for idx, class_name in enumerate(selected_classes_for_set):
+            logger.info(f"Generating set for class: {class_name}")
             (
                 num_support_samples_per_class,
                 selected_samples_addresses,
