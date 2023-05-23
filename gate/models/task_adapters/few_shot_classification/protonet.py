@@ -195,7 +195,12 @@ class PrototypicalNetwork(nn.Module):
 
         # Get the number of tasks and examples
         num_tasks, num_examples = support_set_inputs.shape[:2]
-
+        print(
+            f"Support set -> Mean: {support_set_inputs.mean()}, std: {support_set_inputs.std()}, max: {support_set_inputs.max()}, min: {support_set_inputs.min()}"
+        )
+        print(
+            f"Query set -> Mean: {query_set_inputs.mean()}, std: {query_set_inputs.std()}, max: {query_set_inputs.max()}, min: {query_set_inputs.min()}"
+        )
         # Compute the support set features and embeddings
         print(f"support_set_inputs: {support_set_inputs.shape}")
         support_set_features = self.forward_features(
@@ -205,10 +210,12 @@ class PrototypicalNetwork(nn.Module):
                 )
             }
         )
-
+        print(f"support_set_features: {support_set_features.shape}")
         support_set_embedding = support_set_features.view(
             num_tasks, num_examples, -1
         )
+
+        print(f"support_set_embeddings: {support_set_embedding.shape}")
 
         # Compute the query set features and embeddings
         print(f"query_set_inputs: {query_set_inputs.shape}")
@@ -219,9 +226,12 @@ class PrototypicalNetwork(nn.Module):
                 )
             }
         )
+        print(f"query_set_features: {query_set_features.shape}")
         query_set_embedding = query_set_features.view(
             num_tasks, -1, query_set_features.shape[-1]
         )
+
+        print(f"query_set_embeddings: {query_set_embedding.shape}")
 
         # Get the prototypes
         prototypes = get_prototypes(
@@ -229,6 +239,8 @@ class PrototypicalNetwork(nn.Module):
             targets=support_set_labels,
             num_classes=int(torch.max(support_set_labels)) + 1,
         )
+
+        print(f"prototypes: {prototypes.shape}")
 
         # Store the outputs
         output_dict["prototypes"] = prototypes
@@ -245,6 +257,7 @@ class PrototypicalNetwork(nn.Module):
             output_dict["logits"] = prototype_loss_and_logits[
                 "logits"
             ].permute([0, 2, 1])
+            print(f"logits: {output_dict['logits'].shape}")
 
             accuracy = get_accuracy(
                 prototypes, query_set_embedding, query_set_labels
