@@ -66,8 +66,6 @@ class FewShotClassificationMetaDataset(Dataset):
         Number of queries per class.
     variable_num_samples_per_class: bool
         Flag to indicate if the number of samples per class varies.
-    variable_num_queries_per_class: bool
-        Flag to indicate if the number of queries per class varies.
     variable_num_classes_per_set: bool
         Flag to indicate if the number of classes per set varies.
     input_shape_dict: Dict

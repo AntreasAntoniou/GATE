@@ -49,7 +49,6 @@ def dataset_init(DATASET_CLASS):
         num_samples_per_class=5,
         num_queries_per_class=15,
         variable_num_samples_per_class=True,
-        variable_num_queries_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
         query_set_input_transform=None,
