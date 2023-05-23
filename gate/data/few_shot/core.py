@@ -107,7 +107,6 @@ class FewShotClassificationMetaDataset(Dataset):
         num_samples_per_class: int,  # n_shot
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
-        variable_num_queries_per_class: bool,
         variable_num_classes_per_set: bool,
         input_target_annotation_keys: Dict,
         subset_split_name_list: Optional[List[str]] = None,
@@ -144,7 +143,6 @@ class FewShotClassificationMetaDataset(Dataset):
         self.num_samples_per_class = num_samples_per_class
         self.num_queries_per_class = num_queries_per_class
         self.variable_num_samples_per_class = variable_num_samples_per_class
-        self.variable_num_queries_per_class = variable_num_queries_per_class
         self.variable_num_classes_per_set = variable_num_classes_per_set
 
         self.support_set_input_transform = support_set_input_transform
@@ -353,7 +351,7 @@ class FewShotClassificationMetaDataset(Dataset):
         """Prepare the support and query sets."""
 
         max_support_set_size = 370
-        max_per_class_support_set_size = 100
+        max_per_class_support_set_size = 50
         available_support_set_size = (
             max_support_set_size - len(support_set_inputs) - idx
         )
@@ -624,8 +622,6 @@ class FewShotClassificationMetaDataset(Dataset):
                 len(selected_classes_for_set) - idx,
                 support_set_inputs,
             )
-            if selected_samples_addresses is None:
-                break
 
             # Get the data inputs and labels
             data_inputs, data_labels = self._get_data_inputs_and_labels(
@@ -634,8 +630,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
             # Map labels to local index
             data_labels = [
-                label_idx_to_local_label_idx[self.label_extractor_fn(item)]
-                for item in data_labels
+                label_idx_to_local_label_idx[item] for item in data_labels
             ]
 
             # Shuffle the data
