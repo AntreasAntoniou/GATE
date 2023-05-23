@@ -258,7 +258,7 @@ class PrototypicalNetwork(nn.Module):
                 "logits"
             ].permute([0, 2, 1])
             print(
-                f"logits: {output_dict['logits'].shape}, {output_dict['logits']}"
+                f"logits: {output_dict['logits'].shape}, {output_dict['logits']}, {output_dict['logits'].argmax(dim=-1)}"
             )
 
             accuracy = get_accuracy(
