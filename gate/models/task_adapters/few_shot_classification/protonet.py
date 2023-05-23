@@ -232,8 +232,8 @@ class PrototypicalNetwork(nn.Module):
 
         # Store the outputs
         output_dict["prototypes"] = prototypes
-        output_dict["query_set_embedding"] = query_set_embedding
         output_dict["support_set_embedding"] = support_set_embedding
+        output_dict["query_set_embedding"] = query_set_embedding
 
         # If query set labels are provided, calculate the loss and accuracy
         if query_set_labels is not None:
