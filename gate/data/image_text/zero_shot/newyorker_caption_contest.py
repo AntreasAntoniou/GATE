@@ -47,6 +47,17 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+# {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=500x375
+# at 0x7F4A005A6740>, 'caption': ['A young, blond boy sitting in a white
+# chair beside cactus plants is eating a sandwich.', "A little boy site
+# in a white rocking chair eating a sandwich out of a child's plate.",
+# "A young boy eats a sandwich on his family's porch.",
+#  'Blond boy eating a sandwich on a white chair.',
+# 'A young boy sits while eating.'],
+# 'sentids': ['8760', '8761', '8762', '8763', '8764'], 'split': 'train', 'img_id': '1
+# 752', 'filename': '14989976.jpg'}
+
+
 @configurable(
     group="dataset", name="flickr30k", defaults=dict(data_dir=DATASET_DIR)
 )
