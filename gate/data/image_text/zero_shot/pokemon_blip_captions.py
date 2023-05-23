@@ -47,6 +47,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+# {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=1280x1280 at 0x7F4A005A6CE0>, 'text': 'a purple and blue dragon flying through the air'}
+
+
 @configurable(
     group="dataset", name="flickr30k", defaults=dict(data_dir=DATASET_DIR)
 )

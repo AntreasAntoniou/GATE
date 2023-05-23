@@ -1,9 +1,10 @@
 # food101.py
 import os
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from datasets import load_dataset
+import torch
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
@@ -49,6 +50,27 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
     return dataset_dict[set_name]
+
+
+def dataset_format_transform(sample: Dict[str, Any]) -> Dict[str, Any]:
+    # Example of sample:
+    #
+    # {
+    #     "id": 167,
+    #     'image_0': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=1920x1280 at 0x7F4A00404250>,
+    #     'image_1': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=1920x1291 at 0x7F4A00407340>,
+    #     "caption_0": "an adult is flexing beside a child",
+    #     "caption_1": "a child is flexing beside an adult",
+    #     "tag": "Noun",
+    #     "secondary_tag": "",
+    #     "num_main_preds": 1,
+    #     "collapsed_tag": "Object",
+    # }
+
+    input_dict = {}
+    input_dict["image"] = [sample["image_0"], sample["image_1"]]
+    input_dict["text"] = [sample["caption_0"], sample["caption_1"]]
+    return input_dict
 
 
 @configurable(
