@@ -37,7 +37,6 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
         num_samples_per_class: int,  # n_shot
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
-        variable_num_queries_per_class: bool,
         variable_num_classes_per_set: bool,
         support_set_input_transform: Optional[Any],
         query_set_input_transform: Optional[Any],
@@ -62,7 +61,6 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            variable_num_queries_per_class=variable_num_queries_per_class,
             input_target_annotation_keys=dict(
                 inputs="image",
                 targets="label",
