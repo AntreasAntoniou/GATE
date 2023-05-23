@@ -34,7 +34,7 @@ def convert_single_to_three_channel_maybe(image):
 
 def preprocess_transforms(sample: Tuple):
     image = convert_single_to_three_channel_maybe(
-        T.Resize(size=(126, 126))(sample[0])
+        T.Resize(size=(224, 224))(sample[0])
     )
     label = sample[1]
     return {"image": image, "label": label}
@@ -127,9 +127,9 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_classes_per_set=5,
         min_num_samples_per_class=2,
         min_num_queries_per_class=2,
-        num_classes_per_set=15,
+        num_classes_per_set=10,
         num_samples_per_class=15,
-        num_queries_per_class=25,
+        num_queries_per_class=15,
         variable_num_samples_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
