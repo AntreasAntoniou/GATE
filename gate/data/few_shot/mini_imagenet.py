@@ -160,12 +160,10 @@ def key_mapper(input_dict):
         for item in input_dict["image"]["image"]["support_set"]
     ]
 
-    input_dict["image"]["image"]["query_set"] = torch.stack(
-        [
-            T.ToPILImage()(item)
-            for item in input_dict["image"]["image"]["query_set"]
-        ]
-    )
+    input_dict["image"]["image"]["query_set"] = [
+        T.ToPILImage()(item)
+        for item in input_dict["image"]["image"]["query_set"]
+    ]
 
     return {
         "image": input_dict["image"],
