@@ -257,7 +257,9 @@ class PrototypicalNetwork(nn.Module):
             output_dict["logits"] = prototype_loss_and_logits[
                 "logits"
             ].permute([0, 2, 1])
-            print(f"logits: {output_dict['logits'].shape}")
+            print(
+                f"logits: {output_dict['logits'].shape}, {output_dict['logits']}"
+            )
 
             accuracy = get_accuracy(
                 prototypes, query_set_embedding, query_set_labels
