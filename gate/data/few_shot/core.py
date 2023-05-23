@@ -621,6 +621,9 @@ class FewShotClassificationMetaDataset(Dataset):
                 support_set_inputs,
             )
 
+            if selected_samples_addresses is None:
+                continue
+
             # Get the data inputs and labels
             data_inputs, data_labels = self._get_data_inputs_and_labels(
                 selected_samples_addresses
