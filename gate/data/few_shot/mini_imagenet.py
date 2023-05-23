@@ -21,25 +21,6 @@ logger = get_logger(
 )
 
 
-def convert_single_to_three_channel_maybe(image):
-    if not isinstance(image, torch.Tensor):
-        image = T.ToTensor()(image)
-    single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
-    if image.shape[0] == 1:
-        image = single_to_three_channel(image)
-    if not isinstance(image, PIL.Image.Image):
-        image = T.ToPILImage()(image)
-    return image
-
-
-def preprocess_transforms(sample: Tuple):
-    image = convert_single_to_three_channel_maybe(
-        T.Resize(size=(224, 224))(sample[0])
-    )
-    label = sample[1]
-    return {"image": image, "label": label}
-
-
 class MiniImageNetFewShotClassificationDataset(
     FewShotClassificationMetaDataset
 ):
@@ -100,6 +81,25 @@ class MiniImageNetFewShotClassificationDataset(
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
         )
+
+
+def convert_single_to_three_channel_maybe(image):
+    if not isinstance(image, torch.Tensor):
+        image = T.ToTensor()(image)
+    single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+    if image.shape[0] == 1:
+        image = single_to_three_channel(image)
+    if not isinstance(image, PIL.Image.Image):
+        image = T.ToPILImage()(image)
+    return image
+
+
+def preprocess_transforms(sample: Tuple):
+    image = convert_single_to_three_channel_maybe(
+        T.Resize(size=(224, 224))(sample[0])
+    )
+    label = sample[1]
+    return {"image": image, "label": label}
 
 
 def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
