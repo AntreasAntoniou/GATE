@@ -187,7 +187,9 @@ class PrototypicalNetwork(nn.Module):
             query_set_inputs,
             query_set_labels,
         ) = self._process_episode(image, audio, video, text)
-
+        print(
+            f"support_set_labels: {support_set_labels}, query_set_labels: {query_set_labels}"
+        )
         # Store outputs in this dictionary
         output_dict = {}
 
