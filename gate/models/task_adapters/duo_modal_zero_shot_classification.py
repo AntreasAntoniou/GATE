@@ -51,7 +51,7 @@ class DuoModalZeroShotModel(BaseModule):
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
-        return_loss: bool = False,
+        return_loss: bool = True,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
         modalities = [image, text, audio, video]
