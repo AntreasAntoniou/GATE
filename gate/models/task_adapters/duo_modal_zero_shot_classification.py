@@ -160,10 +160,10 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
         for class_key, class_prompts in class_prompts.items():
             class_prompt_tokens = self.text_modality_model.get_transforms()[
                 "text"
-            ] = class_prompts
-            class_prototype = self.text_modality_model(class_prompt_tokens)[
-                "text"
-            ]["features"].mean(0)
+            ](class_prompts)
+            class_prototype = self.text_modality_model(
+                text=class_prompt_tokens
+            )["text"]["features"].mean(0)
             self.class_prototypes.append(class_prototype)
 
         self.class_prototypes = torch.stack(self.class_prototypes)
