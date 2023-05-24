@@ -86,8 +86,8 @@ def get_similarities(
 ) -> torch.Tensor:
     """
     Args:
-        tensor_modality_a: Tensor, shape [batch_size, seq_len, embedding_dim]
-        tensor_modality_b: Tensor, shape [batch_size, seq_len, embedding_dim]
+        tensor_modality_a: Tensor, shape [seq_len, embedding_dim]
+        tensor_modality_b: Tensor, shape [seq_len, embedding_dim]
     """
 
     similarities = {
