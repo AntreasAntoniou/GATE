@@ -83,6 +83,7 @@ def get_similarities(
     modality_b_features: torch.Tensor,
     temperature_parameter: torch.Tensor,
     return_loss: bool = True,
+    is_irregular_shape: bool = False,
 ) -> torch.Tensor:
     """
     Args:
@@ -106,6 +107,13 @@ def get_similarities(
             f"{key.replace('_similarities', '_loss')}": contrastive_loss(value)
             for key, value in similarities.items()
         }
+
+        if is_irregular_shape:
+            # shape is seq_len, seq_len, but should be seq_len * seq_len / 2, 2
+            similarities = {
+                key: value.view(-1, 2, value.shape[-1]).permute(0, 2, 1)
+                for key, value in similarities.items()
+            }
 
         contrastive_accuracy_dict = {
             f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
