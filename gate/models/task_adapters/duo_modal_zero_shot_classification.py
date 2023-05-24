@@ -176,20 +176,21 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
 
         self.class_prototypes = torch.stack(self.class_prototypes)
 
+    @torch.inference_mode
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
+        if self.class_prototypes is None:
+            self.build_class_prototypes(self.class_prompts)
+
         if image is not None:
             image_features = self.image_modality_model(image=image)["image"][
                 "features"
             ]
         else:
             raise ValueError("An image input must be provided")
-
-        if self.class_prototypes is None:
-            self.build_class_prototypes(self.class_prompts)
 
         if self.projection_num_features is not None:
             image_features = self.modality_a_linear(image_features)
