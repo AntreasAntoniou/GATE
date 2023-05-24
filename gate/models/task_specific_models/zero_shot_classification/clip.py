@@ -219,7 +219,7 @@ def build_gate_model_with_presets(
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
-        image_text=[SourceModalityConfig(image=True, text=True)]
+        image=[SourceModalityConfig(image=True)]
     )
 
     model_key_remapper_dict_config = {
