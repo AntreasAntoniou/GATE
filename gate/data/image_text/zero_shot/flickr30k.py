@@ -3,6 +3,7 @@ from ast import Dict
 from dataclasses import dataclass
 from typing import Any, Optional
 
+import torch
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
@@ -52,10 +53,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
-import torch
-
-
-def dataset_format_transform(sample: Dict[str, Any]) -> Dict[str, Any]:
+def dataset_format_transform(sample: Dict) -> Dict:
     # Example of sample:
     #
     # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=500x333 at 0x7F4A0059A2C0>,
@@ -79,7 +77,6 @@ def dataset_format_transform(sample: Dict[str, Any]) -> Dict[str, Any]:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=101,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
