@@ -139,7 +139,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
         class_prompts: Dict[str, List[str]] = None,
         projection_num_features: Optional[int] = None,
         temperature_parameter: Optional[float] = 1.0,
-        backbone_output_key: str = "projection",
+        backbone_output_key: str = "projection_output",
     ):
         super().__init__()
         self.image_modality_model = image_modality_model

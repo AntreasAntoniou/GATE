@@ -84,13 +84,13 @@ class CLIPAdapter(nn.Module):
 
         if image is not None:
             output_dict["image"] = self.vision_model(x=image)
-            output_dict["image"]["projection"] = self.visual_projection(
+            output_dict["image"]["projection_output"] = self.visual_projection(
                 output_dict["image"]["features"]
             )
 
         if text is not None:
             output_dict["text"] = self.text_model(x=text)
-            output_dict["text"]["projection"] = self.text_projection(
+            output_dict["text"]["projection_output"] = self.text_projection(
                 output_dict["text"]["features"]
             )
 
