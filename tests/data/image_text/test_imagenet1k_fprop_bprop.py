@@ -69,7 +69,7 @@ def test_forward_backward():
     dataloader = accelerator.prepare(dataloader)
     sample = next(iter(dataloader))
 
-    outputs = model.forward(sample)
+    outputs = model.forward(sample)["image"]
     loss = F.cross_entropy(outputs["logits"], sample["label"])
     accuracy = accuracy_top_k(outputs["logits"], sample["label"], k=1)
 
