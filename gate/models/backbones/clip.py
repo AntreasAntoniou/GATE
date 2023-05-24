@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Optional
+from typing import List, Optional
 from urllib.request import urlopen
 
 import torch
@@ -107,11 +107,37 @@ class CLIPAdapter(nn.Module):
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0)
 
+        def image_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=image_transforms, modality=Modality.image
+                )
+
+        def text_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=text_transforms,
+                        modality=Modality.text,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=text_transforms, modality=Modality.text
+                )
+
         return {
-            "image": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=image_transforms, modality=Modality.image
-            ),
-            "text": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=text_transforms, modality=Modality.text
-            ),
+            "image": lambda x: image_transforms_process_multi_type(x),
+            "text": lambda x: text_transforms_process_multi_type(x),
         }
