@@ -67,6 +67,16 @@ class DuoModalZeroShotModel(BaseModule):
         modality_a_features = None
         modality_b_features = None
 
+        is_irregular_shape = False
+
+        if len(image.shape) == 5:
+            image = image.view(-1, *image.shape[2:])
+            is_irregular_shape = True
+
+        if len(text.shape) == 3:
+            text = text.view(-1, *text.shape[2:])
+            is_irregular_shape = True
+
         if image is not None:
             if self.modality_a_identifier == "image":
                 modality_a_features = self.modality_a_model(image=image)[
@@ -117,6 +127,7 @@ class DuoModalZeroShotModel(BaseModule):
             modality_b_features=modality_b_features,
             temperature_parameter=self.temperature_parameter,
             return_loss=return_loss,
+            is_irregular_shape=is_irregular_shape,
         )
 
         losses_list = [
