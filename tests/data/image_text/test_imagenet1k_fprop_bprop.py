@@ -10,7 +10,7 @@ from gate.metrics import accuracy_top_k
 from gate.models.task_specific_models.zero_shot_classification.clip import (
     build_gate_model_with_presets,
 )
-from accelerate import Accelerator, accelerator
+from accelerate import Accelerator
 from rich import print
 from rich.traceback import install
 
