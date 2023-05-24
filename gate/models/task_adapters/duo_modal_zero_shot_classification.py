@@ -180,7 +180,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
 
         self.class_prototypes = torch.stack(self.class_prototypes)
 
-    @torch.inference_mode
+    @torch.inference_mode()
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
