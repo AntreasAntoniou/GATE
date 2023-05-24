@@ -61,7 +61,7 @@ def test_forward_backward():
     )
     dataloader = DataLoader(
         dataset["train"],
-        batch_size=2,
+        batch_size=200,
         collate_fn=collate_fn_with_token_pad,
         shuffle=True,
         num_workers=4,
@@ -69,8 +69,7 @@ def test_forward_backward():
     dataloader = accelerator.prepare(dataloader)
     sample = next(iter(dataloader))
 
-    outputs = model.forward(sample)["image"]
-    print(outputs)
+    outputs = model.forward(sample)["image"]["image"]
     loss = F.cross_entropy(outputs["logits"], sample["label"])
     accuracy = accuracy_top_k(outputs["logits"], sample["label"], k=1)
 
