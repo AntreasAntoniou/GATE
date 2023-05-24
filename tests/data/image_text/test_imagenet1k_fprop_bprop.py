@@ -74,3 +74,8 @@ def test_forward_backward():
     accuracy = accuracy_top_k(outputs["logits"], sample["label"], k=1)
 
     print(f"loss: {loss}, accuracy: {accuracy}")
+
+
+if __name__ == "__main__":
+    test_forward()
+    test_forward_backward()
