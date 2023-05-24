@@ -1,9 +1,11 @@
 import os
 import pytest
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 from gate.data.core import collate_fn_with_token_pad
 from gate.data.image.classification.imagenet1k import build_gate_dataset
 from gate.models import ModelAndTransform
+from gate.metrics import accuracy_top_k
 
 from gate.models.task_specific_models.zero_shot_classification.clip import (
     build_gate_model_with_presets,
@@ -47,6 +49,10 @@ def test_forward_backward():
     )
     dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4)
     sample = next(iter(dataloader))
+    print(sample)
 
     outputs = model.forward(image=sample["image"])
     loss = F.cross_entropy(outputs["logits"], sample["label"])
+    accuracy = accuracy_top_k(outputs["logits"], sample["label"], k=1)
+
+    print(f"loss: {loss}, accuracy: {accuracy}")
