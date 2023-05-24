@@ -1,6 +1,7 @@
 import os
 import pytest
 from torch.utils.data import DataLoader
+from gate.data.core import collate_fn_with_token_pad
 from gate.data.image.classification.imagenet1k import build_gate_dataset
 from gate.models import ModelAndTransform
 
@@ -25,7 +26,13 @@ def test_forward():
     dataset = build_gate_dataset(
         data_dir=os.environ.get("PYTEST_DIR"), transforms=model.transform
     )
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=2,
+        collate_fn=collate_fn_with_token_pad,
+        shuffle=True,
+        num_workers=4,
+    )
     sample = next(iter(dataloader))
 
     model.forward(image=sample)
