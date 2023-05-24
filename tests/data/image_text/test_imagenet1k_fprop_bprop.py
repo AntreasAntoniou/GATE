@@ -27,7 +27,7 @@ def test_forward():
         data_dir=os.environ.get("PYTEST_DIR"), transforms=model.transform
     )
     dataloader = DataLoader(
-        dataset,
+        dataset["train"],
         batch_size=2,
         collate_fn=collate_fn_with_token_pad,
         shuffle=True,
