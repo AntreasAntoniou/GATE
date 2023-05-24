@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import get_similarities
+from tqdm.auto import tqdm
 
 
 class DuoModalZeroShotModel(BaseModule):
@@ -165,8 +166,9 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
     def build_class_prototypes(self, class_prompts):
         self.class_prototypes = []
         self.text_modality_model.eval()
+        print(f"Building class prototypes for {len(class_prompts)} classes")
         with torch.no_grad():
-            for class_key, class_prompts in class_prompts.items():
+            for class_key, class_prompts in tqdm(class_prompts.items()):
                 class_prompt_tokens = (
                     self.text_modality_model.get_transforms()["text"](
                         class_prompts
@@ -175,7 +177,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
                 class_prompt_tokens = class_prompt_tokens.to(
                     accelerator.device
                 )
-                print(f"{class_key} {class_prompt_tokens.shape}")
+
                 class_prototype = self.text_modality_model(
                     text=class_prompt_tokens
                 )["text"][self.backbone_output_key].mean(0)
