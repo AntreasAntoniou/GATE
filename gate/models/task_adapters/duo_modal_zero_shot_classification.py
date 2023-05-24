@@ -20,6 +20,7 @@ class DuoModalZeroShotModel(BaseModule):
         modality_b_num_features: int,
         projection_num_features: Optional[int] = None,
         temperature_parameter: Optional[float] = 1.0,
+        head_identifier: Optional[str] = "projection_output",
     ):
         super().__init__()
         self.modality_a_model = modality_a_model
@@ -27,6 +28,8 @@ class DuoModalZeroShotModel(BaseModule):
 
         self.modality_a_identifier = modality_a_identifier
         self.modality_b_identifier = modality_b_identifier
+
+        self.head_identifier = head_identifier
 
         self.projection_num_features = projection_num_features
         if temperature_parameter is None:
@@ -68,40 +71,40 @@ class DuoModalZeroShotModel(BaseModule):
             if self.modality_a_identifier == "image":
                 modality_a_features = self.modality_a_model(image=image)[
                     self.modality_a_identifier
-                ]["features"]
+                ][self.head_identifier]
             elif self.modality_b_identifier == "image":
                 modality_b_features = self.modality_b_model(image=image)[
                     self.modality_b_identifier
-                ]["features"]
+                ][self.head_identifier]
 
         if text is not None:
             if self.modality_a_identifier == "text":
                 modality_a_features = self.modality_a_model(text=text)[
                     self.modality_a_identifier
-                ]["features"]
+                ][self.head_identifier]
             elif self.modality_b_identifier == "text":
                 modality_b_features = self.modality_b_model(text=text)[
                     self.modality_b_identifier
-                ]["features"]
+                ][self.head_identifier]
         if audio is not None:
             if self.modality_a_identifier == "audio":
                 modality_a_features = self.modality_a_model(audio=audio)[
                     self.modality_a_identifier
-                ]["features"]
+                ][self.head_identifier]
             elif self.modality_b_identifier == "audio":
                 modality_b_features = self.modality_b_model(audio=audio)[
                     self.modality_b_identifier
-                ]["features"]
+                ][self.head_identifier]
 
         if video is not None:
             if self.modality_a_identifier == "video":
                 modality_a_features = self.modality_a_model(video=video)[
                     self.modality_a_identifier
-                ]["features"]
+                ][self.head_identifier]
             elif self.modality_b_identifier == "video":
                 modality_b_features = self.modality_b_model(video=video)[
                     self.modality_b_identifier
-                ]["features"]
+                ][self.head_identifier]
 
         if self.projection_num_features is not None:
             modality_a_features = self.modality_a_linear(modality_a_features)
