@@ -70,7 +70,7 @@ def test_forward_backward():
     )
     dataloader = accelerator.prepare(dataloader)
     sample = next(iter(dataloader))
-    labels = torch.tensor(sample["labels"])
+    labels = torch.tensor(sample["labels"]).to(accelerator.device)
     outputs = model.forward(sample)["image"]["image"]
     loss = F.cross_entropy(outputs["logits"], labels)
     accuracy = accuracy_top_k(outputs["logits"], labels, k=1)
