@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -76,15 +76,23 @@ def build_model(
     transform_dict = backbone_model.get_transforms()
 
     def transform_wrapper(inputs: Union[Dict, Any]):
-        output_dict = {}
-
         if "image" in inputs:
-            output_dict["image"] = transform_dict["image"](inputs["image"])
+            image = inputs["image"]
+            if isinstance(image, List):
+                image = [transform_dict["image"](sample) for sample in image]
+            else:
+                image = transform_dict["image"](image)
+            inputs["image"] = image
 
         if "text" in inputs:
-            output_dict["text"] = transform_dict["text"](inputs["text"])
+            text = inputs["text"]
+            if isinstance(text, List):
+                text = [transform_dict["text"](sample) for sample in text]
+            else:
+                text = transform_dict["text"](text)
 
-        return output_dict
+            inputs["text"] = text
+        return inputs
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
