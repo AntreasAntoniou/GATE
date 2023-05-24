@@ -92,7 +92,7 @@ def get_similarities(
 
     similarities = {
         f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
-            modality_a_features, modality_b_features.permute(1, 0)
+            modality_a_features, modality_b_features
         )
         * temperature_parameter
     }
