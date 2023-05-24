@@ -159,20 +159,24 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
             )
         self.class_prototypes = None
 
-    @torch.inference_mode
     def build_class_prototypes(self, class_prompts):
         self.class_prototypes = []
         self.text_modality_model.eval()
-        for class_key, class_prompts in class_prompts.items():
-            class_prompt_tokens = self.text_modality_model.get_transforms()[
-                "text"
-            ](class_prompts)
-            class_prompt_tokens = class_prompt_tokens.to(accelerator.device)
-            print(f"{class_key} {class_prompt_tokens.shape}")
-            class_prototype = self.text_modality_model(
-                text=class_prompt_tokens
-            )["text"]["features"].mean(0)
-            self.class_prototypes.append(class_prototype)
+        with torch.no_grad():
+            for class_key, class_prompts in class_prompts.items():
+                class_prompt_tokens = (
+                    self.text_modality_model.get_transforms()["text"](
+                        class_prompts
+                    )
+                )
+                class_prompt_tokens = class_prompt_tokens.to(
+                    accelerator.device
+                )
+                print(f"{class_key} {class_prompt_tokens.shape}")
+                class_prototype = self.text_modality_model(
+                    text=class_prompt_tokens
+                )["text"]["features"].mean(0)
+                self.class_prototypes.append(class_prototype)
 
         self.class_prototypes = torch.stack(self.class_prototypes)
 
