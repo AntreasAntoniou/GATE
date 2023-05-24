@@ -82,7 +82,7 @@ def get_similarities(
     modality_a_features: torch.Tensor,
     modality_b_features: torch.Tensor,
     temperature_parameter: torch.Tensor,
-    return_loss: bool = False,
+    return_loss: bool = True,
 ) -> torch.Tensor:
     """
     Args:
