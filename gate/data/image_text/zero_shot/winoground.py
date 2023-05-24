@@ -74,7 +74,7 @@ def dataset_format_transform(sample: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @configurable(
-    group="dataset", name="flickr30k", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="winoground", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
