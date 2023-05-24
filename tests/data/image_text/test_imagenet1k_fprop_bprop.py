@@ -10,10 +10,13 @@ from gate.metrics import accuracy_top_k
 from gate.models.task_specific_models.zero_shot_classification.clip import (
     build_gate_model_with_presets,
 )
+from accelerate import Accelerator, accelerator
 from rich import print
 from rich.traceback import install
 
 install()
+
+accelerator = Accelerator()
 
 
 def test_build_model():
@@ -30,6 +33,7 @@ def test_build_dataset():
 def test_forward():
     model_and_transform: ModelAndTransform = build_gate_model_with_presets()
     model = model_and_transform.model
+    model = accelerator.prepare(model)
     dataset = build_gate_dataset(
         data_dir=os.environ.get("PYTEST_DIR"),
         transforms=model_and_transform.transform,
@@ -41,21 +45,31 @@ def test_forward():
         shuffle=True,
         num_workers=4,
     )
+    dataloader = accelerator.prepare(dataloader)
     sample = next(iter(dataloader))
 
     model.forward(sample)
 
 
 def test_forward_backward():
-    model: ModelAndTransform = build_gate_model_with_presets()
+    model_and_transform: ModelAndTransform = build_gate_model_with_presets()
+    model = model_and_transform.model
+    model = accelerator.prepare(model)
     dataset = build_gate_dataset(
-        data_dir=os.environ.get("PYTEST_DIR"), transforms=model.transform
+        data_dir=os.environ.get("PYTEST_DIR"),
+        transforms=model_and_transform.transform,
     )
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4)
+    dataloader = DataLoader(
+        dataset["train"],
+        batch_size=2,
+        collate_fn=collate_fn_with_token_pad,
+        shuffle=True,
+        num_workers=4,
+    )
+    dataloader = accelerator.prepare(dataloader)
     sample = next(iter(dataloader))
-    print(sample)
 
-    outputs = model.forward(image=sample["image"])
+    outputs = model.forward(sample)
     loss = F.cross_entropy(outputs["logits"], sample["label"])
     accuracy = accuracy_top_k(outputs["logits"], sample["label"], k=1)
 
