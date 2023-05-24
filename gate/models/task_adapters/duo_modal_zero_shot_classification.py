@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
@@ -17,6 +17,7 @@ class DuoModalZeroShotModel(BaseModule):
         modality_a_num_features: int,
         modality_b_num_features: int,
         projection_num_features: Optional[int] = None,
+        temperature_parameter: Optional[float] = 1.0,
     ):
         super().__init__()
         self.modality_a_model = modality_a_model
@@ -26,7 +27,10 @@ class DuoModalZeroShotModel(BaseModule):
         self.modality_b_identifier = modality_b_identifier
 
         self.projection_num_features = projection_num_features
-        self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
+        if temperature_parameter is None:
+            self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
+        else:
+            self.temperature_parameter = temperature_parameter
 
         if self.projection_num_features is not None:
             self.modality_a_linear = nn.Linear(
@@ -116,4 +120,77 @@ class DuoModalZeroShotModel(BaseModule):
         if len(losses_list) > 0:
             loss = torch.mean(torch.stack(losses_list))
             metrics_dict["loss"] = loss
+        return metrics_dict
+
+
+class DuoModalZeroShotModelWithPresetClasses(BaseModule):
+    def __init__(
+        self,
+        image_modality_model: nn.Module,
+        text_modality_model: nn.Module,
+        image_modality_num_features: int,
+        class_prompts: Dict[str, List[str]] = None,
+        projection_num_features: Optional[int] = None,
+        temperature_parameter: Optional[float] = 1.0,
+    ):
+        super().__init__()
+        self.image_modality_model = image_modality_model
+        self.text_modality_model = text_modality_model
+
+        self.projection_num_features = projection_num_features
+
+        if temperature_parameter is None:
+            self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
+        else:
+            self.temperature_parameter = temperature_parameter
+
+        self.class_prompts = class_prompts
+
+        if self.projection_num_features is not None:
+            self.linear_projection = nn.Linear(
+                image_modality_num_features,
+                projection_num_features,
+                bias=False,
+            )
+        self.class_prototypes = None
+
+    def build_class_prototypes(self, class_prompts):
+        self.class_prototypes = []
+
+        for class_key, class_prompts in class_prompts.items():
+            class_prompt_tokens = self.text_modality_model.get_transforms()[
+                "text"
+            ] = class_prompts
+            class_prototype = self.text_modality_model(class_prompt_tokens)[
+                "text"
+            ]["features"].mean(0)
+            self.class_prototypes.append(class_prototype)
+
+        self.class_prototypes = torch.stack(self.class_prototypes)
+
+    def forward(
+        self,
+        image: Optional[torch.Tensor] = None,
+        labels: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        if image is not None:
+            image_features = self.image_modality_model(image=image)["image"][
+                "features"
+            ]
+        else:
+            raise ValueError("An image input must be provided")
+
+        if self.class_prototypes is None:
+            self.build_class_prototypes(self.class_prompts)
+
+        if self.projection_num_features is not None:
+            image_features = self.modality_a_linear(image_features)
+
+        logits = (
+            torch.einsum("ij,jk->ik", image_features, self.class_prototypes)
+            * self.temperature_parameter
+        )
+
+        metrics_dict: dict[str, torch.Tensor] = {"logits": logits}
+
         return metrics_dict
