@@ -22,9 +22,11 @@ def test_build_dataset():
 
 
 def test_forward():
-    model: ModelAndTransform = build_gate_model_with_presets()
+    model_and_transform: ModelAndTransform = build_gate_model_with_presets()
+    model = model_and_transform.model
     dataset = build_gate_dataset(
-        data_dir=os.environ.get("PYTEST_DIR"), transforms=model.transform
+        data_dir=os.environ.get("PYTEST_DIR"),
+        transforms=model_and_transform.transform,
     )
     dataloader = DataLoader(
         dataset["train"],
