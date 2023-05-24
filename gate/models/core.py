@@ -155,7 +155,7 @@ class GATEModel(nn.Module):
 
         for key, value in input_dict.items():
             if isinstance(value, torch.Tensor):
-                print(f"{key}: {value.shape}")
+                print(f"{key}: {value.shape}, {value.max()}, {value.min()}")
 
         for (
             supported_modalities,
