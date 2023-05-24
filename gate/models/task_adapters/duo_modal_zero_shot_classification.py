@@ -209,6 +209,6 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
             * self.temperature_parameter
         )
 
-        metrics_dict: dict[str, torch.Tensor] = {"logits": logits}
+        output_dict: dict[str, torch.Tensor] = {"logits": logits}
 
-        return metrics_dict
+        return output_dict

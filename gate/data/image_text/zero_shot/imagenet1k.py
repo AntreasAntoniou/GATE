@@ -19,6 +19,8 @@ from gate.data.tasks.zero_shot_classification import (
 
 def generate_per_class_prompts():
     prompt_dict = {}
+    print(f"Number of classes: {len(imagenet_classes)}")
+    print(f"Number of prompt templates: {len(imagenet_prompt_templates)}")
     for class_name in imagenet_classes:
         prompts = [
             template.format(class_name)
