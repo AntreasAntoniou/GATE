@@ -90,8 +90,6 @@ def get_similarities(
         tensor_modality_b: Tensor, shape [batch_size, seq_len, embedding_dim]
     """
 
-    modality_a_features = modality_a_features.unsqueeze(0)
-    modality_b_features = modality_b_features.unsqueeze(0)
     similarities = {
         f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
             modality_a_features, modality_b_features.permute(1, 0)
