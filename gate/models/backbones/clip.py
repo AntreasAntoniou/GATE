@@ -109,16 +109,14 @@ class CLIPAdapter(nn.Module):
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):
-                return torch.stack(
-                    [
-                        apply_preprocessing_transforms(
-                            x=item,
-                            transforms=image_transforms,
-                            modality=Modality.image,
-                        )
-                        for item in x
-                    ]
-                )
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
             else:
                 return apply_preprocessing_transforms(
                     x=x, transforms=image_transforms, modality=Modality.image
@@ -126,16 +124,14 @@ class CLIPAdapter(nn.Module):
 
         def text_transforms_process_multi_type(x):
             if isinstance(x, List):
-                return torch.stack(
-                    [
-                        apply_preprocessing_transforms(
-                            x=item,
-                            transforms=text_transforms,
-                            modality=Modality.text,
-                        )
-                        for item in x
-                    ]
-                )
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=text_transforms,
+                        modality=Modality.text,
+                    )
+                    for item in x
+                ]
             else:
                 return apply_preprocessing_transforms(
                     x=x, transforms=text_transforms, modality=Modality.text

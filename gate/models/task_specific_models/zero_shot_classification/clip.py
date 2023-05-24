@@ -77,7 +77,9 @@ def build_model(
         if "image" in inputs:
             image = inputs["image"]
             if isinstance(image, List):
-                image = [transform_dict["image"](sample) for sample in image]
+                image = torch.stack(
+                    [transform_dict["image"](sample) for sample in image]
+                )
             else:
                 image = transform_dict["image"](image)
             inputs["image"] = image
@@ -85,7 +87,9 @@ def build_model(
         if "text" in inputs:
             text = inputs["text"]
             if isinstance(text, List):
-                text = [transform_dict["text"](sample) for sample in text]
+                text = torch.stack(
+                    [transform_dict["text"](sample) for sample in text]
+                )
             else:
                 text = transform_dict["text"](text)
 
