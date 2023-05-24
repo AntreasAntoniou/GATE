@@ -53,6 +53,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+import numpy as np
+
+
 def dataset_format_transform(sample: Dict) -> Dict:
     # Example of sample:
     #
@@ -67,7 +70,7 @@ def dataset_format_transform(sample: Dict) -> Dict:
 
     input_dict = {}
     input_dict["image"] = sample["image"]
-    input_dict["text"] = torch.random.choice(sample["caption"])[0]
+    input_dict["text"] = np.random.choice(sample["caption"])[0]
     return input_dict
 
 
