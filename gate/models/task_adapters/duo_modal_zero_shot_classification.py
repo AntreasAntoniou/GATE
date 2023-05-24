@@ -159,9 +159,10 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
             )
         self.class_prototypes = None
 
+    @torch.no_grad()
     def build_class_prototypes(self, class_prompts):
         self.class_prototypes = []
-
+        self.text_modality_model.eval()
         for class_key, class_prompts in class_prompts.items():
             class_prompt_tokens = self.text_modality_model.get_transforms()[
                 "text"
