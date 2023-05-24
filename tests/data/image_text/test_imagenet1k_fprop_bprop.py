@@ -37,7 +37,7 @@ def test_forward():
     )
     sample = next(iter(dataloader))
 
-    model.forward(**sample)
+    model.forward(sample)
 
 
 def test_forward_backward():
