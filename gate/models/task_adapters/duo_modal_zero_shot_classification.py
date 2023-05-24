@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import get_similarities
@@ -202,7 +203,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
             image_features = self.modality_a_linear(image_features)
 
         logits = (
-            torch.einsum("ij,jk->ik", image_features, self.class_prototypes)
+            F.linear(image_features, self.class_prototypes)
             * self.temperature_parameter
         )
 
