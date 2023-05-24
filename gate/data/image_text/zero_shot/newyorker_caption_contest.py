@@ -1,6 +1,6 @@
 # food101.py
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from datasets import load_dataset
 
@@ -47,15 +47,26 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
-# {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=500x375
-# at 0x7F4A005A6740>, 'caption': ['A young, blond boy sitting in a white
-# chair beside cactus plants is eating a sandwich.', "A little boy site
-# in a white rocking chair eating a sandwich out of a child's plate.",
-# "A young boy eats a sandwich on his family's porch.",
-#  'Blond boy eating a sandwich on a white chair.',
-# 'A young boy sits while eating.'],
-# 'sentids': ['8760', '8761', '8762', '8763', '8764'], 'split': 'train', 'img_id': '1
-# 752', 'filename': '14989976.jpg'}
+import numpy as np
+
+
+def dataset_format_transform(sample: Dict) -> Dict:
+    # Example of sample:
+    #
+    # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=500x375
+    # at 0x7F4A005A6740>, 'caption': ['A young, blond boy sitting in a white
+    # chair beside cactus plants is eating a sandwich.', "A little boy site
+    # in a white rocking chair eating a sandwich out of a child's plate.",
+    # "A young boy eats a sandwich on his family's porch.",
+    #  'Blond boy eating a sandwich on a white chair.',
+    # 'A young boy sits while eating.'],
+    # 'sentids': ['8760', '8761', '8762', '8763', '8764'], 'split': 'train', 'img_id': '1
+    # 752', 'filename': '14989976.jpg'}
+
+    input_dict = {}
+    input_dict["image"] = sample["image"]
+    input_dict["text"] = np.random.choice(sample["caption"])[0]
+    return input_dict
 
 
 @configurable(
@@ -71,25 +82,19 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
