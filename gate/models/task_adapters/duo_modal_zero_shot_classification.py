@@ -123,6 +123,11 @@ class DuoModalZeroShotModel(BaseModule):
         return metrics_dict
 
 
+from accelerate import Accelerator
+
+accelerator = Accelerator()
+
+
 class DuoModalZeroShotModelWithPresetClasses(BaseModule):
     def __init__(
         self,
@@ -161,6 +166,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
             class_prompt_tokens = self.text_modality_model.get_transforms()[
                 "text"
             ](class_prompts)
+            class_prompt_tokens = class_prompt_tokens.to(accelerator.device)
             class_prototype = self.text_modality_model(
                 text=class_prompt_tokens
             )["text"]["features"].mean(0)
