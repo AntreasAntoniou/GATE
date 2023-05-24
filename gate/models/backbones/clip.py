@@ -37,7 +37,9 @@ class CLIPAdapter(nn.Module):
             self.clip.init_weights()
 
         self.vision_model = self.clip.vision_model
+        self.visual_projection = self.clip.visual_projection
         self.text_model = self.clip.text_model
+        self.text_projection = self.clip.text_projection
 
         setattr(self.vision_model, "legacy_forward", self.vision_model.forward)
         setattr(self.text_model, "legacy_forward", self.text_model.forward)
@@ -82,9 +84,15 @@ class CLIPAdapter(nn.Module):
 
         if image is not None:
             output_dict["image"] = self.vision_model(x=image)
+            output_dict["image"]["projection"] = self.visual_projection(
+                output_dict["image"]["features"]
+            )
 
         if text is not None:
             output_dict["text"] = self.text_model(x=text)
+            output_dict["text"]["projection"] = self.text_projection(
+                output_dict["text"]["features"]
+            )
 
         return output_dict
 

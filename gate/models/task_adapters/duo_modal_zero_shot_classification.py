@@ -137,10 +137,12 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
         class_prompts: Dict[str, List[str]] = None,
         projection_num_features: Optional[int] = None,
         temperature_parameter: Optional[float] = 1.0,
+        backbone_output_key: str = "projection",
     ):
         super().__init__()
         self.image_modality_model = image_modality_model
         self.text_modality_model = text_modality_model
+        self.backbone_output_key = backbone_output_key
 
         self.projection_num_features = projection_num_features
 
@@ -175,7 +177,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
                 print(f"{class_key} {class_prompt_tokens.shape}")
                 class_prototype = self.text_modality_model(
                     text=class_prompt_tokens
-                )["text"]["features"].mean(0)
+                )["text"][self.backbone_output_key].mean(0)
                 self.class_prototypes.append(class_prototype)
 
         self.class_prototypes = torch.stack(self.class_prototypes)
@@ -191,7 +193,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
 
         if image is not None:
             image_features = self.image_modality_model(image=image)["image"][
-                "features"
+                self.backbone_output_key
             ]
         else:
             raise ValueError("An image input must be provided")
