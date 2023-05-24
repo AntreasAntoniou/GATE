@@ -64,7 +64,7 @@ def test_forward_backward():
         batch_size=200,
         collate_fn=collate_fn_with_token_pad,
         shuffle=True,
-        num_workers=4,
+        num_workers=1,
     )
     dataloader = accelerator.prepare(dataloader)
     sample = next(iter(dataloader))
