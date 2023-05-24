@@ -88,6 +88,7 @@ def build_model(
             text = inputs["text"]
             if isinstance(text, List):
                 text = transform_dict["text"](text)
+                print(text)
 
             else:
                 text = transform_dict["text"](text)
