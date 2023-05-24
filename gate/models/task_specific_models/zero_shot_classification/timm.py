@@ -202,9 +202,7 @@ def build_model_with_presets(
         if "text" in inputs:
             text = inputs["text"]
             if isinstance(text, List):
-                text = torch.stack(
-                    [transform_dict["text"](sample) for sample in text]
-                )
+                text = transform_dict["text"](text)
             else:
                 text = transform_dict["text"](text)
 
