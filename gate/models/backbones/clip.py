@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Optional
+from typing import List, Optional
 from urllib.request import urlopen
 
 import torch
@@ -37,7 +37,9 @@ class CLIPAdapter(nn.Module):
             self.clip.init_weights()
 
         self.vision_model = self.clip.vision_model
+        self.visual_projection = self.clip.visual_projection
         self.text_model = self.clip.text_model
+        self.text_projection = self.clip.text_projection
 
         setattr(self.vision_model, "legacy_forward", self.vision_model.forward)
         setattr(self.text_model, "legacy_forward", self.text_model.forward)
@@ -82,9 +84,15 @@ class CLIPAdapter(nn.Module):
 
         if image is not None:
             output_dict["image"] = self.vision_model(x=image)
+            output_dict["image"]["projection_output"] = self.visual_projection(
+                output_dict["image"]["features"]
+            )
 
         if text is not None:
             output_dict["text"] = self.text_model(x=text)
+            output_dict["text"]["projection_output"] = self.text_projection(
+                output_dict["text"]["features"]
+            )
 
         return output_dict
 
@@ -99,11 +107,27 @@ class CLIPAdapter(nn.Module):
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0)
 
-        return {
-            "image": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=image_transforms, modality=Modality.image
-            ),
-            "text": lambda x: apply_preprocessing_transforms(
+        def image_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=image_transforms, modality=Modality.image
+                )
+
+        def text_transforms_process_multi_type(x):
+            return apply_preprocessing_transforms(
                 x=x, transforms=text_transforms, modality=Modality.text
-            ),
+            )
+
+        return {
+            "image": lambda x: image_transforms_process_multi_type(x),
+            "text": lambda x: text_transforms_process_multi_type(x),
         }

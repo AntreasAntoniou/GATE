@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 from urllib.request import urlopen
 
 import PIL
@@ -23,6 +23,10 @@ single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     input_shape = None
     is_5d_tensor = False
+
+    if isinstance(x, PIL.Image.Image) and modality == Modality.image:
+        x = x.convert("RGB")
+
     if isinstance(x, PIL.Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
         if x.shape[0] == 1:
@@ -186,11 +190,27 @@ class TimmCLIPAdapter(nn.Module):
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0)
 
-        return {
-            "image": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=image_transforms, modality=Modality.image
-            ),
-            "text": lambda x: apply_preprocessing_transforms(
+        def image_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=image_transforms, modality=Modality.image
+                )
+
+        def text_transforms_process_multi_type(x):
+            return apply_preprocessing_transforms(
                 x=x, transforms=text_transforms, modality=Modality.text
-            ),
+            )
+
+        return {
+            "image": lambda x: image_transforms_process_multi_type(x),
+            "text": lambda x: text_transforms_process_multi_type(x),
         }

@@ -152,6 +152,13 @@ class GATEModel(nn.Module):
             for key, value in input_dict.items()
             if key not in self.supported_input_modalities
         }
+
+        # for key, value in input_dict.items():
+        #     if isinstance(value, torch.Tensor):
+        #         print(
+        #             f"{key}: {value.shape}, {value.float().max()}, {value.float().min()}"
+        #         )
+
         for (
             supported_modalities,
             target_modality_name,

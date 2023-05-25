@@ -21,7 +21,7 @@ logger = get_logger(
 
 
 def preprocess_transforms(sample: Tuple):
-    image_transforms = T.Compose([T.Resize((28, 28)), T.ToTensor()])
+    image_transforms = T.Compose([T.Resize((28, 28))])
     image = image_transforms(sample[0])
     label = sample[1]
     return {"image": image, "label": label}
@@ -41,7 +41,6 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
         num_samples_per_class: int,  # n_shot
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
-        variable_num_queries_per_class: bool,
         variable_num_classes_per_set: bool,
         support_set_input_transform: Optional[Any],
         query_set_input_transform: Optional[Any],
@@ -64,7 +63,6 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            variable_num_queries_per_class=variable_num_queries_per_class,
             input_target_annotation_keys=dict(
                 inputs="image",
                 targets="label",
@@ -115,9 +113,8 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_queries_per_class=2,
         num_classes_per_set=50,
         num_samples_per_class=15,
-        num_queries_per_class=1,
+        num_queries_per_class=5,
         variable_num_samples_per_class=True,
-        variable_num_queries_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
         query_set_input_transform=None,
