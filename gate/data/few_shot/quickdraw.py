@@ -16,7 +16,6 @@ from gate.data.few_shot.core import FewShotClassificationMetaDataset
 from gate.data.few_shot.utils import FewShotSuperSplitSetOptions
 from gate.data.transforms.tiny_image_transforms import pad_image
 
-
 logger = get_logger(
     __name__,
 )
@@ -129,7 +128,6 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
 
 
 from rich import print
-
 
 # def key_mapper(input_dict):
 #     return {

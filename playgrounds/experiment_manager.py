@@ -1,11 +1,12 @@
-import os
-import time
-import fire
-import subprocess
-from typing import Dict
-from rich.logging import RichHandler
-from threading import Thread, Lock
 import logging
+import os
+import subprocess
+import time
+from threading import Lock, Thread
+from typing import Dict
+
+import fire
+from rich.logging import RichHandler
 
 logging.basicConfig(
     level="INFO",
