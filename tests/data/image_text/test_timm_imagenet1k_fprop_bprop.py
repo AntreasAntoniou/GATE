@@ -1,20 +1,20 @@
 import os
-import pytest
 
-from torch.utils.data import DataLoader
+import pytest
 import torch
 import torch.nn.functional as F
-from gate.data.core import collate_fn_with_token_pad
-from gate.data.image.classification.imagenet1k import build_gate_dataset
-from gate.models import ModelAndTransform
-from gate.metrics import accuracy_top_k
-
-from gate.models.task_specific_models.zero_shot_classification.timm import (
-    build_gate_model_with_presets,
-)
 from accelerate import Accelerator
 from rich import print
 from rich.traceback import install
+from torch.utils.data import DataLoader
+
+from gate.data.core import collate_fn_with_token_pad
+from gate.data.image.classification.imagenet1k import build_gate_dataset
+from gate.metrics import accuracy_top_k
+from gate.models import ModelAndTransform
+from gate.models.task_specific_models.zero_shot_classification.timm import (
+    build_gate_model_with_presets,
+)
 
 install()
 

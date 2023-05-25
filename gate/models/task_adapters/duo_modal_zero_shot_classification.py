@@ -3,10 +3,10 @@ from typing import Dict, List, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from tqdm.auto import tqdm
 
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import get_similarities
-from tqdm.auto import tqdm
 
 
 class DuoModalZeroShotModel(BaseModule):
