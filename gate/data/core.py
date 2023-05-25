@@ -2,8 +2,10 @@ import collections
 import json
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
-import torch
 
+import numpy as np
+import PIL
+import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
@@ -112,11 +114,19 @@ def dataclass_collate(batch):
 
 def pad_and_stack_tensors(tensor_list):
     tensor_list = list(tensor_list)
+    # print(f"total tensor_list: {len(tensor_list)}")
     for idx, tensor in enumerate(tensor_list):
         if len(tensor.shape) == 2 and tensor.shape[0] == 1:
             tensor = tensor.squeeze(0)
             tensor_list[idx] = tensor
 
+    is_ireggular_shape = True if len(tensor_list[0].shape) == 2 else False
+    if is_ireggular_shape:
+        temp_tensor_list = []
+        for tensor in tensor_list:
+            temp_tensor_list.extend(tensor.unbind(0))
+        tensor_list = temp_tensor_list
+    # print(f"total tensor_list: {len(tensor_list)}")
     max_len = max(tensor.size(0) for tensor in tensor_list)
     padded_list = []
 
@@ -129,12 +139,16 @@ def pad_and_stack_tensors(tensor_list):
                     dtype=tensor.dtype,
                     device=tensor.device,
                 )
-                * -1
+                * tensor[-1]
             )  # use the last value (eos)
             tensor = torch.cat([tensor, padding], dim=0)
         padded_list.append(tensor)
     # print(f"padded_list: {[tensor.shape for tensor in padded_list]}")
-    return torch.stack(padded_list)
+    if not is_ireggular_shape:
+        padded_list = torch.stack(padded_list)
+    else:
+        padded_list = torch.stack(padded_list).view(-1, 2, max_len)
+    return padded_list
 
 
 def collate_fn_with_token_pad(data):
@@ -142,6 +156,9 @@ def collate_fn_with_token_pad(data):
 
     def process_value(value):
         if isinstance(value[0], torch.Tensor):
+            if value[0].dim() == 0 and value[-1].dim() == 0:
+                # print(value)
+                return torch.stack(value)
             # print(f"tensor: {value}")
             return (
                 pad_and_stack_tensors(value)
@@ -217,11 +234,8 @@ class GATEDataset(Dataset):
         if self.transforms is not None:
             if isinstance(self.transforms, list):
                 for transform in self.transforms:
-                    item = transform(item)
-                    # if hasattr(item["image"], "shape"):
-                    #     print(f"image shape: {item['image'].shape}")
-                    # else:
-                    #     print(f"image shape: {item['image']}")
+                    if transform is not None:
+                        item = transform(item)
             else:
                 item = self.transforms(item)
         return item
@@ -242,6 +256,29 @@ class GATEDataset(Dataset):
             item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
 
         item = self.task(item) if self.task is not None else item
+        # dict_items = (
+        #     item
+        #     if isinstance(item, dict)
+        #     else {idx: item for idx, item in enumerate(item)}
+        # )
+        # for key, value in dict_items.items():
+        #     if isinstance(value, torch.Tensor):
+        #         print(
+        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
+        #         )
+        #     if isinstance(value, PIL.Image.Image):
+        #         # Convert the PIL Image to a NumPy array
+
+        #         numpy_img = np.array(value)
+
+        #         # Convert the NumPy array to a PyTorch tensor
+        #         tensor_img = torch.from_numpy(numpy_img)
+
+        #         # The tensor is in the shape of HxWxC and we need to change it to CxHxW
+        #         tensor_img = tensor_img.permute(2, 0, 1)
+        #         print(
+        #             f"{key}: {tensor_img.shape}, mean: {tensor_img.float().mean()}, std: {tensor_img.float().std()}, min: {tensor_img.float().min()}, max: {tensor_img.float().max()}"
+        #         )
 
         item = self._apply_transforms(item)
 
@@ -250,6 +287,12 @@ class GATEDataset(Dataset):
             if self.key_remapper_dict is not None
             else item
         )
+
+        # for key, value in item.items():
+        #     if isinstance(value, torch.Tensor):
+        #         print(
+        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
+        #         )
 
         # Apply the task to the item if it exists
         return item

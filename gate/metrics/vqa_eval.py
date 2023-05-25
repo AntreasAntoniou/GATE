@@ -1,19 +1,21 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass
-import re
+from itertools import combinations
 from typing import Any, Dict, List, Optional
+
+import torch
+from rich import print
+from tqdm.auto import tqdm
+
 from gate.metrics.glossary import (
+    articles,
+    comma_strip,
     contractions,
     manual_map,
-    articles,
     period_strip,
-    comma_strip,
     punct,
 )
-import torch
-from tqdm.auto import tqdm
-from itertools import combinations
-from rich import print
 
 
 @dataclass

@@ -3,7 +3,9 @@ import os
 import pytest
 from torch.utils.data import DataLoader
 
-from gate.data.video.classification.build_kinetics_400 import build_kinetics_400_dataset
+from gate.data.video.classification.build_kinetics_400 import (
+    build_kinetics_400_dataset,
+)
 
 
 def test_build_kinetics_400_dataset():

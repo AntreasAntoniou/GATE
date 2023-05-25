@@ -3,21 +3,19 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import hydra
-from omegaconf import OmegaConf
-from rich.syntax import Syntax
 import torch
 import yaml
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config
+from omegaconf import OmegaConf
+from rich import print
+from rich.syntax import Syntax
 from timm.scheduler import CosineLRScheduler
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.core import Learner
-from gate.boilerplate.decorators import (
-    register_configurables,
-)
-from rich import print
+from gate.boilerplate.decorators import register_configurables
 from gate.boilerplate.utils import (
     get_hydra_config,
     get_logger,
@@ -51,7 +49,7 @@ hydra_logger = get_logger("hydra")
 
 
 @dataclass
-class Any:
+class Config:
     """
     A dataclass for storing the base configuration for the application.
     🛠 Contains all necessary configurations for model, dataset, dataloader,
@@ -210,7 +208,7 @@ def collect_config_store():
     # 🌐 Hydra Zen global configs
     zen_config = []
 
-    for value in Any.__dataclass_fields__.values():
+    for value in Config.__dataclass_fields__.values():
         item = (
             ZenField(name=value.name, hint=value.type, default=value.default)
             if value.default is not MISSING
@@ -230,8 +228,8 @@ def collect_config_store():
             dict(scheduler="cosine-annealing"),
             dict(model="clip-classification"),
             dict(dataset="cifar100"),
-            dict(trainer="classification"),
-            dict(evaluator="classification"),
+            dict(trainer="image_classification"),
+            dict(evaluator="image_classification"),
             dict(dataloader="default"),
             dict(hydra="default"),
             dict(callbacks="default"),

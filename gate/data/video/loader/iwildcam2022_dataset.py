@@ -9,7 +9,10 @@ import torch
 import torch.utils.data
 from torchvision.transforms import Resize
 
-from ..iwildcam_2022 import filter_metadata_with_counts, read_all_train_metadata
+from ..iwildcam_2022 import (
+    filter_metadata_with_counts,
+    read_all_train_metadata,
+)
 from . import utils as utils
 
 logger = logging.getLogger(__name__)
@@ -66,7 +69,8 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
             for seq_id in self.index_to_seq_id
         }
         self.seq_id_to_counts = {
-            seq_id: self.seq_id_to_counts[seq_id] for seq_id in self.index_to_seq_id
+            seq_id: self.seq_id_to_counts[seq_id]
+            for seq_id in self.index_to_seq_id
         }
 
     def __getitem__(self, index):
@@ -82,7 +86,9 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
         sub_locations = torch.zeros(self.max_num_frames, dtype=torch.int64)
         utc_timestamps = torch.zeros(self.max_num_frames, dtype=torch.float32)
         category_ids = torch.zeros(self.max_num_frames, dtype=torch.int64)
-        sub_location_available = torch.zeros(self.max_num_frames, dtype=torch.bool)
+        sub_location_available = torch.zeros(
+            self.max_num_frames, dtype=torch.bool
+        )
         gps_available = torch.zeros(self.max_num_frames, dtype=torch.bool)
         gps_sub_available = torch.zeros(self.max_num_frames, dtype=torch.bool)
         gps_locations = torch.zeros(
@@ -95,7 +101,9 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
         instance_masks = torch.zeros(
             self.max_num_frames, height, width, dtype=torch.uint8
         )
-        max_detection_confs = torch.zeros(self.max_num_frames, dtype=torch.float32)
+        max_detection_confs = torch.zeros(
+            self.max_num_frames, dtype=torch.float32
+        )
 
         num_detections = torch.zeros(self.max_num_frames, dtype=torch.int64)
         detection_categories = torch.zeros(
@@ -105,10 +113,15 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
             self.max_num_frames, self.max_num_detections, dtype=torch.float32
         )
         detection_bboxes = torch.zeros(
-            self.max_num_frames, self.max_num_detections, 4, dtype=torch.float32
+            self.max_num_frames,
+            self.max_num_detections,
+            4,
+            dtype=torch.float32,
         )
 
-        video = torch.zeros(self.max_num_frames, 3, height, width, dtype=torch.uint8)
+        video = torch.zeros(
+            self.max_num_frames, 3, height, width, dtype=torch.uint8
+        )
 
         for frame_idx, image_annotaion in enumerate(per_image_annotations):
             """
@@ -134,24 +147,30 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
             category_id = image_annotaion["category_id"]
 
             if "gps_location" in image_annotaion:
-                gps_location_latitude = image_annotaion["gps_location"]["latitude"]
-                gps_location_longitude = image_annotaion["gps_location"]["longitude"]
+                gps_location_latitude = image_annotaion["gps_location"][
+                    "latitude"
+                ]
+                gps_location_longitude = image_annotaion["gps_location"][
+                    "longitude"
+                ]
                 gps_locations[frame_idx, 0] = gps_location_latitude
                 gps_locations[frame_idx, 1] = gps_location_longitude
                 gps_available[frame_idx] = True
 
             if "gps_sub_location" in image_annotaion:
-                gps_sub_location_latitude = image_annotaion["gps_sub_location"][
-                    "latitude"
-                ]
-                gps_sub_location_longitude = image_annotaion["gps_sub_location"][
-                    "longitude"
-                ]
+                gps_sub_location_latitude = image_annotaion[
+                    "gps_sub_location"
+                ]["latitude"]
+                gps_sub_location_longitude = image_annotaion[
+                    "gps_sub_location"
+                ]["longitude"]
                 gps_sub_locations[frame_idx, 0] = gps_sub_location_latitude
                 gps_sub_locations[frame_idx, 1] = gps_sub_location_longitude
                 gps_sub_available[frame_idx] = True
 
-            max_detection_conf = image_annotaion["detection"]["max_detection_conf"]
+            max_detection_conf = image_annotaion["detection"][
+                "max_detection_conf"
+            ]
             detections = image_annotaion["detection"]["detections"]
 
             # Annotations

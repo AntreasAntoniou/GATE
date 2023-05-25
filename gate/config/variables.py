@@ -1,8 +1,8 @@
+import multiprocessing as mp
 import os
 from typing import Any
 
 from hydra_zen import hydra_list
-import multiprocessing as mp
 
 
 def get_env_var(key: str, default: Any) -> Any:
@@ -23,7 +23,7 @@ CURRENT_EXPERIMENT_DIR = get_env_var(
 )
 TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
 EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
-NUM_WORKERS = get_env_var("NUM_WORKERS", mp.cpu_count())
+NUM_WORKERS = get_env_var("NUM_WORKERS", min(mp.cpu_count(), 16))
 PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
 PIN_MEMORY = get_env_var("PIN_MEMORY", True)
@@ -36,6 +36,7 @@ DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
 GPU_MEMORY = 24  # in GB
 
 ## Define yaml variable access codes here
+HYDRATED_EXPERIMENT_NAME = "${exp_name}"
 HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
 HYDRATED_NUM_CLASSES = "${dataset.num_classes}"

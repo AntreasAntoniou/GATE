@@ -11,7 +11,9 @@ from gate.data.tasks.reading_comprehension import (
     LambadaTask,
 )
 
-def build_lambada_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_lambada_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
     """
     Build a lambada dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/lambada

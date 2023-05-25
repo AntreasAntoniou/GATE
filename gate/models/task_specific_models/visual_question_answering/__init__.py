@@ -1,7 +1,7 @@
+import random
 from collections import defaultdict
 from copy import deepcopy as copy
-import random
-from typing import Union, Any, Dict
+from typing import Any, Dict, Union
 
 import torch
 
@@ -31,23 +31,7 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
         #     f"post tokenizer pre: {output_dict['text']['question_decoder_tokens'].shape}"
         # )
 
-        input_ids = output_dict["text"]["question_decoder_tokens"]
-
-        input_ids[
-            input_ids == text_decoder_tokenizer.bos_token_id
-        ] = text_decoder_tokenizer.question_start_token_id
-
-        input_ids[
-            input_ids == text_decoder_tokenizer.eos_token_id
-        ] = text_decoder_tokenizer.question_end_token_id
-
-        input_ids = torch.cat(
-            [
-                torch.ones((1)).long() * text_decoder_tokenizer.bos_token_id,
-                input_ids,
-            ],
-            dim=0,
-        )
+        input_ids = output_dict["text"]["question_decoder_tokens"][:-1]
 
         output_dict["text"]["question_decoder_tokens"] = input_ids
 
@@ -81,23 +65,7 @@ def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
 
         input_ids = output_dict["text"]["answer_decoder_tokens"]
 
-        input_ids[
-            input_ids == text_decoder_tokenizer.bos_token_id
-        ] = text_decoder_tokenizer.answer_start_token_id
-
-        input_ids[
-            input_ids == text_decoder_tokenizer.eos_token_id
-        ] = text_decoder_tokenizer.answer_end_token_id
-
-        input_ids = torch.cat(
-            [
-                input_ids,
-                torch.ones((1)).long() * text_decoder_tokenizer.eos_token_id,
-            ],
-            dim=0,
-        )
-
-        output_dict["text"]["answer_decoder_tokens"] = input_ids
+        output_dict["text"]["answer_decoder_tokens"] = input_ids[1:]
 
         output_dict["text"]["answer_original"] = copy(
             inputs["text"]["answers"]

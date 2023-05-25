@@ -5,7 +5,9 @@ import numpy as np
 from datasets import load_dataset
 
 
-def build_trivia_qa_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_trivia_qa_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
     """
     Build a trivia_qa dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/trivia_qa
@@ -21,19 +23,22 @@ def build_trivia_qa_dataset(set_name: str, data_dir: Optional[str] = None) -> di
     rng = np.random.RandomState(42)
 
     train_set = load_dataset(
-        'trivia_qa', 'rc',
+        "trivia_qa",
+        "rc",
         split="train",
         cache_dir=data_dir,
     )
 
     val_set = load_dataset(
-        'trivia_qa', 'rc',
+        "trivia_qa",
+        "rc",
         split="validation",
         cache_dir=data_dir,
     )
 
     test_set = load_dataset(
-        'trivia_qa', 'rc',
+        "trivia_qa",
+        "rc",
         split="test",
         cache_dir=data_dir,
     )

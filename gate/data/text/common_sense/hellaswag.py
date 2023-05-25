@@ -11,7 +11,9 @@ from gate.data.tasks.common_sense import (
     HellaSwagTask,
 )
 
-def build_hellaswag_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_hellaswag_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
     """
     Build a hellaswag dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/hellaswag

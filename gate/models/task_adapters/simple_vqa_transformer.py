@@ -6,10 +6,14 @@ import torch
 import torch.nn as nn
 from transformers import (
     AutoTokenizer,
-    AutoModelForCausalLM,
+    BartForQuestionAnswering,
+    BartTokenizer,
+    BartTokenizerFast,
+    GPT2LMHeadModel,
     GPT2Tokenizer,
-    GPT2TokenizerFast,
 )
+
+from gate.models.task_adapters import BaseModule
 
 
 def tokenize_with_start_end(text, tokenizer):
@@ -31,7 +35,7 @@ def tokenize_with_start_end(text, tokenizer):
     return output_dict
 
 
-class SimpleVQATransformer(nn.Module):
+class SimpleVQATransformer(BaseModule):
     """
     This class represents a simple Visual Question Answering (VQA) transformer model.
     It incorporates image and text encoders, and a text decoder for generating answers to visual questions.
@@ -59,11 +63,10 @@ class SimpleVQATransformer(nn.Module):
         self.text_encoder_transforms = text_encoder_transforms
 
         # Existing tokenizer
-        self.text_decoder_tokenizer: GPT2Tokenizer | GPT2TokenizerFast = (
-            AutoTokenizer.from_pretrained("distilgpt2", use_fast=True)
+        self.text_decoder_tokenizer = GPT2Tokenizer.from_pretrained(
+            "distilgpt2"
         )
-
-        self.text_decoder = AutoModelForCausalLM.from_pretrained(
+        self.text_decoder = GPT2LMHeadModel.from_pretrained(
             "distilgpt2", add_cross_attention=True
         )
 
@@ -83,10 +86,6 @@ class SimpleVQATransformer(nn.Module):
         # New tokens
         new_tokens = [
             "<pad>",
-            "<q>",
-            "<q/>",
-            "<a>",
-            "<a/>",
         ]
 
         # Add new tokens
@@ -96,39 +95,11 @@ class SimpleVQATransformer(nn.Module):
         # print(f"Added {num_added_tokens} tokens")
 
         pad_token = self.text_decoder_tokenizer.encode("<pad>")[0]
-        question_start_token = self.text_decoder_tokenizer.encode("<q>")[0]
-        question_end_token = self.text_decoder_tokenizer.encode("<q/>")[0]
-        answer_start_token = self.text_decoder_tokenizer.encode("<a>")[0]
-        answer_end_token = self.text_decoder_tokenizer.encode("<a/>")[0]
-
-        # print(
-        #     f"pad_token: {pad_token}, question_start_token: {question_start_token}, question_end_token: {question_end_token}, answer_start_token: {answer_start_token}, answer_end_token: {answer_end_token}"
-        # )
 
         setattr(
             self.text_decoder_tokenizer,
             "pad_token_id",
             pad_token,
-        )
-        setattr(
-            self.text_decoder_tokenizer,
-            "question_start_token_id",
-            question_start_token,
-        )
-        setattr(
-            self.text_decoder_tokenizer,
-            "question_end_token_id",
-            question_end_token,
-        )
-        setattr(
-            self.text_decoder_tokenizer,
-            "answer_start_token_id",
-            answer_start_token,
-        )
-        setattr(
-            self.text_decoder_tokenizer,
-            "answer_end_token_id",
-            answer_end_token,
         )
 
         # print(self.text_decoder_tokenizer.additional_special_tokens_ids)
@@ -141,7 +112,7 @@ class SimpleVQATransformer(nn.Module):
         self,
         question_encoder_tokens,
         question_decoder_tokens,
-        answer_decoder_tokens,
+        answer_decoder_tokens: Optional[torch.Tensor] = None,
     ):
         question_encoder_tokens[
             question_encoder_tokens == -1
@@ -157,23 +128,31 @@ class SimpleVQATransformer(nn.Module):
             question_decoder_tokens == -1
         ] = self.text_decoder_tokenizer.pad_token_id
         # print(f"pad_token_id: {self.text_decoder_tokenizer.pad_token_id}")
+        if answer_decoder_tokens is not None:
+            ###########################################################
+            answer_decoder_tokens_attention_mask = torch.ones(
+                answer_decoder_tokens.shape
+            ).to(answer_decoder_tokens.device)
+            answer_decoder_tokens_attention_mask[
+                answer_decoder_tokens == -1
+            ] = 0
+            answer_decoder_tokens[
+                answer_decoder_tokens == -1
+            ] = self.text_decoder_tokenizer.pad_token_id
 
-        ###########################################################
-        answer_decoder_tokens_attention_mask = torch.ones(
-            answer_decoder_tokens.shape
-        ).to(answer_decoder_tokens.device)
-        answer_decoder_tokens_attention_mask[answer_decoder_tokens == -1] = 0
-        answer_decoder_tokens[
-            answer_decoder_tokens == -1
-        ] = self.text_decoder_tokenizer.pad_token_id
-
-        return (
-            question_encoder_tokens,
-            question_decoder_tokens,
-            question_decoder_tokens_attention_mask,
-            answer_decoder_tokens,
-            answer_decoder_tokens_attention_mask,
-        )
+            return (
+                question_encoder_tokens,
+                question_decoder_tokens,
+                question_decoder_tokens_attention_mask,
+                answer_decoder_tokens,
+                answer_decoder_tokens_attention_mask,
+            )
+        else:
+            return (
+                question_encoder_tokens,
+                question_decoder_tokens,
+                question_decoder_tokens_attention_mask,
+            )
 
     def forward(
         self,
@@ -263,25 +242,14 @@ class SimpleVQATransformer(nn.Module):
                     dim=1,
                 ),
             }
-            input_dict = {
-                "input_ids": question_answer_tokens["input_ids"][:, :-1],
-                "attention_mask": question_answer_tokens["attention_mask"][
-                    :, :-1
-                ],
-            }
-            label_dict = {
-                "input_ids": question_answer_tokens["input_ids"][:, 1:],
-                "attention_mask": question_answer_tokens["attention_mask"][
-                    :, 1:
-                ],
-            }
 
-            print(
-                question_answer_tokens["input_ids"][
-                    question_answer_tokens["input_ids"]
-                    == self.text_decoder_tokenizer.eos_token_id
-                ]
-            )
+            # torch.set_printoptions(
+            #     edgeitems=1000
+            # )  # Adjust the number as needed
+
+            # print(
+            #     f"question_answer_tokens: {question_answer_tokens['input_ids'][0]}"
+            # )
 
             # print(
             #     f"input: {input_dict['input_ids']}, input_shape: {input_dict['input_ids'].shape},\n"
@@ -292,9 +260,9 @@ class SimpleVQATransformer(nn.Module):
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels
             output = self.text_decoder(
-                **input_dict,
+                **question_answer_tokens,
                 encoder_hidden_states=combine_embeddings,
-                labels=label_dict["input_ids"],
+                labels=question_answer_tokens["input_ids"],
             )
         else:
             model_input = {
@@ -318,8 +286,11 @@ class SimpleVQATransformer(nn.Module):
         question_decoder_tokens: Optional[torch.Tensor] = None,
         image: Optional[Dict[str, torch.Tensor]] = None,
         text: Optional[Dict[str, torch.Tensor]] = None,
-        max_length: int = 100,
+        max_length: int = 50,
         do_sample: bool = True,
+        num_beams: int = 2,
+        temperature: float = 1.5,
+        no_repeat_ngram_size: int = 2,
     ) -> str:
         """
         This method generates a textual answer given the same inputs
@@ -351,6 +322,15 @@ class SimpleVQATransformer(nn.Module):
         if text is not None:
             question_encoder_tokens = text["question_encoder_tokens"]
             question_decoder_tokens = text["question_decoder_tokens"]
+
+        (
+            question_encoder_tokens,
+            question_decoder_tokens,
+            question_decoder_tokens_attention_mask,
+        ) = self._setup_padding(
+            question_encoder_tokens=question_encoder_tokens,
+            question_decoder_tokens=question_decoder_tokens,
+        )
 
         # Obtain the image embeddings from the image encoder
         image_embeddings = self.image_encoder(image=image_encoder_tokens)[
@@ -402,12 +382,13 @@ class SimpleVQATransformer(nn.Module):
 
         answer_tokens = self.text_decoder.generate(
             input_ids=question_decoder_tokens,
-            attention_mask=torch.ones(question_decoder_tokens.shape).to(
-                question_decoder_tokens.device
-            ),
+            attention_mask=question_decoder_tokens_attention_mask,
             encoder_hidden_states=combined_embeddings,
             max_length=max_length,
-            do_sample=do_sample,
+            # do_sample=do_sample,
+            # num_beams=num_beams,
+            # temperature=temperature,
+            no_repeat_ngram_size=no_repeat_ngram_size,
         )
 
         return answer_tokens
@@ -420,8 +401,11 @@ class SimpleVQATransformer(nn.Module):
         question_decoder_tokens: Optional[torch.Tensor] = None,
         image: Optional[Dict[str, torch.Tensor]] = None,
         text: Optional[Dict[str, torch.Tensor]] = None,
-        max_length: int = 100,
-        do_sample: bool = True,
+        max_length: int = 50,
+        do_sample: bool = False,
+        num_beams: int = 2,
+        temperature: float = 1.5,
+        no_repeat_ngram_size: int = 2,
     ):
         decoded_tokens = self.generate_tokens(
             input_dict=input_dict,
@@ -431,7 +415,10 @@ class SimpleVQATransformer(nn.Module):
             image=image,
             text=text,
             max_length=max_length,
-            do_sample=do_sample,
+            # do_sample=do_sample,
+            # num_beams=num_beams,
+            # temperature=temperature,
+            # no_repeat_ngram_size=no_repeat_ngram_size,
         )
         # Decode the generated tokens into a string
         return [

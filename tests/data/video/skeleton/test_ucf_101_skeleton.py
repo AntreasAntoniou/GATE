@@ -1,8 +1,9 @@
 import os
 
 import pytest
+from torch.utils.data import DataLoader
 
-from gate.data.video.classification.build_gulp_sparsesample_skeleton import (
+from gate.data.video.skeleton.build_gulp_sparsesample_skeleton import (
     build_gulp_skeleton_dataset,
 )
 
@@ -31,5 +32,39 @@ def test_build_ucf101_skeleton_dataset():
         )
 
 
+def test_ucf101_skeleton_dataloader():
+    datasets = build_gulp_skeleton_dataset(
+        dataset_name="ucf-101",
+        data_dir=os.environ.get("PYTEST_DIR"),
+        sets_to_include=["test"],
+    )
+    test_set = datasets["test"]
+
+    batch_size = 2
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=True)
+
+    for batch in test_loader:
+        assert batch["pixel_values"].shape == (batch_size, 3, 8, 224, 224)
+        assert batch["labels"].shape == (batch_size,)
+        assert batch["video_ids"].shape == (batch_size,)
+        assert batch["skeleton_num_persons"].shape == (batch_size,)
+        assert batch["skeleton_num_frames"].shape == (batch_size,)
+        assert batch["skeleton_keypoints"].shape == (
+            batch_size,
+            30,
+            1775,
+            17,
+            2,
+        )
+        assert batch["skeleton_keypoints_scores"].shape == (
+            batch_size,
+            30,
+            1775,
+            17,
+        )
+        break
+
+
 if __name__ == "__main__":
     test_build_ucf101_skeleton_dataset()
+    test_ucf101_skeleton_dataloader()

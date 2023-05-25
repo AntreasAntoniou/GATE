@@ -23,7 +23,7 @@ RUN conda create -n main python=3.10 -y
 SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 
 RUN conda install -c conda-forge mamba -y
-RUN mamba install -c conda-forge starship jupyterlab black git-lfs -y
+RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat -y
 RUN mamba install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
 
 RUN echo y | pip install nvitop --upgrade
@@ -35,11 +35,16 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
+RUN git clone https://github.com/mlguild/learn2learn.git
 
-# RUN mkdir /app/
-# ADD gate/ /app/gate
-# ADD setup.py /app/
+RUN mkdir /app/
+ADD gate/ /app/gate
+ADD setup.py /app/
 
-# RUN echo y | pip install /app/[dev]
+RUN echo y | pip install /app/[dev]
+
+RUN pip install -e learn2learn
+
+
 
 ENTRYPOINT ["/bin/bash"]

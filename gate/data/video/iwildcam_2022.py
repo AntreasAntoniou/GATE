@@ -36,7 +36,9 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
 
     metadata_dir = dataset_rootdir / "metadata" / "metadata"
 
-    sequence_counts = _read_csv_to_listdict(metadata_dir / "train_sequence_counts.csv")
+    sequence_counts = _read_csv_to_listdict(
+        metadata_dir / "train_sequence_counts.csv"
+    )
 
     with open(metadata_dir / "iwildcam2022_mdv4_detections.json") as f:
         detection_data = json.load(f)
@@ -87,10 +89,14 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
             else:
                 gps_sub_location = gps_data[str(images_data["sub_location"])]
             seq_id_to_annotations[seq_id][id]["gps_location"] = gps_location
-            seq_id_to_annotations[seq_id][id]["gps_sub_location"] = gps_sub_location
+            seq_id_to_annotations[seq_id][id][
+                "gps_sub_location"
+            ] = gps_sub_location
 
         # Detection
-        seq_id_to_annotations[seq_id][id]["detection"] = image_id_to_detection[id]
+        seq_id_to_annotations[seq_id][id]["detection"] = image_id_to_detection[
+            id
+        ]
 
     # Rearrange annotations.
     # seq_id_to_annotations[seq_id][id] -> seq_id_to_annotations[seq_id][frame_index]
@@ -98,7 +104,10 @@ def read_all_train_metadata(dataset_rootdir: str | Path):
     seq_id_to_per_image_annotations = {}
     for seq_id, image_id_to_annotations in seq_id_to_annotations.items():
         seq_id_to_per_image_annotations[seq_id] = list(
-            sorted(image_id_to_annotations.values(), key=lambda x: x["seq_frame_num"])
+            sorted(
+                image_id_to_annotations.values(),
+                key=lambda x: x["seq_frame_num"],
+            )
         )
 
     return seq_id_to_per_image_annotations, seq_id_to_counts
@@ -108,9 +117,14 @@ def filter_metadata_with_counts(
     seq_id_to_per_image_annotations: dict, seq_id_to_counts: dict[str, int]
 ):
     seq_id_to_per_image_annotations_filtered = {}
-    for seq_id, per_image_annotations in seq_id_to_per_image_annotations.items():
+    for (
+        seq_id,
+        per_image_annotations,
+    ) in seq_id_to_per_image_annotations.items():
         if seq_id in seq_id_to_counts:
-            seq_id_to_per_image_annotations_filtered[seq_id] = per_image_annotations
+            seq_id_to_per_image_annotations_filtered[
+                seq_id
+            ] = per_image_annotations
     return seq_id_to_per_image_annotations_filtered
 
 
@@ -120,11 +134,17 @@ def count_num_files(dataset_rootdir: str | Path):
         dataset_rootdir = dataset_rootdir / "iwildcam2022"
 
     metadata_dir = dataset_rootdir / "metadata" / "metadata"
-    num_train_files = len(list((dataset_rootdir / "train" / "train").glob("*.jpg")))
+    num_train_files = len(
+        list((dataset_rootdir / "train" / "train").glob("*.jpg"))
+    )
     # num_test_files = len(list((dataset_rootdir / "test" / "test").glob("*.jpg")))
     num_metadata_files = len(list(metadata_dir.glob("*")))
     num_mask_files = len(
-        list((dataset_rootdir / "instance_masks" / "instance_masks").glob("*.png"))
+        list(
+            (dataset_rootdir / "instance_masks" / "instance_masks").glob(
+                "*.png"
+            )
+        )
     )
 
     if num_train_files != 201399:
@@ -228,13 +248,15 @@ if __name__ == "__main__":
     seq_ids = list(sorted(seq_id_to_annotations.keys()))
     train_seq_ids, val_seq_ids, test_seq_ids = train_val_test_splits(seq_ids)
     _save_list_to_file(
-        "/disk/scratch_fast1/datasets/iwildcam2022/splits/train.txt", train_seq_ids
+        "/disk/scratch_fast1/datasets/iwildcam2022/splits/train.txt",
+        train_seq_ids,
     )
     _save_list_to_file(
         "/disk/scratch_fast1/datasets/iwildcam2022/splits/val.txt", val_seq_ids
     )
     _save_list_to_file(
-        "/disk/scratch_fast1/datasets/iwildcam2022/splits/test.txt", test_seq_ids
+        "/disk/scratch_fast1/datasets/iwildcam2022/splits/test.txt",
+        test_seq_ids,
     )
 
     for seq_id, annotations in seq_id_to_annotations.items():

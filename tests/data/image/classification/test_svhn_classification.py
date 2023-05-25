@@ -3,9 +3,7 @@ import os
 
 import pytest
 
-from gate.data.image.classification.svhn import (
-    build_svhn_dataset,
-)
+from gate.data.image.classification.svhn import build_svhn_dataset
 
 
 def test_build_svhn_dataset():

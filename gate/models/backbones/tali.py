@@ -1,21 +1,22 @@
-from collections import defaultdict
 import pathlib
-from typing import Any, Dict, Optional, Union
-from omegaconf import DictConfig
-from tali.utils import download_model_with_name
-
-import torch
-import torch.nn as nn
-
-from tali.models import TALIModel, MultiModalityConfig
-from transformers import CLIPProcessor, WhisperProcessor
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Union
 
 import accelerate
-from rich import print
+import torch
+import torch.nn as nn
 import yaml
+from omegaconf import DictConfig
+from rich import print
+from tali.models import MultiModalityConfig, TALIModel
+from tali.utils import download_model_with_name
+from transformers import CLIPProcessor, WhisperProcessor
 
-from gate.boilerplate.utils import (
-    download_model_checkpoint_from_hub,
+from gate.boilerplate.utils import download_model_checkpoint_from_hub
+from gate.models.backbones import (
+    Modality,
+    apply_preprocessing_transforms,
+    image_dim_reshape,
 )
 from gate.models.core import reinit
 
@@ -32,7 +33,7 @@ class TALINet(nn.Module):
         whisper_model_name: str = "openai/whisper-small",
         model_repo_path: Optional[
             str
-        ] = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+        ] = "Antreas/tali-2-tali_image_text_base_patch16_224-wit_tali_image_text_dataset-2306",
         checkpoint_identifier: Optional[str] = "latest",
         pretrained: bool = True,
     ):
@@ -72,12 +73,15 @@ class TALINet(nn.Module):
 
         if hasattr(self.model, "image_linear_layer"):
             self.image_num_features = self.model.image_linear_layer.in_features
+            self.image_num_patches = 14 * 14
 
         if hasattr(self.model, "text_linear_layer"):
             self.text_num_features = self.model.text_linear_layer.in_features
 
         if hasattr(self.model, "audio_linear_layer"):
             self.audio_num_features = self.model.audio_linear_layer.in_features
+
+        self.to("cpu")
 
     def init_weights(self):
         reinit(self)
@@ -119,6 +123,15 @@ class TALINet(nn.Module):
         # and merge the results into output_dict
         # 💡 Using dictionary comprehension to simplify code and
         # improve readability
+        # if isinstance(image, Dict):
+        #     image = image["image"]
+        # if isinstance(text, Dict):
+        #     text = text["text"]
+        # if isinstance(audio, Dict):
+        #     audio = audio["audio"]
+        # if isinstance(video, Dict):
+        #     video = video["video"]
+
         if image is not None:
             output_dict |= {
                 "image": {
@@ -149,14 +162,18 @@ class TALINet(nn.Module):
         return output_dict
 
     def get_transforms(self):
-        return {
-            "image": lambda x: self.image_text_preprocessor(
+        def image_transforms(x):
+            return self.image_text_preprocessor(
                 images=x, return_tensors="pt"
-            ).pixel_values.squeeze(1),
-            "text": lambda x: self.image_text_preprocessor(
+            ).pixel_values
+
+        def text_transforms(x):
+            return self.image_text_preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids,
-            "audio": lambda x: torch.cat(
+            ).input_ids.squeeze(0)
+
+        def audio_transforms(x):
+            return torch.cat(
                 [
                     self.audio_preprocessor(
                         item.view(-1),
@@ -165,15 +182,49 @@ class TALINet(nn.Module):
                     ).input_features
                     for item in x.unbind(0)
                 ]
+            )
+
+        def video_transforms(x):
+            return (
+                torch.stack(
+                    [
+                        self.image_text_preprocessor(
+                            images=image, return_tensors="pt"
+                        ).pixel_values
+                        for image in x
+                    ],
+                    dim=0,
+                ),
+            )
+
+        def image_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=image_transforms, modality=Modality.image
+                )
+
+        def text_transforms_process_multi_type(x):
+            return apply_preprocessing_transforms(
+                x=x, transforms=text_transforms, modality=Modality.text
+            )
+
+        return {
+            "image": lambda x: image_transforms_process_multi_type(x=x),
+            "text": lambda x: text_transforms_process_multi_type(x=x),
+            "audio": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=audio_transforms, modality=Modality.audio
             ),
-            "video": lambda x: torch.stack(
-                [
-                    self.image_text_preprocessor(
-                        images=image, return_tensors="pt"
-                    ).pixel_values
-                    for image in x
-                ],
-                dim=0,
+            "video": lambda x: apply_preprocessing_transforms(
+                x=x, transforms=video_transforms, modality=Modality.video
             ),
         }
 
@@ -214,7 +265,7 @@ if __name__ == "__main__":
         checkpoint_identifier="latest",
     )
 
-    print(model)
+    # print(model)
     # TODO:
     # 1. Get a way to build the right TALI model given config (10m) (DONE)
     # 2. Add a timm model with clip text encoder as another (15m) (DONE)
