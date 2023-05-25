@@ -3,9 +3,7 @@ import os
 
 import pytest
 
-from gate.data.image.classification.stl10 import (
-    build_stl10_dataset,
-)
+from gate.data.image.classification.stl10 import build_stl10_dataset
 
 
 def test_build_stl10_dataset():

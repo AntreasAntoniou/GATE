@@ -1,12 +1,14 @@
 # Add this import at the top of the file
-from torch.utils.data import DataLoader
 import os
 
 import pytest
-from gate.data.core import collate_fn_with_token_pad
+from torch.utils.data import DataLoader
 
+from gate.data.core import collate_fn_with_token_pad
 from gate.data.image.visual_question_answering.ok_vqa import (
     build_dataset as build_ok_vqa_dataset,
+)
+from gate.data.image.visual_question_answering.ok_vqa import (
     build_gate_dataset as build_ok_vqa_gate_dataset,
 )
 from gate.models.task_specific_models.visual_question_answering.clip import (

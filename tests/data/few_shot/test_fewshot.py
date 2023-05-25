@@ -1,36 +1,36 @@
-import pathlib
-from accelerate.utils import set_seed
-import pytest
 import os
+import pathlib
 
+import pytest
 import torch
+from accelerate.utils import set_seed
+
 from gate.data.few_shot import (
     AircraftFewShotClassificationDataset,
-    CUB200FewShotClassificationDataset,
     CIFARFewShotClassificationDataset,
+    CUB200FewShotClassificationDataset,
     DescribableTexturesFewShotClassificationDataset,
     FC100FewShotClassificationDataset,
     FungiFewShotClassificationDataset,
-    TieredImageNetFewShotClassificationDataset,
     MiniImageNetFewShotClassificationDataset,
     OmniglotFewShotClassificationDataset,
-    VGGFlowersFewShotClassificationDataset,
     QuickDrawFewShotClassificationDataset,
+    TieredImageNetFewShotClassificationDataset,
+    VGGFlowersFewShotClassificationDataset,
 )
 
 set_seed(42)
 
 classes_to_test = [
-    # AircraftFewShotClassificationDataset,
-    # CUB200FewShotClassificationDataset,
-    # CIFARFewShotClassificationDataset,
-    # DescribableTexturesFewShotClassificationDataset,
-    # FC100FewShotClassificationDataset,
-    # FungiFewShotClassificationDataset,
-    TieredImageNetFewShotClassificationDataset,
+    AircraftFewShotClassificationDataset,
+    CUB200FewShotClassificationDataset,
+    CIFARFewShotClassificationDataset,
+    CUB200FewShotClassificationDataset,
+    DescribableTexturesFewShotClassificationDataset,
+    FC100FewShotClassificationDataset,
+    FungiFewShotClassificationDataset,
     MiniImageNetFewShotClassificationDataset,
     OmniglotFewShotClassificationDataset,
-    VGGFlowersFewShotClassificationDataset,
     QuickDrawFewShotClassificationDataset,
 ]
 
@@ -49,7 +49,6 @@ def dataset_init(DATASET_CLASS):
         num_samples_per_class=5,
         num_queries_per_class=15,
         variable_num_samples_per_class=True,
-        variable_num_queries_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
         query_set_input_transform=None,

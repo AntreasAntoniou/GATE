@@ -16,6 +16,14 @@ logger = logging.getLogger(__name__)
 
 class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
     """
+    Note that it doesn't return the tube, but it returns the indices.
+    You can access the tube metadata as follows:
+
+    ```
+    data = next(iter(train_loader))
+    print(train_dataset.tubes[data['indices'][0]])
+    ```
+
     It uses GulpIO2 instead of reading directly from jpg frames to speed up the IO!
     It will ignore the gulp meta data, and read meta from the CSV instead.
 
@@ -183,7 +191,9 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         """
         Construct the video loader.
         """
-        assert os.path.exists(self._csv_file), "{} not found".format(self._csv_file)
+        assert os.path.exists(self._csv_file), "{} not found".format(
+            self._csv_file
+        )
 
         self._gulp_keys = []
         self._video_ids = []
@@ -192,7 +202,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         self._end_frames = []  # number of sample video frames
         self._spatial_temporal_idx = []
         # each entry is a dictionary with ['keypoint', 'keypoint_score', 'frame_dir', 'total_frames', 'original_shape', 'img_shape', 'label'] keys.
-        self._tubes = []
+        self.tubes = []
 
         with open(self._tube_pkl_path, "rb") as f:
             tube_data = pickle.load(f, encoding="latin1")
@@ -211,7 +221,15 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
                 ) = key_label.split()
 
                 # frame_dir is the gulp key without the class name and a slash
-                self._tubes.append(tube_data["gttubes"][gulp_key])
+                # dict of {label: [tubes..]}
+                self.tubes.append(tube_data["gttubes"][gulp_key])
+
+                # self._tube_labels.append(np.stack(tube_labels_list))
+                # self._tubes.append(np.stack(tubes_list))
+                # self.max_num_tubes = max(self.max_num_tubes, self._tubes[-1].shape[0])
+                # self.max_tube_num_frames = max(
+                #     self.max_tube_num_frames, self._tubes[-1].shape[1]
+                # )
 
                 if self.video_id_to_label is None:
                     labels = label.split(";")
@@ -220,7 +238,9 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
                     for label in labels:
                         if self.num_classes > 0:
                             label_list = label.split(",")
-                            label = np.zeros(self.num_classes, dtype=np.float32)
+                            label = np.zeros(
+                                self.num_classes, dtype=np.float32
+                            )
                             for label_idx in label_list:
                                 label[int(label_idx)] = 1.0  # one hot encoding
                         else:
@@ -286,11 +306,15 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             assert len({min_scale, max_scale}) == 1
             sample_uniform = True
         else:
-            raise NotImplementedError("Does not support {} mode".format(self.mode))
+            raise NotImplementedError(
+                "Does not support {} mode".format(self.mode)
+            )
 
         # Decode video. Meta info is used to perform selective decoding.
         #        frame_indices = utils.TRN_sample_indices(self._num_sample_frames[index], self.num_frames, mode = self.mode)
-        num_video_frames = self._end_frames[index] - self._start_frames[index] + 1
+        num_video_frames = (
+            self._end_frames[index] - self._start_frames[index] + 1
+        )
         if self.sample_index_code == "pyvideoai":
             frame_indices = utils.sparse_frame_indices(
                 num_video_frames,
@@ -317,7 +341,9 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         if self.flow == "grey":
             # Frames are saved as (u0, v0, u1, v1, ...)
             # Read pairs of greyscale images.
-            frame_indices = [idx * 2 + uv for idx in frame_indices for uv in range(2)]
+            frame_indices = [
+                idx * 2 + uv for idx in frame_indices for uv in range(2)
+            ]
             frames = np.stack(
                 self.gulp_dir[self._gulp_keys[index], frame_indices][0]
             )  # (T*2, H, W)
@@ -387,7 +413,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         label = self._labels[index]
 
         return {
-            "pixel_values": frames,
+            "video": frames,
             "video_ids": video_id,
             "labels": label,
             "spatial_sample_indices": spatial_sample_index,
@@ -398,7 +424,6 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             "x_offset": x_offset,
             "y_offset": y_offset,
             "is_flipped": is_flipped,
-            "tubes": self._tubes[index],
         }
 
     def __len__(self):

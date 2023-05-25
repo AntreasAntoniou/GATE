@@ -11,7 +11,9 @@ from gate.data.tasks.fact_checking import (
     MultiFCTask,
 )
 
-def build_multi_fc_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_multi_fc_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
     """
     Build a multi_fc dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/multi_fc

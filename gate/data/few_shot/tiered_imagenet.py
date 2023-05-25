@@ -1,13 +1,12 @@
 import pathlib
 from typing import Any, Optional, Tuple, Union
+
 import learn2learn as l2l
 from torchvision import transforms
 
 from gate.boilerplate.utils import get_logger
 from gate.data.few_shot import bytes_to_string
-from gate.data.few_shot.core import (
-    FewShotClassificationMetaDataset,
-)
+from gate.data.few_shot.core import FewShotClassificationMetaDataset
 from gate.data.few_shot.utils import FewShotSuperSplitSetOptions
 
 logger = get_logger(
@@ -40,7 +39,6 @@ class TieredImageNetFewShotClassificationDataset(
         num_samples_per_class: int,  # n_shot
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
-        variable_num_queries_per_class: bool,
         variable_num_classes_per_set: bool,
         support_set_input_transform: Optional[Any],
         query_set_input_transform: Optional[Any],
@@ -64,7 +62,6 @@ class TieredImageNetFewShotClassificationDataset(
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            variable_num_queries_per_class=variable_num_queries_per_class,
             input_target_annotation_keys=dict(
                 inputs="image",
                 targets="label",

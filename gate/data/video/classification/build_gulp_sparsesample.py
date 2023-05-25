@@ -1,12 +1,18 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
 from hydra_zen import store
 
+from gate.data.core import GATEDataset
+from gate.data.tasks.classification import ClassificationTask
+
 from ..loader.gulp_sparsesample_dataset import GulpSparsesampleDataset
-from ..loader.gulp_sparsesample_squeezed_dataset import GulpSparsesampleSqueezedDataset
+from ..loader.gulp_sparsesample_squeezed_dataset import (
+    GulpSparsesampleSqueezedDataset,
+)
 
 
 @store(
@@ -98,32 +104,50 @@ def build_gulp_dataset(
         if dataset_name == "hmdb51-gulprgb":
             if set_name == "train":
                 mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "ucf-101-gulprgb":
             if set_name == "train":
                 mode = "train"
                 csv_path = (
-                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"trainlist{split_num:02d}.txt"
                 )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
+                csv_path = (
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"testlist{split_num:02d}.txt"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
             if set_name == "train":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "train"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial90.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial90.csv"
+                )
             elif set_name == "val":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "test"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial10.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial10.csv"
+                )
             elif set_name == "test":
                 gulp_dir_path = gulp_dir_path / "val"
                 mode = "test"
@@ -238,32 +262,50 @@ def build_squeezed_gulp_dataset(
         if dataset_name == "hmdb51-gulprgb":
             if set_name == "train":
                 mode = "train"
-                csv_path = data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"train{split_num}.csv"
+                )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                csv_path = (
+                    data_dir / "splits_gulp_rgb" / f"test{split_num}.csv"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "ucf-101-gulprgb":
             if set_name == "train":
                 mode = "train"
                 csv_path = (
-                    data_dir / "splits_gulp_rgb" / f"trainlist{split_num:02d}.txt"
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"trainlist{split_num:02d}.txt"
                 )
             elif set_name == "test":
                 mode = "test"
-                csv_path = data_dir / "splits_gulp_rgb" / f"testlist{split_num:02d}.txt"
+                csv_path = (
+                    data_dir
+                    / "splits_gulp_rgb"
+                    / f"testlist{split_num:02d}.txt"
+                )
             else:
                 raise ValueError(f"Unknown set_name: {set_name}")
         elif dataset_name == "epic-kitchens-100-gulprgb":
             if set_name == "train":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "train"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial90.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial90.csv"
+                )
             elif set_name == "val":
                 gulp_dir_path = gulp_dir_path / "train"
                 mode = "test"
-                csv_path = data_dir / "verbnoun_splits_gulp_rgb" / "train_partial10.csv"
+                csv_path = (
+                    data_dir
+                    / "verbnoun_splits_gulp_rgb"
+                    / "train_partial10.csv"
+                )
             elif set_name == "test":
                 gulp_dir_path = gulp_dir_path / "val"
                 mode = "test"
@@ -285,3 +327,39 @@ def build_squeezed_gulp_dataset(
         dataset[set_name] = data
 
     return dataset
+
+
+def build_gate_gulp_dataset(
+    dataset_name: str,
+    data_dir: str | Path,
+    transforms: Any | None = None,
+) -> dict[str, GATEDataset]:
+    datasets = build_gulp_dataset(dataset_name=dataset_name, data_dir=data_dir)
+
+    dataset_dict = {}
+
+    if "train" in datasets:
+        dataset_dict["train"] = GATEDataset(
+            dataset=datasets["train"],
+            infinite_sampling=True,
+            task=ClassificationTask(),
+            transforms=transforms,
+        )
+
+    if "val" in datasets:
+        dataset_dict["val"] = GATEDataset(
+            dataset=datasets["val"],
+            infinite_sampling=False,
+            task=ClassificationTask(),
+            transforms=transforms,
+        )
+
+    if "test" in datasets:
+        dataset_dict["test"] = GATEDataset(
+            dataset=datasets["test"],
+            infinite_sampling=False,
+            task=ClassificationTask(),
+            transforms=transforms,
+        )
+
+    return dataset_dict

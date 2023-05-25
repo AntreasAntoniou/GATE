@@ -28,9 +28,12 @@ def extract_zip(zip_path: Path, destination: Path) -> None:
     :param zip_path: The path of the zip file to extract.
     :param destination: The path where the contents of the zip file will be extracted.
     """
-    if not any(destination.glob("*")):
-        with zipfile.ZipFile(zip_path, "r") as z:
-            z.extractall(destination)
+    print(
+        f"Extracting {zip_path} to {destination}, {any(destination.glob('*'))}, {destination.glob('*')}"
+    )
+
+    with zipfile.ZipFile(zip_path, "r") as z:
+        z.extractall(destination)
 
 
 def download_and_extract_coco_stuff10k(data_dir: str) -> None:
@@ -44,7 +47,9 @@ def download_and_extract_coco_stuff10k(data_dir: str) -> None:
     data_path.mkdir(parents=True, exist_ok=True)
     zip_path = data_path / "cocostuff-10k-v1.1.zip"
 
-    download_file(dataset_url, zip_path)
+    if not zip_path.exists():
+        download_file(dataset_url, zip_path)
+    print(f"Extracting {zip_path} to {data_path}")
     extract_zip(zip_path, data_path)
 
 
@@ -111,11 +116,11 @@ class BaseDataset(data.Dataset):
         self.scales = scales
         self.flip = flip
         self.files = []
-        self._set_files()
+        self._setup_dataset_files()
 
         cv2.setNumThreads(0)
 
-    def _set_files(self):
+    def _setup_dataset_files(self):
         """
         Create a file path/image id list.
         """

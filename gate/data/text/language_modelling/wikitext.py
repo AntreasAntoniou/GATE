@@ -11,7 +11,9 @@ from gate.data.tasks.language_modelling import (
     LanguageModellingTask,
 )
 
-def build_wikitext_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_wikitext_dataset(
+    set_name: str, data_dir: Optional[str] = None
+) -> dict:
     """
     Build a wikitext dataset using the Hugging Face datasets library.
     https://huggingface.co/datasets/wikitext
@@ -27,19 +29,22 @@ def build_wikitext_dataset(set_name: str, data_dir: Optional[str] = None) -> dic
     rng = np.random.RandomState(42)
 
     train_data = load_dataset(
-        "wikitext", "wikitext-103-v1",
+        "wikitext",
+        "wikitext-103-v1",
         split="train",
         cache_dir=data_dir,
     )
 
     val_data = load_dataset(
-        "wikitext", "wikitext-103-v1",
+        "wikitext",
+        "wikitext-103-v1",
         split="validation",
         cache_dir=data_dir,
     )
 
     test_data = load_dataset(
-        "wikitext", "wikitext-103-v1",
+        "wikitext",
+        "wikitext-103-v1",
         split="test",
         cache_dir=data_dir,
     )

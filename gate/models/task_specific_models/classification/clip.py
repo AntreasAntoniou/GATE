@@ -13,9 +13,7 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.classification import (
-    BackboneWithLinear,
-)
+from gate.models.task_adapters.classification import BackboneWithLinear
 
 
 def build_model(
@@ -49,16 +47,20 @@ def build_model(
     if not pretrained:
         model.init_weights()
 
-    transform_dict = backbone_model.get_transforms()
+    backbone_transform_dict = backbone_model.get_transforms()
 
     def transform_wrapper(inputs: Union[Dict, Any]):
         output_dict = {}
 
         if "image" in inputs:
-            output_dict["image"] = transform_dict["image"](inputs["image"])
+            output_dict["image"] = backbone_transform_dict["image"](
+                inputs["image"]
+            )
 
         if "text" in inputs:
-            output_dict["text"] = transform_dict["text"](inputs["text"])
+            output_dict["text"] = backbone_transform_dict["text"](
+                inputs["text"]
+            )
 
         if "labels" in inputs:
             output_dict["labels"] = inputs["labels"]

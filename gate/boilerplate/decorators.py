@@ -1,16 +1,16 @@
-from collections import defaultdict
 import functools
 import importlib
 import inspect
 import pkgutil
+from collections import defaultdict
 from typing import Any, Callable, Dict, Optional
 
 import torch
-from traitlets import default
 import wandb
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds, instantiate
 from rich import print
+from traitlets import default
 
 from gate.boilerplate.utils import get_logger
 
@@ -101,8 +101,13 @@ def collect_metrics(func: Callable) -> Callable:
         if experiment_tracker is not None:
             for metric_key, computed_value in metrics_dict.items():
                 if computed_value is not None:
+                    # print(f"{phase_name}/{metric_key}: {computed_value}")
+                    # if isinstance(computed_value, torch.Tensor):
+                    #     computed_value = computed_value.detach().cpu()
+                    #     if len(computed_value.shape) > 0 or computed_value.shape[0]:
+
                     value = (
-                        computed_value.detach().item()
+                        computed_value.detach()
                         if isinstance(computed_value, torch.Tensor)
                         else computed_value
                     )

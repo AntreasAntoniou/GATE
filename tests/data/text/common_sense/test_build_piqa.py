@@ -9,7 +9,9 @@ from gate.data.text.common_sense.piqa import build_piqa_dataset
 def test_build_piqa_dataset():
     # Test if the function returns the correct dataset split
 
-    train_set = build_piqa_dataset("train", data_dir=os.environ.get("TEST_DIR"))
+    train_set = build_piqa_dataset(
+        "train", data_dir=os.environ.get("TEST_DIR")
+    )
     assert train_set is not None, "Train set should not be None"
 
     val_set = build_piqa_dataset("val", data_dir=os.environ.get("TEST_DIR"))
