@@ -102,6 +102,10 @@ def get_similarities(
         tensor_modality_b: Tensor, shape [seq_len, embedding_dim]
     """
 
+    print(
+        f"modality_a_features.shape: {modality_a_features.shape}, modality_b_features.shape: {modality_b_features.shape}"
+    )
+
     similarities = {
         f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
             modality_a_features, modality_b_features
