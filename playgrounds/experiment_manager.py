@@ -1,60 +1,57 @@
-import fire
 import os
-import queue
-import subprocess
-import threading
 import time
-import datetime
-import torch
-from rich.console import Console
-from tqdm import tqdm
+import fire
+import subprocess
+from typing import Dict
+from rich.logging import RichHandler
+from threading import Thread, Lock
+import logging
+
+logging.basicConfig(
+    level="INFO",
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True)],
+)
+logger = logging.getLogger("rich")
 
 
-class ExperimentRunner:
-    def __init__(self, num_gpus: int, log_dir: str):
-        self.num_gpus = num_gpus
-        self.log_dir = log_dir
-        self.gpu_queue = queue.Queue()
+class GPULocker:
+    def __init__(self, num_gpus: int):
+        self._locks = [Lock() for _ in range(num_gpus)]
 
-        for i in range(num_gpus):
-            self.gpu_queue.put(i)
+    def run(self, cmd: str, gpu_id: int, log_path: str) -> None:
+        with self._locks[gpu_id]:
+            with open(log_path, "w") as f:
+                logger.info(f"Starting command: {cmd} on GPU: {gpu_id}")
+                subprocess.run(cmd, shell=True, stdout=f, stderr=f)
+                logger.info(f"Finished command: {cmd} on GPU: {gpu_id}")
 
-    def run_experiment(self, exp_name, exp_command):
-        gpu_id = (
-            self.gpu_queue.get()
-        )  # this will block until a GPU is available
-        try:
-            os.makedirs(self.log_dir, exist_ok=True)
-            with open(os.path.join(self.log_dir, f"{exp_name}.log"), "w") as f:
-                # Add the --gpu-ids argument to the command
-                complete_command = f"{exp_command} --gpu-ids={gpu_id}"
-                subprocess.run(complete_command.split(), stdout=f, stderr=f)
-        finally:
-            self.gpu_queue.put(gpu_id)
+    def distribute(self, experiments: Dict[str, str], log_dir: str) -> None:
+        os.makedirs(log_dir, exist_ok=True)
 
-    def run_experiments(self, experiments):
-        with tqdm(total=len(experiments)) as pbar:
-            threads = []
-            for exp_name, exp_command in experiments.items():
-                thread = threading.Thread(
-                    target=self.run_experiment, args=(exp_name, exp_command)
-                )
-                thread.start()
-                threads.append(thread)
-                pbar.update(1)
+        threads = []
+        for i, (exp_name, exp_cmd) in enumerate(experiments.items()):
+            gpu_id = i % len(self._locks)
+            log_path = os.path.join(log_dir, f"{exp_name}.log")
+            cmd = f"{exp_cmd} --gpu-ids={gpu_id}"
+            thread = Thread(target=self.run, args=(cmd, gpu_id, log_path))
+            threads.append(thread)
+            thread.start()
 
-            for thread in threads:
-                thread.join()  # wait for all threads to finish
+        for thread in threads:
+            thread.join()
 
-    def test_gpu(self, gpu_id: int):
-        device = torch.device(f"cuda:{gpu_id}")
-        properties = torch.cuda.get_device_properties(device)
-        console = Console()
-        console.print(
-            f"GPU {gpu_id} memory: {properties.total_memory / 1024 ** 3:.2f} GB"
-        )
-        console.print(f"Current time: {datetime.datetime.now()}")
+
+def main(num_gpus: int, log_dir: str):
+    locker = GPULocker(num_gpus)
+
+    experiments = {
+        f"exp_{i}": f"python -c 'import torch;print(torch.cuda.get_device_properties({i % num_gpus}));import time;time.sleep(1)'"
+        for i in range(100)
+    }
+    locker.distribute(experiments, log_dir)
 
 
 if __name__ == "__main__":
-    fire.Fire(ExperimentRunner)
+    fire.Fire(main)
