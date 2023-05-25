@@ -17,15 +17,14 @@ from gate.boilerplate.utils import get_logger
 logger = get_logger(__name__)
 
 
-def contrastive_accuracy(logits):
-    if len(logits.shape) > 2:
-        logits = logits.reshape(-1, logits.shape[-1])
-    print(f"Logits shape: {logits.shape}")
+def contrastive_accuracy(logits, is_irregular_shape: bool = False):
     targets = torch.arange(logits.shape[0]).to(logits.device)
     return (logits.argmax(dim=-1) == targets).float().mean()
 
 
-def contrastive_accuracy_top_k(logits, k: int = 5):
+def contrastive_accuracy_top_k(
+    logits, k: int = 5, is_irregular_shape: bool = False
+):
     if len(logits.shape) > 2:
         logits = logits.reshape(-1, logits.shape[-1])
     targets = torch.arange(logits.shape[0]).to(logits.device)
@@ -112,13 +111,6 @@ def get_similarities(
             f"{key.replace('_similarities', '_loss')}": contrastive_loss(value)
             for key, value in similarities.items()
         }
-
-        if is_irregular_shape:
-            # shape is seq_len, seq_len, but should be seq_len * seq_len / 2, 2
-            similarities = {
-                key: value.view(-1, 2, value.shape[-1]).permute(0, 2, 1)
-                for key, value in similarities.items()
-            }
 
         contrastive_accuracy_dict = {
             f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
