@@ -18,15 +18,15 @@ logger = get_logger(__name__)
 
 def contrastive_accuracy(logits, is_irregular_shape: bool = False):
     if is_irregular_shape:
-        logits = logits.reshape(logits.shape[0], -1, 2, 2).view(-1, 2, 2)
+        logits = logits.reshape(logits.shape[0], -1, 2, 2).reshape(-1, 2, 2)
         targets = (
             torch.arange(2)
             .to(logits.device)
             .unsqueeze(0)
             .repeat([logits.shape[0], 1])
         )
-        logits = logits.view(-1, 2)
-        targets = targets.view(-1)
+        logits = logits.reshape(-1, 2)
+        targets = targets.reshape(-1)
     else:
         targets = torch.arange(logits.shape[0]).to(logits.device)
     return (logits.argmax(dim=-1) == targets).float().mean()
@@ -36,15 +36,15 @@ def contrastive_accuracy_top_k(
     logits, k: int = 5, is_irregular_shape: bool = False
 ):
     if is_irregular_shape:
-        logits = logits.reshape(logits.shape[0], -1, 2, 2).view(-1, 2, 2)
+        logits = logits.reshape(logits.shape[0], -1, 2, 2).reshape(-1, 2, 2)
         targets = (
             torch.arange(2)
             .to(logits.device)
             .unsqueeze(0)
             .repeat([logits.shape[0], 1])
         )
-        logits = logits.view(-1, 2)
-        targets = targets.view(-1)
+        logits = logits.reshape(-1, 2)
+        targets = targets.reshape(-1)
     else:
         targets = torch.arange(logits.shape[0]).to(logits.device)
     accuracy = [
@@ -101,15 +101,15 @@ def get_device():
 
 def contrastive_loss(logits, is_irregular_shape: bool = False):
     if is_irregular_shape:
-        logits = logits.reshape(logits.shape[0], -1, 2, 2).view(-1, 2, 2)
+        logits = logits.reshape(logits.shape[0], -1, 2, 2).reshape(-1, 2, 2)
         targets = (
             torch.arange(2)
             .to(logits.device)
             .unsqueeze(0)
             .repeat([logits.shape[0], 1])
         )
-        logits = logits.view(-1, 2)
-        targets = targets.view(-1)
+        logits = logits.reshape(-1, 2)
+        targets = targets.reshape(-1)
     else:
         targets = torch.arange(len(logits), device=logits.device)
 
