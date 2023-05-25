@@ -131,9 +131,9 @@ def get_similarities(
         tensor_modality_b: Tensor, shape [seq_len, embedding_dim]
     """
 
-    print(
-        f"modality_a_features.shape: {modality_a_features.shape}, modality_b_features.shape: {modality_b_features.shape}"
-    )
+    # print(
+    #     f"modality_a_features.shape: {modality_a_features.shape}, modality_b_features.shape: {modality_b_features.shape}"
+    # )
 
     similarities = {
         f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
@@ -171,8 +171,8 @@ def get_similarities(
         return (
             similarities
             | contrastive_losses_dict
-            # | contrastive_accuracy_dict
-            # | contrastive_accuracy_top_5_dict
+            | contrastive_accuracy_dict
+            | contrastive_accuracy_top_5_dict
         )
 
     return similarities
