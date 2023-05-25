@@ -3,8 +3,8 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from datasets import load_dataset
 import torch
+from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
