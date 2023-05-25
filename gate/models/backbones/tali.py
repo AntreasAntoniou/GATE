@@ -1,6 +1,6 @@
 import pathlib
 from collections import defaultdict
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import accelerate
 import torch
@@ -197,13 +197,29 @@ class TALINet(nn.Module):
                 ),
             )
 
-        return {
-            "image": lambda x: apply_preprocessing_transforms(
-                x=x, transforms=image_transforms, modality=Modality.image
-            ),
-            "text": lambda x: apply_preprocessing_transforms(
+        def image_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=image_transforms, modality=Modality.image
+                )
+
+        def text_transforms_process_multi_type(x):
+            return apply_preprocessing_transforms(
                 x=x, transforms=text_transforms, modality=Modality.text
-            ),
+            )
+
+        return {
+            "image": lambda x: image_transforms_process_multi_type(x=x),
+            "text": lambda x: text_transforms_process_multi_type(x=x),
             "audio": lambda x: apply_preprocessing_transforms(
                 x=x, transforms=audio_transforms, modality=Modality.audio
             ),

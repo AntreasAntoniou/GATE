@@ -1,6 +1,6 @@
 # food101.py
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from datasets import load_dataset
 
@@ -36,9 +36,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         path=HF_DATASET_PATH, cache_dir=data_dir, split="train"
     )
 
-    train_val_test_data = dataset.train_test_split(test_size=0.20)
+    train_val_test_data = dataset.train_test_split(test_size=0.50)
     train_set = train_val_test_data["train"]
-    val_test_set = train_val_test_data["test"].train_test_split(test_size=0.75)
+    val_test_set = train_val_test_data["test"].train_test_split(test_size=0.50)
     val_set = val_test_set["train"]
     test_set = val_test_set["test"]
 
@@ -47,36 +47,46 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+import numpy as np
+
+
+def dataset_format_transform(sample: Dict) -> Dict:
+    # Example of sample:
+    #
+    # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=1280x1280 at 0x7F4A005A6CE0>,
+    # 'text': 'a purple and blue dragon flying through the air'}
+
+    input_dict = {}
+    input_dict["image"] = sample["image"]
+    input_dict["text"] = sample["text"]
+    return input_dict
+
+
 @configurable(
-    group="dataset", name="flickr30k", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset",
+    name="pokemonblipcaptions",
+    defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=101,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

@@ -55,7 +55,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     name="imagenet1k-classification",
     defaults=dict(data_dir=DATASET_DIR),
 )
-def build_gate_imagenet1k_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=1000,

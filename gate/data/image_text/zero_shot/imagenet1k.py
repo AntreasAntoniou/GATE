@@ -17,6 +17,20 @@ from gate.data.tasks.zero_shot_classification import (
 )
 
 
+def generate_per_class_prompts():
+    prompt_dict = {}
+    print(f"Number of classes: {len(imagenet_classes)}")
+    print(f"Number of prompt templates: {len(imagenet_prompt_templates)}")
+    for idx, class_name in enumerate(imagenet_classes):
+        prompts = [
+            template.format(class_name)
+            for template in imagenet_prompt_templates
+        ]
+        prompt_dict[idx] = prompts
+
+    return prompt_dict
+
+
 @configurable(
     group="dataset",
     name="imagenet1k-zero-shot",
