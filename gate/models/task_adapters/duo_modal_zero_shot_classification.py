@@ -68,7 +68,7 @@ class DuoModalZeroShotModel(BaseModule):
         modality_b_features = None
 
         is_irregular_shape = False
-        print(f"image.shape: {image.shape}, text.shape: {text.shape}")
+        # print(f"image.shape: {image.shape}, text.shape: {text.shape}")
         if len(image.shape) == 5:
             image = image.view(-1, *image.shape[2:])
             is_irregular_shape = True
