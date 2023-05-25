@@ -114,12 +114,13 @@ def dataclass_collate(batch):
 
 def pad_and_stack_tensors(tensor_list):
     tensor_list = list(tensor_list)
+    print(f"total tensors: {len(tensor_list)}")
     for idx, tensor in enumerate(tensor_list):
         if len(tensor.shape) == 2 and tensor.shape[0] == 1:
             tensor = tensor.squeeze(0)
             tensor_list[idx] = tensor
-    is_ireggular_shape = True if len(tensor_list[0].shape) == 2 else False
 
+    is_ireggular_shape = True if len(tensor_list[0].shape) == 2 else False
     if is_ireggular_shape:
         temp_tensor_list = []
         for tensor in tensor_list:
