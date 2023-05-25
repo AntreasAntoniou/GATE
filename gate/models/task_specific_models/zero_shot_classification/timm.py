@@ -68,6 +68,7 @@ def build_model(
             modality_a_num_features=num_feature_dict[modality_a_identifier],
             modality_b_num_features=num_feature_dict[modality_b_identifier],
             projection_num_features=num_projection_features,
+            head_identifier="features",
         )
     else:
         raise ValueError(
