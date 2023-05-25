@@ -17,17 +17,36 @@ logger = get_logger(__name__)
 
 
 def contrastive_accuracy(logits, is_irregular_shape: bool = False):
-    # print("logits.shape", logits.shape)
-    targets = torch.arange(logits.shape[0]).to(logits.device)
+    if is_irregular_shape:
+        logits = logits.reshape(logits.shape[0], -1, 2, 2).view(-1, 2, 2)
+        targets = (
+            torch.arange(2)
+            .to(logits.device)
+            .unsqueeze(0)
+            .repeat([logits.shape[0], 1])
+        )
+        logits = logits.view(-1, 2)
+        targets = targets.view(-1)
+    else:
+        targets = torch.arange(logits.shape[0]).to(logits.device)
     return (logits.argmax(dim=-1) == targets).float().mean()
 
 
 def contrastive_accuracy_top_k(
     logits, k: int = 5, is_irregular_shape: bool = False
 ):
-    if len(logits.shape) > 2:
-        logits = logits.reshape(-1, logits.shape[-1])
-    targets = torch.arange(logits.shape[0]).to(logits.device)
+    if is_irregular_shape:
+        logits = logits.reshape(logits.shape[0], -1, 2, 2).view(-1, 2, 2)
+        targets = (
+            torch.arange(2)
+            .to(logits.device)
+            .unsqueeze(0)
+            .repeat([logits.shape[0], 1])
+        )
+        logits = logits.view(-1, 2)
+        targets = targets.view(-1)
+    else:
+        targets = torch.arange(logits.shape[0]).to(logits.device)
     accuracy = [
         any(logit.argsort(dim=-1, descending=True)[:k] == target)
         for logit, target in zip(logits, targets)
@@ -80,11 +99,21 @@ def get_device():
     return torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
 
 
-def contrastive_loss(logits):
-    print(f"logits.shape: {logits.shape}")
-    return nn.functional.cross_entropy(
-        logits, torch.arange(len(logits), device=logits.device)
-    )
+def contrastive_loss(logits, is_irregular_shape: bool = False):
+    if is_irregular_shape:
+        logits = logits.reshape(logits.shape[0], -1, 2, 2).view(-1, 2, 2)
+        targets = (
+            torch.arange(2)
+            .to(logits.device)
+            .unsqueeze(0)
+            .repeat([logits.shape[0], 1])
+        )
+        logits = logits.view(-1, 2)
+        targets = targets.view(-1)
+    else:
+        targets = torch.arange(len(logits), device=logits.device)
+
+    return nn.functional.cross_entropy(logits, targets)
 
 
 def get_similarities(
@@ -119,20 +148,22 @@ def get_similarities(
 
     if return_loss:
         contrastive_losses_dict = {
-            f"{key.replace('_similarities', '_loss')}": contrastive_loss(value)
+            f"{key.replace('_similarities', '_loss')}": contrastive_loss(
+                value, is_irregular_shape=is_irregular_shape
+            )
             for key, value in similarities.items()
         }
 
         contrastive_accuracy_dict = {
             f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
-                value
+                value, is_irregular_shape=is_irregular_shape
             )
             for key, value in similarities.items()
         }
 
         contrastive_accuracy_top_5_dict = {
             f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
-                value, k=5
+                value, k=5, is_irregular_shape=is_irregular_shape
             )
             for key, value in similarities.items()
         }
