@@ -90,7 +90,9 @@ def build_model(
         if "image" in inputs:
             image = inputs["image"]
             if isinstance(image, List):
-                image = [transform_dict["image"](sample) for sample in image]
+                image = torch.stack(
+                    [transform_dict["image"](sample) for sample in image]
+                )
             else:
                 image = transform_dict["image"](image)
             inputs["image"] = image
@@ -98,7 +100,15 @@ def build_model(
         if "text" in inputs:
             text = inputs["text"]
             if isinstance(text, List):
-                text = [transform_dict["text"](sample) for sample in text]
+                text = transform_dict["text"](text)
+                max_length = max([t.shape[0] for t in text])
+                temp_text = (
+                    torch.ones((2, max_length), dtype=torch.long) * text[0, -1]
+                )
+                for i, t in enumerate(text):
+                    temp_text[i, : t.shape[0]] = t
+                text = temp_text
+
             else:
                 text = transform_dict["text"](text)
 
