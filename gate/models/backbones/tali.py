@@ -213,19 +213,9 @@ class TALINet(nn.Module):
                 )
 
         def text_transforms_process_multi_type(x):
-            if isinstance(x, List):
-                return [
-                    apply_preprocessing_transforms(
-                        x=item,
-                        transforms=text_transforms,
-                        modality=Modality.text,
-                    )
-                    for item in x
-                ]
-            else:
-                return apply_preprocessing_transforms(
-                    x=x, transforms=text_transforms, modality=Modality.text
-                )
+            return apply_preprocessing_transforms(
+                x=x, transforms=text_transforms, modality=Modality.text
+            )
 
         return {
             "image": lambda x: image_transforms_process_multi_type(x=x),
