@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 
 def contrastive_accuracy(logits, is_irregular_shape: bool = False):
-    print("logits.shape", logits.shape)
+    # print("logits.shape", logits.shape)
     targets = torch.arange(logits.shape[0]).to(logits.device)
     return (logits.argmax(dim=-1) == targets).float().mean()
 
@@ -123,19 +123,19 @@ def get_similarities(
             for key, value in similarities.items()
         }
 
-        # contrastive_accuracy_dict = {
-        #     f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
-        #         value
-        #     )
-        #     for key, value in similarities.items()
-        # }
+        contrastive_accuracy_dict = {
+            f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
+                value
+            )
+            for key, value in similarities.items()
+        }
 
-        # contrastive_accuracy_top_5_dict = {
-        #     f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
-        #         value, k=5
-        #     )
-        #     for key, value in similarities.items()
-        # }
+        contrastive_accuracy_top_5_dict = {
+            f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
+                value, k=5
+            )
+            for key, value in similarities.items()
+        }
 
         return (
             similarities
