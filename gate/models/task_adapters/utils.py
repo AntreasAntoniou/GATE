@@ -18,12 +18,15 @@ logger = get_logger(__name__)
 
 
 def contrastive_accuracy(logits):
-    print(f"Logits shape: {logits.shape}, device: {logits.device}")
+    if len(logits.shape) > 2:
+        logits = logits.view(-1, logits.shape[-1])
     targets = torch.arange(logits.shape[0]).to(logits.device)
     return (logits.argmax(dim=-1) == targets).float().mean()
 
 
 def contrastive_accuracy_top_k(logits, k: int = 5):
+    if len(logits.shape) > 2:
+        logits = logits.view(-1, logits.shape[-1])
     targets = torch.arange(logits.shape[0]).to(logits.device)
     accuracy = [
         any(logit.argsort(dim=-1, descending=True)[:k] == target)
