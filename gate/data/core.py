@@ -118,6 +118,13 @@ def pad_and_stack_tensors(tensor_list):
         if len(tensor.shape) == 2 and tensor.shape[0] == 1:
             tensor = tensor.squeeze(0)
             tensor_list[idx] = tensor
+    is_ireggular_shape = True if len(tensor_list[0].shape) == 2 else False
+
+    if is_ireggular_shape:
+        temp_tensor_list = []
+        for tensor in tensor_list:
+            temp_tensor_list.append(tensor.view(-1))
+        tensor_list = temp_tensor_list
 
     max_len = max(tensor.size(0) for tensor in tensor_list)
     padded_list = []
@@ -136,7 +143,11 @@ def pad_and_stack_tensors(tensor_list):
             tensor = torch.cat([tensor, padding], dim=0)
         padded_list.append(tensor)
     # print(f"padded_list: {[tensor.shape for tensor in padded_list]}")
-    return torch.stack(padded_list)
+    if not is_ireggular_shape:
+        padded_list = torch.stack(padded_list)
+    else:
+        padded_list = torch.stack(padded_list).view(-1, 2, max_len)
+    return padded_list
 
 
 def collate_fn_with_token_pad(data):
