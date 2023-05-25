@@ -10,7 +10,6 @@ import torch.nn.functional
 import torch.nn.functional as F
 from accelerate import Accelerator
 from rich import print
-from transformers.models.clip.modeling_clip import contrastive_loss
 
 from gate.boilerplate.utils import get_logger
 
@@ -79,6 +78,13 @@ def num_parameters(
 
 def get_device():
     return torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
+
+
+def contrastive_loss(logits):
+    print(f"logits.shape: {logits.shape}")
+    return nn.functional.cross_entropy(
+        logits, torch.arange(len(logits), device=logits.device)
+    )
 
 
 def get_similarities(
