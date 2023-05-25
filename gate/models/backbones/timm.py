@@ -23,6 +23,10 @@ single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     input_shape = None
     is_5d_tensor = False
+
+    if isinstance(x, PIL.Image.Image) and modality == Modality.image:
+        x = x.convert("RGB")
+
     if isinstance(x, PIL.Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
         if x.shape[0] == 1:
