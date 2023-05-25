@@ -220,12 +220,13 @@ def build_model_with_presets(
             if isinstance(text, List):
                 text = transform_dict["text"](text)
                 max_length = max([t.shape[0] for t in text])
-                temp_text = torch.ones(
-                    (2, max_length) * text[0, -1], dtype=torch.long
+                temp_text = (
+                    torch.ones((2, max_length), dtype=torch.long) * text[0, -1]
                 )
                 for i, t in enumerate(text):
                     temp_text[i, : t.shape[0]] = t
                 text = temp_text
+
             else:
                 text = transform_dict["text"](text)
 
