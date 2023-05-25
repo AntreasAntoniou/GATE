@@ -122,7 +122,7 @@ def build_gate_model(
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
-    num_projection_features: Optional[int] = None,
+    num_projection_features: Optional[int] = 512,
 ):
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
