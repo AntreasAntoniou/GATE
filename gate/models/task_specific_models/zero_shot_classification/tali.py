@@ -95,7 +95,7 @@ def build_model(
                 )
             else:
                 image = transform_dict["image"](image)
-            inputs["image"] = image
+            inputs["image"] = image.squeeze()
 
         if "text" in inputs:
             text = inputs["text"]
