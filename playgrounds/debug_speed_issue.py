@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
 from gate.data.image.classification.imagenet1k import build_gate_dataset
 
@@ -17,7 +18,7 @@ data_loader = DataLoader(
 loading_times = []
 
 # Measure the loading speed for 100 data points
-for i, data in enumerate(data_loader):
+for i, data in tqdm(enumerate(data_loader)):
     if i >= 100:  # We only measure the first 100 data points
         break
 
