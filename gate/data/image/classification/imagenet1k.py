@@ -76,7 +76,6 @@ def build_gate_dataset(
     def train_augment(input_dict):
         x = input_dict["image"]
         x = T.ToTensor()(x)
-        # print(x.shape)
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)

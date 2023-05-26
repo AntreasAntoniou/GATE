@@ -1,6 +1,7 @@
 import collections
 import json
 from collections import defaultdict
+import time
 from typing import Any, Dict, Mapping, Optional
 
 import numpy as np
@@ -10,6 +11,9 @@ from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(name=__name__)
 
 
 class CustomConcatDataset(Dataset):
@@ -244,7 +248,10 @@ class GATEDataset(Dataset):
         if self.infinite_sampling:
             index = index % len(self.dataset)
 
+        pre_fetch_time = time.time()
         item = self.dataset[index]
+        post_fetch_time = time.time()
+        logger.info(f"fetch time: {post_fetch_time - pre_fetch_time:.4f}")
 
         if not isinstance(item, dict):
             if self.item_keys is None:
@@ -255,7 +262,10 @@ class GATEDataset(Dataset):
                 )
             item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
 
+        pre_task_time = time.time()
         item = self.task(item) if self.task is not None else item
+        post_task_time = time.time()
+        logger.info(f"task time: {post_task_time - pre_task_time:.4f}")
         # dict_items = (
         #     item
         #     if isinstance(item, dict)
@@ -280,13 +290,21 @@ class GATEDataset(Dataset):
         #             f"{key}: {tensor_img.shape}, mean: {tensor_img.float().mean()}, std: {tensor_img.float().std()}, min: {tensor_img.float().min()}, max: {tensor_img.float().max()}"
         #         )
 
+        pre_transform_time = time.time()
         item = self._apply_transforms(item)
+        post_transform_time = time.time()
+        logger.info(
+            f"transform time: {post_transform_time - pre_transform_time:.4f}"
+        )
 
+        pre_remap_time = time.time()
         item: Any = (
             self.remap_keys(item)
             if self.key_remapper_dict is not None
             else item
         )
+        post_remap_time = time.time()
+        logger.info(f"remap time: {post_remap_time - pre_remap_time:.4f}")
 
         # for key, value in item.items():
         #     if isinstance(value, torch.Tensor):
