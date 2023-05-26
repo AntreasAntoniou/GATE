@@ -1,20 +1,22 @@
 from typing import Any
 
+
 def letter_to_index(letter):
-  """
-  Converts a letter to its index in the English alphabet.
+    """
+    Converts a letter to its index in the English alphabet.
 
-  Args:
-    letter: A letter.
+    Args:
+      letter: A letter.
 
-  Returns:
-    The index of the letter in the English alphabet.
-  """
+    Returns:
+      The index of the letter in the English alphabet.
+    """
 
-  letter = letter.lower()
-  alphabet = 'abcdefghijklmnopqrstuvwxyz'
-  index = alphabet.index(letter)
-  return index
+    letter = letter.lower()
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    index = alphabet.index(letter)
+    return index
+
 
 class RACETask:
     def __init__(self):
@@ -45,29 +47,31 @@ class RACETask:
                 "question": inputs["question"],
                 "options": inputs["options"],
             },
-            "labels": letter_to_index(inputs["answer"])
+            "labels": letter_to_index(inputs["answer"]),
         }
-    
+
+
 class LambadaTask:
     def __init__(self):
         super().__init__()
         self.domains = {
-            'Historical': 0,
-            'Young_Adult': 1,
-            'Other': 2,
-            'Literature': 3,
-            'Mystery': 4,
-            'New_Adult': 5,
-            'Adventure': 6,
-            'Science_fiction': 7,
-            'Horror': 8,
-            'Humor': 9,
-            'Themes': 10,
-            'Thriller': 11,
-            'Fantasy': 12,
-            'Teen': 13, 
-            'Vampires': 14,
-            'Romance': 15}
+            "Historical": 0,
+            "Young_Adult": 1,
+            "Other": 2,
+            "Literature": 3,
+            "Mystery": 4,
+            "New_Adult": 5,
+            "Adventure": 6,
+            "Science_fiction": 7,
+            "Horror": 8,
+            "Humor": 9,
+            "Themes": 10,
+            "Thriller": 11,
+            "Fantasy": 12,
+            "Teen": 13,
+            "Vampires": 14,
+            "Romance": 15,
+        }
 
     def __call__(self, inputs) -> Any:
         """_summary_
@@ -91,10 +95,10 @@ class LambadaTask:
         if inputs["domain"] != None:
             return {
                 "text": inputs["text"],
-                "labels": self.domains[inputs["domain"]]
+                "labels": self.domains[inputs["domain"]],
             }
         else:
             return {
                 "text": inputs["text"],
-                "labels": None # Test dataset does not have labels
+                "labels": None,  # Test dataset does not have labels
             }

@@ -31,11 +31,11 @@ class YahooAnswersTask:
         """
         return {
             "text": {
-                'question_content': inputs["question_content"],
-                'best_answer': inputs["best_answer"],
+                "question_content": inputs["question_content"],
+                "best_answer": inputs["best_answer"],
             },
             "labels": {
                 "labels": inputs["topic"],
                 "labels_names": inputs["question_title"],
-            }
+            },
         }

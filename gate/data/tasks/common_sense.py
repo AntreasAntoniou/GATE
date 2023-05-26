@@ -26,11 +26,12 @@ class PIQATask:
         return {
             "text": {
                 "prompt": inputs["goal"],
-                "choices": [inputs["sol1"], inputs["sol2"]]
+                "choices": [inputs["sol1"], inputs["sol2"]],
             },
             "labels": inputs["label"],
         }
-    
+
+
 class WinograndeTask:
     def __init__(self):
         super().__init__()
@@ -56,11 +57,12 @@ class WinograndeTask:
         return {
             "text": {
                 "prompt": inputs["sentence"],
-                "choices": [inputs["option1"], inputs["option2"]]
+                "choices": [inputs["option1"], inputs["option2"]],
             },
             "labels": inputs["answer"],
         }
-    
+
+
 class HellaSwagTask:
     def __init__(self):
         super().__init__()
@@ -90,14 +92,11 @@ class HellaSwagTask:
             ],
         'source_id': 'activitynet~v_-1IBHYS3L-Y',
         'split': 'train',
-        'split_type': 'indomain', 
+        'split_type': 'indomain',
         'label': '3'
         }
         """
         return {
-            "text": {
-                "prompt": inputs["ctx"],
-                "choices": inputs["endings"]
-            },
+            "text": {"prompt": inputs["ctx"], "choices": inputs["endings"]},
             "labels": inputs["label"],
         }
