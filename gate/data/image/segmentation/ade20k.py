@@ -3,6 +3,7 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
+import multiprocessing as mp
 
 
 def build_ade20k_dataset(
@@ -24,6 +25,7 @@ def build_ade20k_dataset(
         "scene_parse_150",
         "instance_segmentation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     val_data = load_dataset(
@@ -31,6 +33,7 @@ def build_ade20k_dataset(
         "instance_segmentation",
         split="validation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -38,6 +41,7 @@ def build_ade20k_dataset(
         "instance_segmentation",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}

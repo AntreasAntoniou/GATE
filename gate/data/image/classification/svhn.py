@@ -1,5 +1,6 @@
 # svhn.py
 from typing import Any, Dict, Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
@@ -31,6 +32,7 @@ def build_svhn_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         split="train",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -39,6 +41,7 @@ def build_svhn_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         split="test",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)
