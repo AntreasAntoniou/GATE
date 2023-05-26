@@ -138,8 +138,6 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-<<<<<<< HEAD
-=======
 from rich import print
 
 # def key_mapper(input_dict):
@@ -149,7 +147,6 @@ from rich import print
 #     }
 
 
->>>>>>> 826fce678622b640ea28de76d34979be419e39b4
 def key_mapper(input_dict):
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
