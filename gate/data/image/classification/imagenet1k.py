@@ -75,7 +75,6 @@ def build_gate_dataset(
         task=ClassificationTask(
             key_remapper_dict={"pixel_values": "image"},
         ),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[train_augment, transforms],
     )
 
