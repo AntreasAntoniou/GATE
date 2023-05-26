@@ -5,9 +5,15 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
 from gate.data.image.classification.imagenet1k import build_gate_dataset
+from gate.models.task_specific_models.classification.clip import (
+    build_gate_clip_model,
+)
 
+clip_classifier = build_gate_clip_model()
 # Build the dataset
-dataset_dict = build_gate_dataset(data_dir=os.environ["DATASET_DIR"])
+dataset_dict = build_gate_dataset(
+    data_dir=os.environ["DATASET_DIR"], transforms=clip_classifier.transform
+)
 
 # Create a DataLoader with batch size 1 to load one sample at a time
 data_loader = DataLoader(
