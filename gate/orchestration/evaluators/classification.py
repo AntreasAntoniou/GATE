@@ -40,9 +40,12 @@ class StepOutput:
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
+        pre_forward_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        post_forward_time = time.time()
+        logger.info(f"Forward time: {post_forward_time - pre_forward_time}")
         if "loss" not in output_dict:
             loss = F.cross_entropy(
                 input=output_dict["logits"],

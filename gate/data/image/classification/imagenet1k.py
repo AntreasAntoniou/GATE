@@ -28,6 +28,13 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     rng = np.random.RandomState(42)
 
+    all_data = load_dataset(
+        "imagenet-1k",
+        cache_dir=data_dir,
+        task="image-classification",
+        num_proc=mp.cpu_count(),
+    )
+
     train_val_data = load_dataset(
         "imagenet-1k",
         split="train",
