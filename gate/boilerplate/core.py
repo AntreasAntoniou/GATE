@@ -443,7 +443,6 @@ class Learner(nn.Module):
                             model=self.model,
                             batch=batch,
                         )
-                        pre_batch_time = time.time()
 
                         if self.step_idx % self.evaluate_every_n_steps == 0:
                             self._validation_loop()
@@ -475,6 +474,7 @@ class Learner(nn.Module):
 
                         pbar_steps.update(1)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
+                        pre_batch_time = time.time()
 
             return self.end_training()
 
@@ -505,6 +505,7 @@ class Learner(nn.Module):
                         batch=batch,
                     )
                     pbar_dataloaders.update(1)
+                    pre_batch_time = time.time()
 
             self.end_validation()
 
