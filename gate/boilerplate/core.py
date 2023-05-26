@@ -1,6 +1,7 @@
 import pathlib
 from pathlib import Path
 from time import sleep
+import time
 from typing import List, Optional, Union
 
 import torch
@@ -432,8 +433,12 @@ class Learner(nn.Module):
                     if self.limit_train_iters is not None:
                         if self.step_idx >= self.limit_train_iters:
                             return self.end_training()
-
+                    pre_batch_time = time.time()
                     for batch_idx, batch in enumerate(train_dataloader):
+                        post_batch_time = time.time()
+                        logger.info(
+                            f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
+                        )
                         output_list = self.training_step(
                             model=self.model,
                             batch=batch,
@@ -469,6 +474,7 @@ class Learner(nn.Module):
 
                         pbar_steps.update(1)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
+                        pre_batch_time = time.time()
 
             return self.end_training()
 
@@ -485,10 +491,15 @@ class Learner(nn.Module):
             self.start_validation()
 
             with tqdm(total=len(val_dataloader)) as pbar_dataloaders:
+                pre_batch_time = time.time()
                 for batch_idx, batch in enumerate(val_dataloader):
                     if self.limit_val_iters is not None:
                         if batch_idx >= self.limit_val_iters:
                             break
+                    post_batch_time = time.time()
+                    logger.info(
+                        f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
+                    )
                     self.validation_step(
                         model=model,
                         batch=batch,
