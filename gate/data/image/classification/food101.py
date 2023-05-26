@@ -1,10 +1,10 @@
 # food101.py
 from dataclasses import dataclass
 from typing import Any, Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
-from zstandard import train_dictionary
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
@@ -40,6 +40,7 @@ def build_food101_dataset(
         split="train",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
 
     test_set = load_dataset(
@@ -47,6 +48,7 @@ def build_food101_dataset(
         split="validation",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)
