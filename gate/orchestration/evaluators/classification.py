@@ -45,7 +45,7 @@ class ClassificationEvaluator(Evaluator):
             self.source_modality
         ]
         post_forward_time = time.time()
-        logger.info(f"Forward time: {post_forward_time - pre_forward_time}")
+        logger.debug(f"Forward time: {post_forward_time - pre_forward_time}")
         if "loss" not in output_dict:
             loss = F.cross_entropy(
                 input=output_dict["logits"],
@@ -267,7 +267,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         output_dict = model.forward(batch)
         post_forward_time = time.time()
         forward_time = post_forward_time - pre_forward_time
-        logger.info(f"forward time: {forward_time:.2f}s")
+        logger.debug(f"forward time: {forward_time:.2f}s")
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
                 output_dict[self.target_modality][self.source_modality][
