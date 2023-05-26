@@ -71,10 +71,13 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(
-            key_remapper_dict={"pixel_values": "image"},
-        ),
-        transforms=[train_augment, transforms],
+        transforms=[
+            train_augment,
+            transforms,
+            ClassificationTask(
+                key_remapper_dict={"pixel_values": "image"},
+            ),
+        ],
     )
 
     val_set = GATEDataset(
@@ -83,7 +86,12 @@ def build_gate_dataset(
         task=ClassificationTask(
             key_remapper_dict={"pixel_values": "image"},
         ),
-        transforms=transforms,
+        transforms=[
+            transforms,
+            ClassificationTask(
+                key_remapper_dict={"pixel_values": "image"},
+            ),
+        ],
     )
 
     test_set = GATEDataset(
@@ -92,7 +100,12 @@ def build_gate_dataset(
         task=ClassificationTask(
             key_remapper_dict={"pixel_values": "image"},
         ),
-        transforms=transforms,
+        transforms=[
+            transforms,
+            ClassificationTask(
+                key_remapper_dict={"pixel_values": "image"},
+            ),
+        ],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
