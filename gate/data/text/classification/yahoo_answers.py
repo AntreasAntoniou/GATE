@@ -9,19 +9,15 @@ def build_yahoo_answers_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
     """
-    Build a yahoo_answers dataset using the Hugging Face datasets library.
-    https://huggingface.co/datasets/yahoo_answers_topics
+    Build a Yahoo Answers dataset using the Hugging Face datasets library.
 
-    Args:
-        data_dir: The directory where the dataset cache is stored.
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param data_dir: The directory where the dataset cache is stored.
+    :type data_dir: str
+    :param set_name: The name of the dataset split to return ("train", "val", or "test").
+    :type set_name: str
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
-    rng = np.random.RandomState(42)
-
     train_val_data = load_dataset(
         path="yahoo_answers_topics",
         split="train",
