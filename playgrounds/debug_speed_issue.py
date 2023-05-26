@@ -30,7 +30,7 @@ loading_times = []
 
 # Measure the loading speed for 100 data points
 for i, data in tqdm(enumerate(data_loader)):
-    if i >= 100:  # We only measure the first 100 data points
+    if i >= 1000:  # We only measure the first 100 data points
         break
 
     start_time = time.time()
