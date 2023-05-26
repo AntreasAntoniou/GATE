@@ -16,7 +16,7 @@ from gate.data.tasks.classification import ClassificationTask
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
-    Build a SVHN dataset using the Hugging Face datasets library.
+    Build an ImageNet1K dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -26,30 +26,15 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
 
-    all_data = load_dataset(
+    data = load_dataset(
         "imagenet-1k",
         cache_dir=data_dir,
         task="image-classification",
         num_proc=mp.cpu_count(),
     )
-
-    train_val_data = load_dataset(
-        "imagenet-1k",
-        split="train",
-        cache_dir=data_dir,
-        task="image-classification",
-        num_proc=mp.cpu_count(),
-    )
-
-    test_data = load_dataset(
-        "imagenet-1k",
-        split="validation",
-        cache_dir=data_dir,
-        task="image-classification",
-        num_proc=mp.cpu_count(),
-    )
+    train_val_data = data["train"]
+    test_data = data["validation"]
 
     train_val_data = train_val_data.train_test_split(test_size=0.05)
     train_set = train_val_data["train"]
@@ -86,7 +71,9 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
+        task=ClassificationTask(
+            key_remapper_dict={"pixel_values": "image"},
+        ),
         key_remapper_dict={"pixel_values": "image"},
         transforms=[train_augment, transforms],
     )
@@ -94,16 +81,18 @@ def build_gate_dataset(
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
+        task=ClassificationTask(
+            key_remapper_dict={"pixel_values": "image"},
+        ),
         transforms=transforms,
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
+        task=ClassificationTask(
+            key_remapper_dict={"pixel_values": "image"},
+        ),
         transforms=transforms,
     )
 
