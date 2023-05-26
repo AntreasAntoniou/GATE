@@ -71,24 +71,18 @@ def build_gate_food_101_dataset(
     train_set = GATEDataset(
         dataset=build_food101_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
     )
 
     val_set = GATEDataset(
         dataset=build_food101_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
     )
 
     test_set = GATEDataset(
         dataset=build_food101_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
     )
 
