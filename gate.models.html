@@ -1,0 +1,640 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="lang:clipboard.copy" content="Copy to clipboard">
+  <meta name="lang:clipboard.copied" content="Copied to clipboard">
+  <meta name="lang:search.language" content="en">
+  <meta name="lang:search.pipeline.stopwords" content="True">
+  <meta name="lang:search.pipeline.trimmer" content="True">
+  <meta name="lang:search.result.none" content="No matching documents">
+  <meta name="lang:search.result.one" content="1 matching document">
+  <meta name="lang:search.result.other" content="# matching documents">
+  <meta name="lang:search.tokenizer" content="[\s\-]+">
+
+  
+    <link href="https://fonts.gstatic.com/" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,500,700|Roboto:300,400,400i,700&display=fallback" rel="stylesheet">
+
+    <style>
+      body,
+      input {
+        font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif
+      }
+
+      code,
+      kbd,
+      pre {
+        font-family: "Roboto Mono", "Courier New", Courier, monospace
+      }
+    </style>
+  
+
+  <link rel="stylesheet" href="_static/stylesheets/application.css"/>
+  <link rel="stylesheet" href="_static/stylesheets/application-palette.css"/>
+  <link rel="stylesheet" href="_static/stylesheets/application-fixes.css"/>
+  
+  <link rel="stylesheet" href="_static/fonts/material-icons.css"/>
+  
+  <meta name="theme-color" content="#3f51b5">
+  <script src="_static/javascripts/modernizr.js"></script>
+  
+  
+  
+    <title>gate.models package &#8212; GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/material.css" />
+    <script src="_static/jquery.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="gate.models.backbones package" href="gate.models.backbones.html" />
+    <link rel="prev" title="gate.data.video.classification.gulp package" href="gate.data.video.classification.gulp.html" />
+  
+   
+
+  </head>
+  <body dir=ltr
+        data-md-color-primary=blue data-md-color-accent=light-blue>
+  
+  <svg class="md-svg">
+    <defs data-children-count="0">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+      
+    </defs>
+  </svg>
+  
+  <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer">
+  <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search">
+  <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+  <a href="#gate.models" tabindex="1" class="md-skip"> Skip to content </a>
+  <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex navheader">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="index.html" title="GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation"
+           class="md-header-nav__button md-logo">
+          
+            &nbsp;
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          <span class="md-header-nav__topic">GATE - Your GATEway to thorough ML evaluation</span>
+          <span class="md-header-nav__topic"> gate.models package </span>
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+        
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" action="search.html" method="get" name="search">
+      <input type="text" class="md-search__input" name="q" placeholder="Search"
+             autocapitalize="off" autocomplete="off" spellcheck="false"
+             data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            <a href="https://github.com/AntreasAntoniou/GATE/" title="Go to repository" class="md-source" data-md-source="github">
+
+    <div class="md-source__icon">
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" width="28" height="28">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GATE
+  </div>
+</a>
+          </div>
+        </div>
+      
+      
+  
+  <script src="_static/javascripts/version_dropdown.js"></script>
+  <script>
+    var json_loc = ""versions.json"",
+        target_loc = "../",
+        text = "Versions";
+    $( document ).ready( add_version_dropdown(json_loc, target_loc, text));
+  </script>
+  
+
+    </div>
+  </nav>
+</header>
+
+  
+  <div class="md-container">
+    
+    
+    
+  <nav class="md-tabs" data-md-component="tabs">
+    <div class="md-tabs__inner md-grid">
+      <ul class="md-tabs__list">
+          <li class="md-tabs__item"><a href="index.html" class="md-tabs__link">GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation</a></li>
+      </ul>
+    </div>
+  </nav>
+    <main class="md-main">
+      <div class="md-main__inner md-grid" data-md-component="container">
+        
+          <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+            <div class="md-sidebar__scrollwrap">
+              <div class="md-sidebar__inner">
+                <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="index.html" title="GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation" class="md-nav__button md-logo">
+      
+        <img src="_static/" alt=" logo" width="48" height="48">
+      
+    </a>
+    <a href="index.html"
+       title="GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation">GATE - Your GATEway to thorough ML evaluation</a>
+  </label>
+    <div class="md-nav__source">
+      <a href="https://github.com/AntreasAntoniou/GATE/" title="Go to repository" class="md-source" data-md-source="github">
+
+    <div class="md-source__icon">
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" width="28" height="28">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GATE
+  </div>
+</a>
+    </div>
+  
+  
+
+</nav>
+              </div>
+            </div>
+          </div>
+          <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+            <div class="md-sidebar__scrollwrap">
+              <div class="md-sidebar__inner">
+                
+<nav class="md-nav md-nav--secondary">
+    <label class="md-nav__title" for="__toc">Contents</label>
+  <ul class="md-nav__list" data-md-scrollfix="">
+        <li class="md-nav__item"><a href="#gate-models--page-root" class="md-nav__link">gate.models package</a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#subpackages" class="md-nav__link">Subpackages</a>
+        </li>
+        <li class="md-nav__item"><a href="#submodules" class="md-nav__link">Submodules</a>
+        </li>
+        <li class="md-nav__item"><a href="#module-gate.models.core" class="md-nav__link">gate.models.core module</a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#gate.models.core.GATEModel" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">GATEModel</span></code></a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#gate.models.core.GATEModel.forward" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">GATEModel.forward()</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.GATEModel.get_valid_combinations" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">GATEModel.get_valid_combinations()</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.GATEModel.process_modalities" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">GATEModel.process_modalities()</span></code></a>
+        </li></ul>
+            </nav>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.SourceModalityConfig" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">SourceModalityConfig</span></code></a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#gate.models.core.SourceModalityConfig.audio" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">SourceModalityConfig.audio</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.SourceModalityConfig.image" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">SourceModalityConfig.image</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.SourceModalityConfig.text" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">SourceModalityConfig.text</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.SourceModalityConfig.video" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">SourceModalityConfig.video</span></code></a>
+        </li></ul>
+            </nav>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig</span></code></a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.audio" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.audio</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.audio_image" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.audio_image</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.audio_text" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.audio_text</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.audio_video" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.audio_video</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.image" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.image</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.image_audio" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.image_audio</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.image_text" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.image_text</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.text" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.text</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.text_audio" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.text_audio</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.text_image" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.text_image</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.text_video" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.text_video</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.video" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.video</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.video_audio" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.video_audio</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.TargetModalityConfig.video_text" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">TargetModalityConfig.video_text</span></code></a>
+        </li></ul>
+            </nav>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.core.reinit" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">reinit()</span></code></a>
+        </li></ul>
+            </nav>
+        </li>
+        <li class="md-nav__item"><a href="#module-gate.models" class="md-nav__link">Module contents</a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#gate.models.ModelAndTransform" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">ModelAndTransform</span></code></a><nav class="md-nav">
+              <ul class="md-nav__list">
+        <li class="md-nav__item"><a href="#gate.models.ModelAndTransform.model" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">ModelAndTransform.model</span></code></a>
+        </li>
+        <li class="md-nav__item"><a href="#gate.models.ModelAndTransform.transform" class="md-nav__link"><code class="docutils literal notranslate"><span class="pre">ModelAndTransform.transform</span></code></a>
+        </li></ul>
+            </nav>
+        </li></ul>
+            </nav>
+        </li></ul>
+            </nav>
+        </li>
+    
+<li class="md-nav__item"><a class="md-nav__extra_link" href="_sources/gate.models.rst.txt">Show Source</a> </li>
+
+<li id="searchbox" class="md-nav__item"></li>
+
+  </ul>
+</nav>
+              </div>
+            </div>
+          </div>
+        
+        <div class="md-content">
+          <article class="md-content__inner md-typeset" role="main">
+            
+  <section id="gate-models-package">
+<h1 id="gate-models--page-root">gate.models package<a class="headerlink" href="#gate-models--page-root" title="Permalink to this heading"></a></h1>
+<section id="subpackages">
+<h2 id="subpackages">Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gate.models.backbones.html">gate.models.backbones package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.backbones.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.backbones.html#module-gate.models.backbones.clip">gate.models.backbones.clip module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.clip.CLIPAdapter"><code class="docutils literal notranslate"><span class="pre">CLIPAdapter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.clip.CLIPAdapter.forward"><code class="docutils literal notranslate"><span class="pre">CLIPAdapter.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.clip.CLIPAdapter.get_transforms"><code class="docutils literal notranslate"><span class="pre">CLIPAdapter.get_transforms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.clip.CLIPAdapter.init_weights"><code class="docutils literal notranslate"><span class="pre">CLIPAdapter.init_weights()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.clip.forward_dict"><code class="docutils literal notranslate"><span class="pre">forward_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.backbones.html#module-gate.models.backbones.tali">gate.models.backbones.tali module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.tali.TALINet"><code class="docutils literal notranslate"><span class="pre">TALINet</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.tali.TALINet.forward"><code class="docutils literal notranslate"><span class="pre">TALINet.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.tali.TALINet.get_transforms"><code class="docutils literal notranslate"><span class="pre">TALINet.get_transforms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.tali.TALINet.init_weights"><code class="docutils literal notranslate"><span class="pre">TALINet.init_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.tali.TALINet.load_from_hub"><code class="docutils literal notranslate"><span class="pre">TALINet.load_from_hub()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.backbones.html#module-gate.models.backbones.timm">gate.models.backbones.timm module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmCLIPAdapter"><code class="docutils literal notranslate"><span class="pre">TimmCLIPAdapter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmCLIPAdapter.forward"><code class="docutils literal notranslate"><span class="pre">TimmCLIPAdapter.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmCLIPAdapter.get_transforms"><code class="docutils literal notranslate"><span class="pre">TimmCLIPAdapter.get_transforms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmCLIPAdapter.init_weights"><code class="docutils literal notranslate"><span class="pre">TimmCLIPAdapter.init_weights()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmModel"><code class="docutils literal notranslate"><span class="pre">TimmModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmModel.forward"><code class="docutils literal notranslate"><span class="pre">TimmModel.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmModel.get_output_shape"><code class="docutils literal notranslate"><span class="pre">TimmModel.get_output_shape()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.TimmModel.get_transforms"><code class="docutils literal notranslate"><span class="pre">TimmModel.get_transforms()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.timm.apply_preprocessing_transforms"><code class="docutils literal notranslate"><span class="pre">apply_preprocessing_transforms()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.backbones.html#module-gate.models.backbones">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.Modality"><code class="docutils literal notranslate"><span class="pre">Modality</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.Modality.audio"><code class="docutils literal notranslate"><span class="pre">Modality.audio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.Modality.image"><code class="docutils literal notranslate"><span class="pre">Modality.image</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.Modality.text"><code class="docutils literal notranslate"><span class="pre">Modality.text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.Modality.video"><code class="docutils literal notranslate"><span class="pre">Modality.video</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.apply_preprocessing_transforms"><code class="docutils literal notranslate"><span class="pre">apply_preprocessing_transforms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.backbones.html#gate.models.backbones.image_dim_reshape"><code class="docutils literal notranslate"><span class="pre">image_dim_reshape()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gate.models.classification.html">gate.models.classification package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.classification.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.classification.html#gate-models-classification-clip-module">gate.models.classification.clip module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.classification.html#gate-models-classification-tali-module">gate.models.classification.tali module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.classification.html#gate-models-classification-timm-module">gate.models.classification.timm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.classification.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gate.models.task_adapters.html">gate.models.task_adapters package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#gate-models-task-adapters-autoregressive-lm-module">gate.models.task_adapters.autoregressive_lm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#module-gate.models.task_adapters.classification">gate.models.task_adapters.classification module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.classification.BackboneWithLinear"><code class="docutils literal notranslate"><span class="pre">BackboneWithLinear</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.classification.BackboneWithLinear.compute_metrics"><code class="docutils literal notranslate"><span class="pre">BackboneWithLinear.compute_metrics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.classification.BackboneWithLinear.forward"><code class="docutils literal notranslate"><span class="pre">BackboneWithLinear.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.classification.BackboneWithLinear.get_transforms"><code class="docutils literal notranslate"><span class="pre">BackboneWithLinear.get_transforms()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#gate-models-task-adapters-multi-head-classification-module">gate.models.task_adapters.multi_head_classification module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#gate-models-task-adapters-segmentation-module">gate.models.task_adapters.segmentation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#module-gate.models.task_adapters.simple_vqa_transformer">gate.models.task_adapters.simple_vqa_transformer module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.simple_vqa_transformer.SimpleVQATransformer"><code class="docutils literal notranslate"><span class="pre">SimpleVQATransformer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.simple_vqa_transformer.SimpleVQATransformer.forward"><code class="docutils literal notranslate"><span class="pre">SimpleVQATransformer.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.simple_vqa_transformer.SimpleVQATransformer.generate_text"><code class="docutils literal notranslate"><span class="pre">SimpleVQATransformer.generate_text()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.simple_vqa_transformer.SimpleVQATransformer.generate_tokens"><code class="docutils literal notranslate"><span class="pre">SimpleVQATransformer.generate_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.simple_vqa_transformer.SimpleVQATransformer.get_transforms"><code class="docutils literal notranslate"><span class="pre">SimpleVQATransformer.get_transforms()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.simple_vqa_transformer.tokenize_with_start_end"><code class="docutils literal notranslate"><span class="pre">tokenize_with_start_end()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.task_adapters.html#module-gate.models.task_adapters">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.BaseModule"><code class="docutils literal notranslate"><span class="pre">BaseModule</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gate.models.task_adapters.html#gate.models.task_adapters.BaseModule.init_weights"><code class="docutils literal notranslate"><span class="pre">BaseModule.init_weights()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gate.models.visual_question_answering.html">gate.models.visual_question_answering package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.visual_question_answering.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.visual_question_answering.html#gate-models-visual-question-answering-clip-module">gate.models.visual_question_answering.clip module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.visual_question_answering.html#gate-models-visual-question-answering-tali-module">gate.models.visual_question_answering.tali module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.visual_question_answering.html#gate-models-visual-question-answering-timm-module">gate.models.visual_question_answering.timm module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gate.models.visual_question_answering.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2 id="submodules">Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-gate.models.core">
+<span id="gate-models-core-module"></span><h2 id="module-gate.models.core">gate.models.core module<a class="headerlink" href="#module-gate.models.core" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gate.models.core.GATEModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gate.models.core.</span></span><span class="sig-name descname"><span class="pre">GATEModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.11)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><span class="pre">Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_remapper_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gate/models/core.html#GATEModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.GATEModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>🚪 GATEModel class for handling different input and output modalities.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gate.models.core.GATEModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.11)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.11)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gate/models/core.html#GATEModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.GATEModel.forward" title="Permalink to this definition"></a></dt>
+<dd><p>🚀 Forward pass of the GATEModel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_dict</strong> -- Dictionary of input modalities.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A nested dictionary with target modalities as outer keys,
+source modalities as inner keys, and the corresponding output
+as the value.</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gate.models.core.GATEModel.get_valid_combinations">
+<span class="sig-name descname"><span class="pre">get_valid_combinations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.11)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.11)"><span class="pre">Tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gate/models/core.html#GATEModel.get_valid_combinations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.GATEModel.get_valid_combinations" title="Permalink to this definition"></a></dt>
+<dd><p>📋 Get the list of valid input and target modality combinations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of tuples containing input modalities and target</p>
+</dd>
+</dl>
+<p>modality names.</p>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gate.models.core.GATEModel.process_modalities">
+<span class="sig-name descname"><span class="pre">process_modalities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_modality_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_modalities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.11)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_arg_items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.11)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.11)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gate/models/core.html#GATEModel.process_modalities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.GATEModel.process_modalities" title="Permalink to this definition"></a></dt>
+<dd><p>🔄 Process the input modalities and generate the output in the
+specified target modality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target_modality_name</strong> -- Target modality name (e.g., 'image',</p>
+</dd>
+</dl>
+<p>'text', 'audio', 'video')
+:param input_modalities: Input modalities as keyword arguments.
+:raises ValueError: If the given transformation is unsupported.</p>
+</dd></dl>
+</dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="gate.models.core.SourceModalityConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gate.models.core.</span></span><span class="sig-name descname"><span class="pre">SourceModalityConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">video</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gate/models/core.html#SourceModalityConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.SourceModalityConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>📄 Class representing the source modalities configurations.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.SourceModalityConfig.audio">
+<span class="sig-name descname"><span class="pre">audio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#gate.models.core.SourceModalityConfig.audio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.SourceModalityConfig.image">
+<span class="sig-name descname"><span class="pre">image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#gate.models.core.SourceModalityConfig.image" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.SourceModalityConfig.text">
+<span class="sig-name descname"><span class="pre">text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#gate.models.core.SourceModalityConfig.text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.SourceModalityConfig.video">
+<span class="sig-name descname"><span class="pre">video</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#gate.models.core.SourceModalityConfig.video" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+</dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gate.models.core.</span></span><span class="sig-name descname"><span class="pre">TargetModalityConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">video</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">video_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_video</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">video_audio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audio_video</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gate/models/core.html#TargetModalityConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.TargetModalityConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>🎯 Class representing the target modalities configurations.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.audio">
+<span class="sig-name descname"><span class="pre">audio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.audio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.audio_image">
+<span class="sig-name descname"><span class="pre">audio_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.audio_image" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.audio_text">
+<span class="sig-name descname"><span class="pre">audio_text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.audio_text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.audio_video">
+<span class="sig-name descname"><span class="pre">audio_video</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.audio_video" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.image">
+<span class="sig-name descname"><span class="pre">image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.image" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.image_audio">
+<span class="sig-name descname"><span class="pre">image_audio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.image_audio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.image_text">
+<span class="sig-name descname"><span class="pre">image_text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.image_text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.text">
+<span class="sig-name descname"><span class="pre">text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.text_audio">
+<span class="sig-name descname"><span class="pre">text_audio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.text_audio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.text_image">
+<span class="sig-name descname"><span class="pre">text_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.text_image" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.text_video">
+<span class="sig-name descname"><span class="pre">text_video</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.text_video" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.video">
+<span class="sig-name descname"><span class="pre">video</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.video" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.video_audio">
+<span class="sig-name descname"><span class="pre">video_audio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.video_audio" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.core.TargetModalityConfig.video_text">
+<span class="sig-name descname"><span class="pre">video_text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.11)"><span class="pre">List</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="source/gate.models.html#gate.models.core.SourceModalityConfig" title="gate.models.core.SourceModalityConfig"><span class="pre">SourceModalityConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.11)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#gate.models.core.TargetModalityConfig.video_text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="gate.models.core.reinit">
+<span class="sig-prename descclassname"><span class="pre">gate.models.core.</span></span><span class="sig-name descname"><span class="pre">reinit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><span class="pre">Module</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gate/models/core.html#reinit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.core.reinit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+</section>
+<section id="module-gate.models">
+<span id="module-contents"></span><h2 id="module-gate.models">Module contents<a class="headerlink" href="#module-gate.models" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gate.models.ModelAndTransform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gate.models.</span></span><span class="sig-name descname"><span class="pre">ModelAndTransform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><span class="pre">torch.nn.modules.module.Module</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gate/models.html#ModelAndTransform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gate.models.ModelAndTransform" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.11)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.ModelAndTransform.model">
+<span class="sig-name descname"><span class="pre">model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><span class="pre">Module</span></a></em><a class="headerlink" href="#gate.models.ModelAndTransform.model" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gate.models.ModelAndTransform.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.11)"><span class="pre">Any</span></a></em><a class="headerlink" href="#gate.models.ModelAndTransform.transform" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+</dd></dl>
+</section>
+</section>
+
+
+          </article>
+        </div>
+      </div>
+    </main>
+  </div>
+  <footer class="md-footer">
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+          
+            <a href="gate.data.video.classification.gulp.html" title="gate.data.video.classification.gulp package"
+               class="md-flex md-footer-nav__link md-footer-nav__link--prev"
+               rel="prev">
+              <div class="md-flex__cell md-flex__cell--shrink">
+                <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+              </div>
+              <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+                <span class="md-flex__ellipsis">
+                  <span
+                      class="md-footer-nav__direction"> Previous </span> gate.data.video.classification.gulp package </span>
+              </div>
+            </a>
+          
+          
+            <a href="gate.models.backbones.html" title="gate.models.backbones package"
+               class="md-flex md-footer-nav__link md-footer-nav__link--next"
+               rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span
+                class="md-flex__ellipsis"> <span
+                class="md-footer-nav__direction"> Next </span> gate.models.backbones package </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink"><i
+                class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          
+        </a>
+        
+      </nav>
+    </div>
+    <div class="md-footer-meta md-typeset">
+      <div class="md-footer-meta__inner md-grid">
+        <div class="md-footer-copyright">
+          <div class="md-footer-copyright__highlight">
+              &#169; Copyright 2023, Antreas Antoniou.
+              
+          </div>
+            Created using
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+             and
+            <a href="https://github.com/bashtage/sphinx-material/">Material for
+              Sphinx</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="_static/javascripts/application.js"></script>
+  <script>app.initialize({version: "1.0.4", url: {base: ".."}})</script>
+  </body>
+</html>

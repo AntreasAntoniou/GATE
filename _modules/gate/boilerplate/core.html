@@ -1,0 +1,998 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="lang:clipboard.copy" content="Copy to clipboard">
+  <meta name="lang:clipboard.copied" content="Copied to clipboard">
+  <meta name="lang:search.language" content="en">
+  <meta name="lang:search.pipeline.stopwords" content="True">
+  <meta name="lang:search.pipeline.trimmer" content="True">
+  <meta name="lang:search.result.none" content="No matching documents">
+  <meta name="lang:search.result.one" content="1 matching document">
+  <meta name="lang:search.result.other" content="# matching documents">
+  <meta name="lang:search.tokenizer" content="[\s\-]+">
+
+  
+    <link href="https://fonts.gstatic.com/" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,500,700|Roboto:300,400,400i,700&display=fallback" rel="stylesheet">
+
+    <style>
+      body,
+      input {
+        font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif
+      }
+
+      code,
+      kbd,
+      pre {
+        font-family: "Roboto Mono", "Courier New", Courier, monospace
+      }
+    </style>
+  
+
+  <link rel="stylesheet" href="../../../_static/stylesheets/application.css"/>
+  <link rel="stylesheet" href="../../../_static/stylesheets/application-palette.css"/>
+  <link rel="stylesheet" href="../../../_static/stylesheets/application-fixes.css"/>
+  
+  <link rel="stylesheet" href="../../../_static/fonts/material-icons.css"/>
+  
+  <meta name="theme-color" content="#3f51b5">
+  <script src="../../../_static/javascripts/modernizr.js"></script>
+  
+  
+  
+    <title>gate.boilerplate.core &#8212; GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/material.css" />
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  
+   
+
+  </head>
+  <body dir=ltr
+        data-md-color-primary=blue data-md-color-accent=light-blue>
+  
+  <svg class="md-svg">
+    <defs data-children-count="0">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+      
+    </defs>
+  </svg>
+  
+  <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer">
+  <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search">
+  <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+  <a href="#_modules/gate/boilerplate/core" tabindex="1" class="md-skip"> Skip to content </a>
+  <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex navheader">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../../index.html" title="GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation"
+           class="md-header-nav__button md-logo">
+          
+            &nbsp;
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          <span class="md-header-nav__topic">GATE - Your GATEway to thorough ML evaluation</span>
+          <span class="md-header-nav__topic"> gate.boilerplate.core </span>
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+        
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" action="../../../search.html" method="get" name="search">
+      <input type="text" class="md-search__input" name="q" placeholder="Search"
+             autocapitalize="off" autocomplete="off" spellcheck="false"
+             data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            <a href="https://github.com/AntreasAntoniou/GATE/" title="Go to repository" class="md-source" data-md-source="github">
+
+    <div class="md-source__icon">
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" width="28" height="28">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GATE
+  </div>
+</a>
+          </div>
+        </div>
+      
+      
+  
+  <script src="../../../_static/javascripts/version_dropdown.js"></script>
+  <script>
+    var json_loc = "../../../"versions.json"",
+        target_loc = "../../../../",
+        text = "Versions";
+    $( document ).ready( add_version_dropdown(json_loc, target_loc, text));
+  </script>
+  
+
+    </div>
+  </nav>
+</header>
+
+  
+  <div class="md-container">
+    
+    
+    
+  <nav class="md-tabs" data-md-component="tabs">
+    <div class="md-tabs__inner md-grid">
+      <ul class="md-tabs__list">
+          <li class="md-tabs__item"><a href="../../../index.html" class="md-tabs__link">GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">Module code</a></li>
+      </ul>
+    </div>
+  </nav>
+    <main class="md-main">
+      <div class="md-main__inner md-grid" data-md-component="container">
+        
+          <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+            <div class="md-sidebar__scrollwrap">
+              <div class="md-sidebar__inner">
+                <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../../index.html" title="GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation" class="md-nav__button md-logo">
+      
+        <img src="../../../_static/" alt=" logo" width="48" height="48">
+      
+    </a>
+    <a href="../../../index.html"
+       title="GATE - Your GATEway to thorough ML evaluation 0.7.0 documentation">GATE - Your GATEway to thorough ML evaluation</a>
+  </label>
+    <div class="md-nav__source">
+      <a href="https://github.com/AntreasAntoniou/GATE/" title="Go to repository" class="md-source" data-md-source="github">
+
+    <div class="md-source__icon">
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" width="28" height="28">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    GATE
+  </div>
+</a>
+    </div>
+  
+  
+
+</nav>
+              </div>
+            </div>
+          </div>
+          <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+            <div class="md-sidebar__scrollwrap">
+              <div class="md-sidebar__inner">
+                
+<nav class="md-nav md-nav--secondary">
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+
+<li id="searchbox" class="md-nav__item"></li>
+
+  </ul>
+</nav>
+              </div>
+            </div>
+          </div>
+        
+        <div class="md-content">
+          <article class="md-content__inner md-typeset" role="main">
+            
+  <h1 id="modules-gate-boilerplate-core--page-root">Source code for gate.boilerplate.core</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">accelerate</span> <span class="kn">import</span> <span class="n">Accelerator</span><span class="p">,</span> <span class="n">DistributedDataParallelKwargs</span>
+<span class="kn">from</span> <span class="nn">neptune</span> <span class="kn">import</span> <span class="n">Run</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span> <span class="nn">gate.boilerplate.callbacks</span> <span class="kn">import</span> <span class="n">Callback</span><span class="p">,</span> <span class="n">CallbackHandler</span>
+<span class="kn">from</span> <span class="nn">gate.boilerplate.decorators</span> <span class="kn">import</span> <span class="n">configurable</span>
+<span class="kn">from</span> <span class="nn">gate.boilerplate.utils</span> <span class="kn">import</span> <span class="n">download_model_with_name</span><span class="p">,</span> <span class="n">get_logger</span>
+<span class="kn">from</span> <span class="nn">gate.config.variables</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DUMMY_BATCH_MODE</span><span class="p">,</span>
+    <span class="n">HYDRATED_CURRENT_EXPERIMENT_DIR</span><span class="p">,</span>
+    <span class="n">HYDRATED_EXPERIMENT_NAME</span><span class="p">,</span>
+    <span class="n">HYDRATED_HF_CACHE_DIR</span><span class="p">,</span>
+    <span class="n">HYDRATED_HF_REPO_PATH</span><span class="p">,</span>
+    <span class="n">HYDRATED_TRAIN_ITERS</span><span class="p">,</span>
+    <span class="n">RESUME</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">gate.orchestration.evaluators.classification</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClassificationEvaluator</span><span class="p">,</span>
+    <span class="n">Evaluator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">gate.orchestration.trainers.classification</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClassificationTrainer</span><span class="p">,</span>
+    <span class="n">Trainer</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># silence logger for accelerate</span>
+<span class="n">accelerate_logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">"accelerate"</span><span class="p">,</span> <span class="n">logging_level</span><span class="o">=</span><span class="s2">"ERROR"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Learner"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner">[docs]</a><span class="nd">@configurable</span><span class="p">(</span>
+    <span class="n">group</span><span class="o">=</span><span class="s2">"learner"</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"default"</span><span class="p">,</span>
+    <span class="n">defaults</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">experiment_name</span><span class="o">=</span><span class="n">HYDRATED_EXPERIMENT_NAME</span><span class="p">,</span>
+        <span class="n">root_dir</span><span class="o">=</span><span class="n">HYDRATED_CURRENT_EXPERIMENT_DIR</span><span class="p">,</span>
+        <span class="n">resume</span><span class="o">=</span><span class="n">RESUME</span><span class="p">,</span>
+        <span class="n">evaluate_every_n_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">checkpoint_after_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">checkpoint_every_n_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+        <span class="n">train_iters</span><span class="o">=</span><span class="n">HYDRATED_TRAIN_ITERS</span><span class="p">,</span>
+        <span class="n">limit_val_iters</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">dummy_batch_mode</span><span class="o">=</span><span class="n">DUMMY_BATCH_MODE</span><span class="p">,</span>
+        <span class="n">print_model_parameters</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">hf_cache_dir</span><span class="o">=</span><span class="n">HYDRATED_HF_CACHE_DIR</span><span class="p">,</span>
+        <span class="n">hf_repo_path</span><span class="o">=</span><span class="n">HYDRATED_HF_REPO_PATH</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+<span class="k">class</span> <span class="nc">Learner</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">experiment_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">root_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">resume</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">evaluate_every_n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">checkpoint_every_n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">checkpoint_after_validation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">train_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">train_dataloader</span><span class="p">:</span> <span class="n">DataLoader</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">limit_train_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">val_dataloader</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">limit_val_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">test_dataloader</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">],</span> <span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">trainers</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Trainer</span><span class="p">],</span> <span class="n">Trainer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">evaluators</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Evaluator</span><span class="p">],</span> <span class="n">Evaluator</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">callbacks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Callback</span><span class="p">],</span> <span class="n">Callback</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">print_model_parameters</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">hf_cache_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">hf_repo_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">experiment_tracker</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Run</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dummy_batch_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Initialize the Learner class.</span>
+
+<span class="sd">        :param experiment_name: The name of the experiment.</span>
+<span class="sd">        :param experiment_dir: The directory for the experiment.</span>
+<span class="sd">        :param model: The PyTorch model to be trained.</span>
+<span class="sd">        :param train_dataloader: A list of DataLoaders for training.</span>
+<span class="sd">        :param val_dataloader: A list of DataLoaders for validation.</span>
+<span class="sd">        :param test_dataloader: A list of DataLoaders for testing.</span>
+<span class="sd">        :param trainers: A list of trainer objects for training.</span>
+<span class="sd">        :param evaluators: A list of evaluator objects for evaluation.</span>
+<span class="sd">        :param evaluate_every_n_steps: The number of steps between evaluations.</span>
+<span class="sd">        :param checkpoint_every_n_steps: The number of steps between checkpoints.</span>
+<span class="sd">        :param checkpoint_after_validation: Whether to save a checkpoint after validation.</span>
+<span class="sd">        :param train_iters: The number of training iterations.</span>
+<span class="sd">        :param resume: Whether to resume training from a saved checkpoint.</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="n">experiment_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">root_dir</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="n">root_dir</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span> <span class="o">/</span> <span class="n">experiment_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hf_cache_dir</span> <span class="o">=</span> <span class="n">hf_cache_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hf_repo_path</span> <span class="o">=</span> <span class="n">hf_repo_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_threads</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span> <span class="o">/</span> <span class="s2">"checkpoints"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neptune_run</span> <span class="o">=</span> <span class="n">experiment_tracker</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_every_n_steps</span> <span class="o">=</span> <span class="n">evaluate_every_n_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_every_n_steps</span> <span class="o">=</span> <span class="n">checkpoint_every_n_steps</span> <span class="ow">or</span> <span class="mi">99999999999</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_after_validation</span> <span class="o">=</span> <span class="n">checkpoint_after_validation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_step</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit_train_iters</span> <span class="o">=</span> <span class="n">limit_train_iters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit_val_iters</span> <span class="o">=</span> <span class="n">limit_val_iters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dummy_batch_mode</span> <span class="o">=</span> <span class="n">dummy_batch_mode</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_iters</span> <span class="o">=</span> <span class="n">train_iters</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">train_dataloader</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">val_dataloader</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span> <span class="o">=</span> <span class="n">test_dataloader</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">callbacks</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">callbacks</span><span class="p">,</span> <span class="n">Callback</span><span class="p">)</span> <span class="k">else</span> <span class="n">callbacks</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span> <span class="o">=</span> <span class="n">CallbackHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_init_start</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">train_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">,</span>
+            <span class="n">val_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">,</span>
+            <span class="n">test_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resume</span> <span class="o">=</span> <span class="n">resume</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_every_n_steps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_every_n_steps</span> <span class="o">=</span> <span class="mi">99999999999</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">trainers</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trainers</span><span class="p">,</span> <span class="n">Trainer</span><span class="p">)</span> <span class="k">else</span> <span class="n">trainers</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">evaluators</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evaluators</span><span class="p">,</span> <span class="n">Evaluator</span><span class="p">)</span> <span class="k">else</span> <span class="n">evaluators</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_init_end</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">train_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">,</span>
+            <span class="n">val_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">,</span>
+            <span class="n">test_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># use if you want to debug unused parameter errors in DDP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span> <span class="o">=</span> <span class="n">Accelerator</span><span class="p">(</span>
+            <span class="c1"># kwargs_handlers=[</span>
+            <span class="c1">#     DistributedDataParallelKwargs(find_unused_parameters=True)</span>
+            <span class="c1"># ]</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">:</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">get_optimizer</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">scheduler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">scheduler</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resume</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">resume</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">checkpoint_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Checkpoint path </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2"> does not exist, please check your resume= argument"</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="o">=</span><span class="n">checkpoint_path</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resume</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="o">=</span><span class="n">resume</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">print_model_parameters</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Parameter </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> requires grad </span><span class="si">{</span><span class="n">value</span><span class="o">.</span><span class="n">requires_grad</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">)</span>
+
+<div class="viewcode-block" id="Learner.run"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Learner.forward"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">attributes</span><span class="si">}</span><span class="s2">"</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Learner.training_step"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.training_step">[docs]</a>    <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_batch_start</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_training_step_start</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="n">output_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">:</span>
+            <span class="n">cur_output_dict</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">training_step</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+                <span class="n">accelerator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">output_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_output_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_batch_end</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_training_step_end</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">output_list</span></div>
+
+<div class="viewcode-block" id="Learner.validation_step"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.validation_step">[docs]</a>    <span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_batch_start</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_validation_step_start</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="n">evaluator</span><span class="o">.</span><span class="n">validation_step</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+                <span class="n">accelerator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_batch_end</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_validation_step_end</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.testing_step"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.testing_step">[docs]</a>    <span class="k">def</span> <span class="nf">testing_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_batch_start</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_testing_step_start</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="n">evaluator</span><span class="o">.</span><span class="n">testing_step</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+                <span class="n">accelerator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_batch_end</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_testing_step_end</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.start_training"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.start_training">[docs]</a>    <span class="k">def</span> <span class="nf">start_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_train_start</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">:</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">start_training</span><span class="p">(</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting training 🏋🏽"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.end_training"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.end_training">[docs]</a>    <span class="k">def</span> <span class="nf">end_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_train_end</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">:</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">end_training</span><span class="p">(</span><span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_threads</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_manage_background_threads</span><span class="p">()</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Training finished 🎉"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.check_manage_background_threads"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.check_manage_background_threads">[docs]</a>    <span class="k">def</span> <span class="nf">check_manage_background_threads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># iterate threads to find up to where they are done, and start the next one</span>
+        <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_threads</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">thread</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Starting thread </span><span class="si">{</span><span class="n">thread</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">background_threads</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Removing thread </span><span class="si">{</span><span class="n">thread</span><span class="si">}</span><span class="s2"> since it is done"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.start_validation"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.start_validation">[docs]</a>    <span class="k">def</span> <span class="nf">start_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_validation_start</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="n">evaluator</span><span class="o">.</span><span class="n">start_validation</span><span class="p">(</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting validation 🧪"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.end_validation"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.end_validation">[docs]</a>    <span class="k">def</span> <span class="nf">end_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_validation_end</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="n">evaluator</span><span class="o">.</span><span class="n">end_validation</span><span class="p">(</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_after_validation</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_after_validation</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Saving checkpoint after validation"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">checkpoint_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"ckpt_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Validation finished 🎉"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.start_testing"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.start_testing">[docs]</a>    <span class="k">def</span> <span class="nf">start_testing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_testing_start</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="n">evaluator</span><span class="o">.</span><span class="n">start_testing</span><span class="p">(</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting testing 🧪"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.end_testing"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.end_testing">[docs]</a>    <span class="k">def</span> <span class="nf">end_testing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_testing_end</span><span class="p">(</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="n">evaluator</span><span class="o">.</span><span class="n">end_testing</span><span class="p">(</span>
+                <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Testing finished 🎉"</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.train"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_dataloader</span><span class="p">:</span> <span class="n">DataLoader</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">train_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">train_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">train_dataloader</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_training_loop</span><span class="p">(</span><span class="n">train_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.validate"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">val_dataloader</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">val_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">val_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">val_dataloader</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">val_dataloader</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_loop</span><span class="p">(</span><span class="n">val_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.test"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.test">[docs]</a>    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">test_dataloader</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">test_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">test_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">test_dataloader</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span> <span class="o">=</span> <span class="n">test_dataloader</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">model_selection_metric_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load_best_model</span><span class="p">(</span>
+                    <span class="n">metric_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">model_selection_metric_name</span><span class="p">,</span>
+                    <span class="n">higher_is_better</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">[</span>
+                        <span class="mi">0</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">model_selection_metric_higher_is_better</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_testing_loop</span><span class="p">(</span>
+            <span class="n">test_dataloader</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_training_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_dataloader</span><span class="p">:</span> <span class="n">DataLoader</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">train_dataloader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">train_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span>
+
+        <span class="k">if</span> <span class="n">train_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_training</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_iters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">train_iters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">initial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_iters</span>
+            <span class="p">)</span> <span class="k">as</span> <span class="n">pbar_steps</span><span class="p">:</span>
+                <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_iters</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_train_iters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_train_iters</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_training</span><span class="p">()</span>
+
+                    <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">):</span>
+                        <span class="n">output_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_step</span><span class="p">(</span>
+                            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+                            <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_every_n_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_validation_loop</span><span class="p">()</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">check_manage_background_threads</span><span class="p">()</span>
+
+                        <span class="k">if</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_every_n_steps</span> <span class="o">==</span> <span class="mi">0</span>
+                            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                        <span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span>
+                                <span class="n">checkpoint_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"ckpt_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span>
+                            <span class="p">)</span>
+
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_iters</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_training</span><span class="p">()</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                        <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                                <span class="p">[</span>
+                                    <span class="n">value</span>
+                                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">output_list</span>
+                                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                    <span class="k">if</span> <span class="s2">"opt_loss"</span> <span class="ow">in</span> <span class="n">key</span>
+                                <span class="p">]</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+
+                        <span class="n">pbar_steps</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">pbar_steps</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loss: </span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_training</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_validation_loop</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">val_dataloader</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">val_dataloader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">val_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+
+        <span class="k">if</span> <span class="n">val_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_validation</span><span class="p">()</span>
+
+            <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">val_dataloader</span><span class="p">))</span> <span class="k">as</span> <span class="n">pbar_dataloaders</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">val_dataloader</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_val_iters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">batch_idx</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_val_iters</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">validation_step</span><span class="p">(</span>
+                        <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                        <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">pbar_dataloaders</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_validation</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_testing_loop</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">test_dataloader</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">test_dataloader</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">test_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_dataloader</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+
+        <span class="k">if</span> <span class="n">test_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_testing</span><span class="p">()</span>
+
+            <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">test_dataloader</span><span class="p">))</span> <span class="k">as</span> <span class="n">pbar_dataloaders</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">test_dataloader</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">testing_step</span><span class="p">(</span>
+                        <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                        <span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">pbar_dataloaders</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_testing</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Learner.save_checkpoint"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.save_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">save_checkpoint</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">checkpoint_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">ckpt_save_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoints_dir</span> <span class="o">/</span> <span class="n">checkpoint_name</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ckpt_save_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">ckpt_save_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">experiment_hyperparameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">step_idx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span><span class="p">,</span>
+            <span class="n">global_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">global_step</span><span class="p">,</span>
+            <span class="n">current_epoch_dict</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"train"</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">current_epoch_dict</span> <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span>
+                <span class="p">],</span>
+                <span class="s2">"eval"</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="n">evaluator</span><span class="o">.</span><span class="n">current_epoch_dict</span>
+                    <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span>
+                <span class="p">],</span>
+            <span class="p">},</span>
+            <span class="n">per_epoch_metrics</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"eval"</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="n">evaluator</span><span class="o">.</span><span class="n">per_epoch_metrics</span>
+                    <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span>
+                <span class="p">],</span>
+            <span class="p">},</span>
+            <span class="n">neptune_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">neptune_run</span><span class="o">.</span><span class="n">_id</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neptune_run</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="n">experiment_hyperparameters</span><span class="p">,</span>
+            <span class="n">f</span><span class="o">=</span><span class="n">ckpt_save_path</span> <span class="o">/</span> <span class="s2">"trainer_state.pt"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">save_state</span><span class="p">(</span><span class="n">ckpt_save_path</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved checkpoint to </span><span class="si">{</span><span class="n">ckpt_save_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_save_checkpoint</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">optimizers</span><span class="o">=</span><span class="p">[</span><span class="n">trainer</span><span class="o">.</span><span class="n">optimizer</span> <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">],</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">checkpoint_path</span><span class="o">=</span><span class="n">ckpt_save_path</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ckpt_save_path</span></div>
+
+<div class="viewcode-block" id="Learner.load_checkpoint"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.load_checkpoint">[docs]</a>    <span class="k">def</span> <span class="nf">load_checkpoint</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">checkpoint_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="n">checkpoint_path</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">checkpoint_path</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"trainer_state.pt"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading checkpoint from </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">trainer_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+            <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"trainer_state.pt"</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_idx</span> <span class="o">=</span> <span class="n">trainer_state</span><span class="p">[</span><span class="s2">"step_idx"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_step</span> <span class="o">=</span> <span class="n">trainer_state</span><span class="p">[</span><span class="s2">"global_step"</span><span class="p">]</span>
+        <span class="n">current_epoch_dict</span> <span class="o">=</span> <span class="n">trainer_state</span><span class="p">[</span><span class="s2">"current_epoch_dict"</span><span class="p">]</span>
+        <span class="n">per_epoch_metrics</span> <span class="o">=</span> <span class="n">trainer_state</span><span class="p">[</span><span class="s2">"per_epoch_metrics"</span><span class="p">]</span>
+
+        <span class="c1"># print(f"current_epoch_dict: {current_epoch_dict}")</span>
+        <span class="c1"># print(f"per_epoch_metrics: {per_epoch_metrics}")</span>
+
+        <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span>
+                <span class="n">trainer</span><span class="p">,</span>
+                <span class="s2">"current_epoch_dict"</span><span class="p">,</span>
+                <span class="n">current_epoch_dict</span><span class="p">[</span><span class="s2">"train"</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">trainer</span><span class="p">)],</span>
+            <span class="p">)</span>
+            <span class="c1"># print(f"Loaded trainer {trainer.__dict__}")</span>
+
+        <span class="k">for</span> <span class="n">evaluator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span>
+                <span class="n">evaluator</span><span class="p">,</span>
+                <span class="s2">"current_epoch_dict"</span><span class="p">,</span>
+                <span class="n">current_epoch_dict</span><span class="p">[</span><span class="s2">"eval"</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">evaluator</span><span class="p">)],</span>
+            <span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span>
+                <span class="n">evaluator</span><span class="p">,</span>
+                <span class="s2">"per_epoch_metrics"</span><span class="p">,</span>
+                <span class="n">per_epoch_metrics</span><span class="p">[</span><span class="s2">"eval"</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">evaluator</span><span class="p">)],</span>
+            <span class="p">)</span>
+            <span class="c1"># print(f"Loaded evaluator {evaluator.__dict__}")</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">accelerator</span><span class="o">.</span><span class="n">load_state</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback_handler</span><span class="o">.</span><span class="n">on_load_checkpoint</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">optimizers</span><span class="o">=</span><span class="p">[</span><span class="n">trainer</span><span class="o">.</span><span class="n">get_optimizer</span><span class="p">()</span> <span class="k">for</span> <span class="n">trainer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainers</span><span class="p">],</span>
+            <span class="n">experiment</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">checkpoint_path</span><span class="o">=</span><span class="n">checkpoint_path</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Learner.load_best_model"><a class="viewcode-back" href="../../../source/gate.boilerplate.html#gate.boilerplate.core.Learner.load_best_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_best_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metric_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">higher_is_better</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">best_global_step</span><span class="p">,</span> <span class="n">best_metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluators</span><span class="p">[</span>
+            <span class="mi">0</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">get_best_model_global_step_and_metric</span><span class="p">(</span><span class="n">metric_name</span><span class="p">,</span> <span class="n">higher_is_better</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Best </span><span class="si">{</span><span class="n">metric_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">best_metric</span><span class="si">}</span><span class="s2"> at step </span><span class="si">{</span><span class="n">best_global_step</span><span class="si">}</span><span class="s2">, downloading model..."</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"hf_repo_path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_repo_path</span><span class="si">}</span><span class="s2">, hf_cache_dir: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_cache_dir</span><span class="si">}</span><span class="s2">, model_name: ckpt_</span><span class="si">{</span><span class="n">best_global_step</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+        <span class="n">download_dict</span> <span class="o">=</span> <span class="n">download_model_with_name</span><span class="p">(</span>
+            <span class="n">hf_repo_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_repo_path</span><span class="p">,</span>
+            <span class="n">hf_cache_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_cache_dir</span><span class="p">,</span>
+            <span class="n">model_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"ckpt_</span><span class="si">{</span><span class="n">best_global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="o">=</span><span class="n">download_dict</span><span class="p">[</span><span class="s2">"root_filepath"</span><span class="p">])</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="c1"># a minimal example of how to use the Learner class</span>
+    <span class="kn">import</span> <span class="nn">torch</span>
+    <span class="kn">from</span> <span class="nn">datasets</span> <span class="kn">import</span> <span class="n">load_dataset</span>
+    <span class="kn">from</span> <span class="nn">rich</span> <span class="kn">import</span> <span class="nb">print</span>
+    <span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">CrossEntropyLoss</span>
+    <span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+    <span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+    <span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">Compose</span><span class="p">,</span> <span class="n">Resize</span><span class="p">,</span> <span class="n">ToTensor</span>
+
+    <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">"beans"</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">"train"</span><span class="p">)</span>
+    <span class="n">val_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">"beans"</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">"validation"</span><span class="p">)</span>
+    <span class="n">test_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">"beans"</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">"test"</span><span class="p">)</span>
+
+    <span class="n">augs</span> <span class="o">=</span> <span class="n">Compose</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">Resize</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">)),</span>
+            <span class="n">ToTensor</span><span class="p">(),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">transforms</span><span class="p">(</span><span class="n">examples</span><span class="p">):</span>
+        <span class="n">examples</span><span class="p">[</span><span class="s2">"image"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">augs</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">"RGB"</span><span class="p">))</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">[</span><span class="s2">"image"</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">examples</span>
+
+    <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">train_dataset</span><span class="o">.</span><span class="n">with_transform</span><span class="p">(</span><span class="n">transforms</span><span class="p">)</span>
+    <span class="n">val_dataset</span> <span class="o">=</span> <span class="n">val_dataset</span><span class="o">.</span><span class="n">with_transform</span><span class="p">(</span><span class="n">transforms</span><span class="p">)</span>
+    <span class="n">test_dataset</span> <span class="o">=</span> <span class="n">test_dataset</span><span class="o">.</span><span class="n">with_transform</span><span class="p">(</span><span class="n">transforms</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="n">examples</span><span class="p">):</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">example</span> <span class="ow">in</span> <span class="n">examples</span><span class="p">:</span>
+            <span class="n">images</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">example</span><span class="p">[</span><span class="s2">"image"</span><span class="p">]))</span>
+            <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">example</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">])</span>
+
+        <span class="n">pixel_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"image"</span><span class="p">:</span> <span class="n">pixel_values</span><span class="p">,</span> <span class="s2">"labels"</span><span class="p">:</span> <span class="n">labels</span><span class="p">}</span>
+
+    <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+        <span class="n">train_dataset</span><span class="p">,</span>
+        <span class="n">collate_fn</span><span class="o">=</span><span class="n">collate_fn</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">num_workers</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+        <span class="n">val_dataset</span><span class="p">,</span> <span class="n">collate_fn</span><span class="o">=</span><span class="n">collate_fn</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">8</span>
+    <span class="p">)</span>
+
+    <span class="n">test_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+        <span class="n">test_dataset</span><span class="p">,</span> <span class="n">collate_fn</span><span class="o">=</span><span class="n">collate_fn</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">8</span>
+    <span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">BeanResNet</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+                <span class="s2">"pytorch/vision:v0.9.0"</span><span class="p">,</span> <span class="s2">"resnet18"</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"logits"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">input_dict</span><span class="p">[</span><span class="s2">"image"</span><span class="p">])}</span>
+
+    <span class="n">bean_resnet</span> <span class="o">=</span> <span class="n">BeanResNet</span><span class="p">()</span>
+
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">bean_resnet</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">CrossEntropyLoss</span><span class="p">()</span>
+
+    <span class="n">experiment</span> <span class="o">=</span> <span class="n">Learner</span><span class="p">(</span>
+        <span class="n">experiment_name</span><span class="o">=</span><span class="s2">"debug_checkpointing"</span><span class="p">,</span>
+        <span class="n">root_dir</span><span class="o">=</span><span class="s2">"experiments/debug_checkpointing"</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">bean_resnet</span><span class="p">,</span>
+        <span class="n">train_dataloader</span><span class="o">=</span><span class="n">train_dataloader</span><span class="p">,</span>
+        <span class="n">val_dataloader</span><span class="o">=</span><span class="n">val_dataloader</span><span class="p">,</span>
+        <span class="n">test_dataloader</span><span class="o">=</span><span class="n">test_dataloader</span><span class="p">,</span>
+        <span class="n">trainers</span><span class="o">=</span><span class="p">[</span><span class="n">ClassificationTrainer</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)],</span>
+        <span class="n">evaluators</span><span class="o">=</span><span class="p">[</span><span class="n">ClassificationEvaluator</span><span class="p">()],</span>
+        <span class="n">evaluate_every_n_steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">checkpoint_every_n_steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">checkpoint_after_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">train_iters</span><span class="o">=</span><span class="mi">100000</span><span class="p">,</span>
+        <span class="n">resume</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">experiment</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+          </article>
+        </div>
+      </div>
+    </main>
+  </div>
+  <footer class="md-footer">
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+          
+          
+        </a>
+        
+      </nav>
+    </div>
+    <div class="md-footer-meta md-typeset">
+      <div class="md-footer-meta__inner md-grid">
+        <div class="md-footer-copyright">
+          <div class="md-footer-copyright__highlight">
+              &#169; Copyright 2023, Antreas Antoniou.
+              
+          </div>
+            Created using
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+             and
+            <a href="https://github.com/bashtage/sphinx-material/">Material for
+              Sphinx</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="../../../_static/javascripts/application.js"></script>
+  <script>app.initialize({version: "1.0.4", url: {base: ".."}})</script>
+  </body>
+</html>
