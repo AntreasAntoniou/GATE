@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+import time
 from typing import Any, Dict, Optional
+from accelerate.utils.constants import op
 
 import numpy as np
 import torch
+from torch.autograd import backward
 import torch.nn.functional as F
 from accelerate import Accelerator
 from sklearn.metrics import average_precision_score, brier_score_loss
@@ -42,9 +45,13 @@ class ClassificationTrainer(Trainer):
         #         print(f"{key}: {value.shape}")
         #     else:
         #         print(f"{key}: {value}") # uncomment for debugging
+        pre_forward_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        post_forward_time = time.time()
+        forward_time = post_forward_time - pre_forward_time
+        logger.info(f"Forward time: {forward_time} seconds")
 
         # model(image, text) -> image_preds -- source: image_text and target: image
         # model(image) -> image_preds -- source: image and target: image
@@ -72,7 +79,11 @@ class ClassificationTrainer(Trainer):
         else:
             loss = output_dict["loss"]
 
+        pre_backward_time = time.time()
         accelerator.backward(loss)
+        post_backward_time = time.time()
+        backward_time = post_backward_time - pre_backward_time
+        logger.info(f"Backward time: {backward_time} seconds")
         for key, value in output_dict.items():
             self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
@@ -100,8 +111,14 @@ class ClassificationTrainer(Trainer):
             accelerator=accelerator,
         )
 
+        pre_optimizer_step_time = time.time()
         self.optimizer.step()
         self.scheduler.step(global_step)
+        post_optimizer_step_time = time.time()
+        optimizer_step_time = (
+            post_optimizer_step_time - pre_optimizer_step_time
+        )
+        logger.info(f"Optimizer step time: {optimizer_step_time} seconds")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
