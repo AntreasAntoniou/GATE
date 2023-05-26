@@ -137,7 +137,7 @@ class Learner(nn.Module):
         self.test_dataloader = test_dataloader
 
         for name, params in self.model.named_parameters():
-            logger.info(f"{name}, {params.shape}")
+            logger.debug(f"{name}, {params.shape}")
 
         self.callbacks = (
             [callbacks] if isinstance(callbacks, Callback) else callbacks
@@ -218,7 +218,7 @@ class Learner(nn.Module):
 
         if print_model_parameters:
             for key, value in self.named_parameters():
-                logger.info(
+                logger.debug(
                     f"Parameter {key} -> {value.shape} requires grad {value.requires_grad}"
                 )
 
@@ -296,7 +296,7 @@ class Learner(nn.Module):
                 global_step=self.global_step,
             )
 
-        logger.info("Starting training 🏋🏽")
+        logger.debug("Starting training 🏋🏽")
 
     def end_training(self):
         self.callback_handler.on_train_end(
@@ -311,7 +311,7 @@ class Learner(nn.Module):
             self.check_manage_background_threads()
             sleep(1)
 
-        logger.info("Training finished 🎉")
+        logger.debug("Training finished 🎉")
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
@@ -335,7 +335,7 @@ class Learner(nn.Module):
                 global_step=self.global_step,
             )
 
-        logger.info("Starting validation 🧪")
+        logger.debug("Starting validation 🧪")
 
     def end_validation(self):
         self.callback_handler.on_validation_end(
@@ -346,12 +346,12 @@ class Learner(nn.Module):
             evaluator.end_validation(
                 global_step=self.global_step,
             )
-        logger.info(f"{self.checkpoint_after_validation}")
+        logger.debug(f"{self.checkpoint_after_validation}")
         if self.checkpoint_after_validation:
-            logger.info("Saving checkpoint after validation")
+            logger.debug("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
 
-        logger.info("Validation finished 🎉")
+        logger.debug("Validation finished 🎉")
 
     def start_testing(self):
         self.callback_handler.on_testing_start(
@@ -362,7 +362,7 @@ class Learner(nn.Module):
             evaluator.start_testing(
                 global_step=self.global_step,
             )
-            logger.info("Starting testing 🧪")
+            logger.debug("Starting testing 🧪")
 
     def end_testing(self):
         self.callback_handler.on_testing_end(
@@ -375,7 +375,7 @@ class Learner(nn.Module):
                 global_step=self.global_step,
             )
 
-        logger.info("Testing finished 🎉")
+        logger.debug("Testing finished 🎉")
 
     def train(self, train_dataloader: DataLoader = None):
         if train_dataloader is not None:
@@ -436,7 +436,7 @@ class Learner(nn.Module):
                     pre_batch_time = time.time()
                     for batch_idx, batch in enumerate(train_dataloader):
                         post_batch_time = time.time()
-                        logger.info(
+                        logger.debug(
                             f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
                         )
                         output_list = self.training_step(
@@ -497,7 +497,7 @@ class Learner(nn.Module):
                         if batch_idx >= self.limit_val_iters:
                             break
                     post_batch_time = time.time()
-                    logger.info(
+                    logger.debug(
                         f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
                     )
                     self.validation_step(
@@ -568,7 +568,7 @@ class Learner(nn.Module):
             f=ckpt_save_path / "trainer_state.pt",
         )
         self.accelerator.save_state(ckpt_save_path)
-        logger.info(f"Saved checkpoint to {ckpt_save_path}")
+        logger.debug(f"Saved checkpoint to {ckpt_save_path}")
         self.callback_handler.on_save_checkpoint(
             model=self.model,
             optimizers=[trainer.optimizer for trainer in self.trainers],
@@ -590,7 +590,7 @@ class Learner(nn.Module):
 
         if not (pathlib.Path(checkpoint_path) / "trainer_state.pt").exists():
             return
-        logger.info(f"Loading checkpoint from {checkpoint_path}")
+        logger.debug(f"Loading checkpoint from {checkpoint_path}")
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
         )

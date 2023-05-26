@@ -51,7 +51,7 @@ class ClassificationTrainer(Trainer):
         ]
         post_forward_time = time.time()
         forward_time = post_forward_time - pre_forward_time
-        logger.info(f"Forward time: {forward_time} seconds")
+        logger.debug(f"Forward time: {forward_time} seconds")
 
         # model(image, text) -> image_preds -- source: image_text and target: image
         # model(image) -> image_preds -- source: image and target: image
@@ -83,7 +83,7 @@ class ClassificationTrainer(Trainer):
         accelerator.backward(loss)
         post_backward_time = time.time()
         backward_time = post_backward_time - pre_backward_time
-        logger.info(f"Backward time: {backward_time} seconds")
+        logger.debug(f"Backward time: {backward_time} seconds")
         for key, value in output_dict.items():
             self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
@@ -118,7 +118,7 @@ class ClassificationTrainer(Trainer):
         optimizer_step_time = (
             post_optimizer_step_time - pre_optimizer_step_time
         )
-        logger.info(f"Optimizer step time: {optimizer_step_time} seconds")
+        logger.debug(f"Optimizer step time: {optimizer_step_time} seconds")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
