@@ -1,6 +1,6 @@
 # imdb.py
-from typing import Optional, Any
 from dataclasses import dataclass
+from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
@@ -8,9 +8,8 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import (
-    ClassificationTask,
-)
+from gate.data.tasks.classification import ClassificationTask
+
 
 def build_imdb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
@@ -47,6 +46,7 @@ def build_imdb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
     return dataset_dict[set_name]
 
+
 @configurable(
     group="dataset", name="imdb", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -81,11 +81,13 @@ def build_gate_imdb_dataset(
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
 
+
 @dataclass
 class DefaultHyperparameters:
     train_batch_size: int = 32
     eval_batch_size: int = 128
     num_classes: int = 2
+
 
 # For debugging purposes
 if __name__ == "__main__":

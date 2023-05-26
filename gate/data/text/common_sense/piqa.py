@@ -1,5 +1,5 @@
 # piqa.py
-from typing import Optional, Any
+from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
@@ -7,9 +7,8 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.common_sense import (
-    PIQATask,
-)
+from gate.data.tasks.common_sense import PIQATask
+
 
 def build_piqa_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
@@ -48,6 +47,7 @@ def build_piqa_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
     return dataset_dict[set_name]
 
+
 @configurable(
     group="dataset", name="piqa", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -81,7 +81,7 @@ def build_gate_piqa_dataset(
 
 
 # For debugging and testing purposes
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("BEFORE TRANSFORMING THE DATASET")
     train_data = build_piqa_dataset("train")
     print(train_data[0])

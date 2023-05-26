@@ -1,5 +1,5 @@
 # multi_fc.py
-from typing import Optional, Any
+from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
@@ -7,9 +7,8 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.fact_checking import (
-    MultiFCTask,
-)
+from gate.data.tasks.fact_checking import MultiFCTask
+
 
 def build_multi_fc_dataset(
     set_name: str, data_dir: Optional[str] = None
@@ -50,6 +49,7 @@ def build_multi_fc_dataset(
 
     return dataset_dict[set_name]
 
+
 @configurable(
     group="dataset", name="multi_fc", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -81,8 +81,9 @@ def build_gate_multi_fc_dataset(
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
 
+
 # For debugging and testing purposes
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("BEFORE TRANSFORMING THE DATASET")
     train_data = build_multi_fc_dataset("train")
     print(train_data[12])

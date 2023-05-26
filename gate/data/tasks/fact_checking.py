@@ -4,9 +4,7 @@ from typing import Any
 class MultiFCTask:
     def __init__(self):
         super().__init__()
-        self.labels = {
-
-        }
+        self.labels = {}
 
     def __call__(self, inputs) -> Any:
         """_summary_
@@ -32,7 +30,7 @@ class MultiFCTask:
         'article title': None,
         'publish date': '2015-11-10T21:50:05',
         'climate': '2015-11-10',
-        'entities': "['United_States']"       
+        'entities': "['United_States']"
         }
 
         Please note that the train dataset has 27.9K rows with labels distributed as follows:
@@ -43,13 +41,13 @@ class MultiFCTask:
             'determination: false', 'investigation pending!', 'determination: a stretch', 'mostly-correct', 'mostly_true', 'in-the-red', 'factscan score: misleading',
             'disputed!', 'verdict: false', 'verified', 'miscaptioned', '3', 'promise kept', 'some baloney', 'determination: huckster propaganda', 'rating: false',
             'unsupported', 'factscan score: true', 'unobservable', 'outdated!', 'mixture', 'misleading!', 'true', 'spins the facts', 'full flop', 'distorts the facts',
-            'mostly fiction!', 'we rate this claim false', 'authorship confirmed!', 'mostly truth!', '3 pinnochios', 'conclusion: accurate', 'scam!', 'incorrect 
-            attribution!', 'needs context', 'a lot of baloney', 'not yet rated', 'mostly_false', 'virus!', 'truth! & outdated!', 'false', 'truth! & unproven!', 
-            'mostly false', '1', 'in-the-green', 'accurate', 'determination: misleading', 'inaccurate attribution!', 'cherry picks', None, '4', '10', 'promise 
-            broken', 'factscan score: false', '4 pinnochios', 'legend', 'bogus warning', 'correct attribution', 'none', 'opinion!', '2 pinnochios', 'fiction!', 
-            'statirical reports', 'partly true', 'determination: true', 'truth! & fiction!', 'correct', 'conclusion: unclear', 'not the whole story', 'half flip', 
-            'understated', 'exaggerates', 'unproven', 'verdict: true', 'misattributed', 'commentary!', 'outdated', 'half true', 'facebook scams', 'no flip', 'pants 
-            on fire!', 'scam', 'unproven!', 'previously truth! now resolved!', 'partially true', 'fiction! & satire!', 'truth! & disputed!', 'true messages', 
+            'mostly fiction!', 'we rate this claim false', 'authorship confirmed!', 'mostly truth!', '3 pinnochios', 'conclusion: accurate', 'scam!', 'incorrect
+            attribution!', 'needs context', 'a lot of baloney', 'not yet rated', 'mostly_false', 'virus!', 'truth! & outdated!', 'false', 'truth! & unproven!',
+            'mostly false', '1', 'in-the-green', 'accurate', 'determination: misleading', 'inaccurate attribution!', 'cherry picks', None, '4', '10', 'promise
+            broken', 'factscan score: false', '4 pinnochios', 'legend', 'bogus warning', 'correct attribution', 'none', 'opinion!', '2 pinnochios', 'fiction!',
+            'statirical reports', 'partly true', 'determination: true', 'truth! & fiction!', 'correct', 'conclusion: unclear', 'not the whole story', 'half flip',
+            'understated', 'exaggerates', 'unproven', 'verdict: true', 'misattributed', 'commentary!', 'outdated', 'half true', 'facebook scams', 'no flip', 'pants
+            on fire!', 'scam', 'unproven!', 'previously truth! now resolved!', 'partially true', 'fiction! & satire!', 'truth! & disputed!', 'true messages',
             'conclusion: false', 'compromise', 'exaggerated', 'unverified', 'mostly true', 'misleading'
         }
         We took no decision in unifiying these labels under a common index and left this to the user chosen transformation.
@@ -69,7 +67,7 @@ class MultiFCTask:
                     "publish_date": inputs["publish date"],
                     "climate": inputs["climate"],
                     "entities": inputs["entities"],
-                }
+                },
             },
-            "labels": inputs["label"]
+            "labels": inputs["label"],
         }

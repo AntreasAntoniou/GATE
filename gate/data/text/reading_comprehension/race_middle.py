@@ -1,5 +1,5 @@
 # race_middle.py
-from typing import Optional, Any
+from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
@@ -7,9 +7,8 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.reading_comprehension import (
-    RACETask,
-)
+from gate.data.tasks.reading_comprehension import RACETask
+
 
 def build_race_middle_dataset(
     set_name: str, data_dir: Optional[str] = None
@@ -53,6 +52,7 @@ def build_race_middle_dataset(
 
     return dataset_dict[set_name]
 
+
 @configurable(
     group="dataset", name="race_middle", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -84,8 +84,9 @@ def build_gate_race_middle_dataset(
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
 
+
 # For debugging and testing purposes
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("BEFORE TRANSFORMING THE DATASET")
     data = build_race_middle_dataset("test")
     print(data[12])
