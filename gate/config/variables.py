@@ -23,7 +23,9 @@ CURRENT_EXPERIMENT_DIR = get_env_var(
 )
 TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
 EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
-NUM_WORKERS = get_env_var("NUM_WORKERS", min(mp.cpu_count(), 16))
+NUM_WORKERS = get_env_var(
+    "NUM_WORKERS", mp.cpu_count()
+)  # min(mp.cpu_count(), 16))
 PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", True)
 PIN_MEMORY = get_env_var("PIN_MEMORY", True)
