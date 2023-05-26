@@ -27,6 +27,8 @@ RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances 
 RUN mamba install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
 
 RUN echo y | pip install nvitop --upgrade
+RUN mamba install -c conda-forge git-crypt -y
+
 
 RUN conda init bash
 RUN conda init fish
