@@ -1,13 +1,13 @@
 import json
 import pathlib
 from typing import Any, Counter, Dict, List, Optional
-import PIL.Image as Image
 
 import datasets
 import numpy as np
+import PIL.Image as Image
 import torch
-from omegaconf import DictConfig
 import torchvision.transforms as T
+from omegaconf import DictConfig
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
 
