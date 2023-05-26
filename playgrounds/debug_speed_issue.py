@@ -17,7 +17,12 @@ dataset_dict = build_gate_dataset(
 
 # Create a DataLoader with batch size 1 to load one sample at a time
 data_loader = DataLoader(
-    dataset_dict["train"], batch_size=1, shuffle=True, num_workers=4
+    dataset_dict["train"],
+    batch_size=256,
+    shuffle=True,
+    num_workers=64,
+    pin_memory=True,
+    persistent_workers=True,
 )
 
 # Array to store loading times
