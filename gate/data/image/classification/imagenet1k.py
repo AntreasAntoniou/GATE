@@ -74,9 +74,9 @@ def build_gate_dataset(
         transforms=[
             train_augment,
             transforms,
-            ClassificationTask(
-                key_remapper_dict={"pixel_values": "image"},
-            ),
+            # ClassificationTask(
+            #     key_remapper_dict={"pixel_values": "image"},
+            # ),
         ],
     )
 
@@ -85,9 +85,9 @@ def build_gate_dataset(
         infinite_sampling=False,
         transforms=[
             transforms,
-            ClassificationTask(
-                key_remapper_dict={"pixel_values": "image"},
-            ),
+            # ClassificationTask(
+            #     key_remapper_dict={"pixel_values": "image"},
+            # ),
         ],
     )
 
@@ -96,9 +96,9 @@ def build_gate_dataset(
         infinite_sampling=False,
         transforms=[
             transforms,
-            ClassificationTask(
-                key_remapper_dict={"pixel_values": "image"},
-            ),
+            # ClassificationTask(
+            #     key_remapper_dict={"pixel_values": "image"},
+            # ),
         ],
     )
 
