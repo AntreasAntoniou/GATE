@@ -214,7 +214,6 @@ class GATEDataset(Dataset):
         if self.transforms is not None:
             if isinstance(self.transforms, list):
                 for transform in self.transforms:
-                    print(transform)
                     if transform is not None:
                         item = transform(item)
             else:
