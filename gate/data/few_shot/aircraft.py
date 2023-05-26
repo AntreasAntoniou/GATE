@@ -103,17 +103,15 @@ def preprocess_transforms(sample: Tuple):
 
 def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     """
-    Build a SVHN dataset using the Hugging Face datasets library.
+    Build an Aircraft dataset.
 
-    Args:
-        data_dir: The directory where the dataset cache is stored.
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param data_dir: The directory where the dataset is stored.
+    :type data_dir: str
+    :param set_name: The name of the dataset split to return ("train", "val", or "test").
+    :type set_name: str
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
-
     if set_name not in ["train", "val", "test"]:
         raise KeyError(f"Invalid set name: {set_name}")
 
@@ -138,16 +136,6 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     )
 
     return data_set
-
-
-from rich import print
-
-
-# def key_mapper(input_dict):
-#     return {
-#         "image": input_dict["image"],
-#         "labels": input_dict["labels"],
-#     }
 
 
 def key_mapper(input_dict):

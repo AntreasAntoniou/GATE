@@ -1,22 +1,20 @@
 # imdb.py
-from typing import Optional
+from typing import Dict, Optional
 
 import numpy as np
 from datasets import load_dataset
 
 
-def build_imdb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_imdb_dataset(data_dir: str, set_name: str) -> Dict:
     """
-    Build a imdb dataset using the Hugging Face datasets library.
-    https://huggingface.co/datasets/imdb
+    Build an IMDB dataset using the Hugging Face datasets library.
 
-    Args:
-        data_dir: The directory where the dataset cache is stored.
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param data_dir: The directory where the dataset cache is stored.
+    :type data_dir: str
+    :param set_name: The name of the dataset split to return ("train", "val", or "test").
+    :type set_name: str
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
     rng = np.random.RandomState(42)
 
