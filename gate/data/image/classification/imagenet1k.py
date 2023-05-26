@@ -32,6 +32,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         cache_dir=data_dir,
         task="image-classification",
         num_proc=mp.cpu_count(),
+        keep_in_memory=True,
     )
     train_val_data = data["train"]
     test_data = data["validation"]
