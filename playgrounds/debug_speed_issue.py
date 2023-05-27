@@ -28,7 +28,7 @@ train_val_data.set_transform(clip_classifier.transform)
 # Create a DataLoader with batch size 1 to load one sample at a time
 data_loader = DataLoader(
     train_val_data,
-    batch_size=256,
+    batch_size=128,
     shuffle=True,
     num_workers=mp.cpu_count(),
     pin_memory=True,
