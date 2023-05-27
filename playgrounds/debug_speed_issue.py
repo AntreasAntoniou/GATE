@@ -1,6 +1,7 @@
 import os
 import time
 import numpy as np
+import multiprocessing as mp
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -20,7 +21,7 @@ data_loader = DataLoader(
     dataset_dict["train"],
     batch_size=256,
     shuffle=True,
-    num_workers=64,
+    num_workers=mp.cpu_count(),
     pin_memory=True,
     persistent_workers=True,
 )
