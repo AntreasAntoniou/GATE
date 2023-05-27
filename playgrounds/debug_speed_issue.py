@@ -23,7 +23,7 @@ train_val_data = load_dataset(
     cache_dir=os.environ["DATASET_DIR"],
     task="image-classification",
     num_proc=mp.cpu_count(),
-)
+).with_format("torch")
 train_val_data = train_val_data.set_transform(clip_classifier.transform)
 # Create a DataLoader with batch size 1 to load one sample at a time
 data_loader = DataLoader(
