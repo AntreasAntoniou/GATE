@@ -16,22 +16,25 @@ clip_classifier = build_gate_clip_model()
 dataset_dict = build_gate_dataset(
     data_dir=os.environ["DATASET_DIR"], transforms=clip_classifier.transform
 )
+train_val_data = dataset_dict["train"]
 
-train_val_data = load_dataset(
-    path="food101",
-    split="train",
-    cache_dir=os.environ["DATASET_DIR"],
-    task="image-classification",
-    num_proc=mp.cpu_count(),
-    keep_in_memory=True,
-).with_format("torch")
-train_val_data.set_transform(clip_classifier.transform)
+print()
+
+# train_val_data = load_dataset(
+#     path="food101",
+#     split="train",
+#     cache_dir=os.environ["DATASET_DIR"],
+#     task="image-classification",
+#     num_proc=mp.cpu_count(),
+#     keep_in_memory=True,
+# ).with_format("torch")
+# train_val_data.set_transform(clip_classifier.transform)
 # Create a DataLoader with batch size 1 to load one sample at a time
 data_loader = DataLoader(
     train_val_data,
     batch_size=128,
     shuffle=True,
-    num_workers=mp.cpu_count(),
+    num_workers=8,
     pin_memory=True,
     persistent_workers=True,
 )
@@ -46,10 +49,10 @@ with tqdm(total=100) as pbar:
         if i >= 100:  # We only measure the first 100 data points
             break
         end_time = time.time()
-        start_time = time.time()
 
         loading_times.append(end_time - start_time)
         pbar.update(1)
+        start_time = time.time()
 
 # Convert to numpy array for easier manipulation
 loading_times = np.array(loading_times)
