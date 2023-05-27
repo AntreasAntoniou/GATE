@@ -1,5 +1,6 @@
 # librispeech.py
 from typing import Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
@@ -25,6 +26,7 @@ def build_librispeech_dataset(
         name="clean",
         split=f"train.{hours}",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -32,6 +34,7 @@ def build_librispeech_dataset(
         name="clean",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

@@ -1,14 +1,13 @@
 # food101.py
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-
+import multiprocessing as mp
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 
 logger = get_logger(name=__name__, set_rich=True)
 
@@ -33,7 +32,10 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     )
 
     dataset = load_dataset(
-        path=HF_DATASET_PATH, cache_dir=data_dir, split="train"
+        path=HF_DATASET_PATH,
+        cache_dir=data_dir,
+        split="train",
+        num_proc=mp.cpu_count(),
     )
 
     train_val_test_data = dataset.train_test_split(test_size=0.50)

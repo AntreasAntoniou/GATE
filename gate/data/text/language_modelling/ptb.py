@@ -3,6 +3,7 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
+import multiprocessing as mp
 
 
 def build_ptb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
