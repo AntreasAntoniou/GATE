@@ -3,6 +3,7 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
+import multiprocessing as mp
 
 
 def build_trivia_qa_dataset(
@@ -27,6 +28,7 @@ def build_trivia_qa_dataset(
         "rc",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     val_set = load_dataset(
@@ -34,6 +36,7 @@ def build_trivia_qa_dataset(
         "rc",
         split="validation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_set = load_dataset(
@@ -41,6 +44,7 @@ def build_trivia_qa_dataset(
         "rc",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

@@ -1,5 +1,6 @@
 # imdb.py
 from typing import Dict, Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
@@ -22,12 +23,14 @@ def build_imdb_dataset(data_dir: str, set_name: str) -> Dict:
         path="imdb",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
         path="imdb",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

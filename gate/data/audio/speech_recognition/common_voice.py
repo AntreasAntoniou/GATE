@@ -1,5 +1,6 @@
 # common_voice.py
 from typing import Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
@@ -30,6 +31,7 @@ def build_common_voice_dataset(
         name=language,
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -37,6 +39,7 @@ def build_common_voice_dataset(
         name=language,
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

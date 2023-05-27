@@ -224,23 +224,9 @@ class GATEDataset(Dataset):
         if self.infinite_sampling:
             index = index % len(self.dataset)
 
-        pre_fetch_time = time.time()
         item = self.dataset[index]
-        post_fetch_time = time.time()
-        logger.debug(f"fetch time: {post_fetch_time - pre_fetch_time:.4f}")
 
-        pre_transform_time = time.time()
         item = self._apply_transforms(item)
-        post_transform_time = time.time()
-        logger.debug(
-            f"transform time: {post_transform_time - pre_transform_time:.4f}"
-        )
-
-        # for key, value in item.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(
-        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
-        #         )
 
         # Apply the task to the item if it exists
         return item

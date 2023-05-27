@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import torch
 import torchvision.transforms as T
+import multiprocessing as mp
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
@@ -41,17 +42,20 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         path="dali-does/clevr-math",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     validation_set = load_dataset(
         path="dali-does/clevr-math",
         split="validation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
     test_set = load_dataset(
         path="dali-does/clevr-math",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     dataset_dict = {
