@@ -14,13 +14,6 @@ from gate.data.tasks.classification import ClassificationTask
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 
-def transform_wrapper(inputs: Dict, target_size=224):
-    return {
-        "image": pad_image(inputs["image"], target_size=target_size),
-        "labels": inputs["labels"],
-    }
-
-
 def build_cifar100_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
@@ -85,6 +78,13 @@ def build_cifar100_dataset(
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
 
     return dataset_dict[set_name]
+
+
+def transform_wrapper(inputs: Dict, target_size=224):
+    return {
+        "image": pad_image(inputs["image"], target_size=target_size),
+        "labels": inputs["labels"],
+    }
 
 
 @configurable(

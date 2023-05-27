@@ -71,27 +71,18 @@ def build_gate_svhn_dataset(
     train_set = GATEDataset(
         dataset=build_svhn_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        item_keys=["image", "labels"],
         transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_svhn_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        item_keys=["image", "labels"],
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_svhn_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        item_keys=["image", "labels"],
         transforms=[transform_wrapper, transforms],
     )
 
