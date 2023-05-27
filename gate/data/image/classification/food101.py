@@ -41,7 +41,6 @@ def build_food101_dataset(
         cache_dir=data_dir,
         task="image-classification",
         num_proc=mp.cpu_count(),
-        keep_in_memory=True,
     )
 
     test_set = load_dataset(
@@ -50,7 +49,6 @@ def build_food101_dataset(
         cache_dir=data_dir,
         task="image-classification",
         num_proc=mp.cpu_count(),
-        keep_in_memory=True,
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)
