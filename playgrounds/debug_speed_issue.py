@@ -41,13 +41,15 @@ loading_times = []
 
 # Measure the loading speed for 100 data points
 start_time = time.time()
-for i, data in tqdm(enumerate(data_loader)):
-    if i >= 100:  # We only measure the first 100 data points
-        break
-    end_time = time.time()
-    start_time = time.time()
+with tqdm(total=100) as pbar:
+    for i, data in enumerate(data_loader):
+        if i >= 100:  # We only measure the first 100 data points
+            break
+        end_time = time.time()
+        start_time = time.time()
 
-    loading_times.append(end_time - start_time)
+        loading_times.append(end_time - start_time)
+        pbar.update(1)
 
 # Convert to numpy array for easier manipulation
 loading_times = np.array(loading_times)
