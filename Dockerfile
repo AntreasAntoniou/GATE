@@ -24,10 +24,7 @@ SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 
 RUN conda install -c conda-forge mamba -y
 RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat -y
-RUN mamba install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
-
-RUN echo y | pip install nvitop --upgrade
-RUN mamba install -c conda-forge git-crypt -y
+RUN mamba install -c conda-forge git-crypt nvitop -y
 
 
 RUN conda init bash
@@ -46,7 +43,6 @@ ADD setup.py /app/
 RUN echo y | pip install /app/[dev]
 
 RUN pip install -e learn2learn
-
 
 
 ENTRYPOINT ["/bin/bash"]
