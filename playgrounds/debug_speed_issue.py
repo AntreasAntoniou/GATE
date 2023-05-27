@@ -5,7 +5,7 @@ import multiprocessing as mp
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from gate.data.image.classification.imagenet1k import build_gate_dataset
+from gate.data.image.classification.food101 import build_gate_dataset
 from gate.models.task_specific_models.classification.clip import (
     build_gate_clip_model,
 )

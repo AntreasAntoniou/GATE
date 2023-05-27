@@ -55,7 +55,7 @@ def build_gate_dataset(
     transforms: Optional[Any] = None,
     num_classes=1000,
 ) -> dict:
-    rand_augment = rand_augment_transform("rand-m7-mstd0.5-inc1", hparams={})
+    # rand_augment = rand_augment_transform("rand-m7-mstd0.5-inc1", hparams={})
     single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 
     def train_augment(input_dict):
@@ -64,7 +64,7 @@ def build_gate_dataset(
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)
-        input_dict["image"] = rand_augment(x)
+        input_dict["image"] = x
 
         return input_dict
 
