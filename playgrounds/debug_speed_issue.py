@@ -1,5 +1,6 @@
 import os
 import time
+from datasets import load_dataset
 import numpy as np
 import multiprocessing as mp
 from torch.utils.data import DataLoader
@@ -16,9 +17,17 @@ dataset_dict = build_gate_dataset(
     data_dir=os.environ["DATASET_DIR"], transforms=clip_classifier.transform
 )
 
+train_val_data = load_dataset(
+    path="food101",
+    split="train",
+    cache_dir=os.environ["DATASET_DIR"],
+    task="image-classification",
+    num_proc=mp.cpu_count(),
+)
+train_val_data = train_val_data.set_transform(clip_classifier.transform)
 # Create a DataLoader with batch size 1 to load one sample at a time
 data_loader = DataLoader(
-    dataset_dict["train"],
+    train_val_data,
     batch_size=256,
     shuffle=True,
     num_workers=mp.cpu_count(),
@@ -30,17 +39,12 @@ data_loader = DataLoader(
 loading_times = []
 
 # Measure the loading speed for 100 data points
+start_time = time.time()
 for i, data in tqdm(enumerate(data_loader)):
-    if i >= 1000:  # We only measure the first 100 data points
+    if i >= 100:  # We only measure the first 100 data points
         break
-
-    start_time = time.time()
-
-    # Here, data is a single data point from the dataset
-    # You can replace the pass statement with your processing code
-    pass
-
     end_time = time.time()
+    start_time = time.time()
 
     loading_times.append(end_time - start_time)
 
