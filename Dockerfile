@@ -39,6 +39,10 @@ RUN git clone https://github.com/mlguild/learn2learn.git
 RUN mkdir /app/
 ADD gate/ /app/gate
 ADD setup.py /app/
+ADD requirements.txt /app/
+ADD requirements_dev.txt /app/
+
+RUN echo y | pip install -r /app/requirements_dev.txt
 
 RUN echo y | pip install /app/[dev]
 
