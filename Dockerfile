@@ -41,10 +41,11 @@ ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
 ADD setup.py /app/
 RUN echo y | pip install -r /app/requirements_dev.txt
+RUN pip install -e learn2learn
 
 ADD gate/ /app/gate
 RUN echo y | pip install /app/[dev]
-RUN pip install -e learn2learn
+
 
 
 ENTRYPOINT ["/bin/bash"]

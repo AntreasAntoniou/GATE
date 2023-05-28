@@ -113,7 +113,7 @@ class ClassificationTrainer(Trainer):
 
         pre_optimizer_step_time = time.time()
         self.optimizer.step()
-        self.scheduler.step(global_step)
+        self.scheduler.step(step_output.loss)
         post_optimizer_step_time = time.time()
         optimizer_step_time = (
             post_optimizer_step_time - pre_optimizer_step_time

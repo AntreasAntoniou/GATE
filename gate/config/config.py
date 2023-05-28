@@ -10,7 +10,14 @@ from hydra_zen import MISSING, ZenField, builds, make_config
 from omegaconf import OmegaConf
 from rich import print
 from rich.syntax import Syntax
-from timm.scheduler import CosineLRScheduler
+from timm.scheduler import (
+    CosineLRScheduler,
+    PlateauLRScheduler,
+    StepLRScheduler,
+    TanhLRScheduler,
+    PolyLRScheduler,
+    MultiStepLRScheduler,
+)
 from timm.optim import AdamW
 from torch.utils.data import DataLoader
 
@@ -150,7 +157,7 @@ def collect_config_store():
     config_store.store(
         group="optimizer",
         name="adamw",
-        node=adamw_optimizer_config(lr=1e-3, weight_decay=0.0),
+        node=adamw_optimizer_config(lr=1e-1, weight_decay=0.00001),
     )
 
     ##########################################################################
@@ -162,14 +169,38 @@ def collect_config_store():
         zen_partial=True,
     )
 
-    cosine_learning_rate_scheduler_config = (
-        cosine_learning_rate_scheduler_config()
+    config_store.store(
+        group="scheduler",
+        name="cosine-annealing",
+        node=cosine_learning_rate_scheduler_config(),
+    )
+
+    plateu_learning_rate_scheduler_config = builds(
+        PlateauLRScheduler,
+        populate_full_signature=True,
+        zen_partial=True,
     )
 
     config_store.store(
         group="scheduler",
-        name="cosine-annealing",
-        node=cosine_learning_rate_scheduler_config,
+        name="plateu",
+        node=plateu_learning_rate_scheduler_config(
+            decay_rate=0.1,
+            patience_t=50,
+            verbose=True,
+            threshold=1e-4,
+            cooldown_t=0,
+            warmup_t=0,
+            warmup_lr_init=0,
+            lr_min=0,
+            mode="min",
+            noise_range_t=None,
+            noise_type="normal",
+            noise_pct=0.67,
+            noise_std=1.0,
+            noise_seed=None,
+            initialize=True,
+        ),
     )
 
     ##########################################################################
@@ -226,7 +257,7 @@ def collect_config_store():
             "_self_",
             dict(learner="default"),
             dict(optimizer="adamw"),
-            dict(scheduler="cosine-annealing"),
+            dict(scheduler="plateu"),
             dict(model="clip-classification"),
             dict(dataset="cifar100"),
             dict(trainer="image_classification"),

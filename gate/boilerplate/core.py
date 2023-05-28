@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
-from accelerate import Accelerator, DistributedDataParallelKwargs
+from accelerate import Accelerator
 from neptune import Run
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -24,11 +24,9 @@ from gate.config.variables import (
     RESUME,
 )
 from gate.orchestration.evaluators.classification import (
-    ClassificationEvaluator,
     Evaluator,
 )
 from gate.orchestration.trainers.classification import (
-    ClassificationTrainer,
     Trainer,
 )
 
