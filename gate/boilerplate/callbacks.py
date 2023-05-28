@@ -347,23 +347,11 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
 
     def run(self):
         try:
-            # Save the original stdout and stderr
-            original_stdout = sys.stdout
-            original_stderr = sys.stderr
-
-            # Redirect stdout and stderr to os.devnull
-            sys.stdout = open(os.devnull, "w")
-            sys.stderr = open(os.devnull, "w")
-
             self.hf_api.upload_folder(
                 repo_id=f"{self.repo_owner}/{self.repo_name}",
                 folder_path=self.checkpoint_path,
                 path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
             )
-
-            # Restore the original stdout and stderr
-            sys.stdout = original_stdout
-            sys.stderr = original_stderr
 
             self.done = True
         except Exception as e:
