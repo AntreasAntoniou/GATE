@@ -431,10 +431,6 @@ class Learner(nn.Module):
                         if self.step_idx >= self.limit_train_iters:
                             return self.end_training()
 
-                    if self.step_idx % self.evaluate_every_n_steps == 0:
-                        self._validation_loop()
-                        self.check_manage_background_threads()
-
                     for batch_idx, batch in enumerate(train_dataloader):
                         output_list = self.training_step(
                             model=self.model,
@@ -450,6 +446,10 @@ class Learner(nn.Module):
                             self.save_checkpoint(
                                 checkpoint_name=f"ckpt_{self.global_step}"
                             )
+
+                        if self.step_idx % self.evaluate_every_n_steps == 0:
+                            self._validation_loop()
+                            self.check_manage_background_threads()
 
                         if self.step_idx >= self.train_iters:
                             return self.end_training()
