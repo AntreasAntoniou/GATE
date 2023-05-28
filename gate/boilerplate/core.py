@@ -48,7 +48,6 @@ accelerate_logger = get_logger("accelerate", logging_level="ERROR")
         resume=RESUME,
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
-        checkpoint_every_n_steps=500,
         train_iters=HYDRATED_TRAIN_ITERS,
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
@@ -64,21 +63,21 @@ class Learner(nn.Module):
         root_dir: Union[str, Path],
         model: torch.nn.Module,
         resume: Union[bool, str] = False,
-        evaluate_every_n_steps: int = None,
-        checkpoint_every_n_steps: int = None,
-        checkpoint_after_validation: bool = False,
-        train_iters: int = None,
-        train_dataloader: DataLoader = None,
-        limit_train_iters: int = None,
-        val_dataloader: Union[List[DataLoader], DataLoader] = None,
-        limit_val_iters: int = None,
-        test_dataloader: Union[List[DataLoader], DataLoader] = None,
-        trainers: Union[List[Trainer], Trainer] = None,
-        evaluators: Union[List[Evaluator], Evaluator] = None,
-        callbacks: Union[List[Callback], Callback] = None,
-        print_model_parameters: bool = False,
-        hf_cache_dir: str = None,
-        hf_repo_path: str = None,
+        evaluate_every_n_steps: Optional[int] = None,
+        checkpoint_every_n_steps: Optional[int] = None,
+        checkpoint_after_validation: Optional[bool] = False,
+        train_iters: Optional[int] = None,
+        train_dataloader: Optional[DataLoader] = None,
+        limit_train_iters: Optional[int] = None,
+        val_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
+        limit_val_iters: Optional[int] = None,
+        test_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
+        trainers: Optional[Union[List[Trainer], Trainer]] = None,
+        evaluators: Optional[Union[List[Evaluator], Evaluator]] = None,
+        callbacks: Optional[Union[List[Callback], Callback]] = None,
+        print_model_parameters: Optional[bool] = False,
+        hf_cache_dir: Optional[str] = None,
+        hf_repo_path: Optional[str] = None,
         experiment_tracker: Optional[Run] = None,
         dummy_batch_mode: Optional[bool] = False,
     ):
@@ -119,7 +118,7 @@ class Learner(nn.Module):
 
         self.model = model
         self.evaluate_every_n_steps = evaluate_every_n_steps
-        self.checkpoint_every_n_steps = checkpoint_every_n_steps or 99999999999
+        self.checkpoint_every_n_steps = checkpoint_every_n_steps
         self.checkpoint_after_validation = checkpoint_after_validation
         self.step_idx = 0
         self.global_step = 0
@@ -433,23 +432,21 @@ class Learner(nn.Module):
                     if self.limit_train_iters is not None:
                         if self.step_idx >= self.limit_train_iters:
                             return self.end_training()
-                    pre_batch_time = time.time()
+
+                    if self.step_idx % self.evaluate_every_n_steps == 0:
+                        self._validation_loop()
+                        self.check_manage_background_threads()
+
                     for batch_idx, batch in enumerate(train_dataloader):
-                        post_batch_time = time.time()
-                        logger.debug(
-                            f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
-                        )
                         output_list = self.training_step(
                             model=self.model,
                             batch=batch,
                         )
 
-                        if self.step_idx % self.evaluate_every_n_steps == 0:
-                            self._validation_loop()
-                            self.check_manage_background_threads()
-
                         if (
-                            self.step_idx % self.checkpoint_every_n_steps == 0
+                            self.checkpoint_every_n_steps is not None
+                            and self.step_idx % self.checkpoint_every_n_steps
+                            == 0
                             and self.step_idx > 0
                         ):
                             self.save_checkpoint(
