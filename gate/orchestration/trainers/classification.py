@@ -121,7 +121,7 @@ class ClassificationTrainer(Trainer):
         logger.debug(f"Optimizer step time: {optimizer_step_time} seconds")
 
         metrics = step_output.output_metrics_dict
-        metrics["lr"] = self.optimizer.param_groups[0]["lr"]
+        metrics["lr"] = self.scheduler.get_last_lr()[0]
 
         return TrainerOutput(
             phase_name="training",
