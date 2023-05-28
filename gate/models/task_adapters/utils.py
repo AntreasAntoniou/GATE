@@ -134,6 +134,12 @@ def get_similarities(
     # print(
     #     f"modality_a_features.shape: {modality_a_features.shape}, modality_b_features.shape: {modality_b_features.shape}"
     # )
+    modality_a_features = modality_a_features / modality_a_features.norm(
+        p=2, dim=-1, keepdim=True
+    )
+    modality_b_features = modality_b_features / modality_b_features.norm(
+        p=2, dim=-1, keepdim=True
+    )
 
     similarities = {
         f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
