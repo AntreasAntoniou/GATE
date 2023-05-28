@@ -149,7 +149,7 @@ def collect_config_store():
     # Optimizer configs
 
     adamw_optimizer_config = builds(
-        AdamW,
+        torch.optim.AdamW,
         populate_full_signature=True,
         zen_partial=True,
     )
