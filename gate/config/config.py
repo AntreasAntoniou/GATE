@@ -169,7 +169,7 @@ def collect_config_store():
     )
 
     plateu_learning_rate_scheduler_config = builds(
-        PlateauLRScheduler,
+        torch.optim.lr_scheduler.ReduceLROnPlateau,
         populate_full_signature=True,
         zen_partial=True,
     )
