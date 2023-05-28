@@ -469,7 +469,6 @@ class Learner(nn.Module):
 
                         pbar_steps.update(1)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
-                        pre_batch_time = time.time()
 
             return self.end_training()
 

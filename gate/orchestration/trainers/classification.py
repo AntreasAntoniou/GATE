@@ -39,22 +39,9 @@ class ClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
-        # for key, value in batch.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(f"{key}: {value.shape}")
-        #     else:
-        #         print(f"{key}: {value}") # uncomment for debugging
-        pre_forward_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-        post_forward_time = time.time()
-        forward_time = post_forward_time - pre_forward_time
-        logger.debug(f"Forward time: {forward_time} seconds")
-
-        # model(image, text) -> image_preds -- source: image_text and target: image
-        # model(image) -> image_preds -- source: image and target: image
 
         if "loss" not in output_dict:
             loss = F.cross_entropy(
@@ -79,11 +66,8 @@ class ClassificationTrainer(Trainer):
         else:
             loss = output_dict["loss"]
 
-        pre_backward_time = time.time()
         accelerator.backward(loss)
-        post_backward_time = time.time()
-        backward_time = post_backward_time - pre_backward_time
-        logger.debug(f"Backward time: {backward_time} seconds")
+
         for key, value in output_dict.items():
             self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
@@ -111,14 +95,8 @@ class ClassificationTrainer(Trainer):
             accelerator=accelerator,
         )
 
-        pre_optimizer_step_time = time.time()
         self.optimizer.step()
-        self.scheduler.step(epoch=global_step, metric=step_output.loss)
-        post_optimizer_step_time = time.time()
-        optimizer_step_time = (
-            post_optimizer_step_time - pre_optimizer_step_time
-        )
-        logger.debug(f"Optimizer step time: {optimizer_step_time} seconds")
+        self.scheduler.step(step_output.loss)
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
@@ -329,18 +307,18 @@ class MultiClassClassificationTrainer(Trainer):
             global_step=global_step,
             accelerator=accelerator,
         )
-
+        opt_loss = torch.mean(
+            torch.stack(step_output.output_metrics_dict["loss"])
+        )
         self.optimizer.step()
-        self.scheduler.step(global_step)
+        self.scheduler.step(opt_loss)
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
 
         return TrainerOutput(
             phase_name="training",
-            opt_loss=torch.mean(
-                torch.stack(step_output.output_metrics_dict["loss"])
-            ),
+            opt_loss=opt_loss,
             global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,

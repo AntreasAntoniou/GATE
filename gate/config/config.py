@@ -10,15 +10,7 @@ from hydra_zen import MISSING, ZenField, builds, make_config
 from omegaconf import OmegaConf
 from rich import print
 from rich.syntax import Syntax
-from timm.scheduler import (
-    CosineLRScheduler,
-    PlateauLRScheduler,
-    StepLRScheduler,
-    TanhLRScheduler,
-    PolyLRScheduler,
-    MultiStepLRScheduler,
-)
-from timm.optim import AdamW
+from timm.scheduler import CosineLRScheduler, PlateauLRScheduler
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
@@ -41,6 +33,7 @@ from gate.config.variables import (
     GPU_MEMORY,
     HF_CACHE_DIR,
     HF_USERNAME,
+    HYDRATED_TRAIN_ITERS,
     LOGGER_LEVEL,
     NUM_WORKERS,
     PERSISTENT_WORKERS,
@@ -157,7 +150,7 @@ def collect_config_store():
     config_store.store(
         group="optimizer",
         name="adamw",
-        node=adamw_optimizer_config(lr=1e-1, weight_decay=0.00001),
+        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
     )
 
     ##########################################################################
@@ -185,21 +178,33 @@ def collect_config_store():
         group="scheduler",
         name="plateu",
         node=plateu_learning_rate_scheduler_config(
-            decay_rate=0.1,
-            patience_t=50,
-            verbose=True,
-            threshold=1e-4,
-            cooldown_t=0,
-            warmup_t=0,
-            warmup_lr_init=0,
-            lr_min=0,
             mode="min",
-            noise_range_t=None,
-            noise_type="normal",
-            noise_pct=0.67,
-            noise_std=1.0,
-            noise_seed=None,
-            initialize=True,
+            factor=0.5,
+            patience=100,
+            threshold=1e-4,
+            threshold_mode="rel",
+            cooldown=0,
+            min_lr=0,
+            eps=1e-8,
+            verbose=False,
+        ),
+    )
+
+    linear_learning_rate_scheduler_config = builds(
+        torch.optim.lr_scheduler.LinearLR,
+        populate_full_signature=True,
+        zen_partial=True,
+    )
+
+    config_store.store(
+        group="scheduler",
+        name="linear",
+        node=linear_learning_rate_scheduler_config(
+            start_factor=1.0,
+            end_factor=1.0 / 10000,
+            total_iters=10000,
+            last_epoch=-1,
+            verbose=False,
         ),
     )
 
