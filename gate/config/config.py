@@ -180,7 +180,7 @@ def collect_config_store():
         node=plateu_learning_rate_scheduler_config(
             mode="min",
             factor=0.5,
-            patience=100,
+            patience=250,
             threshold=1e-4,
             threshold_mode="rel",
             cooldown=0,
