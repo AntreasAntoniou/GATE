@@ -9,6 +9,7 @@ from datasets import load_dataset
 from timm.data import rand_augment_transform
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
@@ -45,6 +46,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+logger = get_logger(name=__name__)
+
+
 @configurable(
     group="dataset",
     name="imagenet1k-classification",
@@ -64,7 +68,11 @@ def build_gate_dataset(
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)
-        input_dict["image"] = rand_augment(x)
+        try:
+            input_dict["image"] = rand_augment(x)
+        except Exception as e:
+            logger.warn(f"RandAugment failed with error: {e}")
+            input_dict["image"] = x
 
         return input_dict
 
