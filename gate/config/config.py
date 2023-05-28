@@ -11,6 +11,7 @@ from omegaconf import OmegaConf
 from rich import print
 from rich.syntax import Syntax
 from timm.scheduler import CosineLRScheduler
+from timm.optim import AdamW
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
@@ -141,7 +142,7 @@ def collect_config_store():
     # Optimizer configs
 
     adamw_optimizer_config = builds(
-        torch.optim.AdamW,
+        AdamW,
         populate_full_signature=True,
         zen_partial=True,
     )
@@ -149,7 +150,7 @@ def collect_config_store():
     config_store.store(
         group="optimizer",
         name="adamw",
-        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
+        node=adamw_optimizer_config(lr=1e-3, weight_decay=0.0),
     )
 
     ##########################################################################

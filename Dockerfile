@@ -37,15 +37,13 @@ RUN git config --global credential.helper store
 RUN git clone https://github.com/mlguild/learn2learn.git
 
 RUN mkdir /app/
-ADD gate/ /app/gate
-ADD setup.py /app/
 ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
-
+ADD setup.py /app/
 RUN echo y | pip install -r /app/requirements_dev.txt
 
+ADD gate/ /app/gate
 RUN echo y | pip install /app/[dev]
-
 RUN pip install -e learn2learn
 
 
