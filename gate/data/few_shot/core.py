@@ -214,8 +214,8 @@ class FewShotClassificationMetaDataset(Dataset):
         dataset_path = self.dataset_root / self.dataset_name
         state_path = dataset_path / "dataset_info.json"
 
-        if state_path.exists():
-            return datasets.Dataset.load_from_disk(dataset_path)
+        # if state_path.exists():
+        #     return datasets.Dataset.load_from_disk(dataset_path)
 
         subsets = [
             self.dataset_class(
@@ -224,6 +224,7 @@ class FewShotClassificationMetaDataset(Dataset):
             for subset_name in subset_split_name_list
         ]
         datapoints = []
+        label_set = set()
 
         for idx, subset in tqdm(enumerate(subsets)):
             for sample in tqdm(subset):
@@ -231,13 +232,15 @@ class FewShotClassificationMetaDataset(Dataset):
                 sample[
                     "label"
                 ] = f"{subset_split_name_list[idx]}-{sample['label']}"
+                label_set.add(sample["label"])
 
                 datapoints.append(sample)
 
+        print(f"Number of classes: {len(label_set)}")
         dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
-        dataset.save_to_disk(self.dataset_root / self.dataset_name)
+        # dataset.save_to_disk(self.dataset_root / self.dataset_name)
         return dataset
 
     def _process_sample(self, sample):
