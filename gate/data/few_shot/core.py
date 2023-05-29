@@ -164,22 +164,22 @@ class FewShotClassificationMetaDataset(Dataset):
             / self.dataset_name
             / "class_to_address_dict.json"
         )
-        if class_to_address_dict_path.exists():
-            self.class_to_address_dict = load_json(
-                filepath=class_to_address_dict_path
-            )
-        else:
-            self.class_to_address_dict = get_class_to_idx_dict(
-                dataset=self.dataset,
-                class_name_key=self.input_target_annotation_keys[
-                    "target_annotations"
-                ],
-            )
-            save_json(
-                filepath=class_to_address_dict_path,
-                dict_to_store=self.class_to_address_dict,
-                overwrite=True,
-            )
+        # if class_to_address_dict_path.exists():
+        #     self.class_to_address_dict = load_json(
+        #         filepath=class_to_address_dict_path
+        #     )
+        # else:
+        self.class_to_address_dict = get_class_to_idx_dict(
+            dataset=self.dataset,
+            class_name_key=self.input_target_annotation_keys[
+                "target_annotations"
+            ],
+        )
+        # save_json(
+        #     filepath=class_to_address_dict_path,
+        #     dict_to_store=self.class_to_address_dict,
+        #     overwrite=True,
+        # )
         print(self.class_to_address_dict)
 
         self.current_class_to_address_dict = (
@@ -231,7 +231,6 @@ class FewShotClassificationMetaDataset(Dataset):
                 sample[
                     "label"
                 ] = f"{subset_split_name_list[idx]}-{sample['label']}"
-                print(sample)
 
                 datapoints.append(sample)
 
