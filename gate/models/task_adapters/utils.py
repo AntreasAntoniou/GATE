@@ -145,7 +145,7 @@ def get_similarities(
         f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
             modality_a_features, modality_b_features
         )
-        * temperature_parameter
+        * torch.clamp(temperature_parameter.exp(), max=100)
     }
 
     similarities[

@@ -58,15 +58,11 @@ def build_model(
     num_feature_dict = {
         "text": backbone_model.text_num_features,
         "image": backbone_model.image_num_features,
-        "audio": backbone_model.audio_num_features,
-        "video": backbone_model.video_num_features,
     }
     if modality_a_identifier in [
         "image",
         "text",
-        "audio",
-        "video",
-    ] and modality_b_identifier in ["image", "text", "audio", "video"]:
+    ] and modality_b_identifier in ["image", "text"]:
         model = DuoModalZeroShotModel(
             modality_a_model=backbone_model,
             modality_b_model=backbone_model,
