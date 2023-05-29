@@ -1,5 +1,6 @@
 # ade20k.py
 from typing import Any, Dict, Optional
+from PIL import Image
 
 import numpy as np
 from datasets import load_dataset
@@ -46,15 +47,10 @@ import torchvision.transforms as T
 
 def transform_wrapper(inputs: Dict, target_size=224):
     print(inputs)
-    # return {
-    #     "image": T.Resize(size=(target_size, target_size))(
-    #         inputs["image"].convert("RGB")
-    #     ),
-    #     "text": inputs["question"],
-    #     "labels": torch.tensor(int(inputs["label"])).long(),
-    #     "answer_type": inputs["template"],
-    #     "question_family_idx": len(inputs["template"]) * [0],
-    # }
+    return {
+        "image": inputs["image"],
+        "labels": np.fromImage.open(inputs["annotation"]),
+    }
 
 
 @configurable(
