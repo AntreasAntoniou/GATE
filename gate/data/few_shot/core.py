@@ -116,6 +116,7 @@ class FewShotClassificationMetaDataset(Dataset):
         query_set_target_transform: Any = None,
         label_extractor_fn: Optional[Any] = None,
         preprocess_transforms: Optional[Any] = None,
+        max_support_set_size: Optional[int] = 250,
     ):
         super(FewShotClassificationMetaDataset, self).__init__()
 
@@ -140,6 +141,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.num_classes_per_set = num_classes_per_set
         self.num_samples_per_class = num_samples_per_class
         self.num_queries_per_class = num_queries_per_class
+        self.max_support_set_size = max_support_set_size
         self.variable_num_samples_per_class = variable_num_samples_per_class
         self.variable_num_classes_per_set = variable_num_classes_per_set
 
@@ -348,7 +350,7 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Prepare the support and query sets."""
 
-        max_support_set_size = 370
+        max_support_set_size = self.max_support_set_size
         max_per_class_support_set_size = 50
         available_support_set_size = (
             max_support_set_size - len(support_set_inputs) - idx
