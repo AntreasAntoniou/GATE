@@ -126,7 +126,7 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_queries_per_class=2,
         num_classes_per_set=50,
         num_samples_per_class=15,
-        num_queries_per_class=15,
+        num_queries_per_class=5,
         variable_num_samples_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
