@@ -170,7 +170,7 @@ class FewShotClassificationMetaDataset(Dataset):
             )
         else:
             self.class_to_address_dict = get_class_to_idx_dict(
-                self.dataset,
+                dataset=self.dataset,
                 class_name_key=self.input_target_annotation_keys[
                     "target_annotations"
                 ],
@@ -180,6 +180,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 dict_to_store=self.class_to_address_dict,
                 overwrite=True,
             )
+        print(self.class_to_address_dict)
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
@@ -223,18 +224,15 @@ class FewShotClassificationMetaDataset(Dataset):
             for subset_name in subset_split_name_list
         ]
         datapoints = []
-        # #logger.debug(
-        #     f"Loading and preprocessing {self.dataset_name} dataset..."
-        # )
+
         for idx, subset in tqdm(enumerate(subsets)):
             for sample in tqdm(subset):
                 sample = self._process_sample(sample)
                 sample[
                     "label"
                 ] = f"{subset_split_name_list[idx]}-{sample['label']}"
-                # print(
-                #     f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
-                # )
+                print(sample)
+
                 datapoints.append(sample)
 
         dataset = datasets.Dataset.from_list(datapoints)
