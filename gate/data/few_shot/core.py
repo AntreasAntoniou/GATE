@@ -227,12 +227,17 @@ class FewShotClassificationMetaDataset(Dataset):
         label_set = set()
 
         for set_name, subset in tqdm(zip(subset_split_name_list, subsets)):
-            for sample in tqdm(subset):
-                sample = self._process_sample(sample)
-                sample["label"] = f"{set_name}-{sample['label']}"
-                label_set.add(sample["label"])
+            with tqdm(total=len(subset)) as pbar:
+                for sample in subset:
+                    sample = self._process_sample(sample)
+                    sample["label"] = f"{set_name}-{sample['label']}"
+                    label_set.add(sample["label"])
 
-                datapoints.append(sample)
+                    datapoints.append(sample)
+                    pbar.update(1)
+                    pbar.set_description(
+                        f"Label {sample['label']}, {set_name}, {len(label_set)}"
+                    )
 
         print(f"Number of classes: {len(label_set)}")
         dataset = datasets.Dataset.from_list(datapoints)
