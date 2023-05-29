@@ -331,6 +331,7 @@ class FewShotClassificationMetaDataset(Dataset):
         # logger.info(
         #     f"Class to num available samples: {class_to_num_available_samples}"
         # )
+        print(class_to_num_available_samples)
         min_available_shots = min(
             [value for value in class_to_num_available_samples.values()]
         )
