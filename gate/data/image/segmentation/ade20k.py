@@ -25,30 +25,18 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     rng = np.random.RandomState(42)
 
-    train_data = load_dataset(
+    data = load_dataset(
         "scene_parse_150",
         "instance_segmentation",
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
     )
 
-    val_data = load_dataset(
-        "scene_parse_150",
-        "instance_segmentation",
-        split="validation",
-        cache_dir=data_dir,
-        num_proc=mp.cpu_count(),
-    )
-
-    test_data = load_dataset(
-        "scene_parse_150",
-        "instance_segmentation",
-        split="test",
-        cache_dir=data_dir,
-        num_proc=mp.cpu_count(),
-    )
-
-    dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
+    dataset_dict = {
+        "train": data["train"],
+        "val": data["validation"],
+        "test": data["test"],
+    }
 
     return dataset_dict[set_name]
 
