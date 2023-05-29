@@ -74,7 +74,7 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
                 FewShotSuperSplitSetOptions.TEST: 20,
             },
             split_config=None,
-            subset_split_name_list=["all"],
+            subset_split_name_list=["train", "val", "test"],
             label_extractor_fn=lambda x: bytes_to_string(x),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
