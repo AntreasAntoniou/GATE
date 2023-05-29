@@ -1,6 +1,7 @@
 import os
 import pathlib
 from typing import Any, Callable, Optional
+from accelerate import Accelerator
 
 # Set environmental variables for better debugging
 os.environ["HYDRA_FULL_ERROR"] = "1"
@@ -47,6 +48,8 @@ config_store = collect_config_store()
 # Initializing logger
 logger = get_logger(name=__name__)
 
+accelerator = Accelerator()
+
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: Any) -> None:
@@ -85,6 +88,7 @@ def run(cfg: Any) -> None:
     model_and_transform = instantiate(cfg.model)
 
     model: GATEModel = model_and_transform.model
+    model = accelerator.prepare(model)
     transform: Optional[Callable] = model_and_transform.transform
 
     wandb.init()
