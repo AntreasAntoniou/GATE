@@ -159,11 +159,11 @@ class FewShotClassificationMetaDataset(Dataset):
 
         self.dataset = self._load_subsets(subset_split_name_list)
 
-        class_to_address_dict_path = (
-            self.dataset_root
-            / self.dataset_name
-            / "class_to_address_dict.json"
-        )
+        # class_to_address_dict_path = (
+        #     self.dataset_root
+        #     / self.dataset_name
+        #     / "class_to_address_dict.json"
+        # )
         # if class_to_address_dict_path.exists():
         #     self.class_to_address_dict = load_json(
         #         filepath=class_to_address_dict_path
@@ -226,10 +226,11 @@ class FewShotClassificationMetaDataset(Dataset):
         datapoints = []
         label_set = set()
 
-        for set_name, subset in tqdm(zip(subset_split_name_list, subsets)):
+        for set_name, subset in zip(subset_split_name_list, subsets):
             with tqdm(total=len(subset)) as pbar:
                 for sample in subset:
                     sample = self._process_sample(sample)
+                    print(sample)
                     label_set.add(sample["label"])
                     sample["label"] = f"{set_name}-{sample['label']}"
 
