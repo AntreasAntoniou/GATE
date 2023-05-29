@@ -232,12 +232,13 @@ class FewShotClassificationMetaDataset(Dataset):
                     sample = self._process_sample(sample)
                     print(sample)
                     label_set.add(sample["label"])
+                    label_set = sorted(label_set)
                     sample["label"] = f"{set_name}-{sample['label']}"
 
                     datapoints.append(sample)
                     pbar.update(1)
                     pbar.set_description(
-                        f"Label {sample['label']}, {set_name}, {len(label_set)}"
+                        f"Label {sample['label']}, {set_name}, {len(label_set)} {label_set}"
                     )
 
         print(f"Number of classes: {len(label_set)}")
