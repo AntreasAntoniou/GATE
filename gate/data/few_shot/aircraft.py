@@ -147,7 +147,9 @@ from rich import print
 #     }
 
 
-def key_mapper(input_dict):
+def key_mapper(input_tuple):
+    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
+
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
         for item in input_dict["image"]["image"]["support_set"]
@@ -176,21 +178,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
