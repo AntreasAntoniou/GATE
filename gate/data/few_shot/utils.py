@@ -63,13 +63,12 @@ def get_class_to_idx_dict(
     dataset: Iterator,
     class_name_key: str,
     label_extractor_fn: Optional[Callable] = None,
+    split_as_original: bool = False,
 ):
     class_to_idx_dict = defaultdict(list)
 
     for sample_idx, sample in tqdm(enumerate(dataset)):
         key = sample[class_name_key]
-        if label_extractor_fn is not None:
-            key = label_extractor_fn(key)
         class_to_idx_dict[key].append(int(sample_idx))
 
     temp_class_to_idx_dict = {}
