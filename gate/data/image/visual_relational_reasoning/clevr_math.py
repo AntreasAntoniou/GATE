@@ -74,6 +74,8 @@ def transform_wrapper(inputs: Dict, target_size=224):
         ),
         "text": inputs["question"],
         "labels": torch.tensor(int(inputs["label"])).long(),
+        "answer_type": inputs["template"],
+        "question_family_idx": len(inputs["template"]) * [0],
     }
 
 
