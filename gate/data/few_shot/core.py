@@ -230,7 +230,6 @@ class FewShotClassificationMetaDataset(Dataset):
             with tqdm(total=len(subset)) as pbar:
                 for sample in subset:
                     sample = self._process_sample(sample)
-                    # print(sample)
                     label_set.add(sample["label"])
                     
                     sample["label"] = f"{set_name}-{sample['label']}"
@@ -322,7 +321,6 @@ class FewShotClassificationMetaDataset(Dataset):
         # logger.info(
         #     f"Class to num available samples: {class_to_num_available_samples}"
         # )
-        print(class_to_num_available_samples)
         min_available_shots = min(
             [value for value in class_to_num_available_samples.values()]
         )
@@ -385,8 +383,7 @@ class FewShotClassificationMetaDataset(Dataset):
             num_support_samples_per_class + num_query_samples_per_class,
         )
 
-        print(f"Number of samples selected: {num_selected_samples}")
-
+        
         selected_samples_addresses = [
             self.current_class_to_address_dict[class_name][sample_address_idx]
             for sample_address_idx in selected_samples_addresses_idx
@@ -437,11 +434,7 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Assign the data to the support and query sets."""
 
-        logger.debug(
-            f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
-        )
-        print(f"data inputs length: {len(data_inputs)}")
-
+        
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
                 data_inputs[:num_support_samples_per_class]
