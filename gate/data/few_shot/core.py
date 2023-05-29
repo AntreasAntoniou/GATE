@@ -265,14 +265,15 @@ class FewShotClassificationMetaDataset(Dataset):
         print(
             f"set name: {self.split_name}, start: {start_idx}, end: {end_idx}"
         )
-
-        return {
+        split_dict = {
             key: value
             for idx, (key, value) in enumerate(
                 self.class_to_address_dict.items()
             )
             if start_idx <= idx < end_idx
         }
+        print(f"split dict: {split_dict}")
+        return split_dict
 
     def _get_start_end_indices(self):
         """Get start and end indices based on split name."""
