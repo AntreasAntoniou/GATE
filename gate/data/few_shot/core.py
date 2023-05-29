@@ -262,18 +262,10 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_dict_based_on_split_percentage(self):
         """Get current class to address dict based on split percentage."""
         start_idx, end_idx = self._get_start_end_indices()
-        # print(f"start_idx: {start_idx}, end_idx: {end_idx}")
-        # print(
-        #     f"len(self.class_to_address_dict): {len(self.class_to_address_dict)}"
-        # )
-        # temp_dict = {
-        #     key: value
-        #     for idx, (key, value) in enumerate(
-        #         self.class_to_address_dict.items()
-        #     )
-        #     if start_idx <= idx < end_idx
-        # }
-        # print(f"test {temp_dict}")
+        print(
+            f"set name: {self.split_name}, start: {start_idx}, end: {end_idx}"
+        )
+
         return {
             key: value
             for idx, (key, value) in enumerate(
