@@ -88,24 +88,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[transform_wrapper, transforms],
     )
 
@@ -113,7 +107,7 @@ def build_gate_dataset(
     return dataset_dict
 
 
-def build_dummy_food101_dataset(transforms: Optional[Any] = None) -> dict:
+def build_dummy_dataset(transforms: Optional[Any] = None) -> dict:
     # Create a dummy dataset that emulates food-101's shape and modality
     pass
 
