@@ -388,6 +388,12 @@ class FewShotClassificationMetaDataset(Dataset):
             ),
             replace=False,
         )
+        num_selected_samples = min(
+            len(self.current_class_to_address_dict[class_name]),
+            num_support_samples_per_class + num_query_samples_per_class,
+        )
+
+        print(f"Number of samples selected: {num_selected_samples}")
 
         selected_samples_addresses = [
             self.current_class_to_address_dict[class_name][sample_address_idx]
@@ -442,6 +448,7 @@ class FewShotClassificationMetaDataset(Dataset):
         logger.debug(
             f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
         )
+        print(f"data inputs length: {len(data_inputs)}")
 
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
@@ -614,11 +621,11 @@ class FewShotClassificationMetaDataset(Dataset):
                 num_support_samples_per_class,
                 selected_samples_addresses,
             ) = self._prepare_support_and_query_sets(
-                class_name,
-                num_query_samples_per_class,
-                rng,
-                len(selected_classes_for_set) - idx,
-                support_set_inputs,
+                class_name=class_name,
+                num_query_samples_per_class=num_query_samples_per_class,
+                rng=rng,
+                idx=len(selected_classes_for_set) - idx,
+                support_set_inputs=support_set_inputs,
             )
 
             if selected_samples_addresses is None:
