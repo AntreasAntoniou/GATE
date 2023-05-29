@@ -173,15 +173,15 @@ class DuoModalFusionModel(BaseModule):
                 ]["raw_features"]
 
         modality_a_features = self.modality_a_linear(
-            modality_a_features.view(-1, modality_a_features.shape[-1])
-        ).view(
+            modality_a_features.reshape(-1, modality_a_features.shape[-1])
+        ).reshape(
             modality_a_features.shape[0],
             modality_a_features.shape[1],
             self.projection_num_features,
         )
         modality_b_features = self.modality_b_linear(
-            modality_b_features.view(-1, modality_b_features.shape[-1])
-        ).view(
+            modality_b_features.reshape(-1, modality_b_features.shape[-1])
+        ).reshape(
             modality_b_features.shape[0],
             modality_b_features.shape[1],
             self.projection_num_features,

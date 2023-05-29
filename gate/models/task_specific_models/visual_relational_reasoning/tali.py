@@ -190,7 +190,7 @@ material_dict = {"metal": 0, "rubber": 1}
     group="model",
     name="tali-relational-reasoning-multi-task",
 )
-def build_gate_model(
+def build_gate_model_multi_task(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     whisper_model_name: str = "openai/whisper-small",
     model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
