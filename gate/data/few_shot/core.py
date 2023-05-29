@@ -115,7 +115,6 @@ class FewShotClassificationMetaDataset(Dataset):
         query_set_input_transform: Any = None,
         support_set_target_transform: Any = None,
         query_set_target_transform: Any = None,
-        label_extractor_fn: Optional[Any] = None,
         preprocess_transforms: Optional[Any] = None,
         max_support_set_size: Optional[int] = 250,
     ):
@@ -175,16 +174,12 @@ class FewShotClassificationMetaDataset(Dataset):
                 class_name_key=self.input_target_annotation_keys[
                     "target_annotations"
                 ],
-                label_extractor_fn=label_extractor_fn,
-                split_as_original=self.split_as_original,
             )
             save_json(
                 filepath=class_to_address_dict_path,
                 dict_to_store=self.class_to_address_dict,
                 overwrite=True,
             )
-
-        self.label_extractor_fn = label_extractor_fn
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
@@ -278,12 +273,14 @@ class FewShotClassificationMetaDataset(Dataset):
             if start_idx <= idx < end_idx
         }
         split_len_dict = {key: len(value) for key, value in split_dict.items()}
-        print(f"split dict: {split_len_dict}")
+        print(f"set_name {self.split_name} split dict: {split_len_dict}")
+        print(f"set_name {self.split_name} split dict len: {len(split_dict)}")
         class_to_address_dict_len = {
             key: len(value)
             for key, value in self.class_to_address_dict.items()
         }
         print(f"total dict: {class_to_address_dict_len}")
+        print(f"total dict len: {len(self.class_to_address_dict)}")
         return split_dict
 
     def _get_start_end_indices(self):

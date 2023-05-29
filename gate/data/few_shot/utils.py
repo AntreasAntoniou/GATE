@@ -62,8 +62,6 @@ def load_split_datasets(dataset, split_tuple):
 def get_class_to_idx_dict(
     dataset: Iterator,
     class_name_key: str,
-    label_extractor_fn: Optional[Callable] = None,
-    split_as_original: bool = False,
 ):
     class_to_idx_dict = defaultdict(list)
 
