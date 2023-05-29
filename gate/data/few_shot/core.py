@@ -272,7 +272,13 @@ class FewShotClassificationMetaDataset(Dataset):
             )
             if start_idx <= idx < end_idx
         }
-        print(f"split dict: {split_dict}")
+        split_len_dict = {key: len(value) for key, value in split_dict.items()}
+        print(f"split dict: {split_len_dict}")
+        class_to_address_dict_len = {
+            key: len(value)
+            for key, value in self.class_to_address_dict.items()
+        }
+        print(f"total dict: {class_to_address_dict_len}")
         return split_dict
 
     def _get_start_end_indices(self):
