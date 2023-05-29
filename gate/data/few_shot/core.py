@@ -159,35 +159,35 @@ class FewShotClassificationMetaDataset(Dataset):
 
         self.dataset = self._load_subsets(subset_split_name_list)
 
-        # class_to_address_dict_path = (
-        #     self.dataset_root
-        #     / self.dataset_name
-        #     / "class_to_address_dict.json"
-        # )
-        # if class_to_address_dict_path.exists():
-        #     self.class_to_address_dict = load_json(
-        #         filepath=class_to_address_dict_path
-        #     )
-        # else:
-        self.class_to_address_dict = get_class_to_idx_dict(
-            dataset=self.dataset,
-            class_name_key=self.input_target_annotation_keys[
-                "target_annotations"
-            ],
+        class_to_address_dict_path = (
+            self.dataset_root
+            / self.dataset_name
+            / "class_to_address_dict.json"
         )
-        # save_json(
-        #     filepath=class_to_address_dict_path,
-        #     dict_to_store=self.class_to_address_dict,
-        #     overwrite=True,
-        # )
+        if class_to_address_dict_path.exists():
+            self.class_to_address_dict = load_json(
+                filepath=class_to_address_dict_path
+            )
+        else:
+            self.class_to_address_dict = get_class_to_idx_dict(
+                dataset=self.dataset,
+                class_name_key=self.input_target_annotation_keys[
+                    "target_annotations"
+                ],
+            )
+        save_json(
+            filepath=class_to_address_dict_path,
+            dict_to_store=self.class_to_address_dict,
+            overwrite=True,
+        )
         print(self.class_to_address_dict)
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
-        # logger.info(
-        #     f"Current class to address dict: {self.current_class_to_address_dict}"
-        # )
+        logger.info(
+            f"Current class to address dict: {self.current_class_to_address_dict}"
+        )
 
     def _validate_samples_and_classes(
         self,
@@ -214,8 +214,8 @@ class FewShotClassificationMetaDataset(Dataset):
         dataset_path = self.dataset_root / self.dataset_name
         state_path = dataset_path / "dataset_info.json"
 
-        # if state_path.exists():
-        #     return datasets.Dataset.load_from_disk(dataset_path)
+        if state_path.exists():
+            return datasets.Dataset.load_from_disk(dataset_path)
 
         subsets = [
             self.dataset_class(
@@ -246,7 +246,7 @@ class FewShotClassificationMetaDataset(Dataset):
         dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
-        # dataset.save_to_disk(self.dataset_root / self.dataset_name)
+        dataset.save_to_disk(self.dataset_root / self.dataset_name)
         return dataset
 
     def _process_sample(self, sample):
