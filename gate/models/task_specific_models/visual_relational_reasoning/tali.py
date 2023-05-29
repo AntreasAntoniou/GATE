@@ -80,7 +80,9 @@ def build_model(
 
     def transform_wrapper(inputs: Union[Dict, Any]):
         if "image" in inputs:
-            inputs["image"] = transform_dict["image"](inputs["image"])
+            inputs["image"] = transform_dict["image"](
+                inputs["image"]
+            ).squeeze()
 
         if "text" in inputs:
             inputs["text"] = transform_dict["text"](inputs["text"])

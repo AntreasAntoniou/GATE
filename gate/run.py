@@ -127,8 +127,8 @@ def run(cfg: Any) -> None:
     learner: Learner = instantiate(
         cfg.learner,
         model=model,
-        trainers=[trainer],
-        evaluators=[evaluator],
+        trainer=trainer,
+        evaluator=evaluator,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
         callbacks=instantiate_callbacks(cfg.callbacks),
