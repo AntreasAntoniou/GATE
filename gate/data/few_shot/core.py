@@ -232,7 +232,8 @@ class FewShotClassificationMetaDataset(Dataset):
                     sample = self._process_sample(sample)
                     print(sample)
                     label_set.add(sample["label"])
-                    label_set = sorted(label_set)
+                    label_set = set(sorted(label_set))
+
                     sample["label"] = f"{set_name}-{sample['label']}"
 
                     datapoints.append(sample)
