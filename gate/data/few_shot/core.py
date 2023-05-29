@@ -185,7 +185,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
-        logger.info(
+        logger.debug(
             f"Current class to address dict: {self.current_class_to_address_dict}"
         )
 
