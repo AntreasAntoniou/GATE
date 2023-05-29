@@ -64,11 +64,13 @@ def get_class_to_idx_dict(
     class_name_key: str,
 ):
     class_to_idx_dict = defaultdict(list)
+    class_set = set()
 
     for sample_idx, sample in tqdm(enumerate(dataset)):
         key = sample[class_name_key]
+        class_set.add(key)
         class_to_idx_dict[key].append(int(sample_idx))
-
+    print(f"Number of classes: {len(class_set)}")
     temp_class_to_idx_dict = {}
     for key in sorted(class_to_idx_dict.keys()):
         temp_class_to_idx_dict[key] = class_to_idx_dict[key]
