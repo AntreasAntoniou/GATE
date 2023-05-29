@@ -175,12 +175,12 @@ class FewShotClassificationMetaDataset(Dataset):
                     "target_annotations"
                 ],
             )
-        save_json(
-            filepath=class_to_address_dict_path,
-            dict_to_store=self.class_to_address_dict,
-            overwrite=True,
-        )
-        print(self.class_to_address_dict)
+            save_json(
+                filepath=class_to_address_dict_path,
+                dict_to_store=self.class_to_address_dict,
+                overwrite=True,
+            )
+        
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
@@ -230,18 +230,14 @@ class FewShotClassificationMetaDataset(Dataset):
             with tqdm(total=len(subset)) as pbar:
                 for sample in subset:
                     sample = self._process_sample(sample)
-                    print(sample)
+                    # print(sample)
                     label_set.add(sample["label"])
-                    label_set = set(sorted(label_set))
-
+                    
                     sample["label"] = f"{set_name}-{sample['label']}"
 
                     datapoints.append(sample)
                     pbar.update(1)
-                    pbar.set_description(
-                        f"Label {sample['label']}, {set_name}, {len(label_set)} {label_set}"
-                    )
-
+                    
         print(f"Number of classes: {len(label_set)}")
         dataset = datasets.Dataset.from_list(datapoints)
 
@@ -268,9 +264,6 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_dict_based_on_split_percentage(self):
         """Get current class to address dict based on split percentage."""
         start_idx, end_idx = self._get_start_end_indices()
-        print(
-            f"set name: {self.split_name}, start: {start_idx}, end: {end_idx}"
-        )
         split_dict = {
             key: value
             for idx, (key, value) in enumerate(
@@ -278,15 +271,6 @@ class FewShotClassificationMetaDataset(Dataset):
             )
             if start_idx <= idx < end_idx
         }
-        split_len_dict = {key: len(value) for key, value in split_dict.items()}
-        print(f"set_name {self.split_name} split dict: {split_len_dict}")
-        print(f"set_name {self.split_name} split dict len: {len(split_dict)}")
-        class_to_address_dict_len = {
-            key: len(value)
-            for key, value in self.class_to_address_dict.items()
-        }
-        print(f"total dict: {class_to_address_dict_len}")
-        print(f"total dict len: {len(self.class_to_address_dict)}")
         return split_dict
 
     def _get_start_end_indices(self):
