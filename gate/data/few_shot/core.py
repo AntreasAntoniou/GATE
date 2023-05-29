@@ -110,6 +110,7 @@ class FewShotClassificationMetaDataset(Dataset):
         subset_split_name_list: Optional[List[str]] = None,
         split_percentage: Optional[Dict[str, float]] = None,
         split_config: Optional[DictConfig] = None,
+        split_as_original: Optional[bool] = False,
         support_set_input_transform: Any = None,
         query_set_input_transform: Any = None,
         support_set_target_transform: Any = None,
@@ -127,6 +128,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.num_episodes = num_episodes
         self.split_config = split_config
         self.preprocess_transform = preprocess_transforms
+        self.split_as_original = split_as_original
 
         self._validate_samples_and_classes(
             min_num_samples_per_class,
@@ -174,6 +176,7 @@ class FewShotClassificationMetaDataset(Dataset):
                     "target_annotations"
                 ],
                 label_extractor_fn=label_extractor_fn,
+                split_as_original=self.split_as_original,
             )
             save_json(
                 filepath=class_to_address_dict_path,
@@ -233,7 +236,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 sample = self._process_sample(sample)
                 sample[
                     "label"
-                ] = f"{subset_split_name_list[idx]}{sample['label']}"
+                ] = f"{subset_split_name_list[idx]}-{sample['label']}"
                 # print(
                 #     f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
                 # )
