@@ -34,7 +34,7 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
-RUN git clone https://github.com/mlguild/learn2learn.git
+RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 
 RUN mkdir /app/
 ADD requirements.txt /app/
