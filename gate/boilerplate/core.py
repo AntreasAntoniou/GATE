@@ -32,9 +32,6 @@ from gate.orchestration.trainers.classification import (
 
 logger = get_logger(__name__)
 
-# silence logger for accelerate
-accelerate_logger = get_logger("accelerate", logging_level="ERROR")
-
 
 @configurable(
     group="learner",
