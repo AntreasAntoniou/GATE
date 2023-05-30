@@ -86,6 +86,8 @@ def run(cfg: Any) -> None:
     global_step, experiment_tracker = setup(ckpt_path, cfg)
 
     model_and_transform = instantiate(cfg.model)
+    # task_adaptor = instantiate(cfg.task_adaptor)
+    # model = task_adaptor(model_and_transform.model)
 
     model: GATEModel = model_and_transform.model
     model = accelerator.prepare(model)

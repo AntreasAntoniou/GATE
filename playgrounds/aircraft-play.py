@@ -2,7 +2,7 @@ import learn2learn as l2l
 from tqdm.auto import tqdm
 
 data = l2l.vision.datasets.FGVCAircraft(
-    root="/data0/datasets/aircraft",
+    root="data/",
     mode="all",
     download=True,
     bounding_box_crop=False,

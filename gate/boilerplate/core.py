@@ -170,6 +170,7 @@ class Learner(nn.Module):
         )
 
         self.accelerator = Accelerator()
+        self.model = self.accelerator.prepare(self.model)
 
         self.trainer.optimizer = self.accelerator.prepare(
             self.trainer.optimizer
