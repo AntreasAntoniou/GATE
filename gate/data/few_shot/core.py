@@ -117,7 +117,7 @@ class FewShotClassificationMetaDataset(Dataset):
         support_set_target_transform: Any = None,
         query_set_target_transform: Any = None,
         preprocess_transforms: Optional[Any] = None,
-        max_support_set_size: Optional[int] = 250,
+        max_support_set_size: Optional[int] = 100,
     ):
         super(FewShotClassificationMetaDataset, self).__init__()
 
