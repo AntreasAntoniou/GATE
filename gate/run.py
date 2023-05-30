@@ -117,9 +117,7 @@ def run(cfg: Any) -> None:
         train_dataloader,
         val_dataloader,
         test_dataloader,
-    ) = accelerator.prepare_dataloaders(
-        train_dataloader, val_dataloader, test_dataloader
-    )
+    ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
 
     experiment_tracker["num_parameters"] = count_model_parameters(model)
 
@@ -143,6 +141,7 @@ def run(cfg: Any) -> None:
     learner: Learner = instantiate(
         cfg.learner,
         model=model,
+        accelerator=accelerator,
         trainer=trainer,
         evaluator=evaluator,
         train_dataloader=train_dataloader,

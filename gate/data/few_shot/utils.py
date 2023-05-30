@@ -64,7 +64,7 @@ def get_class_to_idx_dict(
     class_name_key: str,
 ):
     class_to_idx_dict = defaultdict(list)
-    
+
     for sample_idx, sample in tqdm(enumerate(dataset)):
         key = sample[class_name_key]
         class_to_idx_dict[key].append(int(sample_idx))

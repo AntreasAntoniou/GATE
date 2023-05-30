@@ -1,5 +1,6 @@
 import json
 import pathlib
+from re import split
 from typing import Any, Counter, Dict, List, Optional
 
 import datasets
@@ -180,14 +181,13 @@ class FewShotClassificationMetaDataset(Dataset):
                 dict_to_store=self.class_to_address_dict,
                 overwrite=True,
             )
-        
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
-        logger.debug(
-            f"Current class to address dict: {self.current_class_to_address_dict}"
-        )
+        # logger.info(
+        #     f"Current class to address dict: {self.current_class_to_address_dict}"
+        # )
 
     def _validate_samples_and_classes(
         self,
@@ -231,12 +231,12 @@ class FewShotClassificationMetaDataset(Dataset):
                 for sample in subset:
                     sample = self._process_sample(sample)
                     label_set.add(sample["label"])
-                    
+
                     sample["label"] = f"{set_name}-{sample['label']}"
 
                     datapoints.append(sample)
                     pbar.update(1)
-                    
+
         print(f"Number of classes: {len(label_set)}")
         dataset = datasets.Dataset.from_list(datapoints)
 
@@ -252,7 +252,9 @@ class FewShotClassificationMetaDataset(Dataset):
 
     def _get_current_class_to_address_dict(self):
         """Get current class to address dict based on split config."""
-        if self.split_config is None:
+        if self.split_as_original is True:
+            return self._get_dict_based_on_original_splits()[self.split_name]
+        elif self.split_config is None:
             return self._get_dict_based_on_split_percentage()
         else:
             return {
@@ -270,6 +272,19 @@ class FewShotClassificationMetaDataset(Dataset):
             )
             if start_idx <= idx < end_idx
         }
+        return split_dict
+
+    def _get_dict_based_on_original_splits(self):
+        """Get current class to address dict based on split percentage."""
+        split_dict = {"train": {}, "val": {}, "test": {}}
+        for key, value in self.class_to_address_dict.items():
+            if "train" in key:
+                split_dict["train"][key] = value
+            elif "val" in key:
+                split_dict["val"][key] = value
+            elif "test" in key:
+                split_dict["test"][key] = value
+
         return split_dict
 
     def _get_start_end_indices(self):
@@ -383,7 +398,6 @@ class FewShotClassificationMetaDataset(Dataset):
             num_support_samples_per_class + num_query_samples_per_class,
         )
 
-        
         selected_samples_addresses = [
             self.current_class_to_address_dict[class_name][sample_address_idx]
             for sample_address_idx in selected_samples_addresses_idx
@@ -434,7 +448,6 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Assign the data to the support and query sets."""
 
-        
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
                 data_inputs[:num_support_samples_per_class]
@@ -566,12 +579,12 @@ class FewShotClassificationMetaDataset(Dataset):
         available_class_labels = list(
             self.current_class_to_address_dict.keys()
         )
-        # logger.debug(f"Available class labels: {available_class_labels}")
+        logger.info(f"Available class labels: {available_class_labels}")
         selected_classes_for_set = rng.choice(
             available_class_labels,
             size=min(num_classes_per_set, len(available_class_labels)),
         )
-        # logger.debug(f"Selected classes for set: {selected_classes_for_set}")
+        logger.info(f"Selected classes for set: {selected_classes_for_set}")
 
         # Generate mapping from label to local index and prepare for
         # sample selection
@@ -579,9 +592,9 @@ class FewShotClassificationMetaDataset(Dataset):
             label_name: i
             for i, label_name in enumerate(selected_classes_for_set)
         }
-        # #logger.debug(
-        #     f"Label index to local label index: {label_idx_to_local_label_idx}"
-        # )
+        logger.info(
+            f"Label index to local label index: {label_idx_to_local_label_idx}"
+        )
         self.class_to_num_available_samples = (
             self._prepare_for_sample_selection(selected_classes_for_set)
         )

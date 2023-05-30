@@ -68,13 +68,8 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 30,
-                FewShotSuperSplitSetOptions.VAL: 20,
-                FewShotSuperSplitSetOptions.TEST: 20,
-            },
-            split_config=None,
-            subset_split_name_list=["all"],
+            split_as_original=True,
+            subset_split_name_list=["train", "validation", "test"],
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -135,15 +130,6 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     )
 
     return data_set
-
-
-from rich import print
-
-# def key_mapper(input_dict):
-#     return {
-#         "image": input_dict["image"],
-#         "labels": input_dict["labels"],
-#     }
 
 
 def key_mapper(input_tuple):
