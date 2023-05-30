@@ -113,10 +113,20 @@ def run(cfg: Any) -> None:
         cfg, test_dataset, cfg.eval_batch_size, shuffle=False
     )
 
+    (
+        train_dataloader,
+        val_dataloader,
+        test_dataloader,
+    ) = accelerator.prepare_dataloaders(
+        train_dataloader, val_dataloader, test_dataloader
+    )
+
     experiment_tracker["num_parameters"] = count_model_parameters(model)
 
     optimizer = instantiate_optimizer(cfg, model)
     scheduler = instantiate_scheduler(cfg, optimizer)
+
+    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     trainer = instantiate(
         cfg.trainer,

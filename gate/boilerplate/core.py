@@ -32,6 +32,9 @@ from gate.orchestration.trainers.classification import (
 
 logger = get_logger(__name__)
 
+from typing import Union
+from pathlib import Path
+
 
 @configurable(
     group="learner",
@@ -55,6 +58,7 @@ class Learner(nn.Module):
     def __init__(
         self,
         experiment_name: str,
+        accelerator: Accelerator,
         root_dir: Union[str, Path],
         model: torch.nn.Module,
         trainer: Trainer,
@@ -95,6 +99,7 @@ class Learner(nn.Module):
         """
         super().__init__()
         self.experiment_name = experiment_name
+        self.accelerator = accelerator
         self.root_dir = (
             root_dir if isinstance(root_dir, Path) else Path(root_dir)
         )
@@ -130,6 +135,9 @@ class Learner(nn.Module):
 
         self.test_dataloader = test_dataloader
 
+        self.trainer = trainer
+        self.evaluator = evaluator
+
         for name, params in self.model.named_parameters():
             logger.debug(f"{name}, {params.shape}")
 
@@ -152,9 +160,6 @@ class Learner(nn.Module):
 
         self.resume = resume
 
-        if self.evaluate_every_n_steps is None:
-            self.evaluate_every_n_steps = 99999999999
-
         self.trainer = trainer
         self.evaluator = evaluator
 
@@ -165,31 +170,6 @@ class Learner(nn.Module):
             val_dataloader=self.val_dataloader,
             test_dataloader=self.test_dataloader,
         )
-
-        self.accelerator = Accelerator()
-        self.model = self.accelerator.prepare(self.model)
-
-        self.trainer.optimizer = self.accelerator.prepare(
-            self.trainer.optimizer
-        )
-
-        if self.trainer.scheduler is not None:
-            self.trainer.scheduler = self.accelerator.prepare(
-                self.trainer.scheduler
-            )
-
-        if self.train_dataloader is not None:
-            self.train_dataloader = self.accelerator.prepare(
-                self.train_dataloader
-            )
-
-        if self.val_dataloader is not None:
-            self.val_dataloader = self.accelerator.prepare(self.val_dataloader)
-
-        if self.test_dataloader is not None:
-            self.test_dataloader = self.accelerator.prepare(
-                self.test_dataloader
-            )
 
         if isinstance(resume, str):
             checkpoint_path = Path(resume)
