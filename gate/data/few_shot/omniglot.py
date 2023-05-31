@@ -153,21 +153,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 

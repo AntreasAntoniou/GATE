@@ -133,15 +133,6 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-from rich import print
-
-# def key_mapper(input_dict):
-#     return {
-#         "image": input_dict["image"],
-#         "labels": input_dict["labels"],
-#     }
-
-
 def key_mapper(input_tuple):
     input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
