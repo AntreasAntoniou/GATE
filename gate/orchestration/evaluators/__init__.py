@@ -53,6 +53,7 @@ class Evaluator(ABC):
     ):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
+        print(self.per_epoch_metrics)
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
 
