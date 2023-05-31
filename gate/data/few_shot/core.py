@@ -237,7 +237,7 @@ class FewShotClassificationMetaDataset(Dataset):
                     datapoints.append(sample)
                     pbar.update(1)
 
-        print(f"Number of classes: {len(label_set)}")
+        # print(f"Number of classes: {len(label_set)}")
         dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
