@@ -185,7 +185,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
-        # logger.info(
+        # logger.debug(
         #     f"Current class to address dict: {self.current_class_to_address_dict}"
         # )
 
@@ -333,7 +333,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self, class_to_num_available_samples
     ):
         """Calculate the number of query samples per class."""
-        # logger.info(
+        # logger.debug(
         #     f"Class to num available samples: {class_to_num_available_samples}"
         # )
         min_available_shots = min(
@@ -579,12 +579,12 @@ class FewShotClassificationMetaDataset(Dataset):
         available_class_labels = list(
             self.current_class_to_address_dict.keys()
         )
-        logger.info(f"Available class labels: {available_class_labels}")
+        logger.debug(f"Available class labels: {available_class_labels}")
         selected_classes_for_set = rng.choice(
             available_class_labels,
             size=min(num_classes_per_set, len(available_class_labels)),
         )
-        logger.info(f"Selected classes for set: {selected_classes_for_set}")
+        logger.debug(f"Selected classes for set: {selected_classes_for_set}")
 
         # Generate mapping from label to local index and prepare for
         # sample selection
@@ -592,7 +592,7 @@ class FewShotClassificationMetaDataset(Dataset):
             label_name: i
             for i, label_name in enumerate(selected_classes_for_set)
         }
-        logger.info(
+        logger.debug(
             f"Label index to local label index: {label_idx_to_local_label_idx}"
         )
         self.class_to_num_available_samples = (
