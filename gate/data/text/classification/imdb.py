@@ -1,7 +1,6 @@
 # imdb.py
-from typing import Dict, Optional
 import multiprocessing as mp
-
+from typing import Dict, Optional
 
 import numpy as np
 from datasets import load_dataset

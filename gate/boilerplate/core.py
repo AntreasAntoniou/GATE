@@ -1,7 +1,7 @@
 import pathlib
+import time
 from pathlib import Path
 from time import sleep
-import time
 from typing import List, Optional, Union
 
 import torch
@@ -23,17 +23,13 @@ from gate.config.variables import (
     HYDRATED_TRAIN_ITERS,
     RESUME,
 )
-from gate.orchestration.evaluators.classification import (
-    Evaluator,
-)
-from gate.orchestration.trainers.classification import (
-    Trainer,
-)
+from gate.orchestration.evaluators.classification import Evaluator
+from gate.orchestration.trainers.classification import Trainer
 
 logger = get_logger(__name__)
 
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 
 @configurable(

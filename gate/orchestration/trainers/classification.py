@@ -1,14 +1,14 @@
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from accelerate.utils.constants import op
 
 import numpy as np
 import torch
-from torch.autograd import backward
 import torch.nn.functional as F
 from accelerate import Accelerator
+from accelerate.utils.constants import op
 from sklearn.metrics import average_precision_score, brier_score_loss
+from torch.autograd import backward
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger

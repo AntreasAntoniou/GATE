@@ -1,6 +1,6 @@
 # librispeech.py
-from typing import Optional
 import multiprocessing as mp
+from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
