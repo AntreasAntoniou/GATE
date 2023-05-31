@@ -53,7 +53,6 @@ class Evaluator(ABC):
     ):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
-        print(self.per_epoch_metrics)
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
 
@@ -141,6 +140,14 @@ class Evaluator(ABC):
         for key, value in self.current_epoch_dict.items():
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
+            self.per_epoch_metrics[f"{key}-epoch-mean"].append(
+                phase_metrics[f"{key}-epoch-mean"]
+            )
+            self.per_epoch_metrics[f"{key}-epoch-std"].append(
+                phase_metrics[f"{key}-epoch-std"]
+            )
+
+        self.per_epoch_metrics["global_step"].append(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,
