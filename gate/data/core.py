@@ -1,7 +1,7 @@
 import collections
 import json
-from collections import defaultdict
 import time
+from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
 
 import numpy as np

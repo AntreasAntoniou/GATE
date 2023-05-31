@@ -1,12 +1,11 @@
 # ade20k.py
+import multiprocessing as mp
 from typing import Any, Dict, Optional
-from PIL import Image
 
 import numpy as np
-from datasets import load_dataset
-import multiprocessing as mp
-
 import torch
+from datasets import load_dataset
+from PIL import Image
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR

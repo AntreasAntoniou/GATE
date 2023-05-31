@@ -135,7 +135,6 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
 def key_mapper(input_tuple):
     input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
-
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
         for item in input_dict["image"]["image"]["support_set"]

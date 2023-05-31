@@ -1,10 +1,10 @@
 # food101.py
+import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
-import multiprocessing as mp
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
