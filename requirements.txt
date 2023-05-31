@@ -31,4 +31,5 @@ gpath
 cython
 git+https://github.com/kiyoon/GulpIO2#egg=gulpio2
 git+https://github.com/huggingface/pytorch-image-models.git#egg=timm
+git+https://github.com/AntreasAntoniou/learn2learn
 git+https://github.com/AntreasAntoniou/TALI.git#egg=tali
