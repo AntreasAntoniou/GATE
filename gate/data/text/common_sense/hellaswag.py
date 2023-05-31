@@ -25,8 +25,6 @@ def build_hellaswag_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
-
     train_data = load_dataset(
         path="hellaswag",
         split="train",
