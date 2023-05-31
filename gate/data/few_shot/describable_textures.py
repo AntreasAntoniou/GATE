@@ -5,8 +5,8 @@ from typing import Any, Optional, Tuple, Union
 import learn2learn as l2l
 import PIL
 import torch
-from torchvision import transforms as T
 from rich import print
+from torchvision import transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
