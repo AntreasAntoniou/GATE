@@ -1,4 +1,5 @@
 # food101.py
+import multiprocessing as mp
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -10,7 +11,6 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-import multiprocessing as mp
 
 logger = get_logger(name=__name__, set_rich=True)
 

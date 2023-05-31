@@ -1,9 +1,9 @@
 # trivia_qa.py
+import multiprocessing as mp
 from typing import Optional
 
 import numpy as np
 from datasets import load_dataset
-import multiprocessing as mp
 
 
 def build_trivia_qa_dataset(

@@ -1,10 +1,10 @@
+import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
 import torchvision.transforms as T
-import multiprocessing as mp
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
