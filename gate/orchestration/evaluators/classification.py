@@ -1,3 +1,4 @@
+from collections import defaultdict
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -39,13 +40,9 @@ class StepOutput:
 
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
-        pre_forward_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-        post_forward_time = time.time()
-        logger.debug(f"Forward time: {post_forward_time - pre_forward_time}")
         if "loss" not in output_dict:
             loss = F.cross_entropy(
                 input=output_dict["logits"],
@@ -68,9 +65,6 @@ class ClassificationEvaluator(Evaluator):
             }
         else:
             loss = output_dict["loss"]
-
-        for key, value in output_dict.items():
-            self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
         return StepOutput(
             metrics=output_dict,
@@ -95,6 +89,11 @@ class ClassificationEvaluator(Evaluator):
         )
 
         metrics = step_output.metrics
+
+        for key, value in metrics.items():
+            self.current_epoch_dict[key].append(value.detach().mean().cpu())
+
+        self.val_idx += 1
 
         return EvaluatorOutput(
             phase_name="validation",
@@ -121,6 +120,15 @@ class ClassificationEvaluator(Evaluator):
         )
 
         metrics = step_output.metrics
+
+        for key, value in metrics.items():
+            if key not in self.current_epoch_dict:
+                self.current_epoch_dict[key] = defaultdict(list)
+            self.current_epoch_dict[key][self.test_idx].append(
+                value.detach().mean().cpu()
+            )
+
+        self.test_idx += 1
 
         return EvaluatorOutput(
             phase_name="testing",
@@ -263,11 +271,7 @@ class MultiClassClassificationEvaluator(Evaluator):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
-        pre_forward_time = time.time()
         output_dict = model.forward(batch)
-        post_forward_time = time.time()
-        forward_time = post_forward_time - pre_forward_time
-        logger.debug(f"forward time: {forward_time:.2f}s")
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
                 output_dict[self.target_modality][self.source_modality][
@@ -277,7 +281,7 @@ class MultiClassClassificationEvaluator(Evaluator):
                 reduction="none",
             )
 
-            self.compute_metrics(output_dict, batch, loss)
+            self.compute_step_metrics(output_dict, batch, loss)
 
             output_dict = {
                 "loss": loss,

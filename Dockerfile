@@ -34,13 +34,14 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
-RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 
 RUN mkdir /app/
 ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
 ADD setup.py /app/
 RUN echo y | pip install -r /app/requirements_dev.txt
+
+RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 RUN pip install -e learn2learn
 
 ADD gate/ /app/gate

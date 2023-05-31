@@ -356,12 +356,10 @@ class Learner(nn.Module):
             self.test_dataloader = test_dataloader
 
         if model is None:
-            if self.evaluator[0].model_selection_metric_name is not None:
+            if self.evaluator.model_selection_metric_name is not None:
                 self.load_best_model(
-                    metric_name=self.evaluator[0].model_selection_metric_name,
-                    higher_is_better=self.evaluator[
-                        0
-                    ].model_selection_metric_higher_is_better,
+                    metric_name=self.evaluator.model_selection_metric_name,
+                    higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
                 )
             model = self.accelerator.prepare(self.model)
 
@@ -587,9 +585,12 @@ class Learner(nn.Module):
         )
 
     def load_best_model(self, metric_name: str, higher_is_better: bool):
-        best_global_step, best_metric = self.evaluator[
-            0
-        ].get_best_model_global_step_and_metric(metric_name, higher_is_better)
+        (
+            best_global_step,
+            best_metric,
+        ) = self.evaluator.get_best_model_global_step_and_metric(
+            metric_name, higher_is_better
+        )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
         )

@@ -29,6 +29,8 @@ class Evaluator(ABC):
         self.model_selection_metric_higher_is_better = (
             model_selection_metric_higher_is_better
         )
+        self.val_idx = 0
+        self.test_idx = 0
 
     @abstractmethod
     def step(self, model, batch, global_step):
@@ -47,7 +49,7 @@ class Evaluator(ABC):
         pass
 
     def get_best_model_global_step_and_metric(
-        self, metric_name: str, higher_is_better: bool
+        self, metric_name: str, higher_is_better: bool, kth_best: int = 1
     ):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
@@ -56,14 +58,18 @@ class Evaluator(ABC):
 
         if isinstance(metrics, List):
             if len(metrics) == 0:
-                raise ValueError(f"No epoch values found for {metric_name}")
+                raise ValueError(
+                    f"No epoch values found for {metric_name}, "
+                    f"the available metrics are: {self.per_epoch_metrics.keys()}"
+                )
 
             metrics = torch.stack(metrics)
 
+        metric_sorting = torch.argsort(torch.tensor(metrics))
         if higher_is_better:
-            best_metric_idx = torch.argmax(torch.tensor(metrics))
+            best_metric_idx = metric_sorting[-kth_best]
         else:
-            best_metric_idx = torch.argmin(torch.tensor(metrics))
+            best_metric_idx = metric_sorting[kth_best]
 
         best_global_step = global_steps[best_metric_idx]
         best_metric = metrics[best_metric_idx]
@@ -77,6 +83,7 @@ class Evaluator(ABC):
     ):
         self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
+
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",

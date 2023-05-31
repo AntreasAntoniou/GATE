@@ -69,14 +69,8 @@ class MiniImageNetFewShotClassificationDataset(
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 64,
-                FewShotSuperSplitSetOptions.VAL: 16,
-                FewShotSuperSplitSetOptions.TEST: 20,
-            },
-            # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
+            split_as_original=True,
             subset_split_name_list=["train", "validation", "test"],
-            label_extractor_fn=lambda x: bytes_to_string(x),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -141,16 +135,9 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-from rich import print
+def key_mapper(input_tuple):
+    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
-# def key_mapper(input_dict):
-#     return {
-#         "image": input_dict["image"],
-#         "labels": input_dict["labels"],
-#     }
-
-
-def key_mapper(input_dict):
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
         for item in input_dict["image"]["image"]["support_set"]
