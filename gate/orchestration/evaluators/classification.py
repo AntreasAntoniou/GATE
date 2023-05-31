@@ -66,6 +66,9 @@ class ClassificationEvaluator(Evaluator):
         else:
             loss = output_dict["loss"]
 
+        for key, value in output_dict.items():
+            self.current_epoch_dict[key].append(value.detach().mean().cpu())
+
         return StepOutput(
             metrics=output_dict,
             loss=loss,
@@ -89,11 +92,6 @@ class ClassificationEvaluator(Evaluator):
         )
 
         metrics = step_output.metrics
-
-        for key, value in metrics.items():
-            self.current_epoch_dict[key].append(value.detach().mean().cpu())
-
-        self.val_idx += 1
 
         return EvaluatorOutput(
             phase_name="validation",
@@ -120,11 +118,6 @@ class ClassificationEvaluator(Evaluator):
         )
 
         metrics = step_output.metrics
-
-        for key, value in metrics.items():
-            self.current_epoch_dict[key].append(value.detach().mean().cpu())
-
-        self.test_idx += 1
 
         return EvaluatorOutput(
             phase_name="testing",
