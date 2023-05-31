@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import torch
 import torchvision.transforms as T
+import multiprocessing as mp
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
@@ -41,17 +42,20 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         path="dali-does/clevr-math",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     validation_set = load_dataset(
         path="dali-does/clevr-math",
         split="validation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
     test_set = load_dataset(
         path="dali-does/clevr-math",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     dataset_dict = {
@@ -70,6 +74,8 @@ def transform_wrapper(inputs: Dict, target_size=224):
         ),
         "text": inputs["question"],
         "labels": torch.tensor(int(inputs["label"])).long(),
+        "answer_type": inputs["template"],
+        "question_family_idx": len(inputs["template"]) * [0],
     }
 
 
@@ -84,24 +90,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=[transform_wrapper, transforms],
     )
 
@@ -109,7 +109,7 @@ def build_gate_dataset(
     return dataset_dict
 
 
-def build_dummy_food101_dataset(transforms: Optional[Any] = None) -> dict:
+def build_dummy_dataset(transforms: Optional[Any] = None) -> dict:
     # Create a dummy dataset that emulates food-101's shape and modality
     pass
 

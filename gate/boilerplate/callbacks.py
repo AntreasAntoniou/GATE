@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import threading
 from abc import ABC
 from pathlib import Path
@@ -130,7 +131,7 @@ class Callback(ABC):
     def on_save_checkpoint(
         self,
         model: nn.Module,
-        optimizers: List[torch.optim.Optimizer],
+        optimizer: List[torch.optim.Optimizer],
         experiment: Any,
         checkpoint_path: Path,
     ) -> None:
@@ -139,7 +140,7 @@ class Callback(ABC):
     def on_load_checkpoint(
         self,
         model: nn.Module,
-        optimizers: List[torch.optim.Optimizer],
+        optimizer: List[torch.optim.Optimizer],
         experiment: Any,
         checkpoint_path: Path,
     ) -> None:
@@ -313,25 +314,25 @@ class CallbackHandler(Callback):
     def on_save_checkpoint(
         self,
         model: nn.Module,
-        optimizers: List[torch.optim.Optimizer],
+        optimizer: List[torch.optim.Optimizer],
         experiment: Any,
         checkpoint_path: Path,
     ) -> None:
         for callback in self.callbacks:
             callback.on_save_checkpoint(
-                model, optimizers, experiment, checkpoint_path
+                model, optimizer, experiment, checkpoint_path
             )
 
     def on_load_checkpoint(
         self,
         model: nn.Module,
-        optimizers: List[torch.optim.Optimizer],
+        optimizer: List[torch.optim.Optimizer],
         experiment: Any,
         checkpoint_path: Path,
     ) -> None:
         for callback in self.callbacks:
             callback.on_load_checkpoint(
-                model, optimizers, experiment, checkpoint_path
+                model, optimizer, experiment, checkpoint_path
             )
 
 
@@ -370,7 +371,7 @@ class UploadCheckpointsToHuggingFace(Callback):
     def on_save_checkpoint(
         self,
         model: nn.Module,
-        optimizers: List[torch.optim.Optimizer],
+        optimizer: torch.optim.Optimizer,
         experiment: Any,
         checkpoint_path: Path,
     ) -> None:

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import time
 from typing import Any, Dict, Optional
 
 import torch
@@ -39,9 +40,12 @@ class StepOutput:
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
+        pre_forward_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        post_forward_time = time.time()
+        logger.debug(f"Forward time: {post_forward_time - pre_forward_time}")
         if "loss" not in output_dict:
             loss = F.cross_entropy(
                 input=output_dict["logits"],
@@ -259,7 +263,11 @@ class MultiClassClassificationEvaluator(Evaluator):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
+        pre_forward_time = time.time()
         output_dict = model.forward(batch)
+        post_forward_time = time.time()
+        forward_time = post_forward_time - pre_forward_time
+        logger.debug(f"forward time: {forward_time:.2f}s")
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
                 output_dict[self.target_modality][self.source_modality][

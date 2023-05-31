@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from accelerate import Accelerator
-from huggingface_hub import snapshot_download
 
 from .iwildcam_2022 import prepare_iwildcam_2022
 from .loader.iwildcam2022_dataset import IWildCam2022Dataset

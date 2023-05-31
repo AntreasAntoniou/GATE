@@ -1,5 +1,6 @@
 import json
 import pathlib
+from re import split
 from typing import Any, Counter, Dict, List, Optional
 
 import datasets
@@ -110,12 +111,13 @@ class FewShotClassificationMetaDataset(Dataset):
         subset_split_name_list: Optional[List[str]] = None,
         split_percentage: Optional[Dict[str, float]] = None,
         split_config: Optional[DictConfig] = None,
+        split_as_original: Optional[bool] = False,
         support_set_input_transform: Any = None,
         query_set_input_transform: Any = None,
         support_set_target_transform: Any = None,
         query_set_target_transform: Any = None,
-        label_extractor_fn: Optional[Any] = None,
         preprocess_transforms: Optional[Any] = None,
+        max_support_set_size: Optional[int] = 100,
     ):
         super(FewShotClassificationMetaDataset, self).__init__()
 
@@ -126,6 +128,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.num_episodes = num_episodes
         self.split_config = split_config
         self.preprocess_transform = preprocess_transforms
+        self.split_as_original = split_as_original
 
         self._validate_samples_and_classes(
             min_num_samples_per_class,
@@ -140,6 +143,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.num_classes_per_set = num_classes_per_set
         self.num_samples_per_class = num_samples_per_class
         self.num_queries_per_class = num_queries_per_class
+        self.max_support_set_size = max_support_set_size
         self.variable_num_samples_per_class = variable_num_samples_per_class
         self.variable_num_classes_per_set = variable_num_classes_per_set
 
@@ -167,19 +171,16 @@ class FewShotClassificationMetaDataset(Dataset):
             )
         else:
             self.class_to_address_dict = get_class_to_idx_dict(
-                self.dataset,
+                dataset=self.dataset,
                 class_name_key=self.input_target_annotation_keys[
                     "target_annotations"
                 ],
-                label_extractor_fn=label_extractor_fn,
             )
             save_json(
                 filepath=class_to_address_dict_path,
                 dict_to_store=self.class_to_address_dict,
                 overwrite=True,
             )
-
-        self.label_extractor_fn = label_extractor_fn
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
@@ -223,20 +224,20 @@ class FewShotClassificationMetaDataset(Dataset):
             for subset_name in subset_split_name_list
         ]
         datapoints = []
-        # #logger.debug(
-        #     f"Loading and preprocessing {self.dataset_name} dataset..."
-        # )
-        for idx, subset in tqdm(enumerate(subsets)):
-            for sample in tqdm(subset):
-                sample = self._process_sample(sample)
-                sample[
-                    "label"
-                ] = f"{subset_split_name_list[idx]}{sample['label']}"
-                # print(
-                #     f"sample: {sample}, subset name: {subset_split_name_list[idx]}"
-                # )
-                datapoints.append(sample)
+        label_set = set()
 
+        for set_name, subset in zip(subset_split_name_list, subsets):
+            with tqdm(total=len(subset)) as pbar:
+                for sample in subset:
+                    sample = self._process_sample(sample)
+                    label_set.add(sample["label"])
+
+                    sample["label"] = f"{set_name}-{sample['label']}"
+
+                    datapoints.append(sample)
+                    pbar.update(1)
+
+        print(f"Number of classes: {len(label_set)}")
         dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
@@ -251,7 +252,9 @@ class FewShotClassificationMetaDataset(Dataset):
 
     def _get_current_class_to_address_dict(self):
         """Get current class to address dict based on split config."""
-        if self.split_config is None:
+        if self.split_as_original is True:
+            return self._get_dict_based_on_original_splits()[self.split_name]
+        elif self.split_config is None:
             return self._get_dict_based_on_split_percentage()
         else:
             return {
@@ -262,25 +265,27 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_dict_based_on_split_percentage(self):
         """Get current class to address dict based on split percentage."""
         start_idx, end_idx = self._get_start_end_indices()
-        # print(f"start_idx: {start_idx}, end_idx: {end_idx}")
-        # print(
-        #     f"len(self.class_to_address_dict): {len(self.class_to_address_dict)}"
-        # )
-        # temp_dict = {
-        #     key: value
-        #     for idx, (key, value) in enumerate(
-        #         self.class_to_address_dict.items()
-        #     )
-        #     if start_idx <= idx < end_idx
-        # }
-        # print(f"test {temp_dict}")
-        return {
+        split_dict = {
             key: value
             for idx, (key, value) in enumerate(
                 self.class_to_address_dict.items()
             )
             if start_idx <= idx < end_idx
         }
+        return split_dict
+
+    def _get_dict_based_on_original_splits(self):
+        """Get current class to address dict based on split percentage."""
+        split_dict = {"train": {}, "val": {}, "test": {}}
+        for key, value in self.class_to_address_dict.items():
+            if "train" in key:
+                split_dict["train"][key] = value
+            elif "val" in key:
+                split_dict["val"][key] = value
+            elif "test" in key:
+                split_dict["test"][key] = value
+
+        return split_dict
 
     def _get_start_end_indices(self):
         """Get start and end indices based on split name."""
@@ -348,7 +353,7 @@ class FewShotClassificationMetaDataset(Dataset):
     ):
         """Prepare the support and query sets."""
 
-        max_support_set_size = 370
+        max_support_set_size = self.max_support_set_size
         max_per_class_support_set_size = 50
         available_support_set_size = (
             max_support_set_size - len(support_set_inputs) - idx
@@ -387,6 +392,10 @@ class FewShotClassificationMetaDataset(Dataset):
                 num_support_samples_per_class + num_query_samples_per_class,
             ),
             replace=False,
+        )
+        num_selected_samples = min(
+            len(self.current_class_to_address_dict[class_name]),
+            num_support_samples_per_class + num_query_samples_per_class,
         )
 
         selected_samples_addresses = [
@@ -438,10 +447,6 @@ class FewShotClassificationMetaDataset(Dataset):
         query_set_labels,
     ):
         """Assign the data to the support and query sets."""
-
-        logger.debug(
-            f"num_support_samples_per_class: {num_support_samples_per_class}, data input length: {len(data_inputs)}"
-        )
 
         if len(data_inputs) > num_support_samples_per_class:
             support_set_inputs.extend(
@@ -574,12 +579,12 @@ class FewShotClassificationMetaDataset(Dataset):
         available_class_labels = list(
             self.current_class_to_address_dict.keys()
         )
-        # logger.debug(f"Available class labels: {available_class_labels}")
+        logger.info(f"Available class labels: {available_class_labels}")
         selected_classes_for_set = rng.choice(
             available_class_labels,
             size=min(num_classes_per_set, len(available_class_labels)),
         )
-        # logger.debug(f"Selected classes for set: {selected_classes_for_set}")
+        logger.info(f"Selected classes for set: {selected_classes_for_set}")
 
         # Generate mapping from label to local index and prepare for
         # sample selection
@@ -587,9 +592,9 @@ class FewShotClassificationMetaDataset(Dataset):
             label_name: i
             for i, label_name in enumerate(selected_classes_for_set)
         }
-        # #logger.debug(
-        #     f"Label index to local label index: {label_idx_to_local_label_idx}"
-        # )
+        logger.info(
+            f"Label index to local label index: {label_idx_to_local_label_idx}"
+        )
         self.class_to_num_available_samples = (
             self._prepare_for_sample_selection(selected_classes_for_set)
         )
@@ -614,11 +619,11 @@ class FewShotClassificationMetaDataset(Dataset):
                 num_support_samples_per_class,
                 selected_samples_addresses,
             ) = self._prepare_support_and_query_sets(
-                class_name,
-                num_query_samples_per_class,
-                rng,
-                len(selected_classes_for_set) - idx,
-                support_set_inputs,
+                class_name=class_name,
+                num_query_samples_per_class=num_query_samples_per_class,
+                rng=rng,
+                idx=len(selected_classes_for_set) - idx,
+                support_set_inputs=support_set_inputs,
             )
 
             if selected_samples_addresses is None:

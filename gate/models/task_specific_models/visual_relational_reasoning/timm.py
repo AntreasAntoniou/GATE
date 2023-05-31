@@ -108,7 +108,7 @@ def build_gate_model(
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
-    num_projection_features: Optional[int] = None,
+    num_projection_features: int = 512,
     dropout_fusion_prob: float = 0.0,
     num_classes: int = 10,
 ):
@@ -189,13 +189,13 @@ material_dict = {"metal": 0, "rubber": 1}
     name="timm-relational-reasoning-multi-task",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-def build_gate_model(
+def build_gate_model_multi_task(
     timm_model_name: str = "resnet50.a1_in1k",
     clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
-    num_projection_features: Optional[int] = None,
+    num_projection_features: int = 512,
     dropout_fusion_prob: float = 0.0,
     num_classes: Dict = {
         "colour": len(colour_dict),

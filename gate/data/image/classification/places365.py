@@ -87,6 +87,10 @@ def build_places365_dataset(
     return dataset_dict[set_name]
 
 
+def data_format_transform(inputs):
+    return {"image": inputs[0], "labels": inputs[1]}
+
+
 @configurable(
     group="dataset", name="places365", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -98,25 +102,19 @@ def build_gate_places365_dataset(
     train_set = GATEDataset(
         dataset=build_places365_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        item_keys=["image", "labels"],
-        transforms=transforms,
+        transforms=[data_format_transform, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_places365_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        item_keys=["image", "labels"],
-        transforms=transforms,
+        transforms=[data_format_transform, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_places365_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        item_keys=["image", "labels"],
-        transforms=transforms,
+        transforms=[data_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

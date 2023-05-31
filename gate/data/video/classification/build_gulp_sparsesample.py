@@ -4,7 +4,6 @@ from typing import Any
 
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
-from hydra_zen import store
 
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
@@ -15,22 +14,6 @@ from ..loader.gulp_sparsesample_squeezed_dataset import (
 )
 
 
-@store(
-    group="torch_dataset",
-    name="hmdb51-gulprgb",
-    dataset_name="hmdb51-gulprgb",
-    data_dir="${data_dir}/hmdb51",
-)
-@store(
-    group="torch_dataset",
-    name="hmdb51-gulprgb-noaug",
-    dataset_name="hmdb51-gulprgb",
-    data_dir="${data_dir}/hmdb51",
-    train_jitter_min=224,
-    train_jitter_max=224,
-    train_horizontal_flip=False,
-    test_scale=224,
-)
 def build_gulp_dataset(
     dataset_name: str,
     data_dir: str | Path,
@@ -183,20 +166,6 @@ def build_gulp_dataset(
     return dataset
 
 
-@store(
-    group="torch_dataset",
-    name="hmdb51-gulprgb-squeezed-noaug",
-    dataset_name="hmdb51-gulprgb",
-    data_dir="${data_dir}/hmdb51",
-    size=224,
-)
-@store(
-    group="torch_dataset",
-    name="epic-kitchens-100-gulprgb-squeezed-noaug",
-    dataset_name="epic-kitchens-100-gulprgb",
-    data_dir="${data_dir}",
-    size=224,
-)
 def build_squeezed_gulp_dataset(
     dataset_name: str,
     data_dir: str | Path,

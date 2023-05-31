@@ -24,9 +24,8 @@ SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 
 RUN conda install -c conda-forge mamba -y
 RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat -y
-RUN mamba install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+RUN mamba install -c conda-forge git-crypt nvitop -y
 
-RUN echo y | pip install nvitop --upgrade
 
 RUN conda init bash
 RUN conda init fish
@@ -35,15 +34,17 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
-RUN git clone https://github.com/mlguild/learn2learn.git
+RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 
 RUN mkdir /app/
-ADD gate/ /app/gate
+ADD requirements.txt /app/
+ADD requirements_dev.txt /app/
 ADD setup.py /app/
-
-RUN echo y | pip install /app/[dev]
-
+RUN echo y | pip install -r /app/requirements_dev.txt
 RUN pip install -e learn2learn
+
+ADD gate/ /app/gate
+RUN echo y | pip install /app/[dev]
 
 
 

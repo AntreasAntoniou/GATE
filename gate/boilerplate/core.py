@@ -1,11 +1,12 @@
 import pathlib
 from pathlib import Path
 from time import sleep
+import time
 from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
-from accelerate import Accelerator, DistributedDataParallelKwargs
+from accelerate import Accelerator
 from neptune import Run
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -23,18 +24,16 @@ from gate.config.variables import (
     RESUME,
 )
 from gate.orchestration.evaluators.classification import (
-    ClassificationEvaluator,
     Evaluator,
 )
 from gate.orchestration.trainers.classification import (
-    ClassificationTrainer,
     Trainer,
 )
 
 logger = get_logger(__name__)
 
-# silence logger for accelerate
-accelerate_logger = get_logger("accelerate", logging_level="ERROR")
+from typing import Union
+from pathlib import Path
 
 
 @configurable(
@@ -47,7 +46,6 @@ accelerate_logger = get_logger("accelerate", logging_level="ERROR")
         resume=RESUME,
         evaluate_every_n_steps=1000,
         checkpoint_after_validation=True,
-        checkpoint_every_n_steps=500,
         train_iters=HYDRATED_TRAIN_ITERS,
         limit_val_iters=1000,
         dummy_batch_mode=DUMMY_BATCH_MODE,
@@ -60,24 +58,25 @@ class Learner(nn.Module):
     def __init__(
         self,
         experiment_name: str,
+        accelerator: Accelerator,
         root_dir: Union[str, Path],
         model: torch.nn.Module,
+        trainer: Trainer,
+        evaluator: Evaluator,
         resume: Union[bool, str] = False,
-        evaluate_every_n_steps: int = None,
-        checkpoint_every_n_steps: int = None,
-        checkpoint_after_validation: bool = False,
-        train_iters: int = None,
-        train_dataloader: DataLoader = None,
-        limit_train_iters: int = None,
-        val_dataloader: Union[List[DataLoader], DataLoader] = None,
-        limit_val_iters: int = None,
-        test_dataloader: Union[List[DataLoader], DataLoader] = None,
-        trainers: Union[List[Trainer], Trainer] = None,
-        evaluators: Union[List[Evaluator], Evaluator] = None,
-        callbacks: Union[List[Callback], Callback] = None,
-        print_model_parameters: bool = False,
-        hf_cache_dir: str = None,
-        hf_repo_path: str = None,
+        evaluate_every_n_steps: Optional[int] = None,
+        checkpoint_every_n_steps: Optional[int] = None,
+        checkpoint_after_validation: Optional[bool] = False,
+        train_iters: Optional[int] = None,
+        train_dataloader: Optional[DataLoader] = None,
+        limit_train_iters: Optional[int] = None,
+        val_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
+        limit_val_iters: Optional[int] = None,
+        test_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
+        callbacks: Optional[Union[List[Callback], Callback]] = None,
+        print_model_parameters: Optional[bool] = False,
+        hf_cache_dir: Optional[str] = None,
+        hf_repo_path: Optional[str] = None,
         experiment_tracker: Optional[Run] = None,
         dummy_batch_mode: Optional[bool] = False,
     ):
@@ -90,8 +89,8 @@ class Learner(nn.Module):
         :param train_dataloader: A list of DataLoaders for training.
         :param val_dataloader: A list of DataLoaders for validation.
         :param test_dataloader: A list of DataLoaders for testing.
-        :param trainers: A list of trainer objects for training.
-        :param evaluators: A list of evaluator objects for evaluation.
+        :param trainer: A list of trainer objects for training.
+        :param evaluator: A list of evaluator objects for evaluation.
         :param evaluate_every_n_steps: The number of steps between evaluations.
         :param checkpoint_every_n_steps: The number of steps between checkpoints.
         :param checkpoint_after_validation: Whether to save a checkpoint after validation.
@@ -100,6 +99,7 @@ class Learner(nn.Module):
         """
         super().__init__()
         self.experiment_name = experiment_name
+        self.accelerator = accelerator
         self.root_dir = (
             root_dir if isinstance(root_dir, Path) else Path(root_dir)
         )
@@ -118,7 +118,7 @@ class Learner(nn.Module):
 
         self.model = model
         self.evaluate_every_n_steps = evaluate_every_n_steps
-        self.checkpoint_every_n_steps = checkpoint_every_n_steps or 99999999999
+        self.checkpoint_every_n_steps = checkpoint_every_n_steps
         self.checkpoint_after_validation = checkpoint_after_validation
         self.step_idx = 0
         self.global_step = 0
@@ -135,8 +135,11 @@ class Learner(nn.Module):
 
         self.test_dataloader = test_dataloader
 
+        self.trainer = trainer
+        self.evaluator = evaluator
+
         for name, params in self.model.named_parameters():
-            logger.info(f"{name}, {params.shape}")
+            logger.debug(f"{name}, {params.shape}")
 
         self.callbacks = (
             [callbacks] if isinstance(callbacks, Callback) else callbacks
@@ -157,15 +160,8 @@ class Learner(nn.Module):
 
         self.resume = resume
 
-        if self.evaluate_every_n_steps is None:
-            self.evaluate_every_n_steps = 99999999999
-
-        self.trainers = (
-            [trainers] if isinstance(trainers, Trainer) else trainers
-        )
-        self.evaluators = (
-            [evaluators] if isinstance(evaluators, Evaluator) else evaluators
-        )
+        self.trainer = trainer
+        self.evaluator = evaluator
 
         self.callback_handler.on_init_end(
             experiment=self,
@@ -174,35 +170,6 @@ class Learner(nn.Module):
             val_dataloader=self.val_dataloader,
             test_dataloader=self.test_dataloader,
         )
-
-        # use if you want to debug unused parameter errors in DDP
-        self.accelerator = Accelerator(
-            # kwargs_handlers=[
-            #     DistributedDataParallelKwargs(find_unused_parameters=True)
-            # ]
-        )
-
-        self.model = self.accelerator.prepare(self.model)
-
-        for trainer in self.trainers:
-            trainer.optimizer = self.accelerator.prepare(
-                trainer.get_optimizer()
-            )
-            if trainer.scheduler is not None:
-                trainer.scheduler = self.accelerator.prepare(trainer.scheduler)
-
-        if self.train_dataloader is not None:
-            self.train_dataloader = self.accelerator.prepare(
-                self.train_dataloader
-            )
-
-        if self.val_dataloader is not None:
-            self.val_dataloader = self.accelerator.prepare(self.val_dataloader)
-
-        if self.test_dataloader is not None:
-            self.test_dataloader = self.accelerator.prepare(
-                self.test_dataloader
-            )
 
         if isinstance(resume, str):
             checkpoint_path = Path(resume)
@@ -217,7 +184,7 @@ class Learner(nn.Module):
 
         if print_model_parameters:
             for key, value in self.named_parameters():
-                logger.info(
+                logger.debug(
                     f"Parameter {key} -> {value.shape} requires grad {value.requires_grad}"
                 )
 
@@ -241,14 +208,13 @@ class Learner(nn.Module):
         self.callback_handler.on_training_step_start(model, batch)
         output_list = []
 
-        for trainer in self.trainers:
-            cur_output_dict = trainer.training_step(
-                model=model,
-                batch=batch,
-                global_step=self.global_step,
-                accelerator=self.accelerator,
-            )
-            output_list.append(cur_output_dict)
+        cur_output_dict = self.trainer.training_step(
+            model=model,
+            batch=batch,
+            global_step=self.global_step,
+            accelerator=self.accelerator,
+        )
+        output_list.append(cur_output_dict)
 
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_training_step_end(model, batch)
@@ -258,13 +224,13 @@ class Learner(nn.Module):
     def validation_step(self, model, batch):
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_validation_step_start(model, batch)
-        for evaluator in self.evaluators:
-            evaluator.validation_step(
-                model=model,
-                batch=batch,
-                global_step=self.global_step,
-                accelerator=self.accelerator,
-            )
+
+        self.evaluator.validation_step(
+            model=model,
+            batch=batch,
+            global_step=self.global_step,
+            accelerator=self.accelerator,
+        )
 
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_validation_step_end(model, batch)
@@ -273,13 +239,12 @@ class Learner(nn.Module):
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_testing_step_start(model, batch)
 
-        for evaluator in self.evaluators:
-            evaluator.testing_step(
-                model=model,
-                batch=batch,
-                global_step=self.global_step,
-                accelerator=self.accelerator,
-            )
+        self.evaluator.testing_step(
+            model=model,
+            batch=batch,
+            global_step=self.global_step,
+            accelerator=self.accelerator,
+        )
 
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_testing_step_end(model, batch)
@@ -290,12 +255,11 @@ class Learner(nn.Module):
             model=self.model,
         )
 
-        for trainer in self.trainers:
-            trainer.start_training(
-                global_step=self.global_step,
-            )
+        self.trainer.start_training(
+            global_step=self.global_step,
+        )
 
-        logger.info("Starting training 🏋🏽")
+        logger.debug("Starting training 🏋🏽")
 
     def end_training(self):
         self.callback_handler.on_train_end(
@@ -303,14 +267,13 @@ class Learner(nn.Module):
             model=self.model,
         )
 
-        for trainer in self.trainers:
-            trainer.end_training(global_step=self.global_step)
+        self.trainer.end_training(global_step=self.global_step)
 
         while len(self.background_threads) > 0:
             self.check_manage_background_threads()
             sleep(1)
 
-        logger.info("Training finished 🎉")
+        logger.debug("Training finished 🎉")
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
@@ -329,39 +292,36 @@ class Learner(nn.Module):
             experiment=self, model=self.model
         )
 
-        for evaluator in self.evaluators:
-            evaluator.start_validation(
-                global_step=self.global_step,
-            )
+        self.evaluator.start_validation(
+            global_step=self.global_step,
+        )
 
-        logger.info("Starting validation 🧪")
+        logger.debug("Starting validation 🧪")
 
     def end_validation(self):
         self.callback_handler.on_validation_end(
             experiment=self, model=self.model
         )
 
-        for evaluator in self.evaluators:
-            evaluator.end_validation(
-                global_step=self.global_step,
-            )
-        logger.info(f"{self.checkpoint_after_validation}")
+        self.evaluator.end_validation(
+            global_step=self.global_step,
+        )
+
         if self.checkpoint_after_validation:
-            logger.info("Saving checkpoint after validation")
+            logger.debug("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
 
-        logger.info("Validation finished 🎉")
+        logger.debug("Validation finished 🎉")
 
     def start_testing(self):
         self.callback_handler.on_testing_start(
             experiment=self, model=self.model
         )
 
-        for evaluator in self.evaluators:
-            evaluator.start_testing(
-                global_step=self.global_step,
-            )
-            logger.info("Starting testing 🧪")
+        self.evaluator.start_testing(
+            global_step=self.global_step,
+        )
+        logger.debug("Starting testing 🧪")
 
     def end_testing(self):
         self.callback_handler.on_testing_end(
@@ -369,12 +329,11 @@ class Learner(nn.Module):
             model=self.model,
         )
 
-        for evaluator in self.evaluators:
-            evaluator.end_testing(
-                global_step=self.global_step,
-            )
+        self.evaluator.end_testing(
+            global_step=self.global_step,
+        )
 
-        logger.info("Testing finished 🎉")
+        logger.debug("Testing finished 🎉")
 
     def train(self, train_dataloader: DataLoader = None):
         if train_dataloader is not None:
@@ -401,10 +360,10 @@ class Learner(nn.Module):
             self.test_dataloader = test_dataloader
 
         if model is None:
-            if self.evaluators[0].model_selection_metric_name is not None:
+            if self.evaluator[0].model_selection_metric_name is not None:
                 self.load_best_model(
-                    metric_name=self.evaluators[0].model_selection_metric_name,
-                    higher_is_better=self.evaluators[
+                    metric_name=self.evaluator[0].model_selection_metric_name,
+                    higher_is_better=self.evaluator[
                         0
                     ].model_selection_metric_higher_is_better,
                 )
@@ -439,17 +398,19 @@ class Learner(nn.Module):
                             batch=batch,
                         )
 
-                        if self.step_idx % self.evaluate_every_n_steps == 0:
-                            self._validation_loop()
-                            self.check_manage_background_threads()
-
                         if (
-                            self.step_idx % self.checkpoint_every_n_steps == 0
+                            self.checkpoint_every_n_steps is not None
+                            and self.step_idx % self.checkpoint_every_n_steps
+                            == 0
                             and self.step_idx > 0
                         ):
                             self.save_checkpoint(
                                 checkpoint_name=f"ckpt_{self.global_step}"
                             )
+
+                        if self.step_idx % self.evaluate_every_n_steps == 0:
+                            self._validation_loop()
+                            self.check_manage_background_threads()
 
                         if self.step_idx >= self.train_iters:
                             return self.end_training()
@@ -485,15 +446,21 @@ class Learner(nn.Module):
             self.start_validation()
 
             with tqdm(total=len(val_dataloader)) as pbar_dataloaders:
+                pre_batch_time = time.time()
                 for batch_idx, batch in enumerate(val_dataloader):
                     if self.limit_val_iters is not None:
                         if batch_idx >= self.limit_val_iters:
                             break
+                    post_batch_time = time.time()
+                    logger.debug(
+                        f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
+                    )
                     self.validation_step(
                         model=model,
                         batch=batch,
                     )
                     pbar_dataloaders.update(1)
+                    pre_batch_time = time.time()
 
             self.end_validation()
 
@@ -534,19 +501,11 @@ class Learner(nn.Module):
             step_idx=self.step_idx,
             global_step=self.global_step,
             current_epoch_dict={
-                "train": [
-                    trainer.current_epoch_dict for trainer in self.trainers
-                ],
-                "eval": [
-                    evaluator.current_epoch_dict
-                    for evaluator in self.evaluators
-                ],
+                "train": self.trainer.current_epoch_dict,
+                "eval": self.evaluator.current_epoch_dict,
             },
             per_epoch_metrics={
-                "eval": [
-                    evaluator.per_epoch_metrics
-                    for evaluator in self.evaluators
-                ],
+                "eval": self.evaluator.current_epoch_dict,
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
@@ -556,10 +515,10 @@ class Learner(nn.Module):
             f=ckpt_save_path / "trainer_state.pt",
         )
         self.accelerator.save_state(ckpt_save_path)
-        logger.info(f"Saved checkpoint to {ckpt_save_path}")
+        logger.debug(f"Saved checkpoint to {ckpt_save_path}")
         self.callback_handler.on_save_checkpoint(
             model=self.model,
-            optimizers=[trainer.optimizer for trainer in self.trainers],
+            optimizer=self.trainer.optimizer,
             experiment=self,
             checkpoint_path=ckpt_save_path,
         )
@@ -578,7 +537,9 @@ class Learner(nn.Module):
 
         if not (pathlib.Path(checkpoint_path) / "trainer_state.pt").exists():
             return
-        logger.info(f"Loading checkpoint from {checkpoint_path}")
+
+        logger.debug(f"Loading checkpoint from {checkpoint_path}")
+
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
         )
@@ -587,41 +548,50 @@ class Learner(nn.Module):
         current_epoch_dict = trainer_state["current_epoch_dict"]
         per_epoch_metrics = trainer_state["per_epoch_metrics"]
 
-        # print(f"current_epoch_dict: {current_epoch_dict}")
-        # print(f"per_epoch_metrics: {per_epoch_metrics}")
+        if isinstance(current_epoch_dict["train"], List):
+            loaded_trainer_epoch_dict = current_epoch_dict["train"][0]
+        else:
+            loaded_trainer_epoch_dict = current_epoch_dict["train"]
 
-        for trainer in self.trainers:
-            setattr(
-                trainer,
-                "current_epoch_dict",
-                current_epoch_dict["train"][self.trainers.index(trainer)],
-            )
-            # print(f"Loaded trainer {trainer.__dict__}")
+        if isinstance(current_epoch_dict["eval"], List):
+            loaded_evaluator_epoch_dict = current_epoch_dict["eval"][0]
+        else:
+            loaded_evaluator_epoch_dict = current_epoch_dict["eval"]
 
-        for evaluator in self.evaluators:
-            setattr(
-                evaluator,
-                "current_epoch_dict",
-                current_epoch_dict["eval"][self.evaluators.index(evaluator)],
-            )
-            setattr(
-                evaluator,
-                "per_epoch_metrics",
-                per_epoch_metrics["eval"][self.evaluators.index(evaluator)],
-            )
-            # print(f"Loaded evaluator {evaluator.__dict__}")
+        if isinstance(per_epoch_metrics["eval"], List):
+            loaded_evaluator_per_epoch_metrics = per_epoch_metrics["eval"][0]
+        else:
+            loaded_evaluator_per_epoch_metrics = per_epoch_metrics["eval"]
+
+        setattr(
+            self.trainer,
+            "current_epoch_dict",
+            loaded_trainer_epoch_dict,
+        )
+
+        setattr(
+            self.evaluator,
+            "current_epoch_dict",
+            loaded_evaluator_epoch_dict,
+        )
+
+        setattr(
+            self.evaluator,
+            "per_epoch_metrics",
+            loaded_evaluator_per_epoch_metrics,
+        )
 
         self.accelerator.load_state(checkpoint_path)
 
         self.callback_handler.on_load_checkpoint(
             model=self.model,
-            optimizers=[trainer.get_optimizer() for trainer in self.trainers],
+            optimizer=self.trainer.optimizer,
             experiment=self,
             checkpoint_path=checkpoint_path,
         )
 
     def load_best_model(self, metric_name: str, higher_is_better: bool):
-        best_global_step, best_metric = self.evaluators[
+        best_global_step, best_metric = self.evaluator[
             0
         ].get_best_model_global_step_and_metric(metric_name, higher_is_better)
         print(
@@ -637,97 +607,3 @@ class Learner(nn.Module):
         )
 
         self.load_checkpoint(checkpoint_path=download_dict["root_filepath"])
-
-
-if __name__ == "__main__":
-    # a minimal example of how to use the Learner class
-    import torch
-    from datasets import load_dataset
-    from rich import print
-    from torch.nn import CrossEntropyLoss
-    from torch.optim import Adam
-    from torch.utils.data import DataLoader
-    from torchvision.transforms import Compose, Resize, ToTensor
-
-    train_dataset = load_dataset("beans", split="train")
-    val_dataset = load_dataset("beans", split="validation")
-    test_dataset = load_dataset("beans", split="test")
-
-    augs = Compose(
-        [
-            Resize(size=(96, 96)),
-            ToTensor(),
-        ]
-    )
-
-    def transforms(examples):
-        examples["image"] = [
-            augs(image.convert("RGB")) for image in examples["image"]
-        ]
-        return examples
-
-    train_dataset = train_dataset.with_transform(transforms)
-    val_dataset = val_dataset.with_transform(transforms)
-    test_dataset = test_dataset.with_transform(transforms)
-
-    def collate_fn(examples):
-        images = []
-        labels = []
-        for example in examples:
-            images.append((example["image"]))
-            labels.append(example["labels"])
-
-        pixel_values = torch.stack(images)
-        labels = torch.tensor(labels)
-        return {"image": pixel_values, "labels": labels}
-
-    train_dataloader = DataLoader(
-        train_dataset,
-        collate_fn=collate_fn,
-        batch_size=256,
-        shuffle=True,
-        num_workers=8,
-    )
-
-    val_dataloader = DataLoader(
-        val_dataset, collate_fn=collate_fn, batch_size=256, num_workers=8
-    )
-
-    test_dataloader = DataLoader(
-        test_dataset, collate_fn=collate_fn, batch_size=256, num_workers=8
-    )
-
-    class BeanResNet(torch.nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.model = torch.hub.load(
-                "pytorch/vision:v0.9.0", "resnet18", pretrained=True
-            )
-            self.model.fc = torch.nn.Linear(512, 5)
-
-        def forward(self, input_dict):
-            return {"logits": self.model(input_dict["image"])}
-
-    bean_resnet = BeanResNet()
-
-    optimizer = Adam(bean_resnet.parameters(), lr=1e-3, weight_decay=1e-5)
-
-    criterion = CrossEntropyLoss()
-
-    experiment = Learner(
-        experiment_name="debug_checkpointing",
-        root_dir="experiments/debug_checkpointing",
-        model=bean_resnet,
-        train_dataloader=train_dataloader,
-        val_dataloader=val_dataloader,
-        test_dataloader=test_dataloader,
-        trainers=[ClassificationTrainer(optimizer=optimizer)],
-        evaluators=[ClassificationEvaluator()],
-        evaluate_every_n_steps=100,
-        checkpoint_every_n_steps=100,
-        checkpoint_after_validation=True,
-        train_iters=100000,
-        resume=True,
-    )
-
-    experiment.run()

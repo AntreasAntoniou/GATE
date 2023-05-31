@@ -1,6 +1,7 @@
 # imdb.py
-from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Dict, Optional
+import multiprocessing as mp
+
 
 import numpy as np
 from datasets import load_dataset
@@ -11,18 +12,16 @@ from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
 
 
-def build_imdb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_imdb_dataset(data_dir: str, set_name: str) -> Dict:
     """
-    Build a imdb dataset using the Hugging Face datasets library.
-    https://huggingface.co/datasets/imdb
+    Build an IMDB dataset using the Hugging Face datasets library.
 
-    Args:
-        data_dir: The directory where the dataset cache is stored.
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param data_dir: The directory where the dataset cache is stored.
+    :type data_dir: str
+    :param set_name: The name of the dataset split to return ("train", "val", or "test").
+    :type set_name: str
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
     rng = np.random.RandomState(42)
 
@@ -30,12 +29,14 @@ def build_imdb_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         path="imdb",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
         path="imdb",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

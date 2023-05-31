@@ -177,7 +177,7 @@ material_dict = {"metal": 0, "rubber": 1}
     group="model",
     name="clip-relational-reasoning-multi-task",
 )
-def build_gate_model(
+def build_gate_model_multi_task(
     model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     modality_a_identifier: str = "image",

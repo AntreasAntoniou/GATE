@@ -1,4 +1,6 @@
 # race_middle.py
+from typing import Optional
+import multiprocessing as mp
 from typing import Any, Optional
 
 import numpy as np
@@ -32,6 +34,7 @@ def build_race_middle_dataset(
         "middle",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     val_data = load_dataset(
@@ -39,6 +42,7 @@ def build_race_middle_dataset(
         "middle",
         split="validation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -46,6 +50,7 @@ def build_race_middle_dataset(
         "middle",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}

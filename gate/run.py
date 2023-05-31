@@ -1,6 +1,7 @@
 import os
 import pathlib
 from typing import Any, Callable, Optional
+from accelerate import Accelerator
 
 # Set environmental variables for better debugging
 os.environ["HYDRA_FULL_ERROR"] = "1"
@@ -47,6 +48,8 @@ config_store = collect_config_store()
 # Initializing logger
 logger = get_logger(name=__name__)
 
+accelerator = Accelerator()
+
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
 def run(cfg: Any) -> None:
@@ -83,8 +86,11 @@ def run(cfg: Any) -> None:
     global_step, experiment_tracker = setup(ckpt_path, cfg)
 
     model_and_transform = instantiate(cfg.model)
+    # task_adaptor = instantiate(cfg.task_adaptor)
+    # model = task_adaptor(model_and_transform.model)
 
     model: GATEModel = model_and_transform.model
+    model = accelerator.prepare(model)
     transform: Optional[Callable] = model_and_transform.transform
 
     wandb.init()
@@ -107,10 +113,18 @@ def run(cfg: Any) -> None:
         cfg, test_dataset, cfg.eval_batch_size, shuffle=False
     )
 
+    (
+        train_dataloader,
+        val_dataloader,
+        test_dataloader,
+    ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
+
     experiment_tracker["num_parameters"] = count_model_parameters(model)
 
     optimizer = instantiate_optimizer(cfg, model)
     scheduler = instantiate_scheduler(cfg, optimizer)
+
+    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     trainer = instantiate(
         cfg.trainer,
@@ -127,8 +141,9 @@ def run(cfg: Any) -> None:
     learner: Learner = instantiate(
         cfg.learner,
         model=model,
-        trainers=[trainer],
-        evaluators=[evaluator],
+        accelerator=accelerator,
+        trainer=trainer,
+        evaluator=evaluator,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
         callbacks=instantiate_callbacks(cfg.callbacks),

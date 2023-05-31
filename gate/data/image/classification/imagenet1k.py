@@ -1,6 +1,7 @@
 # imagenet1k.py
 from dataclasses import dataclass
 from typing import Any, Optional
+import multiprocessing as mp
 
 import numpy as np
 import torchvision.transforms as T
@@ -8,6 +9,7 @@ from datasets import load_dataset
 from timm.data import rand_augment_transform
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
@@ -15,7 +17,7 @@ from gate.data.tasks.classification import ClassificationTask
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
-    Build a SVHN dataset using the Hugging Face datasets library.
+    Build an ImageNet1K dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -25,21 +27,15 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
 
-    train_val_data = load_dataset(
+    data = load_dataset(
         "imagenet-1k",
-        split="train",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
-
-    test_data = load_dataset(
-        "imagenet-1k",
-        split="validation",
-        cache_dir=data_dir,
-        task="image-classification",
-    )
+    train_val_data = data["train"]
+    test_data = data["validation"]
 
     train_val_data = train_val_data.train_test_split(test_size=0.05)
     train_set = train_val_data["train"]
@@ -48,6 +44,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     dataset_dict = {"train": train_set, "val": val_set, "test": test_data}
 
     return dataset_dict[set_name]
+
+
+logger = get_logger(name=__name__)
 
 
 @configurable(
@@ -60,42 +59,48 @@ def build_gate_dataset(
     transforms: Optional[Any] = None,
     num_classes=1000,
 ) -> dict:
-    rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
+    rand_augment = rand_augment_transform(
+        "rand-m9-n3-mstd0.5-inc1", hparams={}
+    )
     single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 
     def train_augment(input_dict):
         x = input_dict["image"]
         x = T.ToTensor()(x)
-        # print(x.shape)
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)
-        input_dict["image"] = rand_augment(x)
+        try:
+            input_dict["image"] = rand_augment(x)
+        except Exception as e:
+            logger.warn(f"RandAugment failed with error: {e}")
+            input_dict["image"] = x
 
         return input_dict
 
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=[train_augment, transforms],
+        transforms=[
+            train_augment,
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[
+            transforms,
+        ],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        transforms=transforms,
+        transforms=[
+            transforms,
+        ],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

@@ -10,7 +10,7 @@ from hydra_zen import MISSING, ZenField, builds, make_config
 from omegaconf import OmegaConf
 from rich import print
 from rich.syntax import Syntax
-from timm.scheduler import CosineLRScheduler
+from timm.scheduler import CosineLRScheduler, PlateauLRScheduler
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
@@ -33,6 +33,7 @@ from gate.config.variables import (
     GPU_MEMORY,
     HF_CACHE_DIR,
     HF_USERNAME,
+    HYDRATED_TRAIN_ITERS,
     LOGGER_LEVEL,
     NUM_WORKERS,
     PERSISTENT_WORKERS,
@@ -161,14 +162,50 @@ def collect_config_store():
         zen_partial=True,
     )
 
-    cosine_learning_rate_scheduler_config = (
-        cosine_learning_rate_scheduler_config()
+    config_store.store(
+        group="scheduler",
+        name="cosine-annealing",
+        node=cosine_learning_rate_scheduler_config(),
+    )
+
+    plateu_learning_rate_scheduler_config = builds(
+        torch.optim.lr_scheduler.ReduceLROnPlateau,
+        populate_full_signature=True,
+        zen_partial=True,
     )
 
     config_store.store(
         group="scheduler",
-        name="cosine-annealing",
-        node=cosine_learning_rate_scheduler_config,
+        name="plateu",
+        node=plateu_learning_rate_scheduler_config(
+            mode="min",
+            factor=0.5,
+            patience=1000,
+            threshold=1e-4,
+            threshold_mode="rel",
+            cooldown=0,
+            min_lr=0,
+            eps=1e-8,
+            verbose=False,
+        ),
+    )
+
+    linear_learning_rate_scheduler_config = builds(
+        torch.optim.lr_scheduler.LinearLR,
+        populate_full_signature=True,
+        zen_partial=True,
+    )
+
+    config_store.store(
+        group="scheduler",
+        name="linear",
+        node=linear_learning_rate_scheduler_config(
+            start_factor=1.0,
+            end_factor=1.0 / 10000,
+            total_iters=10000,
+            last_epoch=-1,
+            verbose=False,
+        ),
     )
 
     ##########################################################################
@@ -225,7 +262,7 @@ def collect_config_store():
             "_self_",
             dict(learner="default"),
             dict(optimizer="adamw"),
-            dict(scheduler="cosine-annealing"),
+            dict(scheduler="plateu"),
             dict(model="clip-classification"),
             dict(dataset="cifar100"),
             dict(trainer="image_classification"),

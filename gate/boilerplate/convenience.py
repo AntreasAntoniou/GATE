@@ -176,6 +176,12 @@ def instantiate_scheduler(cfg: Any, optimizer):
     return instantiate(
         cfg.scheduler,
         optimizer=optimizer,
-        t_initial=cfg.learner.train_iters,
         _partial_=False,
     )
+
+    # return instantiate(
+    #     cfg.scheduler,
+    #     optimizer=optimizer,
+    #     t_initial=cfg.learner.train_iters,
+    #     _partial_=False,
+    # )

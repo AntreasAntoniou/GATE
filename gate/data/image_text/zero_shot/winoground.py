@@ -10,7 +10,7 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
+import multiprocessing as mp
 
 logger = get_logger(name=__name__, set_rich=True)
 
@@ -39,6 +39,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         cache_dir=data_dir,
         split="test",
         use_auth_token=os.environ["HF_TOKEN"],
+        num_proc=mp.cpu_count(),
     )
 
     train_val_test_data = dataset.train_test_split(test_size=0.20)

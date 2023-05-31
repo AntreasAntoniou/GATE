@@ -19,7 +19,7 @@ class DuoModalZeroShotModel(BaseModule):
         modality_a_num_features: int,
         modality_b_num_features: int,
         projection_num_features: Optional[int] = None,
-        temperature_parameter: Optional[float] = 1.0,
+        temperature_parameter: Optional[float] = 1.0 / 0.07,
         head_identifier: Optional[str] = "projection_output",
     ):
         super().__init__()
@@ -33,9 +33,11 @@ class DuoModalZeroShotModel(BaseModule):
 
         self.projection_num_features = projection_num_features
         if temperature_parameter is None:
-            self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
+            self.temperature_parameter = nn.Parameter(torch.tensor(1.0 / 0.07))
         else:
-            self.temperature_parameter = temperature_parameter
+            self.temperature_parameter = nn.Parameter(
+                torch.tensor(temperature_parameter)
+            )
 
         if self.projection_num_features is not None:
             self.modality_a_linear = nn.Linear(

@@ -1,6 +1,6 @@
 # cityscapes.py
 from typing import Optional
-
+import multiprocessing as mp
 import torch
 from datasets import load_dataset
 
@@ -26,12 +26,14 @@ def build_nyu_depth_v2_dataset(
         path="sayakpaul/nyu_depth_v2",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
         path="sayakpaul/nyu_depth_v2",
         split="validation",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)
