@@ -122,11 +122,7 @@ class ClassificationEvaluator(Evaluator):
         metrics = step_output.metrics
 
         for key, value in metrics.items():
-            if key not in self.current_epoch_dict:
-                self.current_epoch_dict[key] = defaultdict(list)
-            self.current_epoch_dict[key][self.test_idx].append(
-                value.detach().mean().cpu()
-            )
+            self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
         self.test_idx += 1
 
