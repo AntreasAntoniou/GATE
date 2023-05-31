@@ -1,7 +1,7 @@
 # imagenet1k.py
+import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Optional
-import multiprocessing as mp
 
 import numpy as np
 import torchvision.transforms as T

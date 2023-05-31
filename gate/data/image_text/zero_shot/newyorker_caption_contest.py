@@ -1,7 +1,7 @@
 # food101.py
+import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-import multiprocessing as mp
 
 from datasets import load_dataset
 

@@ -1,5 +1,4 @@
 # race_middle.py
-from typing import Optional
 import multiprocessing as mp
 from typing import Any, Optional
 
