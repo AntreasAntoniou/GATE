@@ -1,6 +1,6 @@
 # stl10.py
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torchvision
@@ -77,10 +77,10 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
-def transform_wrapper(inputs: Dict, target_size=224):
+def transform_wrapper(inputs: Tuple, target_size=224):
     return {
-        "image": pad_image(inputs["image"], target_size=target_size),
-        "labels": inputs["labels"],
+        "image": pad_image(inputs[0], target_size=target_size),
+        "labels": inputs[1],
     }
 
 
@@ -95,27 +95,18 @@ def build_gate_stl10_dataset(
     train_set = GATEDataset(
         dataset=build_stl10_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        item_keys=["image", "labels"],
         transforms=[transform_wrapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_stl10_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        item_keys=["image", "labels"],
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_stl10_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
-        item_keys=["image", "labels"],
         transforms=[transform_wrapper, transforms],
     )
 

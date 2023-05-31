@@ -1,33 +1,32 @@
 # librispeech.py
 from typing import Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
 
 
 def build_librispeech_dataset(
-    set_name: str, hours: str = 360, data_dir: Optional[str] = None
+    set_name: str, hours: str = "360", data_dir: Optional[str] = None
 ) -> dict:
     """
-    Build LibriSpeech dataset using the Hugging Face datasets library.
+    Build a LibriSpeech dataset using the Hugging Face datasets library.
 
-    Args:
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-        hours: Number of hours to load (available subsets: "100" and "360").
-        data_dir: The directory where the dataset cache is stored.
-
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param set_name: The name of the dataset split to return ("train", "val", or "test").
+    :type set_name: str
+    :param hours: The number of hours to load (available subsets: "100" and "360").
+    :type hours: str, optional
+    :param data_dir: The directory where the dataset cache is stored.
+    :type data_dir: str, optional
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
-    rng = np.random.RandomState(42)
-
     train_val_data = load_dataset(
         path="librispeech_asr",
         name="clean",
         split=f"train.{hours}",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -35,6 +34,7 @@ def build_librispeech_dataset(
         name="clean",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

@@ -1,6 +1,7 @@
 import collections
 import json
 from collections import defaultdict
+import time
 from typing import Any, Dict, Mapping, Optional
 
 import numpy as np
@@ -10,6 +11,9 @@ from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(name=__name__)
 
 
 class CustomConcatDataset(Dataset):
@@ -194,36 +198,12 @@ class GATEDataset(Dataset):
         self,
         dataset: Any,
         infinite_sampling: bool = False,
-        task: Optional[Any] = None,
-        key_remapper_dict: Optional[Dict] = None,
-        item_keys: Optional[Dict] = None,
         transforms: Optional[Any] = None,
     ):
         super().__init__()
         self.dataset = dataset
-        self.task = task
-        self.key_remapper_dict = key_remapper_dict
         self.infinite_sampling = infinite_sampling
         self.transforms = transforms
-        self.item_keys = item_keys
-
-    def remap_keys(self, item: Dict) -> Dict:
-        class_type = None
-        if self.key_remapper_dict is not None:
-            if isinstance(item, Dict) or hasattr(item, "__dict__"):
-                if hasattr(item, "__dict__"):
-                    class_type = item.__class__
-                    item = item.__dict__
-
-                # 🔄 Remap keys based on the key_remapper_dict
-                for key, value in self.key_remapper_dict.items():
-                    if key in item:
-                        item[value] = item[key]
-                        del item[key]
-
-                if class_type is not None:
-                    item = class_type(**item)
-        return item
 
     def __len__(self) -> int:
         if self.infinite_sampling:
@@ -246,53 +226,7 @@ class GATEDataset(Dataset):
 
         item = self.dataset[index]
 
-        if not isinstance(item, dict):
-            if self.item_keys is None:
-                raise ValueError(
-                    f"item_keys must be specified for {item}, because it is not a dict,"
-                    f"please specify the keys of each of the retuned items for each sample,"
-                    f"or use a dict as the return type of the dataset"
-                )
-            item = {key: item[idx] for idx, key in enumerate(self.item_keys)}
-
-        item = self.task(item) if self.task is not None else item
-        # dict_items = (
-        #     item
-        #     if isinstance(item, dict)
-        #     else {idx: item for idx, item in enumerate(item)}
-        # )
-        # for key, value in dict_items.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(
-        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
-        #         )
-        #     if isinstance(value, PIL.Image.Image):
-        #         # Convert the PIL Image to a NumPy array
-
-        #         numpy_img = np.array(value)
-
-        #         # Convert the NumPy array to a PyTorch tensor
-        #         tensor_img = torch.from_numpy(numpy_img)
-
-        #         # The tensor is in the shape of HxWxC and we need to change it to CxHxW
-        #         tensor_img = tensor_img.permute(2, 0, 1)
-        #         print(
-        #             f"{key}: {tensor_img.shape}, mean: {tensor_img.float().mean()}, std: {tensor_img.float().std()}, min: {tensor_img.float().min()}, max: {tensor_img.float().max()}"
-        #         )
-
         item = self._apply_transforms(item)
-
-        item: Any = (
-            self.remap_keys(item)
-            if self.key_remapper_dict is not None
-            else item
-        )
-
-        # for key, value in item.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(
-        #             f"{key}: {value.shape}, mean: {value.float().mean()}, std: {value.float().std()}, min: {value.float().min()}, max: {value.float().max()}"
-        #         )
 
         # Apply the task to the item if it exists
         return item

@@ -67,14 +67,8 @@ class CUB200FewShotClassificationDataset(FewShotClassificationMetaDataset):
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 140 / 200 * 100,
-                FewShotSuperSplitSetOptions.VAL: 30 / 200 * 100,
-                FewShotSuperSplitSetOptions.TEST: 30 / 200 * 100,
-            },
-            # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
+            split_as_original=True,
             subset_split_name_list=["train", "validation", "test"],
-            label_extractor_fn=lambda x: bytes_to_string(x),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -125,9 +119,9 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_classes_per_set=5,
         min_num_samples_per_class=2,
         min_num_queries_per_class=2,
-        num_classes_per_set=30,
+        num_classes_per_set=10,
         num_samples_per_class=15,
-        num_queries_per_class=15,
+        num_queries_per_class=5,
         variable_num_samples_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
@@ -148,7 +142,9 @@ from rich import print
 #     }
 
 
-def key_mapper(input_dict):
+def key_mapper(input_tuple):
+    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
+
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
         for item in input_dict["image"]["image"]["support_set"]
@@ -177,21 +173,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 

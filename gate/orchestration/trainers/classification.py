@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+import time
 from typing import Any, Dict, Optional
+from accelerate.utils.constants import op
 
 import numpy as np
 import torch
+from torch.autograd import backward
 import torch.nn.functional as F
 from accelerate import Accelerator
 from sklearn.metrics import average_precision_score, brier_score_loss
@@ -36,18 +39,9 @@ class ClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
-        # for key, value in batch.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(f"{key}: {value.shape}")
-        #     else:
-        #         print(f"{key}: {value}") # uncomment for debugging
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-
-        # model(image, text) -> image_preds -- source: image_text and target: image
-        # model(image) -> image_preds -- source: image and target: image
 
         if "loss" not in output_dict:
             loss = F.cross_entropy(
@@ -73,6 +67,7 @@ class ClassificationTrainer(Trainer):
             loss = output_dict["loss"]
 
         accelerator.backward(loss)
+
         for key, value in output_dict.items():
             self.current_epoch_dict[key].append(value.detach().mean().cpu())
 
@@ -101,7 +96,7 @@ class ClassificationTrainer(Trainer):
         )
 
         self.optimizer.step()
-        self.scheduler.step(global_step)
+        self.scheduler.step(step_output.loss)
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
@@ -312,18 +307,18 @@ class MultiClassClassificationTrainer(Trainer):
             global_step=global_step,
             accelerator=accelerator,
         )
-
+        opt_loss = torch.mean(
+            torch.stack(step_output.output_metrics_dict["loss"])
+        )
         self.optimizer.step()
-        self.scheduler.step(global_step)
+        self.scheduler.step(opt_loss)
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
 
         return TrainerOutput(
             phase_name="training",
-            opt_loss=torch.mean(
-                torch.stack(step_output.output_metrics_dict["loss"])
-            ),
+            opt_loss=opt_loss,
             global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,

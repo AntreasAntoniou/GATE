@@ -1,5 +1,6 @@
 # common_voice.py
 from typing import Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
@@ -12,16 +13,16 @@ def build_common_voice_dataset(
     Build a Common Voice Corpus 12.0 dataset using the Hugging Face datasets
     library.
 
-    Args:
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-        language: The name of the language to load eg.
-        ("hi", "en", "fr" etc)
-        data_dir: The directory where the dataset cache is stored.
-
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param set_name: The name of the dataset split to return
+    ("train", "val", or "test").
+    :type set_name: str
+    :param language: The name of the language to load eg.
+    ("hi", "en", "fr" etc)
+    :type language: str
+    :param data_dir: The directory where the dataset cache is stored.
+    :type data_dir: str, optional
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
     rng = np.random.RandomState(42)
 
@@ -30,6 +31,7 @@ def build_common_voice_dataset(
         name=language,
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
@@ -37,6 +39,7 @@ def build_common_voice_dataset(
         name=language,
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

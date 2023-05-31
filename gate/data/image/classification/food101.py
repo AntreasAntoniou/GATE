@@ -1,16 +1,16 @@
 # food101.py
 from dataclasses import dataclass
 from typing import Any, Optional
+import multiprocessing as mp
 
 import numpy as np
 from datasets import load_dataset
-from zstandard import train_dictionary
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
+
 
 logger = get_logger(name=__name__, set_rich=True)
 
@@ -40,6 +40,7 @@ def build_food101_dataset(
         split="train",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
 
     test_set = load_dataset(
@@ -47,6 +48,7 @@ def build_food101_dataset(
         split="validation",
         cache_dir=data_dir,
         task="image-classification",
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)
@@ -61,7 +63,7 @@ def build_food101_dataset(
 @configurable(
     group="dataset", name="food101", defaults=dict(data_dir=DATASET_DIR)
 )
-def build_gate_food_101_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=101,
@@ -69,24 +71,18 @@ def build_gate_food_101_dataset(
     train_set = GATEDataset(
         dataset=build_food101_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
     )
 
     val_set = GATEDataset(
         dataset=build_food101_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
     )
 
     test_set = GATEDataset(
         dataset=build_food101_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"pixel_values": "image"},
         transforms=transforms,
     )
 

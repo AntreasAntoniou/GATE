@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 import numpy as np
 from datasets import load_dataset
+import multiprocessing as mp
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
@@ -29,12 +30,14 @@ def build_lm1b_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         path="lm1b",
         split="train",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     test_data = load_dataset(
         path="lm1b",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_data = train_val_data.train_test_split(test_size=0.1)

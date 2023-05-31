@@ -10,7 +10,7 @@ export WANDB_PROJECT=
 export KAGGLE_USERNAME=""
 export KAGGLE_KEY=""
 
-export PYTEST_DIR="/data/"
+export PYTEST_DIR="/data0/"
 
 export EXPERIMENT_NAME=
 export HF_USERNAME=""
@@ -20,7 +20,7 @@ export HF_CACHE_DIR=$PYTEST_DIR
 export TOKENIZERS_PARALLELISM=False
 
 export CODE_DIR=/devcode/GATE-private/
-export PROJECT_DIR="/data/"
+export PROJECT_DIR="/data0/"
 export EXPERIMENT_NAME_PREFIX="gate-exp-0"
 export EXPERIMENTS_ROOT_DIR=$PROJECT_DIR
 export EXPERIMENTS_DIR=$PROJECT_DIR

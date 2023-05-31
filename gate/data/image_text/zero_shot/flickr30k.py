@@ -2,6 +2,7 @@
 from ast import Dict
 from dataclasses import dataclass
 from typing import Any, Optional
+import multiprocessing as mp
 
 import torch
 from datasets import load_dataset
@@ -40,6 +41,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         path="nlphuji/flickr30k",
         split="test",
         cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     train_val_test_data = dataset.train_test_split(test_size=0.30)

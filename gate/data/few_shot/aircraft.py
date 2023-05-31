@@ -68,14 +68,8 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 60,
-                FewShotSuperSplitSetOptions.VAL: 20,
-                FewShotSuperSplitSetOptions.TEST: 20,
-            },
-            split_config=None,
-            subset_split_name_list=["all"],
-            label_extractor_fn=lambda x: bytes_to_string(x),
+            split_as_original=True,
+            subset_split_name_list=["train", "validation", "test"],
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -103,17 +97,15 @@ def preprocess_transforms(sample: Tuple):
 
 def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     """
-    Build a SVHN dataset using the Hugging Face datasets library.
+    Build an Aircraft dataset.
 
-    Args:
-        data_dir: The directory where the dataset cache is stored.
-        set_name: The name of the dataset split to return
-        ("train", "val", or "test").
-
-    Returns:
-        A dictionary containing the dataset split.
+    :param data_dir: The directory where the dataset is stored.
+    :type data_dir: str
+    :param set_name: The name of the dataset split to return ("train", "val", or "test").
+    :type set_name: str
+    :return: A dictionary containing the dataset split.
+    :rtype: dict
     """
-
     if set_name not in ["train", "val", "test"]:
         raise KeyError(f"Invalid set name: {set_name}")
 
@@ -126,9 +118,9 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_classes_per_set=5,
         min_num_samples_per_class=2,
         min_num_queries_per_class=2,
-        num_classes_per_set=50,
+        num_classes_per_set=10,
         num_samples_per_class=15,
-        num_queries_per_class=15,
+        num_queries_per_class=5,
         variable_num_samples_per_class=True,
         variable_num_classes_per_set=True,
         support_set_input_transform=None,
@@ -140,16 +132,10 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-from rich import print
-
-# def key_mapper(input_dict):
-#     return {
-#         "image": input_dict["image"],
-#         "labels": input_dict["labels"],
-#     }
+def key_mapper(input_tuple):
+    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
 
-def key_mapper(input_dict):
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
         for item in input_dict["image"]["image"]["support_set"]
@@ -178,21 +164,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 

@@ -127,10 +127,9 @@ class DuoModalFusionModel(BaseModule):
 
         modality_a_features = None
         modality_b_features = None
-        text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
+        # text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
 
         if image is not None:
-            # print(f"pre input shape {image.shape}")
             image = self.image_instance_norm(image)
             if self.modality_a_identifier == "image":
                 modality_a_features = self.modality_a_model(image=image)[
@@ -143,12 +142,12 @@ class DuoModalFusionModel(BaseModule):
 
         if text is not None:
             if self.modality_a_identifier == "text":
-                text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
+                # text[text == -1] = self.modality_a_model.tokenizer.eos_token_id
                 modality_a_features = self.modality_a_model(text=text)[
                     self.modality_a_identifier
                 ]["raw_features"]
             elif self.modality_b_identifier == "text":
-                text[text == -1] = self.modality_b_model.tokenizer.eos_token_id
+                # text[text == -1] = self.modality_b_model.tokenizer.eos_token_id
                 modality_b_features = self.modality_b_model(text=text)[
                     self.modality_b_identifier
                 ]["raw_features"]
@@ -174,15 +173,15 @@ class DuoModalFusionModel(BaseModule):
                 ]["raw_features"]
 
         modality_a_features = self.modality_a_linear(
-            modality_a_features.view(-1, modality_a_features.shape[-1])
-        ).view(
+            modality_a_features.reshape(-1, modality_a_features.shape[-1])
+        ).reshape(
             modality_a_features.shape[0],
             modality_a_features.shape[1],
             self.projection_num_features,
         )
         modality_b_features = self.modality_b_linear(
-            modality_b_features.view(-1, modality_b_features.shape[-1])
-        ).view(
+            modality_b_features.reshape(-1, modality_b_features.shape[-1])
+        ).reshape(
             modality_b_features.shape[0],
             modality_b_features.shape[1],
             self.projection_num_features,
