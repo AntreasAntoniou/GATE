@@ -77,6 +77,7 @@ class ClassificationEvaluator(Evaluator):
             loss=loss,
         )
 
+    @torch.inference_mode()
     @collect_metrics
     def validation_step(
         self,
@@ -103,6 +104,7 @@ class ClassificationEvaluator(Evaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
+    @torch.inference_mode()
     @collect_metrics
     def testing_step(
         self,
@@ -190,7 +192,7 @@ class MultiClassClassificationEvaluator(Evaluator):
             experiment_tracker,
             source_modality="image",
             target_modality="image",
-            model_selection_metric_name="macro-auc-epoch-mean",
+            model_selection_metric_name="auc-macro",
             model_selection_metric_higher_is_better=True,
         )
         self.label_idx_to_class_name = label_idx_to_class_name
@@ -203,9 +205,8 @@ class MultiClassClassificationEvaluator(Evaluator):
             "bs": brier_score_loss,
         }
 
-    def compute_epoch_metrics(
-        self, phase_metrics: Dict[str, float], global_step: int
-    ):
+    def compute_epoch_metrics(self, global_step: int):
+        phase_metrics = {}
         for key, value in self.current_epoch_dict.items():
             if key not in ["labels", "logits"]:
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
@@ -229,15 +230,13 @@ class MultiClassClassificationEvaluator(Evaluator):
                     for class_name in self.label_idx_to_class_name
                 ]
             )
+            phase_metrics["global_step"] = global_step
             for key, value in phase_metrics.items():
                 if key not in self.current_epoch_dict:
-                    self.current_epoch_dict[key] = {
-                        global_step: phase_metrics[key]
-                    }
+                    self.current_epoch_dict[key] = [phase_metrics[key]]
                 else:
-                    self.current_epoch_dict[key][global_step] = phase_metrics[
-                        key
-                    ]
+                    self.current_epoch_dict[key].append(phase_metrics[key])
+
         return phase_metrics
 
     def compute_step_metrics(self, output_dict, batch, loss):
@@ -269,16 +268,18 @@ class MultiClassClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         batch["compute_metrics"] = False
         output_dict = model.forward(batch)
+        logits = output_dict[self.target_modality][self.source_modality][
+            "logits"
+        ]
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
-                output_dict[self.target_modality][self.source_modality][
-                    "logits"
-                ],
+                logits,
                 batch["labels"],
                 reduction="none",
             )
 
-            self.compute_step_metrics(output_dict, batch, loss)
+            logits = logits.detach().cpu()
+            self.compute_step_metrics(output_dict, batch, loss.detach().cpu())
             loss = loss.mean()
             output_dict = {
                 "loss": loss,
@@ -291,6 +292,8 @@ class MultiClassClassificationEvaluator(Evaluator):
             loss=loss,
         )
 
+    @torch.inference_mode()
+    @collect_metrics
     def validation_step(
         self,
         model,
@@ -316,6 +319,8 @@ class MultiClassClassificationEvaluator(Evaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
+    @torch.inference_mode()
+    @collect_metrics
     def testing_step(
         self,
         model,
@@ -346,11 +351,9 @@ class MultiClassClassificationEvaluator(Evaluator):
         self,
         global_step: int,
     ):
-        phase_metrics = {}
+        phase_metrics = self.compute_epoch_metrics(global_step)
 
-        phase_metrics = self.compute_epoch_metrics(phase_metrics, global_step)
-
-        return StepOutput(
+        return EvaluatorOutput(
             global_step=global_step,
             metrics=phase_metrics,
             phase_name="validation",
@@ -362,11 +365,9 @@ class MultiClassClassificationEvaluator(Evaluator):
         self,
         global_step: int,
     ):
-        phase_metrics = {}
+        phase_metrics = self.compute_epoch_metrics(global_step)
 
-        phase_metrics = self.compute_epoch_metrics(phase_metrics, global_step)
-
-        return StepOutput(
+        return EvaluatorOutput(
             global_step=global_step,
             metrics=phase_metrics,
             phase_name="testing",

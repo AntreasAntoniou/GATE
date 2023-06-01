@@ -61,6 +61,7 @@ class_descriptions = [
     "pleural-other",
     "fracture",
     "support-devices",
+    "unknown",
 ]
 
 
@@ -70,7 +71,7 @@ def dataset_format_transform(sample: Dict) -> Dict:
 
     input_dict = {}
     input_dict["image"] = sample["image"]
-    input_dict["labels"] = torch.zeros(14)
+    input_dict["labels"] = torch.zeros(15)
     input_dict["labels"][sample["labels"]] = 1
     return input_dict
 
@@ -83,7 +84,7 @@ def dataset_format_transform(sample: Dict) -> Dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=14,
+    num_classes=15,
     label_idx_to_class_name: Optional[Dict[int, str]] = {
         i: name for i, name in enumerate(class_descriptions)
     },
