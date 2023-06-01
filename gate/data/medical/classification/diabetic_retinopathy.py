@@ -1,7 +1,7 @@
 import os
 import pathlib
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -82,7 +82,6 @@ def build_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
     torch.manual_seed(42)
 
     logger.info(
@@ -104,6 +103,16 @@ def build_dataset(
     return dataset_dict
 
 
+def dataset_format_transform(sample: Dict) -> Dict:
+    # Example of sample:
+    #
+
+    input_dict = {}
+    input_dict["image"] = sample["image"]
+    input_dict["labels"] = np.random.choice(sample["caption"])[0]
+    return input_dict
+
+
 @configurable(
     group="dataset",
     name="diabetic_retionopathy",
@@ -118,21 +127,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 

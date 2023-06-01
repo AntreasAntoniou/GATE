@@ -48,6 +48,7 @@ class BackboneWithLinear(BaseModule):
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
+        compute_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
             x = self.model(**input_dict)[self.modality]["features"]
@@ -66,10 +67,10 @@ class BackboneWithLinear(BaseModule):
 
         x = self.linear(x)
 
-        if labels is not None:
+        if labels is not None and compute_metrics:
             return self.compute_metrics(x, labels) | {"logits": x}
-
-        return x
+        else:
+            return {"logits": x}
 
     def get_transforms(self):
         return {

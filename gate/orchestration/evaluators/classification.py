@@ -2,6 +2,7 @@ from collections import defaultdict
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+import numpy as np
 
 import torch
 import torch.nn.functional as F
@@ -9,6 +10,7 @@ from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
+from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k
 from gate.metrics.multi_class_classification import (
     average_precision_score,
@@ -40,6 +42,7 @@ class StepOutput:
 
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        batch["compute_metrics"] = False
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
@@ -172,7 +175,11 @@ class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
         )
 
 
-@configurable(group="evaluator", name="multi_class_classification")
+@configurable(
+    group="evaluator",
+    name="multi_class_classification",
+    defaults={"label_idx_to_class_name": HYDRATED_LABEL_IDX_TO_CLASS_NAME},
+)
 class MultiClassClassificationEvaluator(Evaluator):
     def __init__(
         self,
@@ -188,6 +195,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         )
         self.label_idx_to_class_name = label_idx_to_class_name
 
+    @property
     def metrics(self):
         return {
             "auc": roc_auc_score,
@@ -203,10 +211,10 @@ class MultiClassClassificationEvaluator(Evaluator):
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
-        labels = torch.cat(self.current_epoch_dict["labels"])
-        logits = torch.cat(self.current_epoch_dict["logits"])
-        for metric_name, metric_fn in self._metrics.items():
-            for c_idx, class_name in enumerate(self.classes):
+        labels = torch.cat(self.current_epoch_dict["labels"]).detach()
+        logits = torch.cat(self.current_epoch_dict["logits"]).detach()
+        for metric_name, metric_fn in self.metrics.items():
+            for c_idx, class_name in enumerate(self.label_idx_to_class_name):
                 if metric_name == "bs":
                     phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
                         y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
@@ -218,7 +226,7 @@ class MultiClassClassificationEvaluator(Evaluator):
             phase_metrics[f"{metric_name}-macro"] = np.mean(
                 [
                     phase_metrics[f"{class_name}-{metric_name}"]
-                    for class_name in self.classes
+                    for class_name in self.label_idx_to_class_name
                 ]
             )
             for key, value in phase_metrics.items():
@@ -240,7 +248,7 @@ class MultiClassClassificationEvaluator(Evaluator):
             ]
 
         metrics = {"loss": loss.mean()}
-        for c_idx, class_name in enumerate(self.classes):
+        for c_idx, class_name in enumerate(self.label_idx_to_class_name):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
@@ -259,7 +267,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         )
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
+        batch["compute_metrics"] = False
         output_dict = model.forward(batch)
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
@@ -271,7 +279,7 @@ class MultiClassClassificationEvaluator(Evaluator):
             )
 
             self.compute_step_metrics(output_dict, batch, loss)
-
+            loss = loss.mean()
             output_dict = {
                 "loss": loss,
             }
