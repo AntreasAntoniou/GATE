@@ -12,6 +12,7 @@ from torch.autograd import backward
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
+from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k
 from gate.metrics.segmentation import roc_auc_score
 from gate.orchestration.trainers import Trainer, TrainerOutput
@@ -167,7 +168,11 @@ class ImageToTextZeroShotClassificationTrainer(ClassificationTrainer):
         )
 
 
-@configurable(group="trainer", name="multi_class_classification")
+@configurable(
+    group="trainer",
+    name="multi_class_classification",
+    defaults={"label_idx_to_class_name": HYDRATED_LABEL_IDX_TO_CLASS_NAME},
+)
 class MultiClassClassificationTrainer(Trainer):
     def __init__(
         self,
@@ -203,10 +208,10 @@ class MultiClassClassificationTrainer(Trainer):
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
-        labels = torch.cat(self.current_epoch_dict["labels"])
-        logits = torch.cat(self.current_epoch_dict["logits"])
+        labels = torch.cat(self.current_epoch_dict["labels"]).detach()
+        logits = torch.cat(self.current_epoch_dict["logits"]).detach()
         for metric_name, metric_fn in self.metrics.items():
-            for c_idx, class_name in enumerate(self.classes):
+            for c_idx, class_name in enumerate(self.label_idx_to_class_name):
                 y_true = labels[:, c_idx]
                 y_score = logits[:, c_idx]
                 if metric_name == "bs":
@@ -221,7 +226,7 @@ class MultiClassClassificationTrainer(Trainer):
             phase_metrics[f"{metric_name}-macro"] = np.mean(
                 [
                     phase_metrics[f"{class_name}-{metric_name}"]
-                    for class_name in self.classes
+                    for class_name in self.label_idx_to_class_name
                 ]
             )
 
@@ -241,7 +246,7 @@ class MultiClassClassificationTrainer(Trainer):
             ]
 
         metrics = {"loss": loss.mean()}
-        for c_idx, class_name in enumerate(self.classes):
+        for c_idx, class_name in enumerate(self.label_idx_to_class_name):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
@@ -264,6 +269,7 @@ class MultiClassClassificationTrainer(Trainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # print({key: value.shape for key, value in batch.items()})
+        batch["compute_metrics"] = False
         output_dict = model.forward(batch)
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
@@ -274,8 +280,8 @@ class MultiClassClassificationTrainer(Trainer):
                 reduction="none",
             )
 
-            self.compute_metrics(output_dict, batch, loss)
-
+            self.compute_step_metrics(output_dict, batch, loss)
+            loss = loss.mean()
             output_dict = {
                 "loss": loss,
             }
@@ -307,9 +313,15 @@ class MultiClassClassificationTrainer(Trainer):
             global_step=global_step,
             accelerator=accelerator,
         )
-        opt_loss = torch.mean(
-            torch.stack(step_output.output_metrics_dict["loss"])
-        )
+        if not isinstance(
+            step_output.output_metrics_dict["loss"], torch.Tensor
+        ):
+            opt_loss = torch.mean(
+                torch.stack(step_output.output_metrics_dict["loss"])
+            )
+        else:
+            opt_loss = step_output.output_metrics_dict["loss"]
+
         self.optimizer.step()
         self.scheduler.step(opt_loss)
 

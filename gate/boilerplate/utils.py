@@ -324,11 +324,6 @@ def upload_config_files(
     cfg: Any, hf_cache_dir: str, hf_repo_path: str
 ) -> None:
     config_dict = OmegaConf.to_container(cfg, resolve=True)
-    config_json_path = save_json(
-        pathlib.Path(hf_cache_dir) / "config.json",
-        config_dict,
-        overwrite=True,
-    )
     config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
@@ -336,7 +331,6 @@ def upload_config_files(
         yaml.dump(config_dict, file)
 
     for filepath, path_in_repo in [
-        (config_json_path, "config.json"),
         (config_yaml_path, "config.yaml"),
     ]:
         hf_api.upload_file(
