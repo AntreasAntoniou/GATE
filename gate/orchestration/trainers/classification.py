@@ -6,16 +6,17 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
-from accelerate.utils.constants import op
-from sklearn.metrics import average_precision_score, brier_score_loss
-from torch.autograd import backward
 
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k
-from gate.metrics.segmentation import roc_auc_score
 from gate.orchestration.trainers import Trainer, TrainerOutput
+from gate.metrics.multi_class_classification import (
+    average_precision_score,
+    brier_score_loss,
+    roc_auc_score,
+)
 
 logger = get_logger(__name__)
 
@@ -208,34 +209,33 @@ class MultiClassClassificationTrainer(Trainer):
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
-        labels = torch.cat(self.current_epoch_dict["labels"]).detach()
-        logits = torch.cat(self.current_epoch_dict["logits"]).detach()
+        labels = torch.cat(self.current_epoch_dict["labels"]).detach().cpu()
+        logits = torch.cat(self.current_epoch_dict["logits"]).detach().cpu()
         for metric_name, metric_fn in self.metrics.items():
             for c_idx, class_name in enumerate(self.label_idx_to_class_name):
-                y_true = labels[:, c_idx]
-                y_score = logits[:, c_idx]
                 if metric_name == "bs":
                     phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
-                        y_true, y_prob=y_score
+                        y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
                     )
                 else:
                     phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
-                        y_true, y_score
+                        y_true=labels[:, c_idx], y_score=logits[:, c_idx]
                     )
-
             phase_metrics[f"{metric_name}-macro"] = np.mean(
                 [
                     phase_metrics[f"{class_name}-{metric_name}"]
                     for class_name in self.label_idx_to_class_name
                 ]
             )
-
-        for key, value in phase_metrics.items():
-            if key not in self.current_epoch_dict:
-                self.current_epoch_dict[key] = {global_step: value}
-            else:
-                self.current_epoch_dict[key][global_step] = value
-
+            for key, value in phase_metrics.items():
+                if key not in self.current_epoch_dict:
+                    self.current_epoch_dict[key] = {
+                        global_step: phase_metrics[key]
+                    }
+                else:
+                    self.current_epoch_dict[key][global_step] = phase_metrics[
+                        key
+                    ]
         return phase_metrics
 
     def compute_step_metrics(self, output_dict, batch, loss):
@@ -271,16 +271,17 @@ class MultiClassClassificationTrainer(Trainer):
         # print({key: value.shape for key, value in batch.items()})
         batch["compute_metrics"] = False
         output_dict = model.forward(batch)
+        logits = output_dict[self.target_modality][self.source_modality][
+            "logits"
+        ]
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
-                output_dict[self.target_modality][self.source_modality][
-                    "logits"
-                ],
+                logits,
                 batch["labels"],
                 reduction="none",
             )
-
-            self.compute_step_metrics(output_dict, batch, loss)
+            logits = logits.detach().cpu()
+            self.compute_step_metrics(output_dict, batch, loss.detach().cpu())
             loss = loss.mean()
             output_dict = {
                 "loss": loss,
@@ -342,13 +343,6 @@ class MultiClassClassificationTrainer(Trainer):
         global_step: int,
     ):
         phase_metrics = {}
-
-        for key, value in self.current_epoch_dict.items():
-            if key not in ["labels", "logits"]:
-                phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
-                phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
-
-        phase_metrics = self.compute_epoch_metrics(phase_metrics, global_step)
 
         return TrainerOutput(
             opt_loss=None,

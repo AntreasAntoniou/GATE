@@ -63,7 +63,7 @@ class Evaluator(ABC):
                     f"No epoch values found for {metric_name}, "
                     f"the available metrics are: {self.per_epoch_metrics.keys()}"
                 )
-
+            metrics = [torch.tensor(metric) for metric in metrics]
             metrics = torch.stack(metrics)
 
         metric_sorting = torch.argsort(torch.tensor(metrics))
