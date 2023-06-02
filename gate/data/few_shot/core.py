@@ -66,9 +66,9 @@ def convert_to_dict(
                 (subset, transforms, set_name, i)
                 for i in tqdm(range(len(subset)))
             ]
-            futures = [executor.submit(process_sample, arg) for arg in args]
-            for future in tqdm(concurrent.futures.as_completed(futures)):
-                data[idx] = future.result()
+            results = executor.map(process_sample, args)
+            for result in tqdm(results):
+                data[idx] = result
                 idx += 1
 
     return data
