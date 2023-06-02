@@ -32,7 +32,17 @@ from datasets import load_dataset
 from torch.utils.data import Dataset
 
 
-def convert_to_parquet(
+from multiprocessing import Pool, cpu_count
+
+
+def process_sample(args):
+    transforms, set_name, sample = args
+    sample = transforms(sample)
+    sample["label"] = f"{set_name}-{sample['label']}"
+    return sample
+
+
+def convert_to_dict_parallel(
     pytorch_dataset_list,
     pytorch_dataset_set_name_list,
     transforms,
@@ -47,16 +57,18 @@ def convert_to_parquet(
     # Convert the PyTorch dataset to a PyArrow Table
     data = {}
     idx = 0
-    for set_name, subset in zip(
-        pytorch_dataset_set_name_list, pytorch_dataset_list
-    ):
-        with tqdm(total=len(subset)) as pbar:
-            for sample in subset:
-                sample = transforms(sample)
-                sample["label"] = f"{set_name}-{sample['label']}"
-                data[idx] = sample
+
+    with Pool(cpu_count()) as p:
+        for set_name, subset in zip(
+            pytorch_dataset_set_name_list, pytorch_dataset_list
+        ):
+            args = [(transforms, set_name, sample) for sample in subset]
+            results = list(
+                tqdm(p.imap(process_sample, args), total=len(subset))
+            )
+            for result in results:
+                data[idx] = result
                 idx += 1
-                pbar.update(1)
 
     return data
 
@@ -258,7 +270,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 for subset_name in subset_split_name_list
             ]
 
-            dataset_dict = convert_to_parquet(
+            dataset_dict = convert_to_dict(
                 pytorch_dataset_list=subsets,
                 pytorch_dataset_set_name_list=subset_split_name_list,
                 transforms=self.preprocess_transform,
