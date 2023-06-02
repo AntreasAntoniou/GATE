@@ -135,7 +135,7 @@ def optimization_loss(logits, labels):
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-
+    print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
     cross_entropy_loss = F.cross_entropy(logits, labels)
