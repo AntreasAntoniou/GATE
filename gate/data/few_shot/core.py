@@ -231,7 +231,7 @@ class FewShotClassificationMetaDataset(Dataset):
             with tqdm(total=len(subset)) as pbar:
                 for sample in subset:
                     sample = self._process_sample(sample)
-                    print(sample)
+                    # print(sample)
                     label_set.add(sample["label"])
 
                     sample["label"] = f"{set_name}-{sample['label']}"
@@ -240,9 +240,11 @@ class FewShotClassificationMetaDataset(Dataset):
                     pbar.update(1)
 
         # print(f"Number of classes: {len(label_set)}")
+        print("Converting to hf dataset...")
         dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
+        print(f"Saving dataset to {dataset_path}...")
         dataset.save_to_disk(
             self.dataset_root / self.dataset_name, num_proc=mp.cpu_count()
         )
