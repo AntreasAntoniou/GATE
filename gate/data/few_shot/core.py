@@ -58,12 +58,13 @@ def convert_to_dict(
     data = {}
     idx = 0
 
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=mp.cpu_count()) as executor:
         for set_name, subset in zip(
             pytorch_dataset_set_name_list, pytorch_dataset_list
         ):
             args = [
-                (subset, transforms, set_name, i) for i in range(len(subset))
+                (subset, transforms, set_name, i)
+                for i in tqdm(range(len(subset)))
             ]
             futures = [executor.submit(process_sample, arg) for arg in args]
             for future in concurrent.futures.as_completed(futures):
