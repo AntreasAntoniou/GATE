@@ -43,7 +43,7 @@ RUN echo y | pip install -r /app/requirements_dev.txt
 
 RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 RUN pip install -e learn2learn
-
+RUN echo y | pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121 --upgrade
 ADD gate/ /app/gate
 RUN echo y | pip install /app/[dev]
 
