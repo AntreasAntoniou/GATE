@@ -52,7 +52,8 @@ def transform_wrapper(inputs: Dict, target_size: int = 224):
     annotation = T.Resize((target_size, target_size))(annotation)
     annotation = np.array(annotation)
     annotation = torch.from_numpy(annotation)
-    annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+    annotation = annotation.permute(2, 0, 1)[0]
+
     return {
         "image": inputs["image"],
         "labels": annotation.long(),
