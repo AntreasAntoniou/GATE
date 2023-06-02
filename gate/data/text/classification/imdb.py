@@ -1,4 +1,5 @@
 # imdb.py
+import os
 from dataclasses import dataclass
 import multiprocessing as mp
 from typing import Any, Dict, Optional
@@ -10,7 +11,14 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
+import torch
 
+def dataset_format_transform(sample: Dict) -> Dict:
+    input_dict = {}
+    input_dict["text"] = sample["text"]
+    input_dict["labels"] = torch.zeros(DefaultHyperparameters.num_classes)
+    input_dict["labels"][sample["label"]] = 1
+    return input_dict
 
 def build_imdb_dataset(data_dir: str, set_name: str) -> Dict:
     """
@@ -54,29 +62,24 @@ def build_imdb_dataset(data_dir: str, set_name: str) -> Dict:
 def build_gate_imdb_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
+    num_classes=2
 ) -> dict:
     train_set = GATEDataset(
-        dataset=build_imdb_dataset("train", data_dir=data_dir),
-        infinite_sampling=True,
-        task=ClassificationTask(),
-        key_remapper_dict={"label": "labels"},
-        transforms=transforms,
+        dataset=build_imdb_dataset(data_dir, "train"),
+        infinite_sampling=False,
+        transforms=[dataset_format_transform, transforms],
     )
 
     val_set = GATEDataset(
-        dataset=build_imdb_dataset("val", data_dir=data_dir),
+        dataset=build_imdb_dataset(data_dir, "val"),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"label": "labels"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     test_set = GATEDataset(
-        dataset=build_imdb_dataset("test", data_dir=data_dir),
+        dataset=build_imdb_dataset(data_dir, "test"),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        key_remapper_dict={"label": "label"},
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
@@ -93,10 +96,10 @@ class DefaultHyperparameters:
 # For debugging purposes
 if __name__ == "__main__":
     print("BEFORE TRANSFORMING THE DATASET")
-    train_data = build_imdb_dataset("train")
+    train_data = build_imdb_dataset(os.environ["DATASET_DIR"], "train")
     print(train_data[0])
     print("GATE DATASET")
-    data = build_gate_imdb_dataset()
+    data = build_gate_imdb_dataset(data_dir=os.environ["DATASET_DIR"])
     print(data["train"][0])
     print(data["val"][0])
     print(data["test"][0])
