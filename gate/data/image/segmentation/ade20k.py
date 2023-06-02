@@ -45,10 +45,12 @@ import torchvision.transforms as T
 
 
 def transform_wrapper(inputs: Dict, target_size=224):
-    print(inputs)
+    annotation = np.array(inputs["annotation"])
+    annotation = torch.from_numpy(annotation)
+    annotation = annotation.permute(2, 0, 1)
     return {
         "image": inputs["image"],
-        "labels": np.fromImage.open(inputs["annotation"]),
+        "labels": annotation.long(),
     }
 
 
@@ -86,5 +88,5 @@ if __name__ == "__main__":
     dataset_dict = build_gate_dataset()
 
     for item in dataset_dict["train"]:
-        print(item)
+        print(item["labels"])
         break
