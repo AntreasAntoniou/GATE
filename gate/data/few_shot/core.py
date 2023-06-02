@@ -35,8 +35,15 @@ from torch.utils.data import Dataset
 from multiprocessing import Pool, cpu_count
 
 
-def process_sample(args):
-    transforms, set_name, sample = args
+from concurrent.futures import ThreadPoolExecutor
+
+
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
+
+
+def process_sample(sample, transforms, set_name):
     sample = transforms(sample)
     sample["label"] = f"{set_name}-{sample['label']}"
     return sample
@@ -57,19 +64,21 @@ def convert_to_dict(
     # Convert the PyTorch dataset to a PyArrow Table
     data = {}
     idx = 0
-
-    with Pool(cpu_count()) as p:
+    with ThreadPoolExecutor() as executor:
         for set_name, subset in zip(
             pytorch_dataset_set_name_list, pytorch_dataset_list
         ):
-            args = [(transforms, set_name, sample) for sample in subset]
-            results = list(
-                tqdm(p.imap(process_sample, args), total=len(subset))
-            )
-            for result in results:
-                data[idx] = result
-                idx += 1
-
+            with tqdm(total=len(subset)) as pbar:
+                futures = [
+                    executor.submit(
+                        process_sample, sample, transforms, set_name
+                    )
+                    for sample in subset
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    data[idx] = future.result()
+                    idx += 1
+                    pbar.update(1)
     return data
 
 
