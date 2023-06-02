@@ -69,6 +69,7 @@ def convert_to_dict(
             results = executor.map(process_sample, args)
             for result in tqdm(results):
                 data[idx] = result
+                print(result)
                 idx += 1
 
     return data
