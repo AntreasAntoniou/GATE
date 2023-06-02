@@ -122,12 +122,10 @@ def build_dataset(
     train_length = int(len(dataset) * train_ratio)
     val_length = int(len(dataset) * val_ratio)
 
-    train_set = Subset(dataset, list(range(train_length)))
-    val_set = Subset(
-        dataset, list(range(train_length, train_length + val_length))
-    )
-    test_set = Subset(
-        dataset, list(range(train_length + val_length, len(dataset)))
+    train_set, val_set, test_set = random_split(
+        dataset,
+        [train_length, val_length, len(dataset) - train_length - val_length],
+        generator=torch.Generator().manual_seed(42),
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
@@ -135,13 +133,35 @@ def build_dataset(
     return dataset_dict
 
 
+idx_to_class = {
+    0: "Actinic Keratoses and Intraepithelial Carcinoma / Bowen's Disease (akiec)",
+    1: "Basal Cell Carcinoma (bcc)",
+    2: "Benign Keratosis (bkl)",
+    3: "Dermatofibroma (df)",
+    4: "Melanoma (mel)",
+    5: "Melanocytic Nevi (nv)",
+    6: "Vascular Lesions (vasc)",
+}
+
+class_idx_to_descriptions = {
+    0: "akiec",
+    1: "bcc",
+    2: "bkl",
+    3: "df",
+    4: "mel",
+    5: "nv",
+    6: "vasc",
+}
+
+
 def dataset_format_transform(sample: Dict) -> Dict:
     # Example of sample:
-    #
+    # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=600x450 at 0x7F8E1B7B6410>, 'labels': 1}
 
     input_dict = {}
     input_dict["image"] = sample["image"]
-    input_dict["labels"] = sample["labels"]
+    input_dict["labels"] = torch.zeros(len(class_idx_to_descriptions))
+    input_dict["labels"][sample["labels"]] = 1
     return input_dict
 
 
@@ -153,25 +173,26 @@ def dataset_format_transform(sample: Dict) -> Dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=4,
+    num_classes=len(class_idx_to_descriptions),
+    label_idx_to_class_name=class_idx_to_descriptions,
 ) -> dict:
     dataset_dict = build_dataset(data_dir=data_dir)
     train_set = GATEDataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
@@ -189,6 +210,13 @@ class DefaultHyperparameters:
     eval_batch_size: int = 512
     num_classes: int = 4
 
+
+if __name__ == "__main__":
+    dataset = build_gate_dataset(data_dir=DATASET_DIR)
+
+    for item in dataset["train"]:
+        print(item)
+        break
 
 # Details on classes https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6091241/
 
