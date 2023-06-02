@@ -252,26 +252,23 @@ class FewShotClassificationMetaDataset(Dataset):
     def _load_subsets(self, subset_split_name_list):
         """Load and process the subsets."""
         dataset_path = self.dataset_root / self.dataset_name
-        state_path = dataset_path / "dataset_info.json"
 
-        if state_path.exists():
-            return datasets.Dataset.load_from_disk(dataset_path)
+        parquet_file = dataset_path / "parquet"
 
-        subsets = [
-            self.dataset_class(
-                subset_name,
+        if not parquet_file.exists():
+            subsets = [
+                self.dataset_class(
+                    subset_name,
+                )
+                for subset_name in subset_split_name_list
+            ]
+            dataset_items = []
+
+            dataset_items = convert_to_parquet(
+                pytorch_dataset_list=subsets,
+                pytorch_dataset_set_name_list=subset_split_name_list,
+                parquet_file_path=parquet_file,
             )
-            for subset_name in subset_split_name_list
-        ]
-        dataset_items = []
-
-        dataset_items = convert_to_parquet(
-            pytorch_dataset_list=subsets,
-            pytorch_dataset_set_name_list=subset_split_name_list,
-            parquet_file_path=self.dataset_root
-            / self.dataset_name
-            / "parquet",
-        )
 
         # print(f"Number of classes: {len(label_set)}")
         print("Converting to hf dataset...")
