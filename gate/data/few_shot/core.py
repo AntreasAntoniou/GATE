@@ -279,6 +279,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
             print("Converting to hf dataset...")
             hf_dataset = datasets.Dataset.from_dict(dataset_dict)
+            print("Saving hf dataset...")
             hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
         else:
             hf_dataset = datasets.load_from_disk(dataset_path)
