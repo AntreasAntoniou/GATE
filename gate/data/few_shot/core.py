@@ -231,6 +231,7 @@ class FewShotClassificationMetaDataset(Dataset):
             with tqdm(total=len(subset)) as pbar:
                 for sample in subset:
                     sample = self._process_sample(sample)
+                    print(sample)
                     label_set.add(sample["label"])
 
                     sample["label"] = f"{set_name}-{sample['label']}"
