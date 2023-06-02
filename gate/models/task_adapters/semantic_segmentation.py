@@ -114,7 +114,7 @@ from gate.metrics.segmentation import (
 
 
 def metrics(logits, labels, label_dim, num_classes):
-    logits = logits.detach()
+    logits: torch.Tensor = logits.detach().float32().cpu()
     return {
         "roc_auc_score": roc_auc_score(logits, labels, label_dim, num_classes),
         "miou_loss": miou_loss(logits, labels, label_dim, num_classes),
@@ -135,7 +135,7 @@ def optimization_loss(logits, labels):
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-    print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
+    # print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
     cross_entropy_loss = F.cross_entropy(logits, labels)
