@@ -66,7 +66,7 @@ def transform_wrapper(inputs: Dict, target_size: int = 224):
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=11,
+    num_classes=100,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
