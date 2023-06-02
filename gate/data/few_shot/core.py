@@ -241,7 +241,7 @@ class FewShotClassificationMetaDataset(Dataset):
         # print(f"Number of classes: {len(label_set)}")
         print("Converting to hf dataset...")
         dataset = datasets.Dataset.from_generator(
-            dataset_generator, num_proc=mp.cpu_count()
+            dataset_generator(), num_proc=mp.cpu_count()
         )
 
         # Save the dataset to a directory
