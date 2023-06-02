@@ -19,10 +19,49 @@ from gate.data.few_shot.utils import (
     get_class_to_idx_dict,
     get_class_to_image_idx_and_bbox,
 )
+import pandas as pd
 
 logger = get_logger(
     __name__,
 )
+
+import pyarrow as pa
+import pyarrow.parquet as pq
+import pandas as pd
+from datasets import load_dataset
+from torch.utils.data import Dataset
+
+
+def convert_to_parquet(
+    pytorch_dataset_list,
+    pytorch_dataset_set_name_list,
+    parquet_file_path,
+    transforms,
+):
+    """
+    Convert a PyTorch dataset to a Parquet file.
+
+    Args:
+        pytorch_dataset (torch.utils.data.Dataset): The PyTorch dataset to convert.
+        parquet_file_path (str): The path where the Parquet file will be saved.
+    """
+    # Convert the PyTorch dataset to a PyArrow Table
+    data = []
+
+    for set_name, subset in zip(
+        pytorch_dataset_set_name_list, pytorch_dataset_list
+    ):
+        with tqdm(total=len(subset)) as pbar:
+            for sample in subset:
+                sample = transforms(sample)
+                sample["label"] = f"{set_name}-{sample['label']}"
+                data.append(sample)
+                pbar.update(1)
+
+    table = pa.Table.from_pandas(pd.DataFrame(data))
+    # Write the Table to a Parquet file
+    pq.write_table(table, parquet_file_path)
+    return parquet_file_path
 
 
 # convert a list of dicts into a dict of lists
@@ -224,32 +263,21 @@ class FewShotClassificationMetaDataset(Dataset):
             )
             for subset_name in subset_split_name_list
         ]
-        label_set = set()
         dataset_items = []
 
-        for set_name, subset in zip(subset_split_name_list, subsets):
-            with tqdm(total=len(subset)) as pbar:
-                for sample in subset:
-                    sample = self._process_sample(sample)
-                    label_set.add(sample["label"])
-
-                    sample["label"] = f"{set_name}-{sample['label']}"
-
-                    pbar.update(1)
-                    dataset_items.append(sample)
+        dataset_items = convert_to_parquet(
+            pytorch_dataset_list=subsets,
+            pytorch_dataset_set_name_list=subset_split_name_list,
+            parquet_file_path=self.dataset_root
+            / self.dataset_name
+            / "parquet",
+        )
 
         # print(f"Number of classes: {len(label_set)}")
         print("Converting to hf dataset...")
-        dataset = datasets.Dataset.from_generator(
-            (item for item in dataset_items), num_proc=mp.cpu_count()
-        )
+        hf_dataset = load_dataset("parquet", data_files=dataset_items)
 
-        # Save the dataset to a directory
-        print(f"Saving dataset to {dataset_path}...")
-        dataset.save_to_disk(
-            self.dataset_root / self.dataset_name, num_proc=mp.cpu_count()
-        )
-        return dataset
+        return hf_dataset
 
     def _process_sample(self, sample):
         """Process a sample and return its numpy representation."""
