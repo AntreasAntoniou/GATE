@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import pathlib
 from re import split
@@ -55,7 +56,7 @@ def convert_to_dict(
         pytorch_dataset (torch.utils.data.Dataset): The PyTorch dataset to convert.
         parquet_file_path (str): The path where the Parquet file will be saved.
     """
-    data = {}
+    data = defaultdict(list)
     idx = 0
 
     with ThreadPoolExecutor(max_workers=mp.cpu_count()) as executor:
@@ -68,8 +69,9 @@ def convert_to_dict(
             ]
             results = executor.map(process_sample, args)
             for result in tqdm(results):
-                data[idx] = result
-                print(result)
+                data["idx"].append(idx)
+                for key, value in result.items():
+                    data[key].append(value)
                 idx += 1
 
     return data
