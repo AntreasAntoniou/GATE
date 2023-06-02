@@ -224,24 +224,25 @@ class FewShotClassificationMetaDataset(Dataset):
             )
             for subset_name in subset_split_name_list
         ]
-        datapoints = []
         label_set = set()
 
-        for set_name, subset in zip(subset_split_name_list, subsets):
-            with tqdm(total=len(subset)) as pbar:
-                for sample in subset:
-                    sample = self._process_sample(sample)
-                    # print(sample)
-                    label_set.add(sample["label"])
+        def dataset_generator():
+            for set_name, subset in zip(subset_split_name_list, subsets):
+                with tqdm(total=len(subset)) as pbar:
+                    for sample in subset:
+                        sample = self._process_sample(sample)
+                        label_set.add(sample["label"])
 
-                    sample["label"] = f"{set_name}-{sample['label']}"
+                        sample["label"] = f"{set_name}-{sample['label']}"
 
-                    datapoints.append(sample)
-                    pbar.update(1)
+                        pbar.update(1)
+                        yield sample
 
         # print(f"Number of classes: {len(label_set)}")
         print("Converting to hf dataset...")
-        dataset = datasets.Dataset.from_list(datapoints)
+        dataset = datasets.Dataset.from_generator(
+            dataset_generator, num_proc=mp.cpu_count()
+        )
 
         # Save the dataset to a directory
         print(f"Saving dataset to {dataset_path}...")
