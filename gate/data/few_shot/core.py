@@ -51,10 +51,11 @@ def convert_to_parquet(
         pytorch_dataset_set_name_list, pytorch_dataset_list
     ):
         with tqdm(total=len(subset)) as pbar:
-            for sample in subset[:1000]:
+            for sample in subset:
                 sample = transforms(sample)
                 sample["label"] = f"{set_name}-{sample['label']}"
                 data[idx] = sample
+                idx += 1
                 pbar.update(1)
 
     return data
