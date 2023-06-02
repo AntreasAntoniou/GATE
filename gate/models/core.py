@@ -310,6 +310,4 @@ class Ensemble(nn.Module):
             # # Weighted model soup prediction
             # weighted_soup_pred = self.weighted_soup_model(*args, **kwargs)
 
-        return {
-            "logits": soup_pred["logits"],
-        }
+        return soup_pred
