@@ -35,7 +35,6 @@ from torch.utils.data import Dataset
 def convert_to_parquet(
     pytorch_dataset_list,
     pytorch_dataset_set_name_list,
-    parquet_file_path,
     transforms,
 ):
     """
@@ -58,10 +57,7 @@ def convert_to_parquet(
                 data.append(sample)
                 pbar.update(1)
 
-    table = pa.Table.from_pandas(pd.DataFrame(data))
-    # Write the Table to a Parquet file
-    pq.write_table(table, parquet_file_path)
-    return parquet_file_path
+    return data
 
 
 # convert a list of dicts into a dict of lists
@@ -253,9 +249,7 @@ class FewShotClassificationMetaDataset(Dataset):
         """Load and process the subsets."""
         dataset_path = self.dataset_root / self.dataset_name
 
-        parquet_file = dataset_path / "parquet"
-
-        if not parquet_file.exists():
+        if not dataset_path.exists():
             subsets = [
                 self.dataset_class(
                     subset_name,
@@ -267,13 +261,16 @@ class FewShotClassificationMetaDataset(Dataset):
             dataset_items = convert_to_parquet(
                 pytorch_dataset_list=subsets,
                 pytorch_dataset_set_name_list=subset_split_name_list,
-                parquet_file_path=parquet_file,
                 transforms=self.preprocess_transform,
             )
 
-        # print(f"Number of classes: {len(label_set)}")
-        print("Converting to hf dataset...")
-        hf_dataset = load_dataset("parquet", data_files=dataset_items)
+            # print(f"Number of classes: {len(label_set)}")
+            print("Converting to hf dataset...")
+            hf_dataset = datasets.Dataset.from_list(dataset_items)
+
+            hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
+        else:
+            hf_dataset = datasets.load_from_disk(dataset_path)
 
         return hf_dataset
 
