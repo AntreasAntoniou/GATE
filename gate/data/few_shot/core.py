@@ -51,7 +51,7 @@ def convert_to_parquet(
         pytorch_dataset_set_name_list, pytorch_dataset_list
     ):
         with tqdm(total=len(subset)) as pbar:
-            for sample in subset:
+            for sample in subset[:1000]:
                 sample = transforms(sample)
                 sample["label"] = f"{set_name}-{sample['label']}"
                 data[idx] = sample
@@ -263,10 +263,8 @@ class FewShotClassificationMetaDataset(Dataset):
                 transforms=self.preprocess_transform,
             )
 
-            # print(f"Number of classes: {len(label_set)}")
             print("Converting to hf dataset...")
             hf_dataset = datasets.Dataset.from_dict(dataset_dict)
-
             hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
         else:
             hf_dataset = datasets.load_from_disk(dataset_path)
