@@ -45,8 +45,8 @@ def convert_to_parquet(
         parquet_file_path (str): The path where the Parquet file will be saved.
     """
     # Convert the PyTorch dataset to a PyArrow Table
-    data = []
-
+    data = {}
+    idx = 0
     for set_name, subset in zip(
         pytorch_dataset_set_name_list, pytorch_dataset_list
     ):
@@ -54,7 +54,7 @@ def convert_to_parquet(
             for sample in subset:
                 sample = transforms(sample)
                 sample["label"] = f"{set_name}-{sample['label']}"
-                data.append(sample)
+                data[idx] = sample
                 pbar.update(1)
 
     return data
@@ -256,9 +256,8 @@ class FewShotClassificationMetaDataset(Dataset):
                 )
                 for subset_name in subset_split_name_list
             ]
-            dataset_items = []
 
-            dataset_items = convert_to_parquet(
+            dataset_dict = convert_to_parquet(
                 pytorch_dataset_list=subsets,
                 pytorch_dataset_set_name_list=subset_split_name_list,
                 transforms=self.preprocess_transform,
@@ -266,7 +265,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
             # print(f"Number of classes: {len(label_set)}")
             print("Converting to hf dataset...")
-            hf_dataset = datasets.Dataset.from_list(dataset_items)
+            hf_dataset = datasets.Dataset.from_dict(dataset_dict)
 
             hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
         else:
