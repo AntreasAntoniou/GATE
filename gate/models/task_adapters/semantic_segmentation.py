@@ -114,7 +114,8 @@ from gate.metrics.segmentation import (
 
 
 def metrics(logits, labels, label_dim, num_classes):
-    logits: torch.Tensor = logits.detach().float().cpu()
+    logits: torch.Tensor = logits.detach().float()
+    labels: torch.Tensor = labels.detach()
     return {
         "roc_auc_score": roc_auc_score(logits, labels, label_dim, num_classes),
         "miou_loss": miou_loss(logits, labels, label_dim, num_classes),
