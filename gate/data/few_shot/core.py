@@ -10,6 +10,7 @@ import torch
 import torchvision.transforms as T
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
+import multiprocessing as mp
 from tqdm.auto import tqdm
 
 from gate.boilerplate.utils import get_logger, load_json, save_json
@@ -185,6 +186,9 @@ class FewShotClassificationMetaDataset(Dataset):
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
+        print(
+            f"Current class to address dict: {self.current_class_to_address_dict}, {self.class_to_address_dict}"
+        )
 
     def _validate_samples_and_classes(
         self,
@@ -238,7 +242,9 @@ class FewShotClassificationMetaDataset(Dataset):
         dataset = datasets.Dataset.from_list(datapoints)
 
         # Save the dataset to a directory
-        dataset.save_to_disk(self.dataset_root / self.dataset_name)
+        dataset.save_to_disk(
+            self.dataset_root / self.dataset_name, num_proc=mp.cpu_count()
+        )
         return dataset
 
     def _process_sample(self, sample):
