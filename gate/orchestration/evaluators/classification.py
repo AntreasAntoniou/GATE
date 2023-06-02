@@ -1,7 +1,7 @@
 from collections import defaultdict
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 import numpy as np
 
 import torch
@@ -213,83 +213,33 @@ class MultiClassClassificationEvaluator(Evaluator):
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
         labels = torch.cat(self.current_epoch_dict["labels"]).detach()
-        logits = self.current_epoch_dict["logits"]
-        if isinstance(logits, Dict):
-            for key, value in logits.items():
-                logits = torch.cat(value).detach()
-                for metric_name, metric_fn in self.metrics.items():
-                    for c_idx, class_name in enumerate(
-                        self.label_idx_to_class_name
-                    ):
-                        if metric_name == "bs":
-                            phase_metrics[
-                                f"{key}-{class_name}-{metric_name}"
-                            ] = metric_fn(
-                                y_true=labels[:, c_idx],
-                                y_prob=logits[:, c_idx],
-                            )
-                        else:
-                            phase_metrics[
-                                f"{key}-{class_name}-{metric_name}"
-                            ] = metric_fn(
-                                y_true=labels[:, c_idx],
-                                y_score=logits[:, c_idx],
-                            )
-                    phase_metrics[f"{key}-{metric_name}-macro"] = np.mean(
-                        [
-                            phase_metrics[f"{key}-{class_name}-{metric_name}"]
-                            for class_name in self.label_idx_to_class_name
-                        ]
+        logits = torch.cat(self.current_epoch_dict["logits"]).detach()
+        for metric_name, metric_fn in self.metrics.items():
+            for c_idx, class_name in enumerate(self.label_idx_to_class_name):
+                if metric_name == "bs":
+                    phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
+                        y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
                     )
-                    phase_metrics["global_step"] = global_step
-                    for key, value in phase_metrics.items():
-                        if key not in self.per_epoch_metrics:
-                            self.per_epoch_metrics[key] = [phase_metrics[key]]
-                        else:
-                            self.per_epoch_metrics[key].append(
-                                phase_metrics[key]
-                            )
-
-        else:
-            logits = torch.cat(self.current_epoch_dict["logits"]).detach()
-            for metric_name, metric_fn in self.metrics.items():
-                for c_idx, class_name in enumerate(
-                    self.label_idx_to_class_name
-                ):
-                    if metric_name == "bs":
-                        phase_metrics[
-                            f"{class_name}-{metric_name}"
-                        ] = metric_fn(
-                            y_true=labels[:, c_idx], y_prob=logits[:, c_idx]
-                        )
-                    else:
-                        phase_metrics[
-                            f"{class_name}-{metric_name}"
-                        ] = metric_fn(
-                            y_true=labels[:, c_idx], y_score=logits[:, c_idx]
-                        )
-                phase_metrics[f"{metric_name}-macro"] = np.mean(
-                    [
-                        phase_metrics[f"{class_name}-{metric_name}"]
-                        for class_name in self.label_idx_to_class_name
-                    ]
-                )
-                phase_metrics["global_step"] = global_step
-                for key, value in phase_metrics.items():
-                    if key not in self.per_epoch_metrics:
-                        self.per_epoch_metrics[key] = [phase_metrics[key]]
-                    else:
-                        self.per_epoch_metrics[key].append(phase_metrics[key])
+                else:
+                    phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
+                        y_true=labels[:, c_idx], y_score=logits[:, c_idx]
+                    )
+            phase_metrics[f"{metric_name}-macro"] = np.mean(
+                [
+                    phase_metrics[f"{class_name}-{metric_name}"]
+                    for class_name in self.label_idx_to_class_name
+                ]
+            )
+            phase_metrics["global_step"] = global_step
+            for key, value in phase_metrics.items():
+                if key not in self.per_epoch_metrics:
+                    self.per_epoch_metrics[key] = [phase_metrics[key]]
+                else:
+                    self.per_epoch_metrics[key].append(phase_metrics[key])
 
         return phase_metrics
 
-    def compute_step_metrics(
-        self,
-        logits: torch.Tensor,
-        batch: Dict,
-        loss: List[torch.Tensor],
-        prefix: Optional[str] = None,
-    ):
+    def compute_step_metrics(self, output_dict, batch, loss):
         # fallback to numbering classes if no class names are provided
         if self.label_idx_to_class_name is None:
             self.label_idx_to_class_name = [
@@ -301,8 +251,6 @@ class MultiClassClassificationEvaluator(Evaluator):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
-            if prefix is not None:
-                key = f"{prefix}-{key}"
             self.per_epoch_metrics.setdefault(key, []).append(
                 value.detach().cpu()
             )
@@ -311,16 +259,11 @@ class MultiClassClassificationEvaluator(Evaluator):
         self.current_epoch_dict.setdefault("labels", []).append(
             batch["labels"].cpu().round()
         )
-
-        if prefix is not None:
-            self.current_epoch_dict["logits"] = {}
-            self.current_epoch_dict["logits"].setdefault(prefix, []).append(
-                logits.cpu().sigmoid_()
-            )
-        else:
-            self.current_epoch_dict.setdefault("logits", []).append(
-                logits.cpu().sigmoid_()
-            )
+        self.current_epoch_dict.setdefault("logits", []).append(
+            output_dict[self.target_modality][self.source_modality]["logits"]
+            .cpu()
+            .sigmoid_()
+        )
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         batch["compute_metrics"] = False
@@ -328,7 +271,6 @@ class MultiClassClassificationEvaluator(Evaluator):
         logits = output_dict[self.target_modality][self.source_modality][
             "logits"
         ]
-
         if "loss" not in output_dict:
             loss = F.binary_cross_entropy_with_logits(
                 logits,
@@ -388,58 +330,18 @@ class MultiClassClassificationEvaluator(Evaluator):
     ) -> StepOutput:
         model.eval()
 
-        batch["compute_metrics"] = False
-        output_dict = model.forward(batch)
-        logits = output_dict[self.target_modality][self.source_modality][
-            "logits"
-        ]
+        step_output: StepOutput = self.step(
+            model=model,
+            batch=batch,
+            global_step=global_step,
+            accelerator=accelerator,
+        )
 
-        if isinstance(logits, dict):
-            for key, value in logits.items():
-                if "loss" not in output_dict:
-                    loss = F.binary_cross_entropy_with_logits(
-                        value,
-                        batch["labels"],
-                        reduction="none",
-                    )
-
-                    value = value.detach().cpu()
-                    self.compute_step_metrics(
-                        logits=value,
-                        batch=batch,
-                        loss=loss.detach().cpu(),
-                        prefix=key,
-                    )
-                    loss = loss.mean()
-                    output_dict = {
-                        "loss": loss,
-                    }
-                else:
-                    loss = output_dict["loss"]
-        else:
-            if "loss" not in output_dict:
-                loss = F.binary_cross_entropy_with_logits(
-                    logits,
-                    batch["labels"],
-                    reduction="none",
-                )
-
-                logits = logits.detach().cpu()
-                self.compute_step_metrics(
-                    logits=logits,
-                    batch=batch,
-                    loss=loss.detach().cpu(),
-                )
-                loss = loss.mean()
-                output_dict = {
-                    "loss": loss,
-                }
-            else:
-                loss = output_dict["loss"]
+        metrics = step_output.metrics
 
         return EvaluatorOutput(
             phase_name="testing",
-            metrics=output_dict,
+            metrics=metrics,
             global_step=global_step,
             experiment_tracker=self.experiment_tracker,
         )
