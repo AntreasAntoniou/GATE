@@ -31,19 +31,13 @@ import pandas as pd
 from datasets import load_dataset
 from torch.utils.data import Dataset
 
-
-from multiprocessing import Pool, cpu_count
-
-
-from concurrent.futures import ThreadPoolExecutor
-
-
-from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 
 
-def process_sample(sample, transforms, set_name):
+def process_sample(args):
+    dataset, transforms, set_name, idx = args
+    sample = dataset[idx]
     sample = transforms(sample)
     sample["label"] = f"{set_name}-{sample['label']}"
     return sample
@@ -61,24 +55,21 @@ def convert_to_dict(
         pytorch_dataset (torch.utils.data.Dataset): The PyTorch dataset to convert.
         parquet_file_path (str): The path where the Parquet file will be saved.
     """
-    # Convert the PyTorch dataset to a PyArrow Table
     data = {}
     idx = 0
+
     with ThreadPoolExecutor() as executor:
         for set_name, subset in zip(
             pytorch_dataset_set_name_list, pytorch_dataset_list
         ):
-            with tqdm(total=len(subset)) as pbar:
-                futures = [
-                    executor.submit(
-                        process_sample, sample, transforms, set_name
-                    )
-                    for sample in subset
-                ]
-                for future in concurrent.futures.as_completed(futures):
-                    data[idx] = future.result()
-                    idx += 1
-                    pbar.update(1)
+            args = [
+                (subset, transforms, set_name, i) for i in range(len(subset))
+            ]
+            futures = [executor.submit(process_sample, arg) for arg in args]
+            for future in concurrent.futures.as_completed(futures):
+                data[idx] = future.result()
+                idx += 1
+
     return data
 
 
