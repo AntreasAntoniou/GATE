@@ -42,7 +42,7 @@ def process_sample(args):
     return sample
 
 
-def convert_to_dict_parallel(
+def convert_to_dict(
     pytorch_dataset_list,
     pytorch_dataset_set_name_list,
     transforms,
