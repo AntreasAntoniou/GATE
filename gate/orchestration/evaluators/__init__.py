@@ -53,7 +53,6 @@ class Evaluator(ABC):
     ):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
-        print(self.per_epoch_metrics)
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
 
@@ -67,15 +66,21 @@ class Evaluator(ABC):
             metrics = torch.stack(metrics)
 
         metric_sorting = torch.argsort(torch.tensor(metrics))
+
+        # if higher_is_better:
+        #     best_metric_idx = metric_sorting[-kth_best:]
+        # else:
+        #     best_metric_idx = metric_sorting[:kth_best]
+
+        best_global_step = list(
+            set([global_steps[idx] for idx in metric_sorting])
+        )
+        best_metric = list(set([metrics[idx] for idx in metric_sorting]))
+
         if higher_is_better:
-            best_metric_idx = metric_sorting[-kth_best]
+            return best_global_step[-kth_best:], best_metric[-kth_best:]
         else:
-            best_metric_idx = metric_sorting[kth_best]
-
-        best_global_step = global_steps[best_metric_idx]
-        best_metric = metrics[best_metric_idx]
-
-        return best_global_step, best_metric
+            return best_global_step[:kth_best], best_metric[:kth_best]
 
     @collect_metrics
     def start_validation(

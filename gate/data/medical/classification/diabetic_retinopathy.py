@@ -105,12 +105,23 @@ def build_dataset(
 
 def dataset_format_transform(sample: Dict) -> Dict:
     # Example of sample:
+    # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=1024x768 at 0x7FD8EDD55C60>, 'label': 0}
     #
 
     input_dict = {}
     input_dict["image"] = sample["image"]
-    input_dict["labels"] = np.random.choice(sample["caption"])[0]
+    input_dict["labels"] = torch.zeros(5)
+    input_dict["labels"][sample["label"]] = 1
     return input_dict
+
+
+class_idx_to_descriptions = {
+    0: "no-dr",
+    1: "mild",
+    2: "moderate",
+    3: "severe",
+    4: "proliferative-dr",
+}
 
 
 @configurable(
@@ -121,25 +132,26 @@ def dataset_format_transform(sample: Dict) -> Dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=4,
+    num_classes=5,
+    label_idx_to_class_name=class_idx_to_descriptions,
 ) -> dict:
     dataset_dict = build_dataset(data_dir=data_dir)
     train_set = GATEDataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
@@ -156,3 +168,11 @@ class DefaultHyperparameters:
     train_batch_size: int = 256
     eval_batch_size: int = 512
     num_classes: int = 4
+
+
+if __name__ == "__main__":
+    dataset = build_gate_dataset(data_dir=DATASET_DIR)
+
+    for item in dataset["train"]:
+        print(item)
+        break

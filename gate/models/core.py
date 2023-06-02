@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
+from torch.nn.functional import softmax
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
@@ -216,3 +218,103 @@ def reinit(input_module: nn.Module):
             torch.nn.init.normal_(module.weight, std=0.02)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
+
+
+class Ensemble(nn.Module):
+    """
+    This class represents an ensemble of PyTorch models. It can compute ensemble predictions,
+    weighted ensemble predictions, and predictions from a "model soup" that averages the models' parameters.
+    """
+
+    def __init__(self, models: list[nn.Module], weights: list[float] = None):
+        """
+        Initialize the Ensemble with a list of models and optional weights.
+
+        Args:
+            models (list[nn.Module]): A list of PyTorch models.
+            weights (list[float], optional): A list of weights for the models. Defaults to None, which gives equal weight to all models.
+        """
+        super(Ensemble, self).__init__()
+        self.models = nn.ModuleList(models)
+        self.weights = softmax(
+            torch.tensor(
+                weights if weights is not None else [1.0 for _ in models]
+            ),
+            dim=0,
+        )
+
+        # Create the soup models
+        self.soup_model = deepcopy(
+            models[0]
+        )  # Copy the architecture of the first model
+        self.weighted_soup_model = deepcopy(
+            models[0]
+        )  # Copy the architecture of the first model
+
+        # Set the parameters of the soup models to the mean and weighted mean of the original models' parameters
+        with torch.no_grad():
+            for name, param in self.soup_model.named_parameters():
+                # Average the corresponding parameters from each model
+                param.copy_(
+                    torch.mean(
+                        torch.stack(
+                            [model.state_dict()[name] for model in self.models]
+                        ),
+                        dim=0,
+                    )
+                )
+
+            for name, param in self.weighted_soup_model.named_parameters():
+                # Weighted average of the corresponding parameters from each model
+                param.copy_(
+                    sum(
+                        w * model.state_dict()[name]
+                        for w, model in zip(self.weights, self.models)
+                    )
+                )
+
+    def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
+        """
+        Compute the ensemble predictions, weighted ensemble predictions, and model soup predictions.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            dict[str, torch.Tensor]: A dictionary containing the ensemble predictions, weighted ensemble predictions, and model soup predictions.
+        """
+        with torch.inference_mode():
+            # Get the outputs from each model
+            model_outputs = [model(*args, **kwargs) for model in self.models]
+
+            # Ensemble prediction
+            ensemble_pred = torch.mean(
+                torch.stack([output["logits"] for output in model_outputs]),
+                dim=0,
+            )
+
+            # Weighted ensemble prediction
+            weighted_ensemble_pred = torch.sum(
+                torch.stack(
+                    [
+                        w * output["logits"]
+                        for w, output in zip(self.weights, model_outputs)
+                    ]
+                )
+            )
+
+            # Model soup prediction
+            soup_pred = self.soup_model(*args, **kwargs)
+
+            # Weighted model soup prediction
+            weighted_soup_pred = self.weighted_soup_model(*args, **kwargs)
+
+        return {
+            "logits": {
+                "ensemble_pred": ensemble_pred,
+                "weighted_ensemble_pred": weighted_ensemble_pred,
+                "soup_pred": soup_pred,
+                "weighted_soup_pred": weighted_soup_pred,
+            }
+        }

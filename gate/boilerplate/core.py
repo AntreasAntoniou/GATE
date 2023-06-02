@@ -1,3 +1,4 @@
+import copy
 import pathlib
 import time
 from pathlib import Path
@@ -10,6 +11,7 @@ from accelerate import Accelerator
 from neptune import Run
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from transformers import AutoModel
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
@@ -23,6 +25,7 @@ from gate.config.variables import (
     HYDRATED_TRAIN_ITERS,
     RESUME,
 )
+from gate.models.core import Ensemble, GATEModel
 from gate.orchestration.evaluators.classification import Evaluator
 from gate.orchestration.trainers.classification import Trainer
 
@@ -499,7 +502,7 @@ class Learner(nn.Module):
                 "eval": self.evaluator.current_epoch_dict,
             },
             per_epoch_metrics={
-                "eval": self.evaluator.current_epoch_dict,
+                "eval": self.evaluator.per_epoch_metrics,
             },
             neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
@@ -509,7 +512,7 @@ class Learner(nn.Module):
             f=ckpt_save_path / "trainer_state.pt",
         )
         self.accelerator.save_state(ckpt_save_path)
-        logger.debug(f"Saved checkpoint to {ckpt_save_path}")
+
         self.callback_handler.on_save_checkpoint(
             model=self.model,
             optimizer=self.trainer.optimizer,
@@ -589,7 +592,7 @@ class Learner(nn.Module):
             best_global_step,
             best_metric,
         ) = self.evaluator.get_best_model_global_step_and_metric(
-            metric_name, higher_is_better
+            metric_name, higher_is_better, kth_best=3
         )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
@@ -597,10 +600,36 @@ class Learner(nn.Module):
         print(
             f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
-        download_dict = download_model_with_name(
-            hf_repo_path=self.hf_repo_path,
-            hf_cache_dir=self.hf_cache_dir,
-            model_name=f"ckpt_{best_global_step}",
-        )
+        download_dict_list = []
+        for global_step in best_global_step:
+            download_dict = download_model_with_name(
+                hf_repo_path=self.hf_repo_path,
+                hf_cache_dir=self.hf_cache_dir,
+                model_name=f"ckpt_{global_step}",
+            )
+            download_dict_list.append(download_dict)
 
-        self.load_checkpoint(checkpoint_path=download_dict["root_filepath"])
+        models = []
+
+        for download_dict in download_dict_list:
+            # Create a new instance of the model architecture
+            model = copy.deepcopy(self.model)
+
+            # Load the state dictionary
+            state_dict = torch.load(
+                download_dict["model_filepath"], map_location="cpu"
+            )
+
+            # Use Accelerate's state_dict loading
+            model.load_state_dict(state_dict)
+
+            models.append(model.model)
+
+        self.model = GATEModel(
+            config=self.model.config,
+            model=Ensemble(models=models, weights=best_metric),
+            key_remapper_dict=self.model.key_remapper_dict,
+        )
+        self.model = self.accelerator.prepare(self.model)
+
+        return models
