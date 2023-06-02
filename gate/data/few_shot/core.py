@@ -268,6 +268,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 pytorch_dataset_list=subsets,
                 pytorch_dataset_set_name_list=subset_split_name_list,
                 parquet_file_path=parquet_file,
+                transforms=self.preprocess_transform,
             )
 
         # print(f"Number of classes: {len(label_set)}")
