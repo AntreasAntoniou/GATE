@@ -98,7 +98,7 @@ def build_gate_clip_model(
 
     model_key_remapper_dict_config = {
         "image": "image",
-        "text": "image",
+        "text": "text",
     }
 
     gate_model = GATEModel(

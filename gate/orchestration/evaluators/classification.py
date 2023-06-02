@@ -145,6 +145,19 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
             model_selection_metric_higher_is_better=True,
         )
 
+@configurable(group="evaluator", name="text_classification")
+class TextClassificationEvaluator(ClassificationEvaluator):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            experiment_tracker,
+            source_modality="text",
+            target_modality="text",
+            model_selection_metric_name="accuracy_top_1-epoch-mean",
+            model_selection_metric_higher_is_better=True,
+        )
 
 @configurable(group="evaluator", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationEvaluator):

@@ -130,6 +130,23 @@ class ImageClassificationTrainer(ClassificationTrainer):
             target_modality="image",
         )
 
+@configurable(group="trainer", name="text_classification")
+class TextClassificationTrainer(ClassificationTrainer):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer,
+            scheduler,
+            scheduler_interval,
+            experiment_tracker,
+            source_modality="text",
+            target_modality="text",
+        )
 
 @configurable(group="trainer", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationTrainer):
