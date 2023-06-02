@@ -44,8 +44,13 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 import torchvision.transforms as T
 
 
-def transform_wrapper(inputs: Dict, target_size=224):
-    annotation = np.array(inputs["annotation"])
+def transform_wrapper(inputs: Dict, target_size: int = 224):
+    image = inputs["image"]
+    image = T.Resize((target_size, target_size))(image)
+
+    annotation = inputs["annotation"]
+    annotation = T.Resize((target_size, target_size))(annotation)
+    annotation = np.array(annotation)
     annotation = torch.from_numpy(annotation)
     annotation = annotation.permute(2, 0, 1)
     return {
