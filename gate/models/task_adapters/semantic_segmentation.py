@@ -117,14 +117,20 @@ def metrics(logits, labels, label_dim, num_classes):
     logits: torch.Tensor = logits.detach().float()
     labels: torch.Tensor = labels.detach()
     return {
-        "roc_auc_score": roc_auc_score(logits, labels, label_dim, num_classes),
-        "miou_loss": miou_loss(logits, labels, label_dim, num_classes),
-        "dice_loss": dice_loss(logits, labels, label_dim, num_classes),
+        "roc_auc_score": torch.tensor(
+            roc_auc_score(logits, labels, label_dim, num_classes)
+        ),
+        "miou_loss": torch.tensor(
+            miou_loss(logits, labels, label_dim, num_classes)
+        ),
+        "dice_loss": torch.tensor(
+            dice_loss(logits, labels, label_dim, num_classes)
+        ),
         # "normalized_surface_dice_loss": normalized_surface_dice_loss(
         #     logits, labels, label_dim, num_classes
         # ),
-        "generalized_dice_loss": generalized_dice_loss(
-            logits, labels, label_dim, num_classes
+        "generalized_dice_loss": torch.tensor(
+            generalized_dice_loss(logits, labels, label_dim, num_classes)
         ),
     }
 
