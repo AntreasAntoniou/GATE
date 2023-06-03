@@ -621,7 +621,7 @@ class Learner(nn.Module):
 
         self.model = GATEModel(
             config=self.model.config,
-            model=Ensemble(models=models, weights=best_metric),
+            model=Ensemble(models=models),
             key_remapper_dict=self.model.key_remapper_dict,
         )
         self.model = self.accelerator.prepare(self.model)
