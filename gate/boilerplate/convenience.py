@@ -25,6 +25,7 @@ def setup(ckpt_path: Optional[str], cfg: Any) -> tuple:
     Returns:
         tuple: global step and experiment tracker
     """
+    global_step = 0
     if ckpt_path is not None and cfg.resume is True:
         trainer_state = torch.load(
             pathlib.Path(ckpt_path) / "trainer_state.pt"
