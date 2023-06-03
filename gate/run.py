@@ -9,7 +9,6 @@ os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
 import hydra
-import neptune
 import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
@@ -96,7 +95,6 @@ def run(cfg: Any) -> None:
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
-    log_experiment_parameters(experiment_tracker, config_dict, global_step)
     log_wandb_parameters(config_dict, global_step)
 
     dataset: GATEDataset = instantiate(cfg.dataset, transforms=transform)

@@ -1,8 +1,4 @@
 #!/bin/bash
-export NEPTUNE_API_TOKEN=""
-export NEPTUNE_PROJECT=""
-export NEPTUNE_ALLOW_SELF_SIGNED_CERTIFICATE='TRUE'
-
 export WANDB_API_KEY=""
 export WANDB_ENTITY=
 export WANDB_PROJECT=
