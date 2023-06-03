@@ -24,7 +24,6 @@ from gate.boilerplate.convenience import (
     instantiate_optimizer,
     instantiate_scheduler,
     log_checkpoint_path,
-    log_experiment_parameters,
     log_wandb_parameters,
     setup,
 )
