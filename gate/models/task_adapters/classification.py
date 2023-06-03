@@ -23,7 +23,7 @@ class BackboneWithLinear(BaseModule):
         self.linear = nn.Linear(num_clip_features, num_classes)
         self.num_classes = num_classes
 
-    def compute_metrics(self, logits, labels):
+    def compute_loss_and_metrics(self, logits, labels):
         if not isinstance(labels, torch.Tensor):
             labels = torch.tensor(labels).to(logits.device)
 
@@ -48,7 +48,7 @@ class BackboneWithLinear(BaseModule):
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
-        compute_metrics: bool = True,
+        return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
             x = self.model(**input_dict)[self.modality]["features"]
@@ -67,12 +67,7 @@ class BackboneWithLinear(BaseModule):
 
         x = self.linear(x)
 
-        if labels is not None and compute_metrics:
-            return self.compute_metrics(x, labels) | {"logits": x}
+        if labels is not None and return_loss_and_metrics:
+            return self.compute_loss_and_metrics(x, labels) | {"logits": x}
         else:
             return {"logits": x}
-
-    def get_transforms(self):
-        return {
-            "image": rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
-        }
