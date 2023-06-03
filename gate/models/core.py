@@ -226,7 +226,7 @@ class Ensemble(nn.Module):
     weighted ensemble predictions, and predictions from a "model soup" that averages the models' parameters.
     """
 
-    def __init__(self, models: list[nn.Module], weights: list[float] = None):
+    def __init__(self, models: list[nn.Module]):
         """
         Initialize the Ensemble with a list of models and optional weights.
 
@@ -236,42 +236,10 @@ class Ensemble(nn.Module):
         """
         super(Ensemble, self).__init__()
         self.models = nn.ModuleList(models)
-        self.weights = softmax(
-            torch.tensor(
-                weights if weights is not None else [1.0 for _ in models]
-            ),
-            dim=0,
-        )
-
-        # Create the soup models
-        self.soup_model = deepcopy(
-            models[0]
-        )  # Copy the architecture of the first model
-        # self.weighted_soup_model = deepcopy(
-        #     models[0]
-        # )  # Copy the architecture of the first model
-
-        # Set the parameters of the soup models to the mean and weighted mean of the original models' parameters
-        with torch.no_grad():
-            for name, param in self.soup_model.named_parameters():
-                # Average the corresponding parameters from each model
-                param.copy_(
-                    torch.mean(
-                        torch.stack(
-                            [model.state_dict()[name] for model in self.models]
-                        ),
-                        dim=0,
-                    )
-                )
-
-            # for name, param in self.weighted_soup_model.named_parameters():
-            #     # Weighted average of the corresponding parameters from each model
-            #     param.copy_(
-            #         sum(
-            #             w * model.state_dict()[name]
-            #             for w, model in zip(self.weights, self.models)
-            #         )
-            #     )
+        if hasattr(models[0], "compute_loss_and_metrics"):
+            self.compute_loss_and_metrics = models[0].compute_loss_and_metrics
+        else:
+            self.compute_loss_and_metrics = None
 
     def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
         """
@@ -286,28 +254,37 @@ class Ensemble(nn.Module):
         """
         with torch.inference_mode():
             # # Get the outputs from each model
-            # model_outputs = [model(*args, **kwargs) for model in self.models]
+            model_outputs = [model(*args, **kwargs) for model in self.models]
 
-            # # Ensemble prediction
-            # ensemble_pred = torch.mean(
-            #     torch.stack([output["logits"] for output in model_outputs]),
-            #     dim=0,
-            # )
+            # Check if the logits are a dictionary
+            if isinstance(model_outputs[0]["logits"], dict):
+                # Ensemble prediction for dictionary logits
+                ensemble_pred = {}
+                for key in model_outputs[0]["logits"].keys():
+                    ensemble_pred[key] = torch.mean(
+                        torch.stack(
+                            [output["logits"][key] for output in model_outputs]
+                        ),
+                        dim=0,
+                    )
+            else:
+                # Ensemble prediction for tensor logits
+                ensemble_pred = torch.mean(
+                    torch.stack(
+                        [output["logits"] for output in model_outputs]
+                    ),
+                    dim=0,
+                )
 
-            # # Weighted ensemble prediction
-            # weighted_ensemble_pred = torch.sum(
-            #     torch.stack(
-            #         [
-            #             w * output["logits"]
-            #             for w, output in zip(self.weights, model_outputs)
-            #         ]
-            #     )
-            # )
+            output_dict = {"logits": ensemble_pred}
 
-            # Model soup prediction
-            soup_pred = self.soup_model(*args, **kwargs)
+            if (
+                "labels" in kwargs
+                and self.compute_loss_and_metrics is not None
+            ):
+                metrics = self.compute_loss_and_metrics(
+                    logits=ensemble_pred, labels=kwargs["labels"]
+                )
+                output_dict.update(metrics)
 
-            # # Weighted model soup prediction
-            # weighted_soup_pred = self.weighted_soup_model(*args, **kwargs)
-
-        return soup_pred
+            return output_dict

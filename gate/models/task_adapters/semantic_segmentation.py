@@ -273,7 +273,28 @@ class SegmentationViT(nn.Module):
             nn.init.constant_(module.bias, 0)
             nn.init.constant_(module.weight, 1.0)
 
-    def forward(self, image, labels: Optional[torch.Tensor] = None):
+    def compute_loss_and_metrics(
+        self, logits, labels: Optional[torch.Tensor] = None
+    ):
+        if labels is not None:
+            output = {
+                "loss": optimization_loss(logits, labels),
+            }
+            output |= metrics(
+                logits,
+                labels,
+                label_dim=1,
+                num_classes=self.num_classes,
+            )
+
+        return output
+
+    def forward(
+        self,
+        image,
+        labels: Optional[torch.Tensor] = None,
+        return_loss_and_metrics: bool = False,
+    ):
         """
             Forward pass for the segmentation model.
 
@@ -321,18 +342,11 @@ class SegmentationViT(nn.Module):
         )
         output = self.class_decoder(decoder_inputs)
 
-        if labels is not None:
-            output = {
-                "loss": optimization_loss(output, labels),
-                "logits": output,
-            }
-            output |= metrics(
-                output["logits"],
-                labels,
-                label_dim=1,
-                num_classes=self.num_classes,
+        output = {"logits": output}
+
+        if return_loss_and_metrics:
+            output |= self.compute_loss_and_metrics(
+                logits=output["logits"], labels=labels
             )
-        else:
-            output = {"logits": output}
 
         return output
