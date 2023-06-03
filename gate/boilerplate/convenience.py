@@ -1,8 +1,6 @@
 import pathlib
 from typing import Any, Dict, Optional
 
-import accelerate
-import neptune
 import torch
 import torch.nn as nn
 import wandb
@@ -32,16 +30,8 @@ def setup(ckpt_path: Optional[str], cfg: Any) -> tuple:
             pathlib.Path(ckpt_path) / "trainer_state.pt"
         )
         global_step = trainer_state["global_step"]
-        experiment_tracker = neptune.init_run(
-            source_files=["gate/*.py", "kubernetes/*.py"]
-        )
-    else:
-        global_step = 0
-        experiment_tracker = neptune.init_run(
-            source_files=["gate/*.py", "kubernetes/*.py"]
-        )
 
-    return global_step, experiment_tracker
+    return global_step
 
 
 def log_checkpoint_path(ckpt_path: Optional[str], cfg: Any) -> None:
@@ -59,23 +49,6 @@ def log_checkpoint_path(ckpt_path: Optional[str], cfg: Any) -> None:
         )
     else:
         logger.info(f"ckpt_path: {ckpt_path}, resume: {cfg.resume},")
-
-
-def log_experiment_parameters(
-    experiment_tracker: Any, config_dict: dict, global_step: int
-) -> None:
-    """
-    Log parameters to the experiment tracker and Weights & Biases.
-
-    Args:
-        experiment_tracker (Any): The experiment tracker
-        config_dict (dict): The configuration dictionary
-        global_step (int): The global step
-    """
-    from neptune.utils import stringify_unsupported
-
-    experiment_tracker["config"] = stringify_unsupported(config_dict)
-    experiment_tracker["init_global_step"] = global_step
 
 
 def log_wandb_parameters(config_dict: dict, global_step: int) -> None:

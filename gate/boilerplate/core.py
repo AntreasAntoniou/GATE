@@ -8,7 +8,6 @@ from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 from accelerate import Accelerator
-from neptune import Run
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoModel
@@ -76,7 +75,6 @@ class Learner(nn.Module):
         print_model_parameters: Optional[bool] = False,
         hf_cache_dir: Optional[str] = None,
         hf_repo_path: Optional[str] = None,
-        experiment_tracker: Optional[Run] = None,
         dummy_batch_mode: Optional[bool] = False,
     ):
         """
@@ -107,7 +105,6 @@ class Learner(nn.Module):
         self.hf_repo_path = hf_repo_path
         self.background_threads = []
         self.checkpoints_dir = Path(self.experiment_dir / "checkpoints")
-        self.neptune_run = experiment_tracker
 
         if not self.experiment_dir.exists():
             self.experiment_dir.mkdir(parents=True)
@@ -504,7 +501,6 @@ class Learner(nn.Module):
             per_epoch_metrics={
                 "eval": self.evaluator.per_epoch_metrics,
             },
-            neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
 
         torch.save(
@@ -534,8 +530,6 @@ class Learner(nn.Module):
 
         if not (pathlib.Path(checkpoint_path) / "trainer_state.pt").exists():
             return
-
-        logger.debug(f"Loading checkpoint from {checkpoint_path}")
 
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
