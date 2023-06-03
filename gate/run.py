@@ -82,7 +82,7 @@ def run(cfg: Any) -> None:
 
     logger.info(f"Using checkpoint: {ckpt_path}")
 
-    global_step, experiment_tracker = setup(ckpt_path, cfg)
+    global_step = setup(ckpt_path, cfg)
 
     model_and_transform = instantiate(cfg.model)
     # task_adaptor = instantiate(cfg.task_adaptor)
@@ -117,7 +117,7 @@ def run(cfg: Any) -> None:
         test_dataloader,
     ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
 
-    experiment_tracker["num_parameters"] = count_model_parameters(model)
+    wandb.log({"model/num_parameters": count_model_parameters(model)})
 
     optimizer = instantiate_optimizer(cfg, model)
     scheduler = instantiate_scheduler(cfg, optimizer)
@@ -128,11 +128,10 @@ def run(cfg: Any) -> None:
         cfg.trainer,
         optimizer=optimizer,
         scheduler=scheduler,
-        experiment_tracker=experiment_tracker,
     )
 
     evaluator = instantiate(
-        cfg.evaluator, experiment_tracker=experiment_tracker
+        cfg.evaluator,
     )
     # TODO: allow losses and task adapters to be defined at this level
 
@@ -146,7 +145,6 @@ def run(cfg: Any) -> None:
         val_dataloader=val_dataloader,
         callbacks=instantiate_callbacks(cfg.callbacks),
         resume=ckpt_path,
-        experiment_tracker=experiment_tracker,
     )
 
     if cfg.train:
