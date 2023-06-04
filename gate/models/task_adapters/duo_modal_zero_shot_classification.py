@@ -62,7 +62,6 @@ class DuoModalZeroShotModel(BaseModule):
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
-        return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
         modalities = [image, text, audio, video]
@@ -145,17 +144,16 @@ class DuoModalZeroShotModel(BaseModule):
             }
         }
 
-        if return_loss_and_metrics:
-            metrics_dict = self.compute_loss_and_metrics(
-                logits=output_dict["logits"]
-            )
+        metrics_dict = self.compute_loss_and_metrics(
+            logits=output_dict["logits"]
+        )
 
-            losses_list = [
-                value for key, value in metrics_dict.items() if "loss" in key
-            ]
-            if len(losses_list) > 0:
-                loss = torch.mean(torch.stack(losses_list))
-                metrics_dict["loss"] = loss
+        losses_list = [
+            value for key, value in metrics_dict.items() if "loss" in key
+        ]
+        if len(losses_list) > 0:
+            loss = torch.mean(torch.stack(losses_list))
+            metrics_dict["loss"] = loss
 
         return output_dict | metrics_dict
 
