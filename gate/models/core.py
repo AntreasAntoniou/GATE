@@ -293,8 +293,8 @@ class Ensemble(nn.Module):
                 )
                 output_dict.update(metrics)
 
-            output_dict = {
+            ensemble_dict = {
                 f"ensemble-{k}": v.detach() for k, v in output_dict.items()
             }
 
-            return output_dict
+            return output_dict | ensemble_dict
