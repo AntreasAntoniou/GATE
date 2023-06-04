@@ -224,7 +224,10 @@ def recursive_mean(tensor_dict):
     if isinstance(tensor_dict, dict):
         return {k: recursive_mean(v) for k, v in tensor_dict.items()}
     elif isinstance(tensor_dict, list):
-        return torch.mean(torch.stack(tensor_dict), dim=0)
+        if all(isinstance(i, torch.Tensor) for i in tensor_dict):
+            return torch.mean(torch.stack(tensor_dict), dim=0)
+        else:
+            return [recursive_mean(i) for i in tensor_dict]
     else:
         raise ValueError("Unsupported data type for recursive_mean")
 
