@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-from copy import deepcopy
+from rich import print
 
 import torch
 import torch.nn as nn
-from torch.nn.functional import softmax
-
-from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
+
 
 logger = get_logger(__name__, set_rich=True)
 
@@ -305,6 +303,6 @@ class Ensemble(nn.Module):
 
             outputs = output_dict | ensemble_dict
 
-            print(outputs)
+            print(list(outputs.keys()))
 
             return outputs
