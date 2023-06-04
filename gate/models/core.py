@@ -228,8 +228,6 @@ def recursive_mean(tensor_dict):
             return torch.mean(torch.stack(tensor_dict), dim=0)
         else:
             return [recursive_mean(i) for i in tensor_dict]
-    else:
-        raise ValueError("Unsupported data type for recursive_mean")
 
 
 class Ensemble(nn.Module):
