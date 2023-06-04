@@ -252,6 +252,15 @@ def flatten_dict(d, parent_key="", sep="_"):
     return dict(items)
 
 
+def print_dict_structure(d, indent=0):
+    from rich import print
+
+    for key, value in d.items():
+        print(" " * indent + str(key))
+        if isinstance(value, dict):
+            print_dict_structure(value, indent + 2)
+
+
 class Ensemble(nn.Module):
     """
     This class represents an ensemble of PyTorch models. It can compute ensemble predictions,
@@ -294,16 +303,6 @@ class Ensemble(nn.Module):
             if "labels" in kwargs:
                 labels = kwargs["labels"]
 
-            # print the dictionary structure of model_outputs[0] recursively
-
-            # def print_dict_structure(d, indent=0):
-            #     for key, value in d.items():
-            #         print(" " * indent + str(key))
-            #         if isinstance(value, dict):
-            #             print_dict_structure(value, indent + 2)
-
-            # print_dict_structure(model_outputs[0])
-
             ensemble_pred = {}
             for key in model_outputs[0]["logits"].keys():
                 ensemble_pred[key] = recursive_mean(
@@ -321,8 +320,6 @@ class Ensemble(nn.Module):
                 )
                 output_dict.update(metrics)
 
-            outputs = output_dict
-
-            outputs = flatten_dict(outputs)
+            outputs = flatten_dict(output_dict)
 
             return outputs
