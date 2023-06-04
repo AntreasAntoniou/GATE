@@ -355,18 +355,20 @@ class Learner(nn.Module):
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
 
-        if model is None:
-            if self.evaluator.model_selection_metric_name is not None:
-                self.load_best_model(
-                    metric_name=self.evaluator.model_selection_metric_name,
-                    higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
-                )
-            model = self.accelerator.prepare(self.model)
+        for kth in [1, 3]:
+            if model is None:
+                if self.evaluator.model_selection_metric_name is not None:
+                    self.load_best_model(
+                        metric_name=self.evaluator.model_selection_metric_name,
+                        higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
+                        kth_best=kth,
+                    )
+                model = self.accelerator.prepare(self.model)
 
-        self._testing_loop(
-            test_dataloader=self.test_dataloader,
-            model=model,
-        )
+            self._testing_loop(
+                test_dataloader=self.test_dataloader,
+                model=model,
+            )
 
     def _training_loop(self, train_dataloader: DataLoader = None):
         if train_dataloader is None:
@@ -581,12 +583,14 @@ class Learner(nn.Module):
             checkpoint_path=checkpoint_path,
         )
 
-    def load_best_model(self, metric_name: str, higher_is_better: bool):
+    def load_best_model(
+        self, metric_name: str, higher_is_better: bool, kth_best: int
+    ):
         (
             best_global_step,
             best_metric,
         ) = self.evaluator.get_best_model_global_step_and_metric(
-            metric_name, higher_is_better, kth_best=1
+            metric_name, higher_is_better, kth_best=kth_best
         )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
@@ -621,7 +625,7 @@ class Learner(nn.Module):
 
         self.model = GATEModel(
             config=self.model.config,
-            model=Ensemble(models=models),
+            model=Ensemble(models=models, prefix=f"ensemble_{kth_best}"),
             key_remapper_dict=self.model.key_remapper_dict,
         )
         self.model = self.accelerator.prepare(self.model)
