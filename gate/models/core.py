@@ -223,6 +223,12 @@ def recursive_mean(tensor_dict):
     elif isinstance(tensor_dict, list):
         if all(isinstance(i, torch.Tensor) for i in tensor_dict):
             return torch.mean(torch.stack(tensor_dict), dim=0)
+        elif all(isinstance(i, dict) for i in tensor_dict):
+            keys = tensor_dict[0].keys()
+            return {
+                key: recursive_mean([d[key] for d in tensor_dict])
+                for key in keys
+            }
         else:
             return [recursive_mean(i) for i in tensor_dict]
     elif isinstance(tensor_dict, torch.Tensor):
@@ -280,13 +286,13 @@ class Ensemble(nn.Module):
 
             # print the dictionary structure of model_outputs[0] recursively
 
-            def print_dict_structure(d, indent=0):
-                for key, value in d.items():
-                    print(" " * indent + str(key))
-                    if isinstance(value, dict):
-                        print_dict_structure(value, indent + 2)
+            # def print_dict_structure(d, indent=0):
+            #     for key, value in d.items():
+            #         print(" " * indent + str(key))
+            #         if isinstance(value, dict):
+            #             print_dict_structure(value, indent + 2)
 
-            print_dict_structure(model_outputs[0])
+            # print_dict_structure(model_outputs[0])
 
             ensemble_pred = {}
             for key in model_outputs[0]["logits"].keys():
