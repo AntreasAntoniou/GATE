@@ -164,7 +164,7 @@ def get_accuracy(logits, labels):
     _, predictions = torch.min(logits, dim=-1)
     accuracy = torch.mean(predictions.eq(labels).float())
     print(f"Accuracy is {accuracy}, predictions are {predictions}")
-    return
+    return accuracy
 
 
 def get_cosine_distances(query_embeddings, support_embeddings):
