@@ -249,7 +249,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         )
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        batch["compute_metrics"] = False
+        batch["return_loss_and_metrics"] = False
         output_dict = model.forward(batch)
         logits = output_dict[self.target_modality][self.source_modality][
             "logits"
