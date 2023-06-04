@@ -1,7 +1,7 @@
 import learn2learn as l2l
 from tqdm.auto import tqdm
 
-data = l2l.vision.datasets.CUBirds200(
+data = l2l.vision.datasets.FGVCAircraft(
     root="data/",
     mode="all",
     download=True,
