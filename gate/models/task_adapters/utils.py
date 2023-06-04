@@ -154,6 +154,9 @@ def compute_zero_shot_loss_and_metrics(
     similarities: Dict[str, torch.Tensor],
     is_irregular_shape: bool = False,
 ):
+    if isinstance(is_irregular_shape, list):
+        is_irregular_shape = is_irregular_shape[0]
+
     contrastive_losses_dict = {
         f"{key.replace('_similarities', '_loss')}": contrastive_loss(
             value, is_irregular_shape=is_irregular_shape
