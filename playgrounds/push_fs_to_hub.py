@@ -53,11 +53,11 @@ if __name__ == "__main__":
                 total=len(["train", "validation", "test"])
             ) as pbar_set_name:
                 print(f"Processing {key}")
-                for set_name in tqdm(["train", "validation", "test"]):
+                for set_name in ["train", "validation", "test"]:
                     dataset = value(set_name=set_name)
                     data_dict = {"image": [], "label": []}
                     with tqdm(total=len(dataset)) as pbar_data:
-                        for idx, item in tqdm(enumerate(dataset)):
+                        for idx, item in enumerate(dataset):
                             data_dict["image"].append(
                                 T.Resize(size=(224, 224))(item[0])
                             )
