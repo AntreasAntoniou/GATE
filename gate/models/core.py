@@ -304,10 +304,19 @@ class Ensemble(nn.Module):
                 labels = kwargs["labels"]
 
             ensemble_pred = {}
-            for key in model_outputs[0]["logits"].keys():
-                ensemble_pred[key] = recursive_mean(
-                    [output["logits"][key] for output in model_outputs]
+
+            if isinstance(model_outputs[0]["logits"], torch.Tensor):
+                ensemble_pred = torch.mean(
+                    torch.stack(
+                        [output["logits"] for output in model_outputs]
+                    ),
+                    dim=0,
                 )
+            else:
+                for key in model_outputs[0]["logits"].keys():
+                    ensemble_pred[key] = recursive_mean(
+                        [output["logits"][key] for output in model_outputs]
+                    )
 
             output_dict = {"logits": ensemble_pred}
 
