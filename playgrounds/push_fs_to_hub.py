@@ -69,6 +69,6 @@ if __name__ == "__main__":
                     pbar_set_name.update(1)
             hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
             hf_dataset_dict_full.push_to_hub(
-                repo_id=f"Antreas/{key}", repo_type="dataset", private=False
+                repo_id=f"Antreas/{key}", private=False
             )
             pbar_dataset.update(1)
