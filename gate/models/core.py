@@ -330,4 +330,6 @@ class Ensemble(nn.Module):
 
             outputs = flatten_dict(outputs)
 
+            print(list(outputs.keys()))
+
             return outputs
