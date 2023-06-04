@@ -263,10 +263,9 @@ class PrototypicalNetwork(nn.Module):
         return output_dict
 
     def compute_loss_and_metrics(self, logits, labels):
-        print(f"logits: {logits.shape}, labels: {labels.shape}")
         loss = prototypical_loss(logits, labels)
         loss = torch.mean(loss)
         logits = logits.permute([0, 2, 1])
 
         accuracy = get_accuracy(logits=logits, labels=labels)
-        return {"loss": loss, "accuracy_top_1": accuracy, "logits": logits}
+        return {"loss": loss, "accuracy_top_1": accuracy}
