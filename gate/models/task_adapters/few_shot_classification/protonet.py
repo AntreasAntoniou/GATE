@@ -13,7 +13,6 @@ from gate.models.task_adapters.few_shot_classification.utils import (
     get_prototypes,
     prototypical_logits,
     prototypical_loss,
-    prototypical_loss_and_logits,
 )
 
 
