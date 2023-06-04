@@ -241,6 +241,17 @@ def recursive_mean(tensor_dict):
         )
 
 
+def flatten_dict(d, parent_key="", sep="_"):
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
 class Ensemble(nn.Module):
     """
     This class represents an ensemble of PyTorch models. It can compute ensemble predictions,
@@ -317,6 +328,6 @@ class Ensemble(nn.Module):
 
             outputs = output_dict | ensemble_dict
 
-            print(list(outputs.keys()))
+            outputs = flatten_dict(outputs)
 
             return outputs
