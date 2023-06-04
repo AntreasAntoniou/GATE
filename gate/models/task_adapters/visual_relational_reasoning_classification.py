@@ -79,6 +79,7 @@ class DuoModalFusionModel(BaseModule):
             dropout=0.0,
             num_layers=4,
         )
+        self.num_classes = num_classes
         if isinstance(num_classes, int):
             self.classifier = nn.Linear(self.fusion_in_features, num_classes)
         elif isinstance(num_classes, list):
@@ -254,7 +255,7 @@ class DuoModalFusionModel(BaseModule):
             output_dict = {"logits": self.classifier(features)}
 
         if labels is not None and return_loss_and_metrics:
-            output_dict = self.compute_loss_and_metrics(
+            output_dict |= self.compute_loss_and_metrics(
                 logits=output_dict["logits"], labels=labels
             )
 
