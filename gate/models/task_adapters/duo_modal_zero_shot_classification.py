@@ -141,10 +141,10 @@ class DuoModalZeroShotModel(BaseModule):
             "logits": {
                 "similarities": similarities_dict,
                 "is_irregular_shape": is_irregular_shape,
-            }
+            },
+            "labels": similarities_dict,
         }
 
-        output_dict = {"labels": similarities_dict}
         metrics_dict = self.compute_loss_and_metrics(
             logits=output_dict["logits"]
         )
