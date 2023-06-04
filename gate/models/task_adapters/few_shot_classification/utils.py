@@ -162,8 +162,9 @@ def get_accuracy(logits, labels):
     """
     print(f"Logits shape is {logits.shape}, labels shape is {labels.shape}")
     _, predictions = torch.min(logits, dim=-1)
-    print(predictions)
-    return torch.mean(predictions.eq(labels).float())
+    accuracy = torch.mean(predictions.eq(labels).float())
+    print(f"Accuracy is {accuracy}, predictions are {predictions}")
+    return
 
 
 def get_cosine_distances(query_embeddings, support_embeddings):
