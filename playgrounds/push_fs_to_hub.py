@@ -46,18 +46,28 @@ dataset_dict = {
 }
 
 if __name__ == "__main__":
-    for key, value in tqdm(dataset_dict.items()):
-        hf_dataset_dict = dict()
-        for set_name in tqdm(["train", "validation", "test"]):
-            dataset = value(set_name)
-            data_dict = {"image": [], "label": []}
-            for idx, item in tqdm(enumerate(dataset)):
-                data_dict["image"].append(T.Resize(size=(224, 224))(item[0]))
-                data_dict["label"].append(item[1])
+    with tqdm(total=len(dataset_dict)) as pbar_dataset:
+        for key, value in dataset_dict.items():
+            hf_dataset_dict = dict()
+            with tqdm(
+                total=len(["train", "validation", "test"])
+            ) as pbar_set_name:
+                for set_name in tqdm(["train", "validation", "test"]):
+                    dataset = value(set_name)
+                    data_dict = {"image": [], "label": []}
+                    with tqdm(total=len(dataset)) as pbar_data:
+                        for idx, item in tqdm(enumerate(dataset)):
+                            data_dict["image"].append(
+                                T.Resize(size=(224, 224))(item[0])
+                            )
+                            data_dict["label"].append(item[1])
+                            pbar_data.update(1)
 
-            hf_dataset = datasets.Dataset.from_dict(data_dict)
-            hf_dataset_dict[set_name] = hf_dataset
-        hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
-        hf_dataset_dict_full.push_to_hub(
-            repo_id=f"Antreas/{key}", repo_type="dataset", private=False
-        )
+                    hf_dataset = datasets.Dataset.from_dict(data_dict)
+                    hf_dataset_dict[set_name] = hf_dataset
+                    pbar_set_name.update(1)
+            hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
+            hf_dataset_dict_full.push_to_hub(
+                repo_id=f"Antreas/{key}", repo_type="dataset", private=False
+            )
+            pbar_dataset.update(1)
