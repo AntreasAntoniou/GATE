@@ -55,6 +55,9 @@ class Evaluator(ABC):
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
+        print(
+            f"global_steps: {global_steps}, per_epoch_metrics: {self.per_epoch_metrics}, current_epoch_dict: {self.current_epoch_dict}"
+        )
 
         if isinstance(metrics, List):
             if len(metrics) == 0:
