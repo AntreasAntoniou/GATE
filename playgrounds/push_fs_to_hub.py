@@ -6,12 +6,12 @@ import datasets
 dataset_root = "/data/"
 
 dataset_dict = {
-    "aircraft_bbcrop": lambda set_name: l2l.vision.datasets.FGVCAircraft(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        bounding_box_crop=True,
-    ),
+    # "aircraft_bbcrop": lambda set_name: l2l.vision.datasets.FGVCAircraft(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     bounding_box_crop=True,
+    # ),
     "cubirds200_bbcrop": lambda set_name: l2l.vision.datasets.CUBirds200(
         root=dataset_root,
         mode=set_name,
