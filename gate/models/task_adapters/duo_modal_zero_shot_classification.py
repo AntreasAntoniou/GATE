@@ -143,7 +143,8 @@ class DuoModalZeroShotModel(BaseModule):
                 "is_irregular_shape": is_irregular_shape,
             }
         }
-        print(f"output_dict: {output_dict}, will compute loss and metrics")
+
+        output_dict = {"labels": similarities_dict}
         metrics_dict = self.compute_loss_and_metrics(
             logits=output_dict["logits"]
         )
