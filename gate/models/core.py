@@ -224,10 +224,7 @@ def recursive_mean(tensor_dict):
         if all(isinstance(i, torch.Tensor) for i in tensor_dict):
             return torch.mean(torch.stack(tensor_dict), dim=0)
         else:
-            return {
-                i: recursive_mean(tensor_dict[i])
-                for i in range(len(tensor_dict))
-            }
+            return [recursive_mean(i) for i in tensor_dict]
     elif isinstance(tensor_dict, torch.Tensor):
         return tensor_dict
     elif isinstance(tensor_dict, bool):
