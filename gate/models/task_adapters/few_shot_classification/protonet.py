@@ -237,7 +237,7 @@ class PrototypicalNetwork(nn.Module):
         # Get the prototypes
         prototypes = get_prototypes(
             embeddings=support_set_embedding,
-            targets=support_set_labels,
+            labels=support_set_labels,
             num_classes=int(torch.max(support_set_labels)) + 1,
         )
 
