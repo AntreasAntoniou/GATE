@@ -220,6 +220,15 @@ def reinit(input_module: nn.Module):
                 torch.nn.init.zeros_(module.bias)
 
 
+def recursive_mean(tensor_dict):
+    if isinstance(tensor_dict, dict):
+        return {k: recursive_mean(v) for k, v in tensor_dict.items()}
+    elif isinstance(tensor_dict, list):
+        return torch.mean(torch.stack(tensor_dict), dim=0)
+    else:
+        raise ValueError("Unsupported data type for recursive_mean")
+
+
 class Ensemble(nn.Module):
     """
     This class represents an ensemble of PyTorch models. It can compute ensemble predictions,
@@ -264,23 +273,10 @@ class Ensemble(nn.Module):
                 labels = kwargs["labels"]
 
             # Check if the logits are a dictionary
-            if isinstance(model_outputs[0]["logits"], dict):
-                # Ensemble prediction for dictionary logits
-                ensemble_pred = {}
-                for key in model_outputs[0]["logits"].keys():
-                    ensemble_pred[key] = torch.mean(
-                        torch.stack(
-                            [output["logits"][key] for output in model_outputs]
-                        ),
-                        dim=0,
-                    )
-            else:
-                # Ensemble prediction for tensor logits
-                ensemble_pred = torch.mean(
-                    torch.stack(
-                        [output["logits"] for output in model_outputs]
-                    ),
-                    dim=0,
+            ensemble_pred = {}
+            for key in model_outputs[0]["logits"].keys():
+                ensemble_pred[key] = recursive_mean(
+                    [output["logits"][key] for output in model_outputs]
                 )
 
             output_dict = {"logits": ensemble_pred}
