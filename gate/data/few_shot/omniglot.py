@@ -54,6 +54,7 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             dataset_class=lambda set_name: l2l.vision.datasets.FullOmniglot(
                 root=dataset_root,
                 download=download,
+                set_name=set_name,
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
