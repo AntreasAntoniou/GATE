@@ -49,9 +49,7 @@ class ClassificationEvaluator(Evaluator):
         loss = output_dict["loss"]
 
         for key, value in output_dict.items():
-            if isinstance(value, list):
-                self.current_epoch_dict[key].append(value)
-            else:
+            if isinstance(value, torch.Tensor):
                 self.current_epoch_dict[key].append(
                     value.detach().mean().cpu()
                 )
