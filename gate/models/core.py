@@ -303,4 +303,8 @@ class Ensemble(nn.Module):
                 f"{self.prefix}-{k}": v for k, v in output_dict.items()
             }
 
-            return output_dict | ensemble_dict
+            outputs = output_dict | ensemble_dict
+
+            print(outputs)
+
+            return outputs
