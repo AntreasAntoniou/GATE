@@ -45,33 +45,15 @@ class ClassificationTrainer(Trainer):
             self.source_modality
         ]
 
-        if "loss" not in output_dict:
-            loss = F.cross_entropy(
-                output_dict["logits"],
-                batch["labels"],
-            )
-            accuracy = accuracy_top_k(
-                logits=output_dict["logits"],
-                labels=batch["labels"],
-                k=1,
-            )
-            accuracy_top_5 = accuracy_top_k(
-                logits=output_dict["logits"],
-                labels=batch["labels"],
-                k=5,
-            )
-            output_dict = {
-                "loss": loss,
-                "accuracy_top_1": accuracy,
-                "accuracy_top_5": accuracy_top_5,
-            }
-        else:
-            loss = output_dict["loss"]
+        loss = output_dict["loss"]
 
         accelerator.backward(loss)
 
         for key, value in output_dict.items():
-            self.current_epoch_dict[key].append(value.detach().mean().cpu())
+            if isinstance(value, torch.Tensor):
+                self.current_epoch_dict[key].append(
+                    value.detach().mean().cpu()
+                )
 
         return StepOutput(
             output_metrics_dict=output_dict,
@@ -250,9 +232,9 @@ class MultiClassClassificationTrainer(Trainer):
             metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
-            self.current_epoch_dict.setdefault(key, []).append(
-                value.detach().cpu()
-            )
+            if isinstance(value, torch.Tensor):
+                value = value.detach().cpu()
+                self.current_epoch_dict.setdefault(key, []).append(value)
 
         # we need to round the labels because they might be soft labels due to mixup/label smoothing
         self.current_epoch_dict.setdefault("labels", []).append(
