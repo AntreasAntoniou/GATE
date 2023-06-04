@@ -183,6 +183,7 @@ def compute_zero_shot_loss_and_metrics(
         | contrastive_losses_dict
         | contrastive_accuracy_dict
         | contrastive_accuracy_top_5_dict
+        | {"is_irregular_shape": is_irregular_shape}
     )
 
 
