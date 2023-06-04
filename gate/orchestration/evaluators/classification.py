@@ -348,12 +348,13 @@ class MultiClassClassificationEvaluator(Evaluator):
     def end_testing(
         self,
         global_step: int,
+        prefix: Optional[str] = None,
     ):
         phase_metrics = self.compute_epoch_metrics(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,
             metrics=phase_metrics,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             experiment_tracker=self.experiment_tracker,
         )
