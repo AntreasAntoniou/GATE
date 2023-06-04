@@ -321,7 +321,7 @@ class Ensemble(nn.Module):
                 )
                 output_dict.update(metrics)
 
-            outputs = output_dict | ensemble_dict
+            outputs = output_dict
 
             outputs = flatten_dict(outputs)
 
