@@ -34,19 +34,19 @@ def learning_scheduler_smart_autofill(
     return lr_scheduler_config
 
 
-def get_num_samples(targets, num_classes, dtype=None) -> torch.Tensor:
-    batch_size = targets.size(0)
+def get_num_samples(labels, num_classes, dtype=None) -> torch.Tensor:
+    batch_size = labels.size(0)
     with torch.no_grad():
         # log.info(f"Batch size is {batch_size}")
-        ones = torch.ones_like(targets, dtype=dtype)
+        ones = torch.ones_like(labels, dtype=dtype)
         # log.info(f"Ones tensor is {ones.shape}")
         num_samples = ones.new_zeros((batch_size, num_classes))
         # log.info(f"Num samples tensor is {num_samples.shape}")
-        num_samples.scatter_add_(1, targets, ones)
+        num_samples.scatter_add_(1, labels, ones)
     return num_samples
 
 
-def get_prototypes(embeddings, targets, num_classes):
+def get_prototypes(embeddings, labels, num_classes):
     """Compute the prototypes (the mean vector of the embedded training/support
     points belonging to its class) for each classes in the task.
 
@@ -56,8 +56,8 @@ def get_prototypes(embeddings, targets, num_classes):
         A tensor containing the embeddings of the support points. This tensor
         has shape `(batch_size, num_examples, embedding_size)`.
 
-    targets : `torch.LongTensor` instance
-        A tensor containing the targets of the support points. This tensor has
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the support points. This tensor has
         shape `(batch_size, num_examples)`.
 
     num_classes : int
@@ -71,22 +71,20 @@ def get_prototypes(embeddings, targets, num_classes):
     """
     batch_size, embedding_size = embeddings.size(0), embeddings.size(-1)
 
-    num_samples = get_num_samples(targets, num_classes, dtype=embeddings.dtype)
+    num_samples = get_num_samples(labels, num_classes, dtype=embeddings.dtype)
     num_samples.unsqueeze_(-1)
     num_samples = torch.max(num_samples, torch.ones_like(num_samples))
 
     prototypes = embeddings.new_zeros(
         (batch_size, num_classes, embedding_size)
     )
-    indices = targets.unsqueeze(-1).expand_as(embeddings)
+    indices = labels.unsqueeze(-1).expand_as(embeddings)
     prototypes.scatter_add_(1, indices, embeddings).div_(num_samples)
 
     return prototypes
 
 
-def prototypical_loss_and_logits(
-    prototypes, embeddings, targets
-) -> dict[str, torch.Tensor]:
+def prototypical_loss(logits, labels) -> dict[str, torch.Tensor]:
     """Compute the loss (i.e. negative log-likelihood) for the prototypical
     network, on the test/query points.
 
@@ -100,8 +98,35 @@ def prototypical_loss_and_logits(
         A tensor containing the embeddings of the query points. This tensor has
         shape `(batch_size, num_examples, embedding_size)`.
 
-    targets : `torch.LongTensor` instance
-        A tensor containing the targets of the query points. This tensor has
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the query points. This tensor has
+        shape `(batch_size, num_examples)`.
+
+    Returns
+    -------
+    loss : `torch.FloatTensor` instance
+        The negative log-likelihood on the query points.
+    """
+
+    return F.cross_entropy(logits, labels)
+
+
+def prototypical_logits(prototypes, embeddings) -> dict[str, torch.Tensor]:
+    """Compute the loss (i.e. negative log-likelihood) for the prototypical
+    network, on the test/query points.
+
+    Parameters
+    ----------
+    prototypes : `torch.FloatTensor` instance
+        A tensor containing the prototypes for each class. This tensor has shape
+        `(batch_size, num_classes, embedding_size)`.
+
+    embeddings : `torch.FloatTensor` instance
+        A tensor containing the embeddings of the query points. This tensor has
+        shape `(batch_size, num_examples, embedding_size)`.
+
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the query points. This tensor has
         shape `(batch_size, num_examples)`.
 
     Returns
@@ -112,13 +137,10 @@ def prototypical_loss_and_logits(
     squared_distances = torch.sum(
         (prototypes.unsqueeze(2) - embeddings.unsqueeze(1)) ** 2, dim=-1
     )
-    return {
-        "loss": F.cross_entropy(-squared_distances, targets),
-        "logits": -squared_distances,
-    }
+    return -squared_distances
 
 
-def get_accuracy(prototypes, embeddings, targets):
+def get_accuracy(logits, labels):
     """Compute the accuracy of the prototypical network on the test/query points.
 
     Parameters
@@ -129,8 +151,8 @@ def get_accuracy(prototypes, embeddings, targets):
     embeddings : `torch.FloatTensor` instance
         A tensor containing the embeddings of the query points. This tensor has
         shape `(meta_batch_size, num_examples, embedding_size)`.
-    targets : `torch.LongTensor` instance
-        A tensor containing the targets of the query points. This tensor has
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the query points. This tensor has
         shape `(meta_batch_size, num_examples)`.
 
     Returns
@@ -138,11 +160,9 @@ def get_accuracy(prototypes, embeddings, targets):
     accuracy : `torch.FloatTensor` instance
         Mean accuracy on the query points.
     """
-    sq_distances = torch.sum(
-        (prototypes.unsqueeze(1) - embeddings.unsqueeze(2)) ** 2, dim=-1
-    )
-    _, predictions = torch.min(sq_distances, dim=-1)
-    return torch.mean(predictions.eq(targets).float())
+
+    _, predictions = torch.min(logits, dim=-1)
+    return torch.mean(predictions.eq(labels).float())
 
 
 def get_cosine_distances(query_embeddings, support_embeddings):
@@ -172,7 +192,7 @@ def get_cosine_distances(query_embeddings, support_embeddings):
     return cosine_distances
 
 
-def matching_logits(cosine_distances, targets, num_classes):
+def matching_logits(cosine_distances, labels, num_classes):
     """Compute the matching network logits for each query belonging to each class.
 
     Parameters
@@ -181,8 +201,8 @@ def matching_logits(cosine_distances, targets, num_classes):
         A tensor containing the distances between all query and support examples. This tensor has shape
         `(batch_size, num_examples, num_queries)`.
 
-    targets : `torch.LongTensor` instance
-        A tensor containing the targets of the support points. This tensor has
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the support points. This tensor has
         shape `(batch_size, num_examples)`.
 
     num_classes : int
@@ -199,7 +219,7 @@ def matching_logits(cosine_distances, targets, num_classes):
     )
 
     num_samples = get_num_samples(
-        targets, num_classes, dtype=cosine_distances.dtype
+        labels, num_classes, dtype=cosine_distances.dtype
     )
     num_samples.unsqueeze_(-1)
     num_samples = torch.max(num_samples, torch.ones_like(num_samples))
@@ -209,13 +229,13 @@ def matching_logits(cosine_distances, targets, num_classes):
     attentions = F.softmax(cosine_distances, dim=1)
 
     logits = attentions.new_zeros((batch_size, num_classes, num_queries))
-    indices = targets.unsqueeze(2).expand_as(attentions)
+    indices = labels.unsqueeze(2).expand_as(attentions)
     logits.scatter_add_(1, indices, attentions).div_(num_samples)
 
     return logits
 
 
-def matching_loss(logits, targets):
+def matching_loss(logits, labels):
     """Compute the loss (i.e. negative log-likelihood) for the matching
     network, on the test/query points.
 
@@ -225,8 +245,8 @@ def matching_loss(logits, targets):
         A tensor containing the logits of each query belonging to each class. This tensor has shape
         `(batch_size, num_classes, num_queries)`.
 
-    targets : `torch.LongTensor` instance
-        A tensor containing the targets of the query points. This tensor has
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the query points. This tensor has
         shape `(batch_size, num_queries)`.
 
     Returns
@@ -238,19 +258,19 @@ def matching_loss(logits, targets):
     logits = logits.permute(0, 2, 1).view(
         batch_size * num_queries, num_classes
     )
-    targets = targets.view(-1)
-    return F.cross_entropy(logits, targets)
+    labels = labels.view(-1)
+    return F.cross_entropy(logits, labels)
 
 
-def get_matching_accuracy(logits, targets):
+def get_matching_accuracy(logits, labels):
     """Compute the accuracy of the prototypical network on the test/query points.
     Parameters
     ----------
     logits : `torch.FloatTensor` instance
         A tensor containing the logits of each query belonging to each class. This tensor has shape
         `(batch_size, num_classes, num_queries)`.
-    targets : `torch.LongTensor` instance
-        A tensor containing the targets of the query points. This tensor has
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the query points. This tensor has
         shape `(meta_batch_size, num_examples)`.
     Returns
     -------
@@ -258,10 +278,10 @@ def get_matching_accuracy(logits, targets):
         Mean accuracy on the query points.
     """
     _, predictions = torch.max(logits, dim=1)
-    return torch.mean(predictions.eq(targets).float())
+    return torch.mean(predictions.eq(labels).float())
 
 
-def inner_gaussian_product(means, precisions, targets, num_classes):
+def inner_gaussian_product(means, precisions, labels, num_classes):
     """Compute the product of n Gaussians for each class (where n can vary by class) from their means and precisions.
     Parameters
     ----------
@@ -286,13 +306,13 @@ def inner_gaussian_product(means, precisions, targets, num_classes):
     assert means.shape == precisions.shape
     batch_size, num_examples, embedding_size = means.shape
 
-    num_samples = get_num_samples(targets, num_classes, dtype=means.dtype)
+    num_samples = get_num_samples(labels, num_classes, dtype=means.dtype)
     num_samples.unsqueeze_(-1)
     num_samples = torch.max(
         num_samples, torch.ones_like(num_samples)
     )  # Backup for testing only, always >= 1-shot in practice
 
-    indices = targets.unsqueeze(-1).expand_as(means)
+    indices = labels.unsqueeze(-1).expand_as(means)
 
     # NOTE: If this approach doesn't work well, try first normalising precisions by number of samples with:
     # precisions.div_(num_samples)
@@ -414,9 +434,9 @@ def outer_gaussian_product(x_mean, x_precision, y_mean, y_precision):
     return product_mean, product_precision, log_product_normalisation
 
 
-def replace_with_counts(targets):
-    target_counts = torch.zeros_like(targets)
-    unique_targets, counts = targets.unique(return_counts=True)
-    for target, count in zip(unique_targets, counts):
-        target_counts[targets == target] = count
+def replace_with_counts(labels):
+    target_counts = torch.zeros_like(labels)
+    unique_labels, counts = labels.unique(return_counts=True)
+    for target, count in zip(unique_labels, counts):
+        target_counts[labels == target] = count
     return target_counts
