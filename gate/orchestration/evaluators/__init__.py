@@ -101,13 +101,14 @@ class Evaluator(ABC):
     def start_testing(
         self,
         global_step: int,
+        prefix: Optional[str] = None,
     ):
         self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=self.current_epoch_dict,
             experiment_tracker=self.experiment_tracker,
         )
@@ -141,6 +142,7 @@ class Evaluator(ABC):
     def end_testing(
         self,
         global_step: int,
+        prefix: Optional[str] = None,
     ):
         phase_metrics = {}
         for key, value in self.current_epoch_dict.items():
@@ -157,7 +159,7 @@ class Evaluator(ABC):
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=phase_metrics,
             experiment_tracker=self.experiment_tracker,
         )

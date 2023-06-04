@@ -231,7 +231,7 @@ class Learner(nn.Module):
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_validation_step_end(model, batch)
 
-    def testing_step(self, model, batch):
+    def testing_step(self, model, batch, prefix):
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_testing_step_start(model, batch)
 
@@ -240,6 +240,7 @@ class Learner(nn.Module):
             batch=batch,
             global_step=self.global_step,
             accelerator=self.accelerator,
+            prefix=prefix,
         )
 
         self.callback_handler.on_batch_end(model, batch)
@@ -309,25 +310,23 @@ class Learner(nn.Module):
 
         logger.debug("Validation finished 🎉")
 
-    def start_testing(self):
+    def start_testing(self, prefix):
         self.callback_handler.on_testing_start(
             experiment=self, model=self.model
         )
 
         self.evaluator.start_testing(
-            global_step=self.global_step,
+            global_step=self.global_step, prefix=prefix
         )
         logger.debug("Starting testing 🧪")
 
-    def end_testing(self):
+    def end_testing(self, prefix):
         self.callback_handler.on_testing_end(
             experiment=self,
             model=self.model,
         )
 
-        self.evaluator.end_testing(
-            global_step=self.global_step,
-        )
+        self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
 
         logger.debug("Testing finished 🎉")
 
@@ -368,6 +367,7 @@ class Learner(nn.Module):
             self._testing_loop(
                 test_dataloader=self.test_dataloader,
                 model=model,
+                prefix=f"ensemble_{kth}",
             )
 
     def _training_loop(self, train_dataloader: DataLoader = None):
@@ -464,6 +464,7 @@ class Learner(nn.Module):
         self,
         test_dataloader: List[DataLoader] = None,
         model: nn.Module = None,
+        prefix: Optional[str] = None,
     ):
         if test_dataloader is None:
             test_dataloader = self.test_dataloader
@@ -472,17 +473,18 @@ class Learner(nn.Module):
             model = self.model
 
         if test_dataloader is not None:
-            self.start_testing()
+            self.start_testing(prefix=prefix)
 
             with tqdm(total=len(test_dataloader)) as pbar_dataloaders:
                 for batch_idx, batch in enumerate(test_dataloader):
                     self.testing_step(
                         model=model,
                         batch=batch,
+                        prefix=prefix,
                     )
                     pbar_dataloaders.update(1)
 
-            self.end_testing()
+            self.end_testing(prefix=prefix)
 
     def save_checkpoint(
         self,

@@ -258,7 +258,7 @@ class Ensemble(nn.Module):
     weighted ensemble predictions, and predictions from a "model soup" that averages the models' parameters.
     """
 
-    def __init__(self, models: list[nn.Module], prefix: str = "emsemble"):
+    def __init__(self, models: list[nn.Module]):
         """
         Initialize the Ensemble with a list of models and optional weights.
 
@@ -268,7 +268,6 @@ class Ensemble(nn.Module):
         """
         super(Ensemble, self).__init__()
         self.models = nn.ModuleList(models)
-        self.prefix = prefix
         if hasattr(models[0], "compute_loss_and_metrics"):
             self.compute_loss_and_metrics = models[0].compute_loss_and_metrics
         else:
@@ -322,14 +321,8 @@ class Ensemble(nn.Module):
                 )
                 output_dict.update(metrics)
 
-            ensemble_dict = {
-                f"{self.prefix}-{k}": v for k, v in output_dict.items()
-            }
-
             outputs = output_dict | ensemble_dict
 
             outputs = flatten_dict(outputs)
-
-            print(list(outputs.keys()))
 
             return outputs

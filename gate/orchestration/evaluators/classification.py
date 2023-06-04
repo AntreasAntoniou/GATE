@@ -94,6 +94,7 @@ class ClassificationEvaluator(Evaluator):
         batch,
         global_step,
         accelerator: Accelerator,
+        prefix: Optional[str] = None,
     ) -> EvaluatorOutput:
         model.eval()
 
@@ -107,7 +108,7 @@ class ClassificationEvaluator(Evaluator):
         metrics = step_output.metrics
 
         return EvaluatorOutput(
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             global_step=global_step,
             metrics=metrics,
             experiment_tracker=self.experiment_tracker,
@@ -309,6 +310,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         batch,
         global_step,
         accelerator: Accelerator,
+        prefix: Optional[str] = None,
     ) -> StepOutput:
         model.eval()
 
@@ -322,7 +324,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         metrics = step_output.metrics
 
         return EvaluatorOutput(
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=metrics,
             global_step=global_step,
             experiment_tracker=self.experiment_tracker,
