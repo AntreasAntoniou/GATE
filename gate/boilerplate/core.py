@@ -626,4 +626,4 @@ class Learner(nn.Module):
         )
         self.model = self.accelerator.prepare(self.model)
 
-        return models
+        return self.model
