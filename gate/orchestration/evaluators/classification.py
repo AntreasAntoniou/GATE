@@ -171,7 +171,7 @@ class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
             experiment_tracker,
             source_modality="image_text",
             target_modality="image_text",
-            model_selection_metric_name="accuracy_top_1-epoch-mean",
+            model_selection_metric_name="image_to_text_accuracy-epoch-mean",
             model_selection_metric_higher_is_better=True,
         )
 
