@@ -157,7 +157,7 @@ class DuoModalZeroShotModel(BaseModule):
                 loss = torch.mean(torch.stack(losses_list))
                 metrics_dict["loss"] = loss
 
-        return metrics_dict
+        return output_dict | metrics_dict
 
 
 from accelerate import Accelerator
