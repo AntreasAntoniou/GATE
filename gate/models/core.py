@@ -230,6 +230,8 @@ def recursive_mean(tensor_dict):
             return [recursive_mean(i) for i in tensor_dict]
     elif isinstance(tensor_dict, torch.Tensor):
         return tensor_dict
+    elif isinstance(tensor_dict, bool):
+        return tensor_dict
     else:
         raise ValueError(
             f"Unsupported data type for recursive_mean, data type is {type(tensor_dict)}"
