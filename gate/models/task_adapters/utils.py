@@ -161,6 +161,8 @@ def compute_zero_shot_loss_and_metrics(
         for key, value in similarities.items()
     }
 
+    loss = torch.mean(contrastive_losses_dict.values())
+
     contrastive_accuracy_dict = {
         f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
             value, is_irregular_shape=is_irregular_shape
@@ -180,7 +182,7 @@ def compute_zero_shot_loss_and_metrics(
         | contrastive_losses_dict
         | contrastive_accuracy_dict
         | contrastive_accuracy_top_5_dict
-        | {"is_irregular_shape": is_irregular_shape}
+        | {"is_irregular_shape": is_irregular_shape, "loss": loss}
     )
 
 
