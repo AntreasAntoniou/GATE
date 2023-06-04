@@ -50,14 +50,12 @@ if __name__ == "__main__":
         hf_dataset_dict = dict()
         for set_name in tqdm(["train", "validation", "test"]):
             dataset = value(set_name)
-            dataset_list = {
-                idx: {
-                    "image": T.Resize(size=(224, 224))(item[0]),
-                    "label": item[1],
-                }
-                for idx, item in tqdm(enumerate(dataset))
-            }
-            hf_dataset = datasets.Dataset.from_dict(dataset_list)
+            data_dict = {"image": [], "label": []}
+            for idx, item in tqdm(enumerate(dataset)):
+                data_dict["image"].append(T.Resize(size=(224, 224))(item[0]))
+                data_dict["label"].append(item[1])
+
+            hf_dataset = datasets.Dataset.from_dict(data_dict)
             hf_dataset_dict[set_name] = hf_dataset
         hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
         hf_dataset_dict_full.push_to_hub(
