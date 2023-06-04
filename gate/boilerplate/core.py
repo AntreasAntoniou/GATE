@@ -586,7 +586,7 @@ class Learner(nn.Module):
             best_global_step,
             best_metric,
         ) = self.evaluator.get_best_model_global_step_and_metric(
-            metric_name, higher_is_better, kth_best=3
+            metric_name, higher_is_better, kth_best=1
         )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
