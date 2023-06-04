@@ -161,7 +161,7 @@ def get_accuracy(logits, labels):
         Mean accuracy on the query points.
     """
     print(f"Logits shape is {logits.shape}, labels shape is {labels.shape}")
-    _, predictions = torch.min(logits, dim=-1)
+    _, predictions = torch.min(-logits, dim=-1)
     accuracy = torch.mean(predictions.eq(labels).float())
     print(f"Accuracy is {accuracy}, predictions are {predictions}")
     return accuracy
