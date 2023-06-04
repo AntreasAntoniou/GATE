@@ -161,7 +161,7 @@ def compute_zero_shot_loss_and_metrics(
         for key, value in similarities.items()
     }
 
-    loss = torch.mean(contrastive_losses_dict.values())
+    loss = torch.mean(torch.stack(list(contrastive_losses_dict.values())))
 
     contrastive_accuracy_dict = {
         f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
