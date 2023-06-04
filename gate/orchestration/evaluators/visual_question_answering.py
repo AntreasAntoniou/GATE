@@ -11,7 +11,6 @@ from gate.metrics.vqa_eval import vqa_metric
 from gate.models.core import GATEModel
 from gate.orchestration.evaluators import Evaluator
 from gate.orchestration.trainers import log_data_to_wandb_table
-from gate.orchestration.trainers.classification import StepOutput
 
 logger = get_logger(__name__)
 
@@ -137,6 +136,7 @@ class VQAEvaluator(Evaluator):
         batch,
         global_step,
         accelerator: Accelerator,
+        prefix: Optional[str] = None,
     ):
         model.eval()
 
@@ -146,7 +146,7 @@ class VQAEvaluator(Evaluator):
                 batch=batch,
                 global_step=global_step,
                 accelerator=accelerator,
-                phase_name="validation",
+                phase_name="testing",
             )
 
             for key, value in step_output.output_metrics_dict.items():
@@ -154,7 +154,7 @@ class VQAEvaluator(Evaluator):
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="test",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=step_output.output_metrics_dict,
             experiment_tracker=self.experiment_tracker,
         )
