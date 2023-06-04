@@ -49,8 +49,12 @@ class ClassificationEvaluator(Evaluator):
         loss = output_dict["loss"]
 
         for key, value in output_dict.items():
-            print(f"key: {key}, value: {value}")
-            self.current_epoch_dict[key].append(value.detach().mean().cpu())
+            if isinstance(value, list):
+                self.current_epoch_dict[key].append(value)
+            else:
+                self.current_epoch_dict[key].append(
+                    value.detach().mean().cpu()
+                )
 
         return StepOutput(
             metrics=output_dict,
