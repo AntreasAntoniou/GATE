@@ -255,6 +255,12 @@ class Ensemble(nn.Module):
         with torch.inference_mode():
             # # Get the outputs from each model
             model_outputs = [model(*args, **kwargs) for model in self.models]
+            labels = None
+            if "labels" in model_outputs[0]:
+                labels = model_outputs[0]["labels"]
+
+            if "labels" in kwargs:
+                labels = kwargs["labels"]
 
             # Check if the logits are a dictionary
             if isinstance(model_outputs[0]["logits"], dict):
@@ -279,11 +285,11 @@ class Ensemble(nn.Module):
             output_dict = {"logits": ensemble_pred}
 
             if (
-                "labels" in kwargs
+                labels is not None
                 and self.compute_loss_and_metrics is not None
             ):
                 metrics = self.compute_loss_and_metrics(
-                    logits=ensemble_pred, labels=kwargs["labels"]
+                    logits=ensemble_pred, labels=labels
                 )
                 output_dict.update(metrics)
 

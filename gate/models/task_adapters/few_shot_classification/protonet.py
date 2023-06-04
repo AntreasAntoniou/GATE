@@ -11,6 +11,8 @@ from gate.models.task_adapters.few_shot_classification import (
 from gate.models.task_adapters.few_shot_classification.utils import (
     get_accuracy,
     get_prototypes,
+    prototypical_logits,
+    prototypical_loss,
     prototypical_loss_and_logits,
 )
 
@@ -246,24 +248,25 @@ class PrototypicalNetwork(nn.Module):
         output_dict["prototypes"] = prototypes
         output_dict["support_set_embedding"] = support_set_embedding
         output_dict["query_set_embedding"] = query_set_embedding
+        output_dict["logits"] = prototypical_logits(
+            prototypes, query_set_embedding
+        )
+        output_dict["labels"] = query_set_labels
 
         # If query set labels are provided, calculate the loss and accuracy
         if query_set_labels is not None:
-            prototype_loss_and_logits = prototypical_loss_and_logits(
-                prototypes, query_set_embedding, query_set_labels
+            output_dict.update(
+                self.compute_loss_and_metrics(
+                    output_dict["logits"], output_dict["labels"]
+                )
             )
-
-            output_dict["loss"] = torch.mean(prototype_loss_and_logits["loss"])
-            output_dict["logits"] = prototype_loss_and_logits[
-                "logits"
-            ].permute([0, 2, 1])
-            # print(
-            #     f"logits: {output_dict['logits'].shape}, {output_dict['logits']}, {output_dict['logits'].argmax(dim=-1)}"
-            # )
-
-            accuracy = get_accuracy(
-                prototypes, query_set_embedding, query_set_labels
-            )
-            output_dict["accuracy_top_1"] = accuracy
 
         return output_dict
+
+    def compute_loss_and_metrics(self, logits, labels):
+        loss = prototypical_loss(logits, labels)
+        loss = torch.mean(loss)
+        logits = logits.permute([0, 2, 1])
+
+        accuracy = get_accuracy(logits=logits, labels=labels)
+        return {"loss": loss, "accuracy_top_1": accuracy, "logits": logits}
