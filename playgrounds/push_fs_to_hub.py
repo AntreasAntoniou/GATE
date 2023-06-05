@@ -7,24 +7,50 @@ import datasets
 dataset_root = "/data/"
 
 dataset_dict = {
-    # "aircraft_bbcrop": lambda set_name: l2l.vision.datasets.FGVCAircraft(
-    #     root=dataset_root,
-    #     mode=set_name,
-    #     download=True,
-    #     bounding_box_crop=True,
-    # ),
-    # "cubirds200_bbcrop": lambda set_name: l2l.vision.datasets.CUBirds200(
-    #     root=dataset_root,
-    #     mode=set_name,
-    #     download=True,
-    #     bounding_box_crop=True,
-    # ),
-    "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
+    "aircraft": lambda set_name: l2l.vision.datasets.FGVCAircraft(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        bounding_box_crop=False,
+        transform=T.Compose([T.Resize(size=(224, 224))]),
+    ),
+    "cubirds200": lambda set_name: l2l.vision.datasets.CUBirds200(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        bounding_box_crop=False,
+        transform=T.Compose([T.Resize(size=(224, 224))]),
+    ),
+    "cifarfs": lambda set_name: l2l.vision.datasets.CIFARFS(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=None,
+    ),
+    "fc100": lambda set_name: l2l.vision.datasets.FC100(
         root=dataset_root,
         mode=set_name,
         download=True,
         transform=T.Compose([T.Resize(size=(224, 224))]),
     ),
+    "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(224, 224))]),
+    ),
+    "quickdraw": lambda set_name: l2l.vision.datasets.Quickdraw(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(28, 28))]),
+    ),
+    # "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
     # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
     #     root=dataset_root,
     #     mode=set_name,
