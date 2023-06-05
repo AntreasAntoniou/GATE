@@ -44,6 +44,7 @@ RUN echo y | pip install -r /app/requirements_dev.txt
 RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 RUN pip install -e learn2learn
 RUN echo y | pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121 --upgrade
+RUN huggingface-cli lfs-enable-largefiles /app/
 ADD gate/ /app/gate
 RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
 RUN find /app/ -name "*.pyc" -type f -delete
