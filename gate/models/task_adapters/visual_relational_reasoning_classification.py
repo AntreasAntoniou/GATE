@@ -241,6 +241,7 @@ class DuoModalFusionModel(BaseModule):
 
         features = self.fusion_post_processing(fused_features)["features"]
         logits_dict = {}
+        labels_dict = {}
         if isinstance(self.classifier, nn.ModuleDict):
             for answer in self.classifier.keys():
                 answer_specific_idx = [
@@ -249,14 +250,20 @@ class DuoModalFusionModel(BaseModule):
                     if answer_type[item] == answer
                 ]
                 temp_features = features[answer_specific_idx]
+                temp_labels = labels[answer_specific_idx]
+
                 logits_dict[answer] = self.classifier[answer](temp_features)
-                output_dict = {"logits": logits_dict}
+                labels_dict[answer] = temp_labels
+                output_dict = {"logits": logits_dict, "labels": labels_dict}
         else:
-            output_dict = {"logits": self.classifier(features)}
+            output_dict = {
+                "logits": self.classifier(features),
+                "labels": labels,
+            }
 
         if labels is not None and return_loss_and_metrics:
             output_dict |= self.compute_loss_and_metrics(
-                logits=output_dict["logits"], labels=labels
+                logits=output_dict["logits"], labels=output_dict["labels"]
             )
 
         return output_dict
