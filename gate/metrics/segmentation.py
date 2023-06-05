@@ -2,6 +2,9 @@ import monai
 import torch
 import torch.nn.functional as F
 
+import numpy as np
+from sklearn.metrics import roc_auc_score as compute_roc_auc_score
+
 
 def one_hot_encoding(tensor, num_classes, dim):
     # Ensure the tensor is a LongTensor
@@ -51,22 +54,6 @@ def loss_adapter(
     )
 
 
-def normalized_surface_dice_loss(
-    logits, labels, label_dim, num_classes, class_thresholds: list = [0.5]
-):
-    # logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
-    # labels = labels.permute(0, 2, 3, 1).reshape(-1)
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_surface_dice,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-        remove_dim=True,
-        class_thresholds=class_thresholds,
-    )
-
-
 def dice_loss(logits, targets):
     b, classes, h, w = logits.shape
     logits = torch.softmax(logits, dim=1)
@@ -105,16 +92,12 @@ def miou_loss(logits, targets):
     return miou_loss
 
 
-import numpy as np
-from sklearn.metrics import roc_auc_score
-
-
 def roc_auc_score(logits, targets):
     logits = torch.softmax(logits, dim=1)
     logits_flat = logits.view(-1, logits.shape[1]).cpu().detach().numpy()
     targets_flat = targets.view(-1).cpu().detach().numpy()
 
-    roc_auc = roc_auc_score(
+    roc_auc = compute_roc_auc_score(
         targets_flat, logits_flat, multi_class="ovr", average="macro"
     )
 
