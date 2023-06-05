@@ -40,8 +40,6 @@ def save_dict_to_yaml(filepath, dict_to_store):
     with open(filepath, "w") as file:
         yaml.dump(dict_to_store, file)
 
-        import yaml
-
 
 def load_yaml_to_dict(filepath):
     with open(filepath, "r") as file:
