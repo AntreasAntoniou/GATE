@@ -87,6 +87,53 @@ def convert_to_dict(
     return data
 
 
+def _get_dict_based_on_original_splits(class_to_address_dict, split_name):
+    """Get current class to address dict based on split percentage."""
+    split_dict = {"train": {}, "val": {}, "test": {}}
+    for key, value in class_to_address_dict.items():
+        split_dict[split_name][key] = value
+
+    return split_dict
+
+
+def _get_start_end_indices(num_classes, split_percentage, split_name):
+    """Get start and end indices based on split name."""
+    train_percentage = split_percentage["train"]
+    val_percentage = split_percentage["val"]
+    test_percentage = split_percentage["test"]
+
+    start_idx = 0
+    end_idx = num_classes
+
+    if split_name == "train":
+        end_idx = int(num_classes * train_percentage)
+    elif split_name == "val":
+        start_idx = end_idx
+        end_idx += int(num_classes * val_percentage)
+    elif split_name == "test":
+        start_idx = end_idx
+        end_idx += int(num_classes * test_percentage)
+    else:
+        raise ValueError(f"Unknown split name: {split_name}")
+
+    return start_idx, end_idx
+
+
+def _get_dict_based_on_split_percentage(
+    class_to_address_dict, split_percentage, split_name
+):
+    """Get current class to address dict based on split percentage."""
+    start_idx, end_idx = _get_start_end_indices(
+        len(class_to_address_dict), split_percentage, split_name
+    )
+    split_dict = {
+        key: value
+        for idx, (key, value) in enumerate(class_to_address_dict.items())
+        if start_idx <= idx < end_idx
+    }
+    return split_dict
+
+
 # convert a list of dicts into a dict of lists
 def list_of_dicts_to_dict_of_lists(list_of_dicts):
     return {
@@ -242,8 +289,15 @@ class FewShotClassificationMetaDataset(Dataset):
             )
 
         self.current_class_to_address_dict = (
-            self._get_current_class_to_address_dict()
+            self._get_current_class_to_address_dict(
+                class_to_address_dict=self.class_to_address_dict,
+                split_config=self.split_config,
+                split_percentage=self.split_percentage,
+                split_as_original=self.split_as_original,
+                split_name=self.split_name,
+            )
         )
+
         print(f"Current class to address dict: {self.class_to_address_dict}")
 
     def _validate_samples_and_classes(
@@ -299,16 +353,27 @@ class FewShotClassificationMetaDataset(Dataset):
             return self.preprocess_transform(sample)
         return sample
 
-    def _get_current_class_to_address_dict(self):
+    def _get_current_class_to_address_dict(
+        self,
+        class_to_address_dict,
+        split_as_original,
+        split_config,
+        split_name,
+        split_percentage,
+    ):
         """Get current class to address dict based on split config."""
-        if self.split_as_original is True:
-            return self._get_dict_based_on_original_splits()[self.split_name]
-        elif self.split_config is None:
-            return self._get_dict_based_on_split_percentage()
+        if split_as_original is True:
+            return _get_dict_based_on_original_splits(
+                class_to_address_dict, split_name
+            )[split_name]
+        elif split_config is None:
+            return _get_dict_based_on_split_percentage(
+                class_to_address_dict, split_percentage, split_name
+            )
         else:
             return {
-                label_name: self.class_to_address_dict[label_name]
-                for label_name in self.split_config[self.split_name]
+                label_name: class_to_address_dict[label_name]
+                for label_name in split_config[split_name]
             }
 
     def _get_dict_based_on_split_percentage(self):
