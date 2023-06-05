@@ -53,7 +53,7 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
         super(OmniglotFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=datasets.load_dataset(
+            dataset_dict=datasets.load_dataset(
                 path="Antreas/omniglot",
                 cache_dir=dataset_root,
                 num_proc=mp.cpu_count(),
@@ -74,9 +74,6 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
                 float(1200 / 1623),
                 float(200 / 1623),
                 float(223 / 1623),
-            ],
-            subset_split_name_list=[
-                "all",
             ],
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
