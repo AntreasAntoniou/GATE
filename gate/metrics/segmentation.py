@@ -98,6 +98,36 @@ def miou_loss(logits, targets):
 
 from einops import rearrange
 
+import torch
+
+
+def int_labels_to_one_hot(labels, num_classes):
+    """
+    Converts integer labels to one-hot encoded labels.
+
+    Args:
+        labels (torch.Tensor): A tensor of integer labels with shape (N, *), where N is the number of samples.
+        num_classes (int): The number of unique classes.
+
+    Returns:
+        torch.Tensor: A tensor of one-hot encoded labels with shape (N, num_classes, *).
+    """
+    # Get the shape of the input labels tensor
+    shape = labels.shape
+
+    # Create a tensor with the same shape as the input tensor, but with an additional dimension for the classes
+    one_hot = torch.zeros(
+        *shape, num_classes, device=labels.device, dtype=torch.float32
+    )
+
+    # Scatter ones along the class dimension at the positions specified by the integer labels
+    one_hot.scatter_(-1, labels.unsqueeze(-1), 1)
+
+    # Rearrange the dimensions to have the class dimension as the second dimension
+    one_hot = one_hot.permute(0, -1, *range(1, len(shape)))
+
+    return one_hot
+
 
 def roc_auc_score(logits, targets):
     logits = rearrange(logits, "b c h w -> (b h w) c")
@@ -107,14 +137,18 @@ def roc_auc_score(logits, targets):
     logits_flat = logits.cpu().detach().numpy()
 
     # Convert targets to one-hot encoding
-    targets_one_hot = torch.zeros_like(logits).scatter_(
-        1, targets.unsqueeze(1), 1
+    targets_one_hot = int_labels_to_one_hot(
+        targets, num_classes=logits.shape[1]
     )
     targets_flat = (
         targets_one_hot.view(-1, targets_one_hot.shape[1])
         .cpu()
         .detach()
         .numpy()
+    )
+
+    print(
+        f"targets_flat.shape: {targets_flat.shape}, logits_flat.shape: {logits_flat.shape}"
     )
 
     roc_auc = compute_roc_auc_score(
