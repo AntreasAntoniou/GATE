@@ -23,6 +23,7 @@ def build_model(
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
+    allow_on_model_metric_computation: bool = True,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -46,6 +47,7 @@ def build_model(
             }[modality],
             num_classes,
             modality=modality,
+            allow_on_model_metric_computation=allow_on_model_metric_computation,
         )
     else:
         raise ValueError(f"Modality {modality} not supported for CLIP.")
@@ -83,6 +85,7 @@ def build_gate_timm_model(
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
+    allow_on_model_metric_computation: bool = True,
 ):
     model_and_transform = build_model(
         clip_model_name=clip_model_name,
@@ -90,6 +93,7 @@ def build_gate_timm_model(
         pretrained=pretrained,
         num_classes=num_classes,
         modality=modality,
+        allow_on_model_metric_computation=allow_on_model_metric_computation,
     )
     if modality == "image":
         model_modality_config_image_classification = TargetModalityConfig(
