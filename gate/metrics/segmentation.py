@@ -101,9 +101,21 @@ from einops import rearrange
 
 def roc_auc_score(logits, targets):
     logits = rearrange(logits, "b c h w -> (b h w) c")
+    targets = rearrange(targets, "b h w -> (b h w)")
+
     logits = torch.softmax(logits, dim=1)
-    logits_flat = logits.view(-1, logits.shape[1]).cpu().detach().numpy()
-    targets_flat = targets.view(-1).cpu().detach().numpy()
+    logits_flat = logits.cpu().detach().numpy()
+
+    # Convert targets to one-hot encoding
+    targets_one_hot = torch.zeros_like(logits).scatter_(
+        1, targets.unsqueeze(1), 1
+    )
+    targets_flat = (
+        targets_one_hot.view(-1, targets_one_hot.shape[1])
+        .cpu()
+        .detach()
+        .numpy()
+    )
 
     roc_auc = compute_roc_auc_score(
         targets_flat, logits_flat, multi_class="ovr", average="macro"
