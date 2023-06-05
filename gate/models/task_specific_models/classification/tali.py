@@ -15,7 +15,11 @@ SUPPORTED_MODALITIES = ["image", "text", "audio", "video"]
 
 
 def create_model_with_linear(
-    backbone_model, num_features, num_classes, modality
+    backbone_model,
+    num_features,
+    num_classes,
+    modality,
+    allow_on_model_metric_computation,
 ):
     """
     Helper function to create a model with linear layer.
@@ -25,6 +29,7 @@ def create_model_with_linear(
         num_clip_features=num_features,
         num_classes=num_classes,
         modality=modality,
+        allow_on_model_metric_computation=allow_on_model_metric_computation,
     )
 
 
@@ -36,6 +41,7 @@ def build_model(
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
+    allow_on_model_metric_computation: bool = True,
 ) -> ModelAndTransform:
     backbone_model = TALINet(
         clip_model_name=clip_model_name,
@@ -84,6 +90,7 @@ def build_gate_tali_model(
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
+    allow_on_model_metric_computation: bool = True,
 ):
     model_and_transform = build_model(
         clip_model_name=clip_model_name,
@@ -93,6 +100,7 @@ def build_gate_tali_model(
         pretrained=pretrained,
         num_classes=num_classes,
         modality=modality,
+        allow_on_model_metric_computation=allow_on_model_metric_computation,
     )
 
     # Create Modality Config based on input modality
