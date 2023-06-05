@@ -23,11 +23,11 @@ dataset_dict = {
     #     mode=set_name,
     #     download=True,
     # ),
-    "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-    ),
+    # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    # ),
     "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
         root=dataset_root,
         download=True,
