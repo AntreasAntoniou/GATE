@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 from sklearn.metrics import roc_auc_score as compute_roc_auc_score
+from einops import rearrange
 
 
 def one_hot_encoding(tensor, num_classes, dim):
@@ -54,139 +55,43 @@ def loss_adapter(
     )
 
 
-def dice_loss(logits, targets):
-    b, classes, h, w = logits.shape
+def dice_loss(logits, labels):
+    smooth = 1.0
     logits = torch.softmax(logits, dim=1)
-    targets_one_hot = (
-        torch.zeros(b, classes, h, w)
-        .to(targets.device)
-        .scatter_(1, targets.unsqueeze(1), 1)
+    logits = logits.view(-1)
+    labels = labels.view(-1)
+    intersection = (logits * labels).sum()
+    return 1 - (
+        (2.0 * intersection + smooth) / (logits.sum() + labels.sum() + smooth)
     )
 
-    smooth = 1e-6
-    intersection = torch.sum(targets_one_hot * logits, dim=(0, 2, 3))
-    union = torch.sum(targets_one_hot, dim=(0, 2, 3)) + torch.sum(
-        logits, dim=(0, 2, 3)
-    )
-    dice_coefficient = (2 * intersection + smooth) / (union + smooth)
-    dice_loss = 1 - dice_coefficient.mean()
 
-    return dice_loss
-
-
-def miou_loss(logits, targets):
-    b, classes, h, w = logits.shape
+def miou_loss(logits, labels):
+    smooth = 1.0
     logits = torch.softmax(logits, dim=1)
-    targets_one_hot = (
-        torch.zeros(b, classes, h, w)
-        .to(targets.device)
-        .scatter_(1, targets.unsqueeze(1), 1)
-    )
-
-    smooth = 1e-6
-    intersection = torch.sum(targets_one_hot * logits, dim=(0, 2, 3))
-    union = (
-        torch.sum(targets_one_hot, dim=(0, 2, 3))
-        + torch.sum(logits, dim=(0, 2, 3))
-        - intersection
-    )
-    iou = (intersection + smooth) / (union + smooth)
-    miou_loss = 1 - iou.mean()
-
-    return miou_loss
+    logits = logits.view(-1)
+    labels = labels.view(-1)
+    intersection = (logits * labels).sum()
+    union = logits.sum() + labels.sum() - intersection
+    return 1 - ((intersection + smooth) / (union + smooth))
 
 
-from einops import rearrange
-
-import torch
-
-
-def int_labels_to_one_hot(labels, num_classes):
-    """
-    Converts integer labels to one-hot encoded labels.
-
-    Args:
-        labels (torch.Tensor): A tensor of integer labels with shape (N, *), where N is the number of samples.
-        num_classes (int): The number of unique classes.
-
-    Returns:
-        torch.Tensor: A tensor of one-hot encoded labels with shape (N, num_classes, *).
-    """
-    # Get the shape of the input labels tensor
-    shape = labels.shape
-
-    # Create a tensor with the same shape as the input tensor, but with an additional dimension for the classes
-    one_hot = torch.zeros(
-        *shape, num_classes, device=labels.device, dtype=torch.float32
-    )
-
-    # Scatter ones along the class dimension at the positions specified by the integer labels
-    one_hot.scatter_(-1, labels.unsqueeze(-1), 1)
-
-    # Rearrange the dimensions to have the class dimension as the second dimension
-    one_hot = one_hot.permute(0, -1, *range(1, len(shape)))
-
-    return one_hot
-
-
-def roc_auc_score(logits, targets):
-    logits = rearrange(logits, "b c h w -> (b h w) c")
-    targets = rearrange(targets, "b c h w -> (b h w c)")
-
+def roc_auc_score(logits, labels):
     logits = torch.softmax(logits, dim=1)
-    logits_flat = logits.cpu().detach().numpy()
-
-    # Check if there is only one class present in the targets
-    unique_classes = np.unique(targets.cpu().numpy())
-    if len(unique_classes) <= 1:
-        raise ValueError(
-            f"Only one class present in y_true (class index: {unique_classes[0]}). "
-            "ROC AUC score is not defined in that case."
-        )
-
-    # Convert targets to one-hot encoding
-    targets_one_hot = torch.zeros_like(logits).scatter_(
-        1, targets.unsqueeze(1), 1
-    )
-    targets_flat = (
-        targets_one_hot.view(-1, targets_one_hot.shape[1])
-        .cpu()
-        .detach()
-        .numpy()
-    )
-
-    roc_auc = compute_roc_auc_score(
-        targets_flat, logits_flat, multi_class="ovr", average="macro"
-    )
-
-    return roc_auc
+    logits = logits.view(-1).cpu().detach().numpy()
+    labels = labels.view(-1).cpu().detach().numpy()
+    return compute_roc_auc_score(labels, logits)
 
 
-def generalized_dice_loss(logits, targets):
-    b, classes, h, w = logits.shape
+def generalized_dice_loss(logits, labels):
+    smooth = 1.0
     logits = torch.softmax(logits, dim=1)
-    targets_one_hot = (
-        torch.zeros(b, classes, h, w)
-        .to(targets.device)
-        .scatter_(1, targets.unsqueeze(1), 1)
-    )
-
-    smooth = 1e-6
-    intersection = torch.sum(targets_one_hot * logits, dim=(0, 2, 3))
-    union = torch.sum(targets_one_hot, dim=(0, 2, 3)) + torch.sum(
-        logits, dim=(0, 2, 3)
-    )
-
-    class_weights = 1 / (
-        (torch.sum(targets_one_hot, dim=(0, 2, 3)) ** 2) + smooth
-    )
-
-    generalized_dice_coefficient = (
-        2 * torch.sum(intersection * class_weights) + smooth
-    ) / (torch.sum(union * class_weights) + smooth)
-    generalized_dice_loss = 1 - generalized_dice_coefficient
-
-    return generalized_dice_loss
+    logits = logits.view(-1)
+    labels = labels.view(-1)
+    intersection = (logits * labels).sum()
+    sum_ = logits.sum() + labels.sum()
+    w = 1 / (sum_**2 + smooth)
+    return 1 - ((2 * w * intersection + smooth) / (w * sum_ + smooth))
 
 
 def diff_dice_loss(inputs, targets):
