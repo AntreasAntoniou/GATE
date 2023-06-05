@@ -49,7 +49,6 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
             dataset_class=datasets.load_dataset(
                 path="Antreas/aircraft_bbcrop",
                 cache_dir=dataset_root,
-                data_dir=dataset_root,
                 num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
