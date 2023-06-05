@@ -28,7 +28,7 @@ dataset_dict = {
         root=dataset_root,
         mode=set_name,
         download=True,
-        transform=T.Compose([T.Resize(size=(224, 224)), T.ToTensor()]),
+        transform=T.Compose([T.Resize(size=(224, 224))]),
     ),
     # "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
     #     root=dataset_root,
@@ -45,13 +45,13 @@ dataset_dict = {
         root=dataset_root,
         mode=set_name,
         download=True,
-        transform=T.Compose([T.Resize(size=(224, 224)), T.ToTensor()]),
+        transform=T.Compose([T.Resize(size=(224, 224))]),
     ),
     "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
         root=dataset_root,
         mode=set_name,
         download=True,
-        transform=T.Compose([T.Resize(size=(224, 224)), T.ToTensor()]),
+        transform=T.Compose([T.Resize(size=(224, 224))]),
     ),
 }
 
