@@ -1,6 +1,8 @@
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
+import multiprocessing as mp
+import datasets
 
 import learn2learn as l2l
 import torch
@@ -51,10 +53,11 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
         super(OmniglotFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.FullOmniglot(
-                root=dataset_root,
-                download=download,
-                set_name=set_name,
+            dataset_class=datasets.load_dataset(
+                path="Antreas/omniglot",
+                cache_dir=dataset_root,
+                data_dir=dataset_root,
+                num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -64,17 +67,18 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            input_target_annotation_keys=dict(
-                inputs="image",
-                targets="label",
-                target_annotations="label",
-            ),
             support_set_input_transform=support_set_input_transform,
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_as_original=True,
-            subset_split_name_list=["train", "validation", "test"],
+            split_percentage=[
+                float(1200 / 1623),
+                float(200 / 1623),
+                float(223 / 1623),
+            ],
+            subset_split_name_list=[
+                "all",
+            ],
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,

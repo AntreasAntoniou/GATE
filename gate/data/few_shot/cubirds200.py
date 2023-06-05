@@ -1,6 +1,8 @@
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
+import multiprocessing as mp
+import datasets
 
 import learn2learn as l2l
 import PIL
@@ -45,10 +47,11 @@ class CUB200FewShotClassificationDataset(FewShotClassificationMetaDataset):
         super(CUB200FewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.CUBirds200(
-                root=dataset_root,
-                mode=set_name,
-                download=download,
+            dataset_class=datasets.load_dataset(
+                path="Antreas/cubirds200_bbcrop",
+                cache_dir=dataset_root,
+                data_dir=dataset_root,
+                num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -58,11 +61,6 @@ class CUB200FewShotClassificationDataset(FewShotClassificationMetaDataset):
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            input_target_annotation_keys=dict(
-                inputs="image",
-                targets="label",
-                target_annotations="label",
-            ),
             support_set_input_transform=support_set_input_transform,
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,

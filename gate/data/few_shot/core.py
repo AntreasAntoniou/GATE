@@ -149,7 +149,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self,
         dataset_name: str,
         dataset_root: str,
-        dataset_class: Any,
+        dataset_class: datasets.DatasetDict,
         split_name: str,
         num_episodes: int,
         min_num_classes_per_set: int,
@@ -160,7 +160,6 @@ class FewShotClassificationMetaDataset(Dataset):
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
         variable_num_classes_per_set: bool,
-        input_target_annotation_keys: Dict,
         subset_split_name_list: Optional[List[str]] = None,
         split_percentage: Optional[Dict[str, float]] = None,
         split_config: Optional[DictConfig] = None,
@@ -177,7 +176,6 @@ class FewShotClassificationMetaDataset(Dataset):
         self.dataset_name = dataset_name
         self.dataset_root = pathlib.Path(dataset_root)
         self.dataset_class = dataset_class
-        self.input_target_annotation_keys = input_target_annotation_keys
         self.num_episodes = num_episodes
         self.split_config = split_config
         self.preprocess_transform = preprocess_transforms
@@ -208,16 +206,17 @@ class FewShotClassificationMetaDataset(Dataset):
         self.split_name = split_name
         self.split_percentage = split_percentage
 
-        if subset_split_name_list is None:
-            subset_split_name_list = ["train", "test"]
-
-        self.dataset = self._load_subsets(subset_split_name_list)
+        self.dataset = self.dataset_class[
+            split_name if split_name != "val" else "validation"
+        ]
 
         class_to_address_dict_path = (
             self.dataset_root
             / self.dataset_name
+            / split_name
             / "class_to_address_dict.json"
         )
+
         if class_to_address_dict_path.exists():
             self.class_to_address_dict = load_json(
                 filepath=class_to_address_dict_path
@@ -225,9 +224,6 @@ class FewShotClassificationMetaDataset(Dataset):
         else:
             self.class_to_address_dict = get_class_to_idx_dict(
                 dataset=self.dataset,
-                class_name_key=self.input_target_annotation_keys[
-                    "target_annotations"
-                ],
             )
             save_json(
                 filepath=class_to_address_dict_path,
@@ -320,12 +316,7 @@ class FewShotClassificationMetaDataset(Dataset):
         """Get current class to address dict based on split percentage."""
         split_dict = {"train": {}, "val": {}, "test": {}}
         for key, value in self.class_to_address_dict.items():
-            if "train" in key:
-                split_dict["train"][key] = value
-            elif "val" in key:
-                split_dict["val"][key] = value
-            elif "test" in key:
-                split_dict["test"][key] = value
+            split_dict[self.split_name][key] = value
 
         return split_dict
 
@@ -450,15 +441,11 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_data_inputs_and_labels(self, selected_samples_addresses):
         """Get the data inputs and labels."""
         data_inputs = [
-            self.dataset[idx][self.input_target_annotation_keys["inputs"]]
-            for idx in selected_samples_addresses
+            self.dataset[idx]["image"] for idx in selected_samples_addresses
         ]
 
         data_labels = [
-            self.dataset[idx][
-                self.input_target_annotation_keys["target_annotations"]
-            ]
-            for idx in selected_samples_addresses
+            self.dataset[idx]["label"] for idx in selected_samples_addresses
         ]
 
         return data_inputs, data_labels

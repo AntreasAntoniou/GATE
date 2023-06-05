@@ -1,11 +1,12 @@
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
+import multiprocessing as mp
 
-import learn2learn as l2l
 import PIL
 import torch
 from torchvision import transforms as T
+import datasets
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
@@ -45,11 +46,11 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
         super(AircraftFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.FGVCAircraft(
-                root=dataset_root,
-                mode=set_name,
-                download=download,
-                bounding_box_crop=True,
+            dataset_class=datasets.load_dataset(
+                path="Antreas/aircraft_bbcrop",
+                cache_dir=dataset_root,
+                data_dir=dataset_root,
+                num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -59,11 +60,6 @@ class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            input_target_annotation_keys=dict(
-                inputs="image",
-                targets="label",
-                target_annotations="label",
-            ),
             support_set_input_transform=support_set_input_transform,
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
