@@ -355,8 +355,8 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
 
             self.done = True
         except Exception as e:
-            logger.exception(e)
-            self.done = True
+            logger.info(e)
+            self.run()
 
 
 class UploadCheckpointsToHuggingFace(Callback):
