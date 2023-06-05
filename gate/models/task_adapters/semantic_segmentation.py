@@ -125,9 +125,9 @@ def metrics(logits, labels, label_dim, num_classes):
         "dice_loss": torch.tensor(
             dice_loss(logits, labels, label_dim, num_classes)
         ),
-        # "generalized_dice_loss": torch.tensor(
-        #     generalized_dice_loss(logits, labels, label_dim, num_classes)
-        # ),
+        "generalized_dice_loss": torch.tensor(
+            generalized_dice_loss(logits, labels, label_dim, num_classes)
+        ),
     }
 
 
