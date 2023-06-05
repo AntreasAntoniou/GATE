@@ -67,47 +67,86 @@ def normalized_surface_dice_loss(
     )
 
 
-def dice_loss(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_meandice,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
+def dice_loss(logits, targets):
+    b, classes, h, w = logits.shape
+    logits = torch.softmax(logits, dim=1)
+    logits = logits.argmax(dim=1)
+    targets_one_hot = torch.zeros_like(logits).scatter_(
+        1, targets.unsqueeze(1), 1
     )
 
+    intersection = 2 * torch.sum(targets_one_hot * logits, dim=(0, 1, 2))
+    union = torch.sum(targets_one_hot, dim=(0, 1, 2)) + torch.sum(
+        logits, dim=(0, 1, 2)
+    )
+    dice_coefficient = intersection / (union + 1e-6)
+    dice_loss = 1 - dice_coefficient.mean()
 
-def miou_loss(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_meaniou,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
+    return dice_loss
+
+
+def miou_loss(logits, targets):
+    b, classes, h, w = logits.shape
+    logits = torch.softmax(logits, dim=1)
+    logits = logits.argmax(dim=1)
+    targets_one_hot = torch.zeros_like(logits).scatter_(
+        1, targets.unsqueeze(1), 1
     )
 
+    intersection = torch.sum(targets_one_hot * logits, dim=(0, 1, 2))
+    union = (
+        torch.sum(targets_one_hot, dim=(0, 1, 2))
+        + torch.sum(logits, dim=(0, 1, 2))
+        - intersection
+    )
+    iou = intersection / (union + 1e-6)
+    miou_loss = 1 - iou.mean()
 
-def generalized_dice_loss(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_generalized_dice,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
+    return miou_loss
+
+
+import numpy as np
+from sklearn.metrics import roc_auc_score
+
+
+def roc_auc_score(logits, targets):
+    logits = torch.softmax(logits, dim=1)
+    logits_flat = logits.view(-1, logits.shape[1]).cpu().detach().numpy()
+    targets_flat = targets.view(-1).cpu().detach().numpy()
+
+    roc_auc = roc_auc_score(
+        targets_flat, logits_flat, multi_class="ovr", average="macro"
     )
 
+    return roc_auc
 
-def roc_auc_score(logits, labels, label_dim, num_classes):
-    logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
-    labels = labels.permute(0, 2, 3, 1).reshape(-1)
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_roc_auc,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-        remove_dim=False,
+
+def generalized_dice_loss(logits, targets):
+    b, classes, h, w = logits.shape
+    logits = torch.softmax(logits, dim=1)
+    logits = logits.argmax(dim=1)
+    targets_one_hot = torch.zeros_like(logits).scatter_(
+        1, targets.unsqueeze(1), 1
     )
+
+    # Calculate per-class weights
+    class_weights = 1 / (torch.sum(targets_one_hot, dim=(0, 1, 2)) ** 2 + 1e-6)
+
+    # Compute intersection and union
+    intersection = torch.sum(targets_one_hot * logits, dim=(0, 1, 2))
+    union = torch.sum(targets_one_hot, dim=(0, 1, 2)) + torch.sum(
+        logits, dim=(0, 1, 2)
+    )
+
+    # Calculate the generalized Dice coefficient
+    numerator = torch.sum(class_weights * intersection)
+    denominator = torch.sum(class_weights * union) + 1e-6
+    generalized_dice_coefficient = 2 * numerator / denominator
+
+    # Calculate the generalized Dice loss
+    generalized_dice_loss = 1 - generalized_dice_coefficient
+
+    return generalized_dice_loss
 
 
 def diff_dice_loss(inputs, targets):
