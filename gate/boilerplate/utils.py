@@ -391,6 +391,7 @@ def create_hf_model_repo_and_download_maybe(
         valid_model_downloaded = False
         idx = 0
         ckpt_list = sorted(list(ckpt_dict.keys()), reverse=True)
+        print(ckpt_list)
         while not valid_model_downloaded:
             if len(ckpt_list) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
