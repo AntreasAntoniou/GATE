@@ -131,24 +131,28 @@ def int_labels_to_one_hot(labels, num_classes):
 
 def roc_auc_score(logits, targets):
     logits = rearrange(logits, "b c h w -> (b h w) c")
-    targets = rearrange(targets, "b c h w -> (b h w c)")
+    targets = rearrange(targets, "b h w -> (b h w)")
 
     logits = torch.softmax(logits, dim=1)
     logits_flat = logits.cpu().detach().numpy()
 
+    # Check if there is only one class present in the targets
+    unique_classes = np.unique(targets.cpu().numpy())
+    if len(unique_classes) <= 1:
+        raise ValueError(
+            f"Only one class present in y_true (class index: {unique_classes[0]}). "
+            "ROC AUC score is not defined in that case."
+        )
+
     # Convert targets to one-hot encoding
-    targets_one_hot = int_labels_to_one_hot(
-        targets, num_classes=logits.shape[1]
+    targets_one_hot = torch.zeros_like(logits).scatter_(
+        1, targets.unsqueeze(1), 1
     )
     targets_flat = (
         targets_one_hot.view(-1, targets_one_hot.shape[1])
         .cpu()
         .detach()
         .numpy()
-    )
-
-    print(
-        f"targets_flat.shape: {targets_flat.shape}, logits_flat.shape: {logits_flat.shape}"
     )
 
     roc_auc = compute_roc_auc_score(
