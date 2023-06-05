@@ -174,7 +174,17 @@ def pretty_config(
         if isinstance(config_section, DictConfig):
             branch_content = OmegaConf.to_yaml(config_section, resolve=resolve)
 
-        branch.add(Syntax(branch_content, "yaml", theme="github-dark"))
+        # theme list ['default', 'emacs', 'friendly', 'friendly_grayscale',
+        # 'colorful', 'autumn', 'murphy', 'manni', 'material', 'monokai',
+        # 'perldoc', 'pastie', 'borland', 'trac', 'native', 'fruity', 'bw',
+        # 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 'paraiso-light',
+        # 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino',
+        # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light',
+        # 'sas', 'staroffice', 'stata', 'stata-light', 'stata-dark',
+        # 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light',
+        # 'dracula', 'one-dark', 'lilypond', 'nord', 'nord-darker',
+        # 'github-dark']
+        branch.add(Syntax(branch_content, "yaml", theme="dracula"))
 
     return tree
 
