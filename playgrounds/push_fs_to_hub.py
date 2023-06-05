@@ -19,40 +19,41 @@ dataset_dict = {
     #     download=True,
     #     bounding_box_crop=True,
     # ),
-    # "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
+    "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(224, 224))]),
+    ),
+    # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
     #     root=dataset_root,
     #     mode=set_name,
     #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
-    "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    # "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
+    # # "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
+    # #     root=dataset_root,
+    # #     download=True,
+    # #     transform=T.Compose(
+    # #         [
+    # #             T.Resize(28, interpolation=LANCZOS),
+    # #             T.ToTensor(),
+    # #             lambda x: 1.0 - x,
+    # #         ]
+    # #     ),
+    # # ),
+    # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
     #     root=dataset_root,
+    #     mode=set_name,
     #     download=True,
-    #     transform=T.Compose(
-    #         [
-    #             T.Resize(28, interpolation=LANCZOS),
-    #             T.ToTensor(),
-    #             lambda x: 1.0 - x,
-    #         ]
-    #     ),
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
-    "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
+    # "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
 }
 
 if __name__ == "__main__":
