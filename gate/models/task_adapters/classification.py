@@ -28,6 +28,9 @@ class BackboneWithLinear(BaseModule):
         )
 
     def compute_loss_and_metrics(self, logits, labels):
+        if not self.allow_on_model_metric_computation:
+            return {}
+
         if not isinstance(labels, torch.Tensor):
             labels = torch.tensor(labels).to(logits.device)
 
