@@ -272,6 +272,7 @@ class SegmentationViT(nn.Module):
     def compute_loss_and_metrics(
         self, logits, labels: Optional[torch.Tensor] = None
     ):
+        output = {}
         if labels is not None:
             output = {
                 "loss": optimization_loss(logits, labels),
