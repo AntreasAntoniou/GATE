@@ -108,7 +108,6 @@ from gate.metrics.segmentation import (
     diff_sigmoid_focal_loss,
     generalized_dice_loss,
     miou_loss,
-    normalized_surface_dice_loss,
     roc_auc_score,
 )
 
@@ -126,9 +125,6 @@ def metrics(logits, labels, label_dim, num_classes):
         "dice_loss": torch.tensor(
             dice_loss(logits, labels, label_dim, num_classes)
         ),
-        # "normalized_surface_dice_loss": normalized_surface_dice_loss(
-        #     logits, labels, label_dim, num_classes
-        # ),
         "generalized_dice_loss": torch.tensor(
             generalized_dice_loss(logits, labels, label_dim, num_classes)
         ),
@@ -293,7 +289,7 @@ class SegmentationViT(nn.Module):
         self,
         image,
         labels: Optional[torch.Tensor] = None,
-        return_loss_and_metrics: bool = False,
+        return_loss_and_metrics: bool = True,
     ):
         """
             Forward pass for the segmentation model.
