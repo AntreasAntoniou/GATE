@@ -244,7 +244,6 @@ class FewShotClassificationMetaDataset(Dataset):
             dict_to_store=self.class_to_address_dict,
         )
         # save to yaml
-        import yaml
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
