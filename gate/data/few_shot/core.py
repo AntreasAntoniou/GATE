@@ -298,7 +298,9 @@ class FewShotClassificationMetaDataset(Dataset):
             )
         )
 
-        print(f"Current class to address dict: {self.class_to_address_dict}")
+        print(
+            f"Current class to address dict: {self.current_class_to_address_dict}"
+        )
 
     def _validate_samples_and_classes(
         self,
