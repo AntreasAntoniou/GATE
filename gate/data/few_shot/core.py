@@ -225,8 +225,7 @@ class FewShotClassificationMetaDataset(Dataset):
         class_to_address_dict_path = (
             self.dataset_root
             / self.dataset_name
-            / split_name
-            / "class_to_address_dict.yaml"
+            / f"{split_name}-class_to_address_dict.yaml"
         )
 
         # if class_to_address_dict_path.exists():
