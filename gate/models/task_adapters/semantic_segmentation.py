@@ -125,9 +125,9 @@ def metrics(logits, labels, label_dim, num_classes):
         "dice_loss": torch.tensor(
             dice_loss(logits, labels, label_dim, num_classes)
         ),
-        "generalized_dice_loss": torch.tensor(
-            generalized_dice_loss(logits, labels, label_dim, num_classes)
-        ),
+        # "generalized_dice_loss": torch.tensor(
+        #     generalized_dice_loss(logits, labels, label_dim, num_classes)
+        # ),
     }
 
 
@@ -277,12 +277,12 @@ class SegmentationViT(nn.Module):
             output = {
                 "loss": optimization_loss(logits, labels),
             }
-            # output |= metrics(
-            #     logits,
-            #     labels,
-            #     label_dim=1,
-            #     num_classes=self.num_classes,
-            # )
+            output |= metrics(
+                logits,
+                labels,
+                label_dim=1,
+                num_classes=self.num_classes,
+            )
 
         return output
 
