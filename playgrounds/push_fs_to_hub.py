@@ -112,7 +112,6 @@ dataset_dict = {
         transform=T.Compose(
             [
                 T.Resize(28, interpolation=LANCZOS),
-                T.ToTensor(),
             ]
         ),
     ),
