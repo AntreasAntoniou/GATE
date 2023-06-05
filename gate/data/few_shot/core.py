@@ -244,9 +244,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
         )
-        print(
-            f"Current class to address dict: {self.current_class_to_address_dict}"
-        )
+        print(f"Current class to address dict: {self.class_to_address_dict}")
 
     def _validate_samples_and_classes(
         self,
