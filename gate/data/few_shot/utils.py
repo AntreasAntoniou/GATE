@@ -65,7 +65,7 @@ def get_class_to_idx_dict(
     class_to_idx_dict = defaultdict(list)
     print("Building class to idx dict")
     for sample_idx, sample in tqdm(enumerate(dataset)):
-        key = sample["label"]
+        key = str(sample["label"])
         class_to_idx_dict[key].append(int(sample_idx))
 
     print("Sorting class to idx dict")
