@@ -70,11 +70,11 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_percentage=[
-                float(1200 / 1623),
-                float(200 / 1623),
-                float(223 / 1623),
-            ],
+            split_percentage={
+                FewShotSuperSplitSetOptions.TRAIN: float(1200 / 1623),
+                FewShotSuperSplitSetOptions.VAL: float(200 / 1623),
+                FewShotSuperSplitSetOptions.TEST: float(223 / 1623),
+            },
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
