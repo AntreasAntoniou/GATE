@@ -108,11 +108,13 @@ def _get_start_end_indices(num_classes, split_percentage, split_name):
     if split_name == "train":
         end_idx = int(num_classes * train_percentage)
     elif split_name == "val":
-        start_idx = end_idx
-        end_idx += int(num_classes * val_percentage)
+        start_idx = int(num_classes * train_percentage)
+        end_idx = start_idx + int(num_classes * val_percentage)
     elif split_name == "test":
-        start_idx = end_idx
-        end_idx += int(num_classes * test_percentage)
+        start_idx = int(num_classes * train_percentage) + int(
+            num_classes * val_percentage
+        )
+        end_idx = start_idx + int(num_classes * test_percentage)
     else:
         raise ValueError(f"Unknown split name: {split_name}")
 
