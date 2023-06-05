@@ -396,7 +396,9 @@ def create_hf_model_repo_and_download_maybe(
             if len(ckpt_list) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
                 return None
-            latest_ckpt = ckpt_list[idx]
+            latest_ckpt = pathlib.Path(
+                ckpt_dict[ckpt_list[idx]].split("/")[-1]
+            )
             download_dict = download_checkpoint(
                 hf_cache_dir=hf_cache_dir,
                 hf_repo_path=hf_repo_path,
