@@ -242,7 +242,6 @@ class FewShotClassificationMetaDataset(Dataset):
         save_dict_to_yaml(
             filepath=class_to_address_dict_path,
             dict_to_store=self.class_to_address_dict,
-            overwrite=True,
         )
         # save to yaml
         import yaml
