@@ -32,7 +32,7 @@ dataset_dict = {
     "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
         root=dataset_root,
         download=True,
-        transform=True.Compose(
+        transform=T.Compose(
             [
                 T.Resize(28, interpolation=LANCZOS),
                 T.ToTensor(),
