@@ -234,7 +234,11 @@ class FewShotClassificationMetaDataset(Dataset):
         super(FewShotClassificationMetaDataset, self).__init__()
 
         self.dataset_name = dataset_name
-        self.dataset_root = pathlib.Path(dataset_root)
+        self.dataset_root = pathlib.Path(dataset_root) / dataset_name
+
+        if not self.dataset_root.exists():
+            self.dataset_root.mkdir(parents=True, exist_ok=True)
+
         self.dataset_dict = dataset_dict
         self.num_episodes = num_episodes
         self.split_config = split_config
