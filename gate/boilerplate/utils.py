@@ -286,9 +286,7 @@ def download_model_with_name(
             downloaded_files[key] = target_path
         except Exception as e:
             invalid_download = True
-            if key != "scaler_filepath":
-                raise e
-
+            logger.info(f"Error downloading {filename}: {e}")
     # Handle config.yaml separately
     config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
     download_and_copy("config.yaml", config_target_path, subfolder="")
