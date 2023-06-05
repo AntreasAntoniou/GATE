@@ -219,19 +219,19 @@ class FewShotClassificationMetaDataset(Dataset):
             / "class_to_address_dict.json"
         )
 
-        if class_to_address_dict_path.exists():
-            self.class_to_address_dict = load_json(
-                filepath=class_to_address_dict_path
-            )
-        else:
-            self.class_to_address_dict = get_class_to_idx_dict(
-                dataset=self.dataset,
-            )
-            save_json(
-                filepath=class_to_address_dict_path,
-                dict_to_store=self.class_to_address_dict,
-                overwrite=True,
-            )
+        # if class_to_address_dict_path.exists():
+        #     self.class_to_address_dict = load_json(
+        #         filepath=class_to_address_dict_path
+        #     )
+        # else:
+        self.class_to_address_dict = get_class_to_idx_dict(
+            dataset=self.dataset,
+        )
+        save_json(
+            filepath=class_to_address_dict_path,
+            dict_to_store=self.class_to_address_dict,
+            overwrite=True,
+        )
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
