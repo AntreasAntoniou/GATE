@@ -141,7 +141,12 @@ def optimization_loss(logits, labels):
 
     loss = cross_entropy_loss + dice_loss + focal_loss
 
-    return loss
+    return {
+        "loss": loss,
+        "cross_entropy_loss": cross_entropy_loss,
+        "dice_loss": dice_loss,
+        "focal_loss": focal_loss,
+    }
 
 
 class PositionalEncoding(nn.Module):
@@ -268,16 +273,14 @@ class SegmentationViT(nn.Module):
     ):
         output = {}
         if labels is not None:
-            output = {
-                "loss": optimization_loss(logits, labels),
-            }
-            output |= metrics(
-                logits,
-                labels,
-                label_dim=1,
-                num_classes=self.num_classes,
-            )
-            print(output)
+            output = optimization_loss(logits, labels)
+            # output |= metrics(
+            #     logits,
+            #     labels,
+            #     label_dim=1,
+            #     num_classes=self.num_classes,
+            # )
+            # print(output)
 
         return output
 
