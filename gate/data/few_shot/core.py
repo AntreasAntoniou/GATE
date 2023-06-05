@@ -160,7 +160,6 @@ class FewShotClassificationMetaDataset(Dataset):
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
         variable_num_classes_per_set: bool,
-        subset_split_name_list: Optional[List[str]] = None,
         split_percentage: Optional[Dict[str, float]] = None,
         split_config: Optional[DictConfig] = None,
         split_as_original: Optional[bool] = False,
