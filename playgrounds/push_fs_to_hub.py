@@ -40,12 +40,12 @@ dataset_dict = {
     #     download=True,
     #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
-    # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
-    #     root=dataset_root,
-    #     mode=set_name,
-    #     download=True,
-    #     transform=T.Compose([T.Resize(size=(224, 224))]),
-    # ),
+    "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(224, 224)), T.ToPILImage()]),
+    ),
     # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
     #     root=dataset_root,
     #     mode=set_name,
@@ -58,18 +58,18 @@ dataset_dict = {
     #     download=True,
     #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
-    "quickdraw": lambda set_name: l2l.vision.datasets.Quickdraw(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(28, 28))]),
-    ),
-    "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
+    # "quickdraw": lambda set_name: l2l.vision.datasets.Quickdraw(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(28, 28))]),
+    # ),
+    # "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
 }
 
 if __name__ == "__main__":
