@@ -1,5 +1,5 @@
 from collections import defaultdict
-import json
+import yaml
 import pathlib
 from re import split
 from typing import Any, Counter, Dict, List, Optional
@@ -14,7 +14,7 @@ from torch.utils.data import Dataset
 import multiprocessing as mp
 from tqdm.auto import tqdm
 
-from gate.boilerplate.utils import get_logger, load_json, save_json
+from gate.boilerplate.utils import get_logger
 from gate.data.few_shot.utils import (
     FewShotSuperSplitSetOptions,
     get_class_to_idx_dict,
@@ -34,6 +34,18 @@ from torch.utils.data import Dataset
 
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
+
+
+def save_dict_to_yaml(filepath, dict_to_store):
+    with open(filepath, "w") as file:
+        yaml.dump(dict_to_store, file)
+
+        import yaml
+
+
+def load_yaml_to_dict(filepath):
+    with open(filepath, "r") as file:
+        return yaml.safe_load(file)
 
 
 def process_sample(args):
@@ -216,7 +228,7 @@ class FewShotClassificationMetaDataset(Dataset):
             self.dataset_root
             / self.dataset_name
             / split_name
-            / "class_to_address_dict.json"
+            / "class_to_address_dict.yaml"
         )
 
         # if class_to_address_dict_path.exists():
@@ -227,11 +239,13 @@ class FewShotClassificationMetaDataset(Dataset):
         self.class_to_address_dict = get_class_to_idx_dict(
             dataset=self.dataset,
         )
-        save_json(
+        save_dict_to_yaml(
             filepath=class_to_address_dict_path,
             dict_to_store=self.class_to_address_dict,
             overwrite=True,
         )
+        # save to yaml
+        import yaml
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
