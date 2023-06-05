@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 from sklearn.metrics import roc_auc_score as compute_roc_auc_score
+from sklearn.preprocessing import LabelBinarizer
 from einops import rearrange
 
 
@@ -78,9 +79,23 @@ def miou_loss(logits, labels):
 
 def roc_auc_score(logits, labels):
     logits = torch.softmax(logits, dim=1)
-    logits = logits.view(-1).cpu().detach().numpy()
+    logits = (
+        logits.permute(0, 2, 3, 1)
+        .reshape(-1, logits.shape[1])
+        .cpu()
+        .detach()
+        .numpy()
+    )
     labels = labels.view(-1).cpu().detach().numpy()
-    return compute_roc_auc_score(labels, logits)
+
+    lb = LabelBinarizer()
+    lb.fit(labels)
+    labels_binarized = lb.transform(labels)
+
+    roc_auc = compute_roc_auc_score(
+        labels_binarized, logits, multi_class="ovr"
+    )
+    return roc_auc
 
 
 def generalized_dice_loss(logits, labels):
