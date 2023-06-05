@@ -114,7 +114,7 @@ def build_dataset(
     torch.manual_seed(42)
 
     logger.info(
-        f"Loading Diabetic retinopathy dataset, will download to {data_dir} if necessary."
+        f"Loading HAM10 dataset, will download to {data_dir} if necessary."
     )
 
     dataset = HAM10KClassification(dataset_path=data_dir)
