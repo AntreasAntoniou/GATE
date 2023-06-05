@@ -297,11 +297,12 @@ class Ensemble(nn.Module):
             # # Get the outputs from each model
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
-            if "labels" in model_outputs[0]:
-                labels = model_outputs[0]["labels"]
 
             if "labels" in kwargs:
                 labels = kwargs["labels"]
+
+            if "labels" in model_outputs[0]:
+                labels = model_outputs[0]["labels"]
 
             ensemble_pred = {}
 
