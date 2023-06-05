@@ -115,12 +115,24 @@ from gate.metrics.segmentation import (
 def metrics(logits, labels, label_dim, num_classes):
     logits: torch.Tensor = logits.detach().float()
     labels: torch.Tensor = labels.detach()
+    logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
+    labels = labels.reshape(-1)
     return {
-        # "roc_auc_score": torch.tensor(roc_auc_score(logits, labels)),
-        "miou_loss": torch.tensor(miou_loss(logits, labels)),
-        "dice_loss": torch.tensor(dice_loss(logits, labels)),
+        "roc_auc_score": torch.tensor(
+            roc_auc_score(
+                logits, labels, num_classes=logits.shape[1], label_dim=1
+            )
+        ),
+        "miou_loss": torch.tensor(
+            miou_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
+        ),
+        "dice_loss": torch.tensor(
+            dice_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
+        ),
         "generalized_dice_loss": torch.tensor(
-            generalized_dice_loss(logits, labels)
+            generalized_dice_loss(
+                logits, labels, num_classes=logits.shape[1], label_dim=1
+            )
         ),
     }
 

@@ -2,11 +2,6 @@ import monai
 import torch
 import torch.nn.functional as F
 
-import numpy as np
-from sklearn.metrics import roc_auc_score as compute_roc_auc_score
-from sklearn.preprocessing import LabelBinarizer
-from einops import rearrange
-
 
 def one_hot_encoding(tensor, num_classes, dim):
     # Ensure the tensor is a LongTensor
@@ -56,50 +51,61 @@ def loss_adapter(
     )
 
 
-def dice_loss(logits, labels):
-    smooth = 1.0
-    logits = torch.softmax(logits, dim=1)
-    logits = logits.view(-1)
-    labels = labels.view(-1)
-    intersection = (logits * labels).sum()
-    return 1 - (
-        (2.0 * intersection + smooth) / (logits.sum() + labels.sum() + smooth)
+def normalized_surface_dice_loss(
+    logits, labels, label_dim, num_classes, class_thresholds: list = [0.5]
+):
+    # logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
+    # labels = labels.permute(0, 2, 3, 1).reshape(-1)
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_surface_dice,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+        remove_dim=True,
+        class_thresholds=class_thresholds,
     )
 
 
-def miou_loss(logits, labels):
-    smooth = 1.0
-    logits = torch.softmax(logits, dim=1)
-    logits = logits.view(-1)
-    labels = labels.view(-1)
-    intersection = (logits * labels).sum()
-    union = logits.sum() + labels.sum() - intersection
-    return 1 - ((intersection + smooth) / (union + smooth))
-
-
-def roc_auc_score(logits, labels):
-    logits = logits.softmax(dim=1)
-    num_classes = logits.shape[1]
-    labels_binarized = F.one_hot(labels, num_classes=num_classes)
-    labels_binarized = labels_binarized.permute(0, 3, 1, 2).contiguous()
-
-    roc_auc = compute_roc_auc_score(
-        labels_binarized.view(-1, num_classes).cpu().numpy(),
-        logits.view(-1, num_classes).detach().cpu().numpy(),
-        multi_class="ovr",
+def dice_loss(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_meandice,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
     )
-    return roc_auc
 
 
-def generalized_dice_loss(logits, labels):
-    smooth = 1.0
-    logits = torch.softmax(logits, dim=1)
-    logits = logits.view(-1)
-    labels = labels.view(-1)
-    intersection = (logits * labels).sum()
-    sum_ = logits.sum() + labels.sum()
-    w = 1 / (sum_**2 + smooth)
-    return 1 - ((2 * w * intersection + smooth) / (w * sum_ + smooth))
+def miou_loss(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_meaniou,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+    )
+
+
+def generalized_dice_loss(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_generalized_dice,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+    )
+
+
+def roc_auc_score(logits, labels, label_dim, num_classes):
+    return loss_adapter(
+        loss_fn=monai.metrics.compute_roc_auc,
+        logits=logits,
+        labels=labels,
+        label_dim=label_dim,
+        num_classes=num_classes,
+        remove_dim=False,
+    )
 
 
 def diff_dice_loss(inputs, targets):
