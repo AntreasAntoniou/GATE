@@ -32,7 +32,6 @@ dataset_dict = {
     "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
         root=dataset_root,
         download=True,
-        set_name=set_name,
         transform=True.Compose(
             [
                 T.Resize(28, interpolation=LANCZOS),
@@ -41,29 +40,27 @@ dataset_dict = {
             ]
         ),
     ),
-    "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Resize(size=(224, 224)),
-    ),
-    "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Resize(size=(224, 224)),
-    ),
+    # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Resize(size=(224, 224)),
+    # ),
+    # "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Resize(size=(224, 224)),
+    # ),
 }
 
 if __name__ == "__main__":
     with tqdm(total=len(dataset_dict)) as pbar_dataset:
         for key, value in dataset_dict.items():
             hf_dataset_dict = dict()
-            with tqdm(
-                total=len(["train", "validation", "test"])
-            ) as pbar_set_name:
+            with tqdm(total=len(["all"])) as pbar_set_name:
                 pbar_dataset.set_description(f"Processing {key}")
-                for set_name in ["train", "validation", "test"]:
+                for set_name in ["all"]:
                     pbar_set_name.set_description(f"Processing {set_name}")
                     dataset = value(set_name=set_name)
                     data_dict = {"image": [], "label": []}
