@@ -101,7 +101,7 @@ from einops import rearrange
 
 def roc_auc_score(logits, targets):
     logits = rearrange(logits, "b c h w -> (b h w) c")
-    targets = rearrange(targets, "b c h w -> (b h w) c")
+    targets = rearrange(targets, "b c h w -> (b h w c)")
 
     logits = torch.softmax(logits, dim=1)
     logits_flat = logits.cpu().detach().numpy()
