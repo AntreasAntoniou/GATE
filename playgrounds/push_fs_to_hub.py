@@ -77,7 +77,13 @@ if __name__ == "__main__":
                     hf_dataset_dict[set_name] = hf_dataset
                     pbar_set_name.update(1)
             hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
-            hf_dataset_dict_full.push_to_hub(
-                repo_id=f"Antreas/{key}", private=False
-            )
+            completed = False
+            while not completed:
+                try:
+                    hf_dataset_dict_full.push_to_hub(
+                        repo_id=f"Antreas/{key}", private=False
+                    )
+                    completed = True
+                except Exception as e:
+                    print(e)
             pbar_dataset.update(1)
