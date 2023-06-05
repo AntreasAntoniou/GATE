@@ -12,22 +12,17 @@ dataset_dict = {
     #     download=True,
     #     bounding_box_crop=True,
     # ),
-    "cubirds200_bbcrop": lambda set_name: l2l.vision.datasets.CUBirds200(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        bounding_box_crop=True,
-    ),
-    "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-    ),
-    "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-    ),
+    # "cubirds200_bbcrop": lambda set_name: l2l.vision.datasets.CUBirds200(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     bounding_box_crop=True,
+    # ),
+    # "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    # ),
     "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
         root=dataset_root,
         mode=set_name,
@@ -39,6 +34,11 @@ dataset_dict = {
         set_name=set_name,
     ),
     "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+    ),
+    "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
         root=dataset_root,
         mode=set_name,
         download=True,
