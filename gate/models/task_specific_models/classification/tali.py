@@ -24,16 +24,13 @@ def create_model_with_linear(
     """
     Helper function to create a model with linear layer.
     """
-    model = BackboneWithLinear(
+    return BackboneWithLinear(
         model=backbone_model,
         num_clip_features=num_features,
         num_classes=num_classes,
-        modality=modality,
+        modality=modality
+        allow_on_model_metric_computation=allow_on_model_metric_computation,
     )
-    if not allow_on_model_metric_computation:
-        del model.compute_loss_and_metrics
-
-    return model
 
 
 def build_model(
@@ -61,11 +58,7 @@ def build_model(
     num_features_attr = f"{modality}_num_features"
     num_features = getattr(backbone_model, num_features_attr, None)
     model = create_model_with_linear(
-        backbone_model,
-        num_features,
-        num_classes,
-        modality,
-        allow_on_model_metric_computation,
+        backbone_model, num_features, num_classes, modality, allow_on_model_metric_computation
     )
 
     if not pretrained:
