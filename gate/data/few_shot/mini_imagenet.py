@@ -49,10 +49,9 @@ class MiniImageNetFewShotClassificationDataset(
         super(MiniImageNetFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=datasets.load_dataset(
+            dataset_dict=datasets.load_dataset(
                 path="Antreas/mini_imagenet",
                 cache_dir=dataset_root,
-                data_dir=dataset_root,
                 num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,

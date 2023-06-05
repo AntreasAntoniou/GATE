@@ -149,7 +149,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self,
         dataset_name: str,
         dataset_root: str,
-        dataset_class: datasets.DatasetDict,
+        dataset_dict: datasets.DatasetDict,
         split_name: str,
         num_episodes: int,
         min_num_classes_per_set: int,
@@ -175,7 +175,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
         self.dataset_name = dataset_name
         self.dataset_root = pathlib.Path(dataset_root)
-        self.dataset_class = dataset_class
+        self.dataset_dict = dataset_dict
         self.num_episodes = num_episodes
         self.split_config = split_config
         self.preprocess_transform = preprocess_transforms
@@ -206,9 +206,12 @@ class FewShotClassificationMetaDataset(Dataset):
         self.split_name = split_name
         self.split_percentage = split_percentage
 
-        self.dataset = self.dataset_class[
-            split_name if split_name != "val" else "validation"
-        ]
+        if split_name is None:
+            self.dataset = self.dataset_dict
+        else:
+            self.dataset = self.dataset_dict[
+                split_name if split_name != "val" else "validation"
+            ]
 
         class_to_address_dict_path = (
             self.dataset_root
@@ -261,7 +264,7 @@ class FewShotClassificationMetaDataset(Dataset):
 
         if not dataset_path.exists():
             subsets = [
-                self.dataset_class(
+                self.dataset_dict(
                     subset_name,
                 )
                 for subset_name in subset_split_name_list
