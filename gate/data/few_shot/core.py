@@ -228,19 +228,18 @@ class FewShotClassificationMetaDataset(Dataset):
             / f"{split_name}-class_to_address_dict.yaml"
         )
 
-        # if class_to_address_dict_path.exists():
-        #     self.class_to_address_dict = load_json(
-        #         filepath=class_to_address_dict_path
-        #     )
-        # else:
-        self.class_to_address_dict = get_class_to_idx_dict(
-            dataset=self.dataset,
-        )
-        save_dict_to_yaml(
-            filepath=class_to_address_dict_path,
-            dict_to_store=self.class_to_address_dict,
-        )
-        # save to yaml
+        if class_to_address_dict_path.exists():
+            self.class_to_address_dict = load_yaml_to_dict(
+                filepath=class_to_address_dict_path
+            )
+        else:
+            self.class_to_address_dict = get_class_to_idx_dict(
+                dataset=self.dataset,
+            )
+            save_dict_to_yaml(
+                filepath=class_to_address_dict_path,
+                dict_to_store=self.class_to_address_dict,
+            )
 
         self.current_class_to_address_dict = (
             self._get_current_class_to_address_dict()
