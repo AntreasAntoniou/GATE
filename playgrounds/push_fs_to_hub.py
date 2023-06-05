@@ -130,6 +130,7 @@ if __name__ == "__main__":
                     data_dict = {"image": [], "label": []}
                     with tqdm(total=len(dataset)) as pbar_data:
                         for idx, item in enumerate(dataset):
+                            print(item[0].shape)
                             data_dict["image"].append(item[0])
                             data_dict["label"].append(item[1])
                             pbar_data.update(1)
