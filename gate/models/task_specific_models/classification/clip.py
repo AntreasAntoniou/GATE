@@ -41,8 +41,9 @@ def build_model(
             }[modality],
             num_classes,
             modality=modality,
-            allow_on_model_metric_computation=allow_on_model_metric_computation,
         )
+        if not allow_on_model_metric_computation:
+            del model.compute_loss_and_metrics
     else:
         raise ValueError(f"Modality {modality} not supported for CLIP.")
 

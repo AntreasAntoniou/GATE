@@ -16,19 +16,12 @@ class BackboneWithLinear(BaseModule):
         num_clip_features,
         num_classes: int,
         modality: str,
-        allow_on_model_metric_computation: bool = True,
     ):
         super().__init__()
         self.model = model
         self.modality = modality
         self.linear = nn.Linear(num_clip_features, num_classes)
         self.num_classes = num_classes
-        self.allow_on_model_metric_computation = (
-            allow_on_model_metric_computation
-        )
-
-        if not self.allow_on_model_metric_computation:
-            delattr(self, "compute_loss_and_metrics")
 
     def compute_loss_and_metrics(self, logits, labels):
         if not isinstance(labels, torch.Tensor):
