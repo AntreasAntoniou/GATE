@@ -57,16 +57,18 @@ def loss_adapter(
 def dice_loss(logits, targets):
     b, classes, h, w = logits.shape
     logits = torch.softmax(logits, dim=1)
-    logits = logits.argmax(dim=1)
-    targets_one_hot = torch.zeros_like(logits).scatter_(
-        1, targets.unsqueeze(1), 1
+    targets_one_hot = (
+        torch.zeros(b, classes, h, w)
+        .to(targets.device)
+        .scatter_(1, targets.unsqueeze(1), 1)
     )
 
-    intersection = 2 * torch.sum(targets_one_hot * logits, dim=(0, 1, 2))
-    union = torch.sum(targets_one_hot, dim=(0, 1, 2)) + torch.sum(
-        logits, dim=(0, 1, 2)
+    smooth = 1e-6
+    intersection = torch.sum(targets_one_hot * logits, dim=(0, 2, 3))
+    union = torch.sum(targets_one_hot, dim=(0, 2, 3)) + torch.sum(
+        logits, dim=(0, 2, 3)
     )
-    dice_coefficient = intersection / (union + 1e-6)
+    dice_coefficient = (2 * intersection + smooth) / (union + smooth)
     dice_loss = 1 - dice_coefficient.mean()
 
     return dice_loss
@@ -75,18 +77,20 @@ def dice_loss(logits, targets):
 def miou_loss(logits, targets):
     b, classes, h, w = logits.shape
     logits = torch.softmax(logits, dim=1)
-    logits = logits.argmax(dim=1)
-    targets_one_hot = torch.zeros_like(logits).scatter_(
-        1, targets.unsqueeze(1), 1
+    targets_one_hot = (
+        torch.zeros(b, classes, h, w)
+        .to(targets.device)
+        .scatter_(1, targets.unsqueeze(1), 1)
     )
 
-    intersection = torch.sum(targets_one_hot * logits, dim=(0, 1, 2))
+    smooth = 1e-6
+    intersection = torch.sum(targets_one_hot * logits, dim=(0, 2, 3))
     union = (
-        torch.sum(targets_one_hot, dim=(0, 1, 2))
-        + torch.sum(logits, dim=(0, 1, 2))
+        torch.sum(targets_one_hot, dim=(0, 2, 3))
+        + torch.sum(logits, dim=(0, 2, 3))
         - intersection
     )
-    iou = intersection / (union + 1e-6)
+    iou = (intersection + smooth) / (union + smooth)
     miou_loss = 1 - iou.mean()
 
     return miou_loss
@@ -107,26 +111,25 @@ def roc_auc_score(logits, targets):
 def generalized_dice_loss(logits, targets):
     b, classes, h, w = logits.shape
     logits = torch.softmax(logits, dim=1)
-    logits = logits.argmax(dim=1)
-    targets_one_hot = torch.zeros_like(logits).scatter_(
-        1, targets.unsqueeze(1), 1
+    targets_one_hot = (
+        torch.zeros(b, classes, h, w)
+        .to(targets.device)
+        .scatter_(1, targets.unsqueeze(1), 1)
     )
 
-    # Calculate per-class weights
-    class_weights = 1 / (torch.sum(targets_one_hot, dim=(0, 1, 2)) ** 2 + 1e-6)
-
-    # Compute intersection and union
-    intersection = torch.sum(targets_one_hot * logits, dim=(0, 1, 2))
-    union = torch.sum(targets_one_hot, dim=(0, 1, 2)) + torch.sum(
-        logits, dim=(0, 1, 2)
+    smooth = 1e-6
+    intersection = torch.sum(targets_one_hot * logits, dim=(0, 2, 3))
+    union = torch.sum(targets_one_hot, dim=(0, 2, 3)) + torch.sum(
+        logits, dim=(0, 2, 3)
     )
 
-    # Calculate the generalized Dice coefficient
-    numerator = torch.sum(class_weights * intersection)
-    denominator = torch.sum(class_weights * union) + 1e-6
-    generalized_dice_coefficient = 2 * numerator / denominator
+    class_weights = 1 / (
+        (torch.sum(targets_one_hot, dim=(0, 2, 3)) ** 2) + smooth
+    )
 
-    # Calculate the generalized Dice loss
+    generalized_dice_coefficient = (
+        2 * torch.sum(intersection * class_weights) + smooth
+    ) / (torch.sum(union * class_weights) + smooth)
     generalized_dice_loss = 1 - generalized_dice_coefficient
 
     return generalized_dice_loss
