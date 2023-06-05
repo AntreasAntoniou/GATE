@@ -66,7 +66,6 @@ class DescribableTexturesFewShotClassificationDataset(
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
             split_as_original=True,
-            subset_split_name_list=["train", "validation", "test"],
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
