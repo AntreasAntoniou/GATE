@@ -78,22 +78,15 @@ def miou_loss(logits, labels):
 
 
 def roc_auc_score(logits, labels):
-    logits = torch.softmax(logits, dim=1)
-    logits = (
-        logits.permute(0, 2, 3, 1)
-        .reshape(-1, logits.shape[1])
-        .cpu()
-        .detach()
-        .numpy()
-    )
-    labels = labels.view(-1).cpu().detach().numpy()
-
-    lb = LabelBinarizer()
-    lb.fit(labels)
-    labels_binarized = lb.transform(labels)
+    logits = logits.softmax(dim=1)
+    num_classes = logits.shape[1]
+    labels_binarized = F.one_hot(labels, num_classes=num_classes)
+    labels_binarized = labels_binarized.permute(0, 3, 1, 2).contiguous()
 
     roc_auc = compute_roc_auc_score(
-        labels_binarized, logits, multi_class="ovr"
+        labels_binarized.view(-1, num_classes).cpu().numpy(),
+        logits.view(-1, num_classes).detach().cpu().numpy(),
+        multi_class="ovr",
     )
     return roc_auc
 
