@@ -283,6 +283,7 @@ class SegmentationViT(nn.Module):
                 label_dim=1,
                 num_classes=self.num_classes,
             )
+            print(output)
 
         return output
 
