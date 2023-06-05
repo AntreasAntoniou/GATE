@@ -118,7 +118,7 @@ def _get_start_end_indices(num_classes, split_percentage, split_name):
     else:
         raise ValueError(f"Unknown split name: {split_name}")
 
-    print(f"start_idx: {start_idx}, end_idx: {end_idx}, for {split_name}")
+    # print(f"start_idx: {start_idx}, end_idx: {end_idx}, for {split_name}")
 
     return start_idx, end_idx
 
@@ -302,9 +302,9 @@ class FewShotClassificationMetaDataset(Dataset):
             )
         )
 
-        print(
-            f"Current class to address dict: {self.current_class_to_address_dict}"
-        )
+        # print(
+        #     f"Current class to address dict: {self.current_class_to_address_dict}"
+        # )
 
     def _validate_samples_and_classes(
         self,
