@@ -1,3 +1,4 @@
+from PIL.Image import LANCZOS
 import learn2learn as l2l
 from tqdm.auto import tqdm
 import torchvision.transforms as T
@@ -32,16 +33,25 @@ dataset_dict = {
         root=dataset_root,
         download=True,
         set_name=set_name,
+        transform=True.Compose(
+            [
+                T.Resize(28, interpolation=LANCZOS),
+                T.ToTensor(),
+                lambda x: 1.0 - x,
+            ]
+        ),
     ),
     "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
         root=dataset_root,
         mode=set_name,
         download=True,
+        transform=T.Resize(size=(224, 224)),
     ),
     "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
         root=dataset_root,
         mode=set_name,
         download=True,
+        transform=T.Resize(size=(224, 224)),
     ),
 }
 
@@ -59,9 +69,7 @@ if __name__ == "__main__":
                     data_dict = {"image": [], "label": []}
                     with tqdm(total=len(dataset)) as pbar_data:
                         for idx, item in enumerate(dataset):
-                            data_dict["image"].append(
-                                T.Resize(size=(224, 224))(item[0])
-                            )
+                            data_dict["image"].append(item[0])
                             data_dict["label"].append(item[1])
                             pbar_data.update(1)
 
