@@ -49,7 +49,7 @@ class DescribableTexturesFewShotClassificationDataset(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
             dataset_dict=datasets.load_dataset(
-                path="Antreas/describable_features",
+                path="Antreas/describable_textures",
                 cache_dir=dataset_root,
                 num_proc=mp.cpu_count(),
             ),
