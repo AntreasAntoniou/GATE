@@ -24,43 +24,46 @@ dataset_dict = {
     #     mode=set_name,
     #     download=True,
     # ),
-    # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
-    #     root=dataset_root,
-    #     mode=set_name,
-    #     download=True,
-    # ),
-    "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
+    "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
         root=dataset_root,
+        mode=set_name,
         download=True,
-        transform=T.Compose(
-            [
-                T.Resize(28, interpolation=LANCZOS),
-                T.ToTensor(),
-                lambda x: 1.0 - x,
-            ]
-        ),
+        transform=T.Compose([T.Resize(size=(224, 224)), T.ToTensor()]),
     ),
-    # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
+    # "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
     #     root=dataset_root,
-    #     mode=set_name,
     #     download=True,
-    #     transform=T.Resize(size=(224, 224)),
+    #     transform=T.Compose(
+    #         [
+    #             T.Resize(28, interpolation=LANCZOS),
+    #             T.ToTensor(),
+    #             lambda x: 1.0 - x,
+    #         ]
+    #     ),
     # ),
-    # "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
-    #     root=dataset_root,
-    #     mode=set_name,
-    #     download=True,
-    #     transform=T.Resize(size=(224, 224)),
-    # ),
+    "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(224, 224)), T.ToTensor()]),
+    ),
+    "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(224, 224)), T.ToTensor()]),
+    ),
 }
 
 if __name__ == "__main__":
     with tqdm(total=len(dataset_dict)) as pbar_dataset:
         for key, value in dataset_dict.items():
             hf_dataset_dict = dict()
-            with tqdm(total=len(["all"])) as pbar_set_name:
+            with tqdm(
+                total=len(["train", "validation", "test"])
+            ) as pbar_set_name:
                 pbar_dataset.set_description(f"Processing {key}")
-                for set_name in ["all"]:
+                for set_name in ["train", "validation", "test"]:
                     pbar_set_name.set_description(f"Processing {set_name}")
                     dataset = value(set_name=set_name)
                     data_dict = {"image": [], "label": []}
