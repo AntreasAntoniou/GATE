@@ -184,7 +184,7 @@ def pretty_config(
         # 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light',
         # 'dracula', 'one-dark', 'lilypond', 'nord', 'nord-darker',
         # 'github-dark']
-        branch.add(Syntax(branch_content, "yaml", theme="dracula"))
+        branch.add(Syntax(branch_content, "yaml", theme="default"))
 
     return tree
 
