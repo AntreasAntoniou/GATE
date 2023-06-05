@@ -96,7 +96,11 @@ def miou_loss(logits, targets):
     return miou_loss
 
 
+from einops import rearrange
+
+
 def roc_auc_score(logits, targets):
+    logits = rearrange(logits, "b c h w -> (b h w) c")
     logits = torch.softmax(logits, dim=1)
     logits_flat = logits.view(-1, logits.shape[1]).cpu().detach().numpy()
     targets_flat = targets.view(-1).cpu().detach().numpy()
