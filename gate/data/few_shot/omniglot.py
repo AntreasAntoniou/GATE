@@ -121,9 +121,7 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
 
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
-omniglot_transforms = T.Compose(
-    [T.ToTensor(), lambda x: 1.0 - x, T.ToPILImage()]
-)
+omniglot_transforms = T.Compose([lambda x: 1.0 - x, T.ToPILImage()])
 
 
 def key_mapper(input_tuple):
