@@ -57,7 +57,6 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
                 path="Antreas/omniglot",
                 cache_dir=dataset_root,
                 num_proc=mp.cpu_count(),
-                split="full",
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
