@@ -277,12 +277,12 @@ class SegmentationViT(nn.Module):
             output = {
                 "loss": optimization_loss(logits, labels),
             }
-            output |= metrics(
-                logits,
-                labels,
-                label_dim=1,
-                num_classes=self.num_classes,
-            )
+            # output |= metrics(
+            #     logits,
+            #     labels,
+            #     label_dim=1,
+            #     num_classes=self.num_classes,
+            # )
 
         return output
 
