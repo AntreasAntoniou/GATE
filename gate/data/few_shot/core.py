@@ -206,7 +206,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self.split_percentage = split_percentage
 
         if len(list(self.dataset_dict.keys())) == 1:
-            self.dataset = self.dataset_dict
+            self.dataset = self.dataset_dict[list(self.dataset_dict.keys())[0]]
         else:
             self.dataset = self.dataset_dict[
                 split_name if split_name != "val" else "validation"
