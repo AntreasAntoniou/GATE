@@ -121,18 +121,21 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
 
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+omniglot_transforms = T.Compose(
+    [T.ToTensor(), lambda x: 1.0 - x, T.ToPILImage()]
+)
 
 
 def key_mapper(input_tuple):
     input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
     input_dict["image"]["image"]["support_set"] = [
-        T.ToPILImage()(item)
+        omniglot_transforms(item)
         for item in input_dict["image"]["image"]["support_set"]
     ]
 
     input_dict["image"]["image"]["query_set"] = [
-        T.ToPILImage()(item)
+        omniglot_transforms(item)
         for item in input_dict["image"]["image"]["query_set"]
     ]
 
