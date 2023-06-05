@@ -5,92 +5,91 @@ import torchvision.transforms as T
 import datasets
 
 dataset_root = "/data/"
+split_names_list = ["train", "validation", "test"]
 
 dataset_dict = {
-    "aircraft": lambda set_name: l2l.vision.datasets.FGVCAircraft(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        bounding_box_crop=False,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "cubirds200": lambda set_name: l2l.vision.datasets.CUBirds200(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        bounding_box_crop=False,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "cifarfs": lambda set_name: l2l.vision.datasets.CIFARFS(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=None,
-    ),
-    "fc100": lambda set_name: l2l.vision.datasets.FC100(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
-    "quickdraw": lambda set_name: l2l.vision.datasets.Quickdraw(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(28, 28))]),
-    ),
-    # "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
+    # "aircraft": lambda set_name: l2l.vision.datasets.FGVCAircraft(
     #     root=dataset_root,
+    #     mode=set_name,
     #     download=True,
-    #     transform=T.Compose(
-    #         [
-    #             T.Resize(28, interpolation=LANCZOS),
-    #             T.ToTensor(),
-    #             lambda x: 1.0 - x,
-    #         ]
-    #     ),
+    #     bounding_box_crop=False,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
+    # "cubirds200": lambda set_name: l2l.vision.datasets.CUBirds200(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     bounding_box_crop=False,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "cifarfs": lambda set_name: l2l.vision.datasets.CIFARFS(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=None,
+    # ),
+    # "fc100": lambda set_name: l2l.vision.datasets.FC100(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "fungi": lambda set_name: l2l.vision.datasets.FGVCFungi(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(224, 224))]),
+    # ),
+    # "quickdraw": lambda set_name: l2l.vision.datasets.Quickdraw(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose([T.Resize(size=(28, 28))]),
+    # ),
+    "omniglot": lambda set_name: l2l.vision.datasets.FullOmniglot(
+        root=dataset_root,
+        download=True,
+        transform=T.Compose(
+            [
+                T.Resize(28, interpolation=LANCZOS),
+                T.ToTensor(),
+                lambda x: 1.0 - x,
+            ]
+        ),
+    ),
 }
 
 if __name__ == "__main__":
     with tqdm(total=len(dataset_dict)) as pbar_dataset:
         for key, value in dataset_dict.items():
             hf_dataset_dict = dict()
-            with tqdm(
-                total=len(["train", "validation", "test"])
-            ) as pbar_set_name:
+            with tqdm(total=len(["full"])) as pbar_set_name:
                 pbar_dataset.set_description(f"Processing {key}")
-                for set_name in ["train", "validation", "test"]:
+                for set_name in ["full"]:
                     pbar_set_name.set_description(f"Processing {set_name}")
                     dataset = value(set_name=set_name)
                     data_dict = {"image": [], "label": []}
