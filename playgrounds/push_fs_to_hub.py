@@ -34,12 +34,6 @@ dataset_dict = {
     #     download=True,
     #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
-    "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose([T.Resize(size=(224, 224))]),
-    ),
     # "describable_textures": lambda set_name: l2l.vision.datasets.DescribableTextures(
     #     root=dataset_root,
     #     mode=set_name,
@@ -69,6 +63,12 @@ dataset_dict = {
         mode=set_name,
         download=True,
         transform=T.Compose([T.Resize(size=(28, 28))]),
+    ),
+    "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
+        root=dataset_root,
+        mode=set_name,
+        download=True,
+        transform=T.Compose([T.Resize(size=(224, 224))]),
     ),
 }
 
