@@ -1,12 +1,25 @@
 from PIL.Image import LANCZOS
 import learn2learn as l2l
+import torch
 from tqdm.auto import tqdm
 import torchvision.transforms as T
 import numpy as np
 import datasets
+from rich import print as rprint
 
 dataset_root = "/data/"
+
+
 # split_names_list = ["train", "validation", "test"]
+def report_summary_statistics(x):
+    tensor = torch.tensor(x)
+    mean = tensor.mean()
+    std = tensor.std()
+    max = tensor.max()
+    min = tensor.min()
+    rprint(f"mean: {mean}, std: {std}, max: {max}, min: {min}")
+    return x
+
 
 dataset_dict = {
     # "aircraft": lambda set_name: l2l.vision.datasets.FGVCAircraft(
@@ -45,7 +58,13 @@ dataset_dict = {
         root=dataset_root,
         mode=set_name,
         download=True,
-        transform=T.Compose([T.Resize(size=(224, 224)), T.ToPILImage()]),
+        transform=T.Compose(
+            [
+                T.Resize(size=(224, 224)),
+                report_summary_statistics,
+                T.ToPILImage(),
+            ]
+        ),
     ),
     # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
     #     root=dataset_root,
@@ -63,7 +82,12 @@ dataset_dict = {
         root=dataset_root,
         mode=set_name,
         download=True,
-        transform=T.Compose([lambda x: np.array(x), T.Resize(size=(28, 28))]),
+        transform=T.Compose(
+            [
+                lambda x: torch.tensor(np.array(x)).permute([1, 2, 0]),
+                T.Resize(size=(28, 28)),
+            ]
+        ),
     ),
     "tiered_imagenet": lambda set_name: l2l.vision.datasets.TieredImagenet(
         root=dataset_root,
