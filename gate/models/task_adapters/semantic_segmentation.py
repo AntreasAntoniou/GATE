@@ -263,7 +263,7 @@ class SegmentationViT(nn.Module):
             ]
         )
         self.additional_projection = None
-        self.decoder_normalization = norm_layer(num_classes)
+        self.decoder_normalization = norm_layer(decoder_embed_dim)
         self.class_decoder = nn.Conv2d(num_classes, num_classes, kernel_size=1)
 
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
