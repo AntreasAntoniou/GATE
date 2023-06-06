@@ -247,6 +247,12 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
 
+        self.channel_projection = nn.Conv2d(
+            in_channels=decoder_embed_dim,
+            out_channels=num_classes,
+            kernel_size=1,
+        )
+
         self.upsample_blocks = nn.ModuleList(
             [
                 ResidualConvBlock(
@@ -382,6 +388,7 @@ class SegmentationViT(nn.Module):
         decoder_inputs = decoder_inputs.view(
             batch, channels, feature_map_size, feature_map_size
         )
+        decoder_inputs = self.channel_projection(decoder_inputs)
         print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
         print(f"Line 12: {time.time() - start_time} seconds")
 
@@ -404,7 +411,6 @@ class SegmentationViT(nn.Module):
         output = self.class_decoder(decoder_inputs)
         print(f"class decoder output.shape: {output.shape}")
         output = {"logits": output}
-        print(f"output: {output.shape}")
 
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
