@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from rich import print
 from timm.models.vision_transformer import Block, PatchEmbed
 
 from gate.models.task_adapters import BaseModule
@@ -362,7 +363,7 @@ class SegmentationViT(nn.Module):
         output = self.class_decoder(decoder_inputs)
         print(f"class decoder output.shape: {output.shape}")
         output = {"logits": output}
-        print(f"output: {output}")
+        print(f"output: {output.shape}")
 
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
