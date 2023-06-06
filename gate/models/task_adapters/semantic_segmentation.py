@@ -408,9 +408,11 @@ class SegmentationViT(nn.Module):
         print(f"class decoder output.shape: {output.shape}")
         output = {"logits": output}
 
+        start_time = time.time()
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
             )
+        print(f"Line 15: {time.time() - start_time} seconds")
 
         return output
