@@ -280,7 +280,7 @@ class Learner(nn.Module):
             if not thread.done:
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
-                    thread.start()
+                    thread.start_with_timeout()
                 else:
                     # Check if the thread has been running for too long
                     elapsed_time = time.time() - thread.start_time
@@ -319,6 +319,10 @@ class Learner(nn.Module):
             logger.debug("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
 
+        while len(self.background_threads) > 0:
+            self.check_manage_background_threads()
+            sleep(1)
+
         logger.debug("Validation finished 🎉")
 
     def start_testing(self, prefix):
@@ -338,6 +342,10 @@ class Learner(nn.Module):
         )
 
         self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
+
+        while len(self.background_threads) > 0:
+            self.check_manage_background_threads()
+            sleep(1)
 
         logger.debug("Testing finished 🎉")
 
@@ -417,7 +425,6 @@ class Learner(nn.Module):
 
                         if self.step_idx % self.evaluate_every_n_steps == 0:
                             self._validation_loop()
-                            self.check_manage_background_threads()
 
                         if self.step_idx >= self.train_iters:
                             return self.end_training()
