@@ -274,12 +274,23 @@ class Learner(nn.Module):
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
+        TIME_LIMIT = 600  # 10 minutes
+
         for thread in self.background_threads:
             if not thread.done:
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
                     thread.start()
-                    break
+                else:
+                    # Check if the thread has been running for too long
+                    elapsed_time = time.time() - thread.start_time
+                    if elapsed_time > TIME_LIMIT:
+                        print(
+                            f"Thread {thread} has been running for too long. Stopping it."
+                        )
+                        exit()  # experiment kills itself to prevent upload mechanism from completely halting the program
+                        # Here you can stop the thread. However, keep in mind that stopping a thread is tricky in Python.
+                        # You might need to set a flag that the thread checks regularly and stops itself when the flag is set.
             else:
                 self.background_threads.remove(thread)
                 print(f"Removing thread {thread} since it is done")
