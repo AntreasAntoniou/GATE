@@ -196,7 +196,7 @@ class SegmentationViT(nn.Module):
         model_type: str = "vit",
         embed_dim: int = 768,
         decoder_embed_dim: int = 768,
-        decoder_depth: int = 2,
+        decoder_depth: int = 1,
         decoder_num_heads: int = 8,
         mlp_ratio: int = 4.0,
         norm_layer: int = nn.LayerNorm,
