@@ -324,6 +324,7 @@ class SegmentationViT(nn.Module):
             decoder_inputs = block(decoder_inputs)
 
         decoder_inputs = self.decoder_normalization(decoder_inputs)
+        print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
         if decoder_inputs.shape[1] != self.num_patches + 1:
             if self.additional_projection is None:
                 self.additional_projection = nn.Conv1d(
@@ -332,24 +333,36 @@ class SegmentationViT(nn.Module):
                     kernel_size=1,
                 ).to(decoder_inputs.device)
             decoder_inputs = self.additional_projection(decoder_inputs)
+            print(
+                f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
+            )
 
         decoder_inputs = self.pre_upsample_projection(decoder_inputs)
+        print(
+            f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
+        )
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape
         feature_map_size = int(sequence**0.5)
         decoder_inputs = decoder_inputs.view(
             batch, channels, feature_map_size, feature_map_size
         )
+        print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
 
         for block in self.upsample_blocks:
             decoder_inputs = block(decoder_inputs)
+            print(
+                f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
+            )
 
         decoder_inputs = F.interpolate(
             decoder_inputs, size=(height, width), mode="bilinear"
         )
+        print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
         output = self.class_decoder(decoder_inputs)
-
+        print(f"class decoder output.shape: {output.shape}")
         output = {"logits": output}
+        print(f"output: {output}")
 
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
