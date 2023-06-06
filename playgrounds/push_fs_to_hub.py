@@ -110,10 +110,13 @@ if __name__ == "__main__":
                     dataset = value(set_name=set_name)
                     data_dict = {"image": [], "label": []}
                     with tqdm(total=len(dataset)) as pbar_data:
-                        for idx, item in enumerate(dataset):
-                            data_dict["image"].append(item[0])
-                            data_dict["label"].append(item[1])
-                            pbar_data.update(1)
+                        try:
+                            for idx, item in enumerate(dataset):
+                                data_dict["image"].append(item[0])
+                                data_dict["label"].append(item[1])
+                                pbar_data.update(1)
+                        except Exception as e:
+                            continue
 
                     hf_dataset = datasets.Dataset.from_dict(data_dict)
                     hf_dataset_dict[set_name] = hf_dataset
