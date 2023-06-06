@@ -327,6 +327,7 @@ class SegmentationViT(nn.Module):
 
         for block in self.decoder_blocks:
             decoder_inputs = block(decoder_inputs)
+            print(f"decoder_inputs.shape: {decoder_inputs.shape}")
 
         decoder_inputs = self.decoder_normalization(decoder_inputs)
         print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
