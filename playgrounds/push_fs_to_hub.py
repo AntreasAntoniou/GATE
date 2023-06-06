@@ -54,18 +54,18 @@ dataset_dict = {
     #     download=True,
     #     transform=T.Compose([T.Resize(size=(224, 224))]),
     # ),
-    "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
-        root=dataset_root,
-        mode=set_name,
-        download=True,
-        transform=T.Compose(
-            [
-                T.Resize(size=(224, 224)),
-                lambda x: torch.tensor(x) / 255.0,
-                T.ToPILImage(),
-            ]
-        ),
-    ),
+    # "mini_imagenet": lambda set_name: l2l.vision.datasets.MiniImagenet(
+    #     root=dataset_root,
+    #     mode=set_name,
+    #     download=True,
+    #     transform=T.Compose(
+    #         [
+    #             T.Resize(size=(224, 224)),
+    #             lambda x: torch.tensor(x) / 255.0,
+    #             T.ToPILImage(),
+    #         ]
+    #     ),
+    # ),
     # "vggflowers": lambda set_name: l2l.vision.datasets.VGGFlower102(
     #     root=dataset_root,
     #     mode=set_name,
@@ -84,7 +84,7 @@ dataset_dict = {
         download=True,
         transform=T.Compose(
             [
-                lambda x: torch.tensor(np.array(x)).permute([1, 2, 0]),
+                lambda x: torch.tensor(np.array(x)).unsqueeze(0),
                 T.Resize(size=(28, 28)),
             ]
         ),
