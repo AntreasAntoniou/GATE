@@ -61,7 +61,7 @@ dataset_dict = {
         transform=T.Compose(
             [
                 T.Resize(size=(224, 224)),
-                report_summary_statistics,
+                lambda x: torch.tensor(x) / 255.0,
                 T.ToPILImage(),
             ]
         ),
