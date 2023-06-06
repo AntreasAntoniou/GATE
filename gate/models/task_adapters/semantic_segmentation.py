@@ -315,7 +315,10 @@ class SegmentationViT(nn.Module):
         batch, _, height, width = image.shape
 
         features = self.encoder(image)["image"]["raw_features"]
-        print(f"stem features.shape: {features.shape}")
+        feature_dict_shape = [
+            f"{key}: {value.shape}" for key, value in features.items()
+        ]
+        print(f"stem features.shape: {feature_dict_shape}")
         decoder_inputs = self.decoder(features)
 
         class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
