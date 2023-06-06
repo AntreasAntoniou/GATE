@@ -336,27 +336,53 @@ class CallbackHandler(Callback):
             )
 
 
+import time
+
+
 class UploadCheckpointToHuggingFaceBackground(threading.Thread):
-    def __init__(self, repo_name: str, repo_owner: str, checkpoint_path: Path):
+    def __init__(
+        self,
+        repo_name: str,
+        repo_owner: str,
+        checkpoint_path: Path,
+        timeout: int = 10 * 60,
+    ):
         super().__init__()
         self.repo_name = repo_name
         self.repo_owner = repo_owner
         self.checkpoint_path = checkpoint_path
         self.hf_api = HfApi(token=os.environ["HF_TOKEN"])
         self.done = False
+        self.should_stop = False  # Flag to indicate the thread should stop
+        self.timeout = timeout  # Timeout in seconds
+        self.start_time = None
 
     def run(self):
-        try:
-            self.hf_api.upload_folder(
-                repo_id=f"{self.repo_owner}/{self.repo_name}",
-                folder_path=self.checkpoint_path,
-                path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
-            )
+        self.start_time = time.time()
+        succesful = False
+        while not succesful and not self.should_stop:
+            try:
+                self.hf_api.upload_folder(
+                    repo_id=f"{self.repo_owner}/{self.repo_name}",
+                    folder_path=self.checkpoint_path,
+                    path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+                )
 
-            self.done = True
-        except Exception as e:
-            logger.info(e)
-            self.run()
+                self.done = True
+                succesful = True
+            except Exception as e:
+                logger.info(e)
+                time.sleep(10)
+
+            if time.time() - self.start_time > self.timeout:
+                self.should_stop = True
+
+    def start_with_timeout(self):
+        self.start()
+        threading.Timer(self.timeout, self.stop).start()
+
+    def stop(self):
+        self.should_stop = True
 
 
 class UploadCheckpointsToHuggingFace(Callback):
