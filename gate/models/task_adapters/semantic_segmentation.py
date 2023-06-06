@@ -256,19 +256,15 @@ class SegmentationViT(nn.Module):
         self.upsample_blocks = nn.ModuleList(
             [
                 ResidualConvBlock(
-                    in_channels=self.decoder_embedding_dimension,
-                    out_channels=self.decoder_embedding_dimension,
+                    in_channels=num_classes,
+                    out_channels=num_classes,
                 )
                 for _ in range(decoder_depth)
             ]
         )
         self.additional_projection = None
-        self.decoder_normalization = norm_layer(
-            self.decoder_embedding_dimension
-        )
-        self.class_decoder = nn.Conv2d(
-            self.decoder_embedding_dimension, num_classes, kernel_size=1
-        )
+        self.decoder_normalization = norm_layer(num_classes)
+        self.class_decoder = nn.Conv2d(num_classes, num_classes, kernel_size=1)
 
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
