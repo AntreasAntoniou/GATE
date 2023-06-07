@@ -35,7 +35,10 @@ from torch.distributed.fsdp.wrap import (
     wrap,
 )
 
-from gate.data.image_text.zero_shot.flickr30k import build_dataset
+from gate.data.image_text.zero_shot.flickr30k import (
+    build_dataset,
+    build_gate_dataset,
+)
 from gate.models.task_specific_models.zero_shot_classification.clip import (
     build_gate_model,
 )
@@ -188,7 +191,9 @@ if __name__ == "__main__":
     rank = 0
 
     batch_size = 64
-    dataset = build_dataset("train", data_dir="/data1/")
+    dataset = build_gate_dataset(
+        data_dir="/data1/", transforms=model.transform
+    )["train"]
     epochs = 1
     lr = 1e-5
     gamma = 0.7
@@ -201,7 +206,7 @@ if __name__ == "__main__":
     mp.spawn(
         main,
         (
-            model,
+            model.model,
             rank,
             WORLD_SIZE,
             batch_size,
