@@ -52,6 +52,20 @@ RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
 RUN find /app/ -name "*.pyc" -type f -delete
 RUN echo y | pip install /app/[dev]
 
+# Install OpenSSH Server
+RUN apt-get update && apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
 
+# Set root password
+RUN echo 'root:230612' | chpasswd
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+# Expose SSH port
+EXPOSE 22
+
+# Run SSHD
+CMD ["/usr/sbin/sshd", "-D"]
 
 ENTRYPOINT ["/bin/bash"]
