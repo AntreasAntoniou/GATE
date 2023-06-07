@@ -23,8 +23,6 @@ def build_piqa_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
-
     train_data = load_dataset(
         path="piqa",
         split="train",

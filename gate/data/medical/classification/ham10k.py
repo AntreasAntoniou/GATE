@@ -1,7 +1,7 @@
 import os
 import pathlib
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -101,7 +101,7 @@ def build_dataset(
     data_dir: Optional[str] = None,
 ) -> dict:
     """
-    Build a DR dataset using the Hugging Face datasets library.
+    Build a HAM10K dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -111,11 +111,10 @@ def build_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
     torch.manual_seed(42)
 
     logger.info(
-        f"Loading Diabetic retinopathy dataset, will download to {data_dir} if necessary."
+        f"Loading HAM10 dataset, will download to {data_dir} if necessary."
     )
 
     dataset = HAM10KClassification(dataset_path=data_dir)
@@ -123,12 +122,10 @@ def build_dataset(
     train_length = int(len(dataset) * train_ratio)
     val_length = int(len(dataset) * val_ratio)
 
-    train_set = Subset(dataset, list(range(train_length)))
-    val_set = Subset(
-        dataset, list(range(train_length, train_length + val_length))
-    )
-    test_set = Subset(
-        dataset, list(range(train_length + val_length, len(dataset)))
+    train_set, val_set, test_set = random_split(
+        dataset,
+        [train_length, val_length, len(dataset) - train_length - val_length],
+        generator=torch.Generator().manual_seed(42),
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
@@ -136,36 +133,66 @@ def build_dataset(
     return dataset_dict
 
 
+idx_to_class = {
+    0: "Actinic Keratoses and Intraepithelial Carcinoma / Bowen's Disease (akiec)",
+    1: "Basal Cell Carcinoma (bcc)",
+    2: "Benign Keratosis (bkl)",
+    3: "Dermatofibroma (df)",
+    4: "Melanoma (mel)",
+    5: "Melanocytic Nevi (nv)",
+    6: "Vascular Lesions (vasc)",
+}
+
+class_idx_to_descriptions = {
+    0: "akiec",
+    1: "bcc",
+    2: "bkl",
+    3: "df",
+    4: "mel",
+    5: "nv",
+    6: "vasc",
+}
+
+
+def dataset_format_transform(sample: Dict) -> Dict:
+    # Example of sample:
+    # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=600x450 at 0x7F8E1B7B6410>, 'labels': 1}
+
+    input_dict = {}
+    input_dict["image"] = sample["image"]
+    input_dict["labels"] = torch.zeros(len(class_idx_to_descriptions))
+    input_dict["labels"][sample["labels"]] = 1
+    return input_dict
+
+
 @configurable(
     group="dataset",
-    name="diabetic_retionopathy",
+    name="ham10k",
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=4,
+    num_classes=len(class_idx_to_descriptions),
+    label_idx_to_class_name=class_idx_to_descriptions,
 ) -> dict:
     dataset_dict = build_dataset(data_dir=data_dir)
     train_set = GATEDataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
-        task=ClassificationTask(),
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        task=ClassificationTask(),
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        task=ClassificationTask(),
-        transforms=transforms,
+        transforms=[dataset_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
@@ -184,12 +211,19 @@ class DefaultHyperparameters:
     num_classes: int = 4
 
 
+if __name__ == "__main__":
+    dataset = build_gate_dataset(data_dir=DATASET_DIR)
+
+    for item in dataset["train"]:
+        print(item)
+        break
+
 # Details on classes https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6091241/
+
 # akiec
 # Actinic Keratoses (Solar Keratoses) and Intraepithelial Carcinoma
 # (Bowen’s disease) are common non-invasive, variants of squamous
 # cell carcinoma that can be treated locally without surgery.
-
 # The dermatoscopic criteria of pigmented actinic keratoses and Bowen’s disease.
 
 # bcc
@@ -220,7 +254,5 @@ class DefaultHyperparameters:
 
 # vasc
 # Vascular skin lesions in the dataset range from cherry angiomas to angiokeratomas31 and pyogenic granulomas32. Hemorrhage is also included in this category.
-
 # Angiomas are dermatoscopically characterized by red or purple color and solid, well circumscribed structures known as red clods or lacunes.
-
 # The number of images in the datasets does not correspond to the number of unique lesions, because we also provide images of the same lesion taken at different magnifications or angles (Fig. 4), or with different cameras. This should serve as a natural data-augmentation as it shows random transformations and visualizes both general and local features.

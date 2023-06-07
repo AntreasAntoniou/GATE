@@ -174,6 +174,16 @@ def pretty_config(
         if isinstance(config_section, DictConfig):
             branch_content = OmegaConf.to_yaml(config_section, resolve=resolve)
 
+        # theme list ['default', 'emacs', 'friendly', 'friendly_grayscale',
+        # 'colorful', 'autumn', 'murphy', 'manni', 'material', 'monokai',
+        # 'perldoc', 'pastie', 'borland', 'trac', 'native', 'fruity', 'bw',
+        # 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 'paraiso-light',
+        # 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino',
+        # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light',
+        # 'sas', 'staroffice', 'stata', 'stata-light', 'stata-dark',
+        # 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light',
+        # 'dracula', 'one-dark', 'lilypond', 'nord', 'nord-darker',
+        # 'github-dark']
         branch.add(Syntax(branch_content, "yaml", theme="one-dark"))
 
     return tree
@@ -274,20 +284,19 @@ def download_model_with_name(
         "optimizer.bin": "optimizer_filepath",
         "pytorch_model.bin": "model_filepath",
         "random_states_0.pkl": "random_states_filepath",
-        "scaler.pt": "scaler_filepath",
+        # "scaler.pt": "scaler_filepath",
     }
 
     downloaded_files = {}
-
+    invalid_download = False
     for filename, key in file_mapping.items():
         try:
             target_path = checkpoint_dir / filename
             download_and_copy(filename, target_path)
             downloaded_files[key] = target_path
         except Exception as e:
-            if key != "scaler_filepath":
-                raise e
-
+            invalid_download = True
+            logger.info(f"Error downloading {filename}: {e}")
     # Handle config.yaml separately
     config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
     download_and_copy("config.yaml", config_target_path, subfolder="")
@@ -301,6 +310,7 @@ def download_model_with_name(
             return {}
 
     downloaded_files["root_filepath"] = checkpoint_dir
+    downloaded_files["validation_passed"] = not invalid_download
 
     return downloaded_files
 
@@ -324,11 +334,6 @@ def upload_config_files(
     cfg: Any, hf_cache_dir: str, hf_repo_path: str
 ) -> None:
     config_dict = OmegaConf.to_container(cfg, resolve=True)
-    config_json_path = save_json(
-        pathlib.Path(hf_cache_dir) / "config.json",
-        config_dict,
-        overwrite=True,
-    )
     config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
@@ -336,7 +341,6 @@ def upload_config_files(
         yaml.dump(config_dict, file)
 
     for filepath, path_in_repo in [
-        (config_json_path, "config.json"),
         (config_yaml_path, "config.yaml"),
     ]:
         hf_api.upload_file(
@@ -394,12 +398,25 @@ def create_hf_model_repo_and_download_maybe(
             ckpt_identifier=resume_from_checkpoint,
         )
     elif resume:
-        latest_ckpt = ckpt_dict[max(ckpt_dict.keys())].split("/")[-1]
-        return download_checkpoint(
-            hf_cache_dir=hf_cache_dir,
-            hf_repo_path=hf_repo_path,
-            ckpt_identifier=latest_ckpt,
-        )
+        valid_model_downloaded = False
+        idx = 0
+        ckpt_list = sorted(list(ckpt_dict.keys()), reverse=True)
+        print(ckpt_list)
+        while not valid_model_downloaded:
+            if len(ckpt_list) < idx + 1:
+                logger.info("No valid checkpoint found. starting from scratch")
+                return None
+            latest_ckpt = pathlib.Path(
+                ckpt_dict[ckpt_list[idx]].split("/")[-1]
+            )
+            download_dict = download_checkpoint(
+                hf_cache_dir=hf_cache_dir,
+                hf_repo_path=hf_repo_path,
+                ckpt_identifier=latest_ckpt,
+            )
+            valid_model_downloaded = download_dict["validation_passed"]
+            idx += 1
+        return download_dict
     else:
         print(f"Created repo {hf_repo_path}, {hf_cache_dir}")
         return None

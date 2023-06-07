@@ -29,6 +29,8 @@ class Evaluator(ABC):
         self.model_selection_metric_higher_is_better = (
             model_selection_metric_higher_is_better
         )
+        self.val_idx = 0
+        self.test_idx = 0
 
     @abstractmethod
     def step(self, model, batch, global_step):
@@ -47,28 +49,41 @@ class Evaluator(ABC):
         pass
 
     def get_best_model_global_step_and_metric(
-        self, metric_name: str, higher_is_better: bool
+        self, metric_name: str, higher_is_better: bool, kth_best: int = 1
     ):
         # Finds the best model based on the metric name,
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
+        print(
+            f"global_steps: {global_steps}, per_epoch_metrics: {self.per_epoch_metrics}, current_epoch_dict: {self.current_epoch_dict}"
+        )
 
         if isinstance(metrics, List):
             if len(metrics) == 0:
-                raise ValueError(f"No epoch values found for {metric_name}")
-
+                raise ValueError(
+                    f"No epoch values found for {metric_name}, "
+                    f"the available metrics are: {self.per_epoch_metrics.keys()}"
+                )
+            metrics = [torch.tensor(metric) for metric in metrics]
             metrics = torch.stack(metrics)
 
+        metric_sorting = torch.argsort(torch.tensor(metrics))
+
+        # if higher_is_better:
+        #     best_metric_idx = metric_sorting[-kth_best:]
+        # else:
+        #     best_metric_idx = metric_sorting[:kth_best]
+
+        best_global_step = list(
+            set([global_steps[idx] for idx in metric_sorting])
+        )
+        best_metric = list(set([metrics[idx] for idx in metric_sorting]))
+
         if higher_is_better:
-            best_metric_idx = torch.argmax(torch.tensor(metrics))
+            return best_global_step[-kth_best:], best_metric[-kth_best:]
         else:
-            best_metric_idx = torch.argmin(torch.tensor(metrics))
-
-        best_global_step = global_steps[best_metric_idx]
-        best_metric = metrics[best_metric_idx]
-
-        return best_global_step, best_metric
+            return best_global_step[:kth_best], best_metric[:kth_best]
 
     @collect_metrics
     def start_validation(
@@ -77,6 +92,7 @@ class Evaluator(ABC):
     ):
         self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
+
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",
@@ -88,13 +104,14 @@ class Evaluator(ABC):
     def start_testing(
         self,
         global_step: int,
+        prefix: Optional[str] = None,
     ):
         self.current_epoch_dict = defaultdict(list)
         self.starting_eval = True
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=self.current_epoch_dict,
             experiment_tracker=self.experiment_tracker,
         )
@@ -128,15 +145,24 @@ class Evaluator(ABC):
     def end_testing(
         self,
         global_step: int,
+        prefix: Optional[str] = None,
     ):
         phase_metrics = {}
         for key, value in self.current_epoch_dict.items():
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
             phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
+            self.per_epoch_metrics[f"{key}-epoch-mean"].append(
+                phase_metrics[f"{key}-epoch-mean"]
+            )
+            self.per_epoch_metrics[f"{key}-epoch-std"].append(
+                phase_metrics[f"{key}-epoch-std"]
+            )
+
+        self.per_epoch_metrics["global_step"].append(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=phase_metrics,
             experiment_tracker=self.experiment_tracker,
         )

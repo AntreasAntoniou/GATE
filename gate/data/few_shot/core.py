@@ -1,4 +1,5 @@
-import json
+from collections import defaultdict
+import yaml
 import pathlib
 from re import split
 from typing import Any, Counter, Dict, List, Optional
@@ -10,18 +11,131 @@ import torch
 import torchvision.transforms as T
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
+import multiprocessing as mp
 from tqdm.auto import tqdm
 
-from gate.boilerplate.utils import get_logger, load_json, save_json
+from gate.boilerplate.utils import get_logger
 from gate.data.few_shot.utils import (
     FewShotSuperSplitSetOptions,
     get_class_to_idx_dict,
     get_class_to_image_idx_and_bbox,
 )
+import pandas as pd
 
 logger = get_logger(
     __name__,
 )
+
+import pyarrow as pa
+import pyarrow.parquet as pq
+import pandas as pd
+from datasets import load_dataset
+from torch.utils.data import Dataset
+
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
+
+
+def save_dict_to_yaml(filepath, dict_to_store):
+    with open(filepath, "w") as file:
+        yaml.dump(dict_to_store, file)
+
+
+def load_yaml_to_dict(filepath):
+    with open(filepath, "r") as file:
+        return yaml.safe_load(file)
+
+
+def process_sample(args):
+    dataset, transforms, set_name, idx = args
+    sample = dataset[idx]
+    sample = transforms(sample)
+    sample["label"] = f"{set_name}-{sample['label']}"
+    return sample
+
+
+def convert_to_dict(
+    pytorch_dataset_list,
+    pytorch_dataset_set_name_list,
+    transforms,
+):
+    """
+    Convert a PyTorch dataset to a Parquet file.
+
+    Args:
+        pytorch_dataset (torch.utils.data.Dataset): The PyTorch dataset to convert.
+        parquet_file_path (str): The path where the Parquet file will be saved.
+    """
+    data = defaultdict(list)
+    idx = 0
+
+    with ThreadPoolExecutor(max_workers=mp.cpu_count()) as executor:
+        for set_name, subset in zip(
+            pytorch_dataset_set_name_list, pytorch_dataset_list
+        ):
+            args = [
+                (subset, transforms, set_name, i)
+                for i in tqdm(range(len(subset)))
+            ]
+            results = executor.map(process_sample, args)
+            for result in tqdm(results):
+                data["idx"].append(idx)
+                for key, value in result.items():
+                    data[key].append(value)
+                idx += 1
+
+    return data
+
+
+def _get_dict_based_on_original_splits(class_to_address_dict, split_name):
+    """Get current class to address dict based on split percentage."""
+    split_dict = {"train": {}, "val": {}, "test": {}}
+    for key, value in class_to_address_dict.items():
+        split_dict[split_name][key] = value
+
+    return split_dict
+
+
+def _get_start_end_indices(num_classes, split_percentage, split_name):
+    """Get start and end indices based on split name."""
+    train_percentage = split_percentage["train"]
+    val_percentage = split_percentage["val"]
+    test_percentage = split_percentage["test"]
+
+    start_idx = 0
+    end_idx = num_classes
+
+    if split_name == "train":
+        end_idx = int(num_classes * train_percentage)
+    elif split_name == "val":
+        start_idx = int(num_classes * train_percentage)
+        end_idx = start_idx + int(num_classes * val_percentage)
+    elif split_name == "test":
+        start_idx = int(num_classes * train_percentage) + int(
+            num_classes * val_percentage
+        )
+        end_idx = start_idx + int(num_classes * test_percentage)
+    else:
+        raise ValueError(f"Unknown split name: {split_name}")
+
+    # print(f"start_idx: {start_idx}, end_idx: {end_idx}, for {split_name}")
+
+    return start_idx, end_idx
+
+
+def _get_dict_based_on_split_percentage(
+    class_to_address_dict, split_percentage, split_name
+):
+    """Get current class to address dict based on split percentage."""
+    start_idx, end_idx = _get_start_end_indices(
+        len(class_to_address_dict), split_percentage, split_name
+    )
+    split_dict = {
+        key: value
+        for idx, (key, value) in enumerate(class_to_address_dict.items())
+        if start_idx <= idx < end_idx
+    }
+    return split_dict
 
 
 # convert a list of dicts into a dict of lists
@@ -96,7 +210,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self,
         dataset_name: str,
         dataset_root: str,
-        dataset_class: Any,
+        dataset_dict: datasets.DatasetDict,
         split_name: str,
         num_episodes: int,
         min_num_classes_per_set: int,
@@ -107,8 +221,6 @@ class FewShotClassificationMetaDataset(Dataset):
         num_queries_per_class: int,
         variable_num_samples_per_class: bool,
         variable_num_classes_per_set: bool,
-        input_target_annotation_keys: Dict,
-        subset_split_name_list: Optional[List[str]] = None,
         split_percentage: Optional[Dict[str, float]] = None,
         split_config: Optional[DictConfig] = None,
         split_as_original: Optional[bool] = False,
@@ -117,14 +229,17 @@ class FewShotClassificationMetaDataset(Dataset):
         support_set_target_transform: Any = None,
         query_set_target_transform: Any = None,
         preprocess_transforms: Optional[Any] = None,
-        max_support_set_size: Optional[int] = 100,
+        max_support_set_size: Optional[int] = 200,
     ):
         super(FewShotClassificationMetaDataset, self).__init__()
 
         self.dataset_name = dataset_name
-        self.dataset_root = pathlib.Path(dataset_root)
-        self.dataset_class = dataset_class
-        self.input_target_annotation_keys = input_target_annotation_keys
+        self.dataset_root = pathlib.Path(dataset_root) / dataset_name
+
+        if not self.dataset_root.exists():
+            self.dataset_root.mkdir(parents=True, exist_ok=True)
+
+        self.dataset_dict = dataset_dict
         self.num_episodes = num_episodes
         self.split_config = split_config
         self.preprocess_transform = preprocess_transforms
@@ -155,37 +270,41 @@ class FewShotClassificationMetaDataset(Dataset):
         self.split_name = split_name
         self.split_percentage = split_percentage
 
-        if subset_split_name_list is None:
-            subset_split_name_list = ["train", "test"]
-
-        self.dataset = self._load_subsets(subset_split_name_list)
+        if len(list(self.dataset_dict.keys())) == 1:
+            self.dataset = self.dataset_dict[list(self.dataset_dict.keys())[0]]
+        else:
+            self.dataset = self.dataset_dict[
+                split_name if split_name != "val" else "validation"
+            ]
 
         class_to_address_dict_path = (
-            self.dataset_root
-            / self.dataset_name
-            / "class_to_address_dict.json"
+            self.dataset_root / f"{split_name}-class_to_address_dict.yaml"
         )
+
         if class_to_address_dict_path.exists():
-            self.class_to_address_dict = load_json(
+            self.class_to_address_dict = load_yaml_to_dict(
                 filepath=class_to_address_dict_path
             )
         else:
             self.class_to_address_dict = get_class_to_idx_dict(
                 dataset=self.dataset,
-                class_name_key=self.input_target_annotation_keys[
-                    "target_annotations"
-                ],
             )
-            save_json(
+            save_dict_to_yaml(
                 filepath=class_to_address_dict_path,
                 dict_to_store=self.class_to_address_dict,
-                overwrite=True,
             )
 
         self.current_class_to_address_dict = (
-            self._get_current_class_to_address_dict()
+            self._get_current_class_to_address_dict(
+                class_to_address_dict=self.class_to_address_dict,
+                split_config=self.split_config,
+                split_percentage=self.split_percentage,
+                split_as_original=self.split_as_original,
+                split_name=self.split_name,
+            )
         )
-        # logger.info(
+
+        # print(
         #     f"Current class to address dict: {self.current_class_to_address_dict}"
         # )
 
@@ -212,37 +331,29 @@ class FewShotClassificationMetaDataset(Dataset):
     def _load_subsets(self, subset_split_name_list):
         """Load and process the subsets."""
         dataset_path = self.dataset_root / self.dataset_name
-        state_path = dataset_path / "dataset_info.json"
 
-        if state_path.exists():
-            return datasets.Dataset.load_from_disk(dataset_path)
+        if not dataset_path.exists():
+            subsets = [
+                self.dataset_dict(
+                    subset_name,
+                )
+                for subset_name in subset_split_name_list
+            ]
 
-        subsets = [
-            self.dataset_class(
-                subset_name,
+            dataset_dict = convert_to_dict(
+                pytorch_dataset_list=subsets,
+                pytorch_dataset_set_name_list=subset_split_name_list,
+                transforms=self.preprocess_transform,
             )
-            for subset_name in subset_split_name_list
-        ]
-        datapoints = []
-        label_set = set()
 
-        for set_name, subset in zip(subset_split_name_list, subsets):
-            with tqdm(total=len(subset)) as pbar:
-                for sample in subset:
-                    sample = self._process_sample(sample)
-                    label_set.add(sample["label"])
+            print("Converting to hf dataset...")
+            hf_dataset = datasets.Dataset.from_dict(dataset_dict)
+            print("Saving hf dataset...")
+            hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
+        else:
+            hf_dataset = datasets.load_from_disk(dataset_path)
 
-                    sample["label"] = f"{set_name}-{sample['label']}"
-
-                    datapoints.append(sample)
-                    pbar.update(1)
-
-        print(f"Number of classes: {len(label_set)}")
-        dataset = datasets.Dataset.from_list(datapoints)
-
-        # Save the dataset to a directory
-        dataset.save_to_disk(self.dataset_root / self.dataset_name)
-        return dataset
+        return hf_dataset
 
     def _process_sample(self, sample):
         """Process a sample and return its numpy representation."""
@@ -250,16 +361,27 @@ class FewShotClassificationMetaDataset(Dataset):
             return self.preprocess_transform(sample)
         return sample
 
-    def _get_current_class_to_address_dict(self):
+    def _get_current_class_to_address_dict(
+        self,
+        class_to_address_dict,
+        split_as_original,
+        split_config,
+        split_name,
+        split_percentage,
+    ):
         """Get current class to address dict based on split config."""
-        if self.split_as_original is True:
-            return self._get_dict_based_on_original_splits()[self.split_name]
-        elif self.split_config is None:
-            return self._get_dict_based_on_split_percentage()
+        if split_as_original is True:
+            return _get_dict_based_on_original_splits(
+                class_to_address_dict, split_name
+            )[split_name]
+        elif split_config is None:
+            return _get_dict_based_on_split_percentage(
+                class_to_address_dict, split_percentage, split_name
+            )
         else:
             return {
-                label_name: self.class_to_address_dict[label_name]
-                for label_name in self.split_config[self.split_name]
+                label_name: class_to_address_dict[label_name]
+                for label_name in split_config[split_name]
             }
 
     def _get_dict_based_on_split_percentage(self):
@@ -278,12 +400,7 @@ class FewShotClassificationMetaDataset(Dataset):
         """Get current class to address dict based on split percentage."""
         split_dict = {"train": {}, "val": {}, "test": {}}
         for key, value in self.class_to_address_dict.items():
-            if "train" in key:
-                split_dict["train"][key] = value
-            elif "val" in key:
-                split_dict["val"][key] = value
-            elif "test" in key:
-                split_dict["test"][key] = value
+            split_dict[self.split_name][key] = value
 
         return split_dict
 
@@ -333,7 +450,7 @@ class FewShotClassificationMetaDataset(Dataset):
         self, class_to_num_available_samples
     ):
         """Calculate the number of query samples per class."""
-        # logger.info(
+        # logger.debug(
         #     f"Class to num available samples: {class_to_num_available_samples}"
         # )
         min_available_shots = min(
@@ -408,15 +525,11 @@ class FewShotClassificationMetaDataset(Dataset):
     def _get_data_inputs_and_labels(self, selected_samples_addresses):
         """Get the data inputs and labels."""
         data_inputs = [
-            self.dataset[idx][self.input_target_annotation_keys["inputs"]]
-            for idx in selected_samples_addresses
+            self.dataset[idx]["image"] for idx in selected_samples_addresses
         ]
 
         data_labels = [
-            self.dataset[idx][
-                self.input_target_annotation_keys["target_annotations"]
-            ]
-            for idx in selected_samples_addresses
+            self.dataset[idx]["label"] for idx in selected_samples_addresses
         ]
 
         return data_inputs, data_labels
@@ -579,12 +692,12 @@ class FewShotClassificationMetaDataset(Dataset):
         available_class_labels = list(
             self.current_class_to_address_dict.keys()
         )
-        logger.info(f"Available class labels: {available_class_labels}")
+        logger.debug(f"Available class labels: {available_class_labels}")
         selected_classes_for_set = rng.choice(
             available_class_labels,
             size=min(num_classes_per_set, len(available_class_labels)),
         )
-        logger.info(f"Selected classes for set: {selected_classes_for_set}")
+        logger.debug(f"Selected classes for set: {selected_classes_for_set}")
 
         # Generate mapping from label to local index and prepare for
         # sample selection
@@ -592,7 +705,7 @@ class FewShotClassificationMetaDataset(Dataset):
             label_name: i
             for i, label_name in enumerate(selected_classes_for_set)
         }
-        logger.info(
+        logger.debug(
             f"Label index to local label index: {label_idx_to_local_label_idx}"
         )
         self.class_to_num_available_samples = (

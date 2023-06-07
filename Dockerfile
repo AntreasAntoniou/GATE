@@ -34,18 +34,38 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
-RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 
 RUN mkdir /app/
 ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
 ADD setup.py /app/
 RUN echo y | pip install -r /app/requirements_dev.txt
+RUN export HF_HUB_ENABLE_HF_TRANSFER=1
+RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 RUN pip install -e learn2learn
+RUN echo y | pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121 --upgrade
+
+RUN echo y | pip install --upgrade huggingface_hub
 
 ADD gate/ /app/gate
+RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
+RUN find /app/ -name "*.pyc" -type f -delete
 RUN echo y | pip install /app/[dev]
 
+# Install OpenSSH Server
+RUN apt-get update && apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
 
+# Set root password
+RUN echo 'root:230612' | chpasswd
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+# Expose SSH port
+EXPOSE 22
+
+# Run SSHD
+CMD ["/usr/sbin/sshd", "-D"]
 
 ENTRYPOINT ["/bin/bash"]

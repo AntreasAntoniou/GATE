@@ -1,6 +1,8 @@
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
+import datasets
+import multiprocessing as mp
 
 import learn2learn as l2l
 import PIL
@@ -46,10 +48,10 @@ class DescribableTexturesFewShotClassificationDataset(
         super(DescribableTexturesFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.DescribableTextures(
-                root=dataset_root,
-                mode=set_name,
-                download=download,
+            dataset_dict=datasets.load_dataset(
+                path="Antreas/describable_textures",
+                cache_dir=dataset_root,
+                num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -59,17 +61,11 @@ class DescribableTexturesFewShotClassificationDataset(
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            input_target_annotation_keys=dict(
-                inputs="image",
-                targets="label",
-                target_annotations="label",
-            ),
             support_set_input_transform=support_set_input_transform,
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
             split_as_original=True,
-            subset_split_name_list=["train", "validation", "test"],
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -120,7 +116,7 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_classes_per_set=5,
         min_num_samples_per_class=2,
         min_num_queries_per_class=2,
-        num_classes_per_set=10,
+        num_classes_per_set=20,
         num_samples_per_class=15,
         num_queries_per_class=5,
         variable_num_samples_per_class=True,

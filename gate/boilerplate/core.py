@@ -1,3 +1,4 @@
+import copy
 import pathlib
 import time
 from pathlib import Path
@@ -7,9 +8,9 @@ from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 from accelerate import Accelerator
-from neptune import Run
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from transformers import AutoModel
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
@@ -23,6 +24,7 @@ from gate.config.variables import (
     HYDRATED_TRAIN_ITERS,
     RESUME,
 )
+from gate.models.core import Ensemble, GATEModel
 from gate.orchestration.evaluators.classification import Evaluator
 from gate.orchestration.trainers.classification import Trainer
 
@@ -73,7 +75,6 @@ class Learner(nn.Module):
         print_model_parameters: Optional[bool] = False,
         hf_cache_dir: Optional[str] = None,
         hf_repo_path: Optional[str] = None,
-        experiment_tracker: Optional[Run] = None,
         dummy_batch_mode: Optional[bool] = False,
     ):
         """
@@ -104,7 +105,6 @@ class Learner(nn.Module):
         self.hf_repo_path = hf_repo_path
         self.background_threads = []
         self.checkpoints_dir = Path(self.experiment_dir / "checkpoints")
-        self.neptune_run = experiment_tracker
 
         if not self.experiment_dir.exists():
             self.experiment_dir.mkdir(parents=True)
@@ -231,7 +231,7 @@ class Learner(nn.Module):
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_validation_step_end(model, batch)
 
-    def testing_step(self, model, batch):
+    def testing_step(self, model, batch, prefix):
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_testing_step_start(model, batch)
 
@@ -240,6 +240,7 @@ class Learner(nn.Module):
             batch=batch,
             global_step=self.global_step,
             accelerator=self.accelerator,
+            prefix=prefix,
         )
 
         self.callback_handler.on_batch_end(model, batch)
@@ -273,12 +274,23 @@ class Learner(nn.Module):
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
+        TIME_LIMIT = 600  # 10 minutes
+
         for thread in self.background_threads:
             if not thread.done:
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
-                    thread.start()
-                    break
+                    thread.start_with_timeout()
+                else:
+                    # Check if the thread has been running for too long
+                    elapsed_time = time.time() - thread.start_time
+                    if elapsed_time > TIME_LIMIT:
+                        print(
+                            f"Thread {thread} has been running for too long. Stopping it."
+                        )
+                        exit()  # experiment kills itself to prevent upload mechanism from completely halting the program
+                        # Here you can stop the thread. However, keep in mind that stopping a thread is tricky in Python.
+                        # You might need to set a flag that the thread checks regularly and stops itself when the flag is set.
             else:
                 self.background_threads.remove(thread)
                 print(f"Removing thread {thread} since it is done")
@@ -307,27 +319,33 @@ class Learner(nn.Module):
             logger.debug("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
 
+        while len(self.background_threads) > 0:
+            self.check_manage_background_threads()
+            sleep(1)
+
         logger.debug("Validation finished 🎉")
 
-    def start_testing(self):
+    def start_testing(self, prefix):
         self.callback_handler.on_testing_start(
             experiment=self, model=self.model
         )
 
         self.evaluator.start_testing(
-            global_step=self.global_step,
+            global_step=self.global_step, prefix=prefix
         )
         logger.debug("Starting testing 🧪")
 
-    def end_testing(self):
+    def end_testing(self, prefix):
         self.callback_handler.on_testing_end(
             experiment=self,
             model=self.model,
         )
 
-        self.evaluator.end_testing(
-            global_step=self.global_step,
-        )
+        self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
+
+        while len(self.background_threads) > 0:
+            self.check_manage_background_threads()
+            sleep(1)
 
         logger.debug("Testing finished 🎉")
 
@@ -355,20 +373,21 @@ class Learner(nn.Module):
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
 
-        if model is None:
-            if self.evaluator[0].model_selection_metric_name is not None:
-                self.load_best_model(
-                    metric_name=self.evaluator[0].model_selection_metric_name,
-                    higher_is_better=self.evaluator[
-                        0
-                    ].model_selection_metric_higher_is_better,
-                )
-            model = self.accelerator.prepare(self.model)
+        for kth in [1, 3]:
+            if model is None:
+                if self.evaluator.model_selection_metric_name is not None:
+                    self.load_best_model(
+                        metric_name=self.evaluator.model_selection_metric_name,
+                        higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
+                        kth_best=kth,
+                    )
+                model = self.accelerator.prepare(self.model)
 
-        self._testing_loop(
-            test_dataloader=self.test_dataloader,
-            model=model,
-        )
+            self._testing_loop(
+                test_dataloader=self.test_dataloader,
+                model=model,
+                prefix=f"ensemble_{kth}",
+            )
 
     def _training_loop(self, train_dataloader: DataLoader = None):
         if train_dataloader is None:
@@ -406,7 +425,6 @@ class Learner(nn.Module):
 
                         if self.step_idx % self.evaluate_every_n_steps == 0:
                             self._validation_loop()
-                            self.check_manage_background_threads()
 
                         if self.step_idx >= self.train_iters:
                             return self.end_training()
@@ -464,6 +482,7 @@ class Learner(nn.Module):
         self,
         test_dataloader: List[DataLoader] = None,
         model: nn.Module = None,
+        prefix: Optional[str] = None,
     ):
         if test_dataloader is None:
             test_dataloader = self.test_dataloader
@@ -472,17 +491,18 @@ class Learner(nn.Module):
             model = self.model
 
         if test_dataloader is not None:
-            self.start_testing()
+            self.start_testing(prefix=prefix)
 
             with tqdm(total=len(test_dataloader)) as pbar_dataloaders:
                 for batch_idx, batch in enumerate(test_dataloader):
                     self.testing_step(
                         model=model,
                         batch=batch,
+                        prefix=prefix,
                     )
                     pbar_dataloaders.update(1)
 
-            self.end_testing()
+            self.end_testing(prefix=prefix)
 
     def save_checkpoint(
         self,
@@ -501,9 +521,8 @@ class Learner(nn.Module):
                 "eval": self.evaluator.current_epoch_dict,
             },
             per_epoch_metrics={
-                "eval": self.evaluator.current_epoch_dict,
+                "eval": self.evaluator.per_epoch_metrics,
             },
-            neptune_id=self.neptune_run._id if self.neptune_run else None,
         )
 
         torch.save(
@@ -511,7 +530,7 @@ class Learner(nn.Module):
             f=ckpt_save_path / "trainer_state.pt",
         )
         self.accelerator.save_state(ckpt_save_path)
-        logger.debug(f"Saved checkpoint to {ckpt_save_path}")
+
         self.callback_handler.on_save_checkpoint(
             model=self.model,
             optimizer=self.trainer.optimizer,
@@ -533,8 +552,6 @@ class Learner(nn.Module):
 
         if not (pathlib.Path(checkpoint_path) / "trainer_state.pt").exists():
             return
-
-        logger.debug(f"Loading checkpoint from {checkpoint_path}")
 
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
@@ -586,20 +603,51 @@ class Learner(nn.Module):
             checkpoint_path=checkpoint_path,
         )
 
-    def load_best_model(self, metric_name: str, higher_is_better: bool):
-        best_global_step, best_metric = self.evaluator[
-            0
-        ].get_best_model_global_step_and_metric(metric_name, higher_is_better)
+    def load_best_model(
+        self, metric_name: str, higher_is_better: bool, kth_best: int
+    ):
+        (
+            best_global_step,
+            best_metric,
+        ) = self.evaluator.get_best_model_global_step_and_metric(
+            metric_name, higher_is_better, kth_best=kth_best
+        )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
         )
         print(
             f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
-        download_dict = download_model_with_name(
-            hf_repo_path=self.hf_repo_path,
-            hf_cache_dir=self.hf_cache_dir,
-            model_name=f"ckpt_{best_global_step}",
-        )
+        download_dict_list = []
+        for global_step in best_global_step:
+            download_dict = download_model_with_name(
+                hf_repo_path=self.hf_repo_path,
+                hf_cache_dir=self.hf_cache_dir,
+                model_name=f"ckpt_{global_step}",
+            )
+            download_dict_list.append(download_dict)
 
-        self.load_checkpoint(checkpoint_path=download_dict["root_filepath"])
+        models = []
+
+        for download_dict in download_dict_list:
+            # Create a new instance of the model architecture
+            model = copy.deepcopy(self.model)
+
+            # Load the state dictionary
+            state_dict = torch.load(
+                download_dict["model_filepath"], map_location="cpu"
+            )
+
+            # Use Accelerate's state_dict loading
+            model.load_state_dict(state_dict)
+
+            models.append(model.model)
+
+        self.model = GATEModel(
+            config=self.model.config,
+            model=Ensemble(models=models),
+            key_remapper_dict=self.model.key_remapper_dict,
+        )
+        self.model = self.accelerator.prepare(self.model)
+
+        return self.model
