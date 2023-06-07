@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+from rich import print
 
 import torch
 import torch.nn as nn
-
-from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
+
 
 logger = get_logger(__name__, set_rich=True)
 
@@ -86,7 +86,6 @@ class GATEModel(nn.Module):
                     self.supported_input_modalities[
                         (supported_modalities, target_modality_name)
                     ] = True
-        # print(self.supported_input_modalities)
 
     def process_modalities(
         self,
@@ -216,3 +215,121 @@ def reinit(input_module: nn.Module):
             torch.nn.init.normal_(module.weight, std=0.02)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
+
+
+def recursive_mean(tensor_dict):
+    if isinstance(tensor_dict, dict):
+        return {k: recursive_mean(v) for k, v in tensor_dict.items()}
+    elif isinstance(tensor_dict, list):
+        if all(isinstance(i, torch.Tensor) for i in tensor_dict):
+            return torch.mean(torch.stack(tensor_dict), dim=0)
+        elif all(isinstance(i, dict) for i in tensor_dict):
+            keys = tensor_dict[0].keys()
+            return {
+                key: recursive_mean([d[key] for d in tensor_dict])
+                for key in keys
+            }
+        else:
+            return [recursive_mean(i) for i in tensor_dict]
+    elif isinstance(tensor_dict, torch.Tensor):
+        return tensor_dict
+    elif isinstance(tensor_dict, bool):
+        return tensor_dict
+    else:
+        raise ValueError(
+            f"Unsupported data type for recursive_mean, data type is {type(tensor_dict)}"
+        )
+
+
+def flatten_dict(d, parent_key="", sep="_"):
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+def print_dict_structure(d, indent=0):
+    from rich import print
+
+    for key, value in d.items():
+        print(" " * indent + str(key))
+        if isinstance(value, dict):
+            print_dict_structure(value, indent + 2)
+
+
+class Ensemble(nn.Module):
+    """
+    This class represents an ensemble of PyTorch models. It can compute ensemble predictions,
+    weighted ensemble predictions, and predictions from a "model soup" that averages the models' parameters.
+    """
+
+    def __init__(self, models: list[nn.Module]):
+        """
+        Initialize the Ensemble with a list of models and optional weights.
+
+        Args:
+            models (list[nn.Module]): A list of PyTorch models.
+            weights (list[float], optional): A list of weights for the models. Defaults to None, which gives equal weight to all models.
+        """
+        super(Ensemble, self).__init__()
+        self.models = nn.ModuleList(models)
+        if hasattr(models[0], "compute_loss_and_metrics"):
+            self.compute_loss_and_metrics = models[0].compute_loss_and_metrics
+        else:
+            self.compute_loss_and_metrics = None
+
+    def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
+        """
+        Compute the ensemble predictions, weighted ensemble predictions, and model soup predictions.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            dict[str, torch.Tensor]: A dictionary containing the ensemble predictions, weighted ensemble predictions, and model soup predictions.
+        """
+        with torch.inference_mode():
+            # # Get the outputs from each model
+            model_outputs = [model(*args, **kwargs) for model in self.models]
+            labels = None
+
+            if "labels" in kwargs:
+                labels = kwargs["labels"]
+
+            if "labels" in model_outputs[0]:
+                labels = model_outputs[0]["labels"]
+
+            ensemble_pred = {}
+
+            if isinstance(model_outputs[0]["logits"], torch.Tensor):
+                ensemble_pred = torch.mean(
+                    torch.stack(
+                        [output["logits"] for output in model_outputs]
+                    ),
+                    dim=0,
+                )
+            else:
+                for key in model_outputs[0]["logits"].keys():
+                    ensemble_pred[key] = recursive_mean(
+                        [output["logits"][key] for output in model_outputs]
+                    )
+
+            output_dict = {"logits": ensemble_pred}
+
+            if (
+                labels is not None
+                and self.compute_loss_and_metrics is not None
+            ):
+                metrics = self.compute_loss_and_metrics(
+                    logits=ensemble_pred, labels=labels
+                )
+                output_dict.update(metrics)
+
+            outputs = flatten_dict(output_dict)
+
+            return outputs

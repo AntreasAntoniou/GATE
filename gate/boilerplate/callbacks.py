@@ -336,14 +336,26 @@ class CallbackHandler(Callback):
             )
 
 
+import time
+
+
 class UploadCheckpointToHuggingFaceBackground(threading.Thread):
-    def __init__(self, repo_name: str, repo_owner: str, checkpoint_path: Path):
+    def __init__(
+        self,
+        repo_name: str,
+        repo_owner: str,
+        checkpoint_path: Path,
+        timeout: int = 10 * 60,
+    ):
         super().__init__()
         self.repo_name = repo_name
         self.repo_owner = repo_owner
         self.checkpoint_path = checkpoint_path
         self.hf_api = HfApi(token=os.environ["HF_TOKEN"])
         self.done = False
+        self.should_stop = False  # Flag to indicate the thread should stop
+        self.timeout = timeout  # Timeout in seconds
+        self.start_time = None
 
     def run(self):
         try:
@@ -354,9 +366,12 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
             )
 
             self.done = True
+
         except Exception as e:
-            logger.exception(e)
-            self.done = True
+            logger.info(e)
+
+    def start_with_timeout(self):
+        self.start()
 
 
 class UploadCheckpointsToHuggingFace(Callback):

@@ -79,6 +79,7 @@ class DuoModalFusionModel(BaseModule):
             dropout=0.0,
             num_layers=4,
         )
+        self.num_classes = num_classes
         if isinstance(num_classes, int):
             self.classifier = nn.Linear(self.fusion_in_features, num_classes)
         elif isinstance(num_classes, list):
@@ -104,6 +105,51 @@ class DuoModalFusionModel(BaseModule):
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
 
+    def compute_loss_and_metrics_multi_class(self, logits_dict, labels):
+        output_dict = {}
+        overall_loss = []
+        overall_accuracy_top_1 = []
+        for answer in logits_dict.keys():
+            temp_logits = logits_dict[answer]
+            temp_labels = labels[answer]
+            loss = F.cross_entropy(temp_logits, temp_labels, reduction="none")
+            accuracy_top_1 = accuracy_top_k(temp_logits, temp_labels, k=1)
+
+            output_dict[f"loss_{answer}"] = torch.mean(loss)
+            output_dict[f"accuracy_top_1_{answer}"] = accuracy_top_1
+            overall_loss.extend(loss)
+            overall_accuracy_top_1.append(accuracy_top_1)
+
+        output_dict["loss"] = torch.mean(torch.stack(overall_loss))
+        output_dict["accuracy_top_1"] = torch.mean(
+            torch.stack(overall_accuracy_top_1)
+        )
+        return output_dict
+
+    def compute_loss_and_metrics_single_class(self, logits, labels):
+        if not isinstance(labels, torch.Tensor):
+            labels = torch.tensor(labels).to(logits.device)
+
+        accuracy_top_1 = accuracy_top_k(logits, labels, k=1)
+        accuracy_top_5 = accuracy_top_k(
+            logits, labels, k=min(5, self.num_classes)
+        )
+
+        loss = F.cross_entropy(logits, labels)
+
+        return {
+            "loss": loss,
+            "accuracy_top_1": accuracy_top_1,
+            "accuracy_top_5": accuracy_top_5,
+        }
+
+    def compute_loss_and_metrics(self, logits, labels):
+        if isinstance(logits, dict):
+            return self.compute_loss_and_metrics_multi_class(logits, labels)
+
+        else:
+            return self.compute_loss_and_metrics_single_class(logits, labels)
+
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
@@ -113,6 +159,7 @@ class DuoModalFusionModel(BaseModule):
         labels: Optional[torch.Tensor] = None,
         answer_type: Optional[str] = None,
         question_family_idx: Optional[int] = None,
+        return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
         modalities = [image, text, audio, video]
@@ -188,16 +235,14 @@ class DuoModalFusionModel(BaseModule):
         )
 
         # Fusion of the two modalities and post processing
-
         fused_features = torch.cat(
             [modality_a_features, modality_b_features], dim=1
         )
 
         features = self.fusion_post_processing(fused_features)["features"]
+        logits_dict = {}
+        labels_dict = {}
         if isinstance(self.classifier, nn.ModuleDict):
-            output_dict = {}
-            overall_loss = []
-            overall_accuracy_top_1 = []
             for answer in self.classifier.keys():
                 answer_specific_idx = [
                     item
@@ -205,28 +250,20 @@ class DuoModalFusionModel(BaseModule):
                     if answer_type[item] == answer
                 ]
                 temp_features = features[answer_specific_idx]
-                temp_logits = self.classifier[answer](temp_features)
                 temp_labels = labels[answer_specific_idx]
-                loss = F.cross_entropy(
-                    temp_logits, temp_labels, reduction="none"
-                )
-                output_dict[f"loss_{answer}"] = torch.mean(loss)
-                output_dict[f"accuracy_top_1_{answer}"] = accuracy_top_k(
-                    temp_logits, temp_labels, k=1
-                )
-                output_dict[f"logits_{answer}"] = temp_logits
 
-                overall_loss.extend(loss)
-                overall_accuracy_top_1.append(
-                    output_dict[f"accuracy_top_1_{answer}"]
-                )
-            output_dict["loss"] = torch.mean(torch.stack(overall_loss))
-            output_dict["accuracy_top_1"] = torch.mean(
-                torch.stack(overall_accuracy_top_1)
-            )
-
+                logits_dict[answer] = self.classifier[answer](temp_features)
+                labels_dict[answer] = temp_labels
+                output_dict = {"logits": logits_dict, "labels": labels_dict}
         else:
-            logits = self.classifier(features)
-            output_dict = {"logits": logits}
+            output_dict = {
+                "logits": self.classifier(features),
+                "labels": labels,
+            }
+
+        if labels is not None and return_loss_and_metrics:
+            output_dict |= self.compute_loss_and_metrics(
+                logits=output_dict["logits"], labels=output_dict["labels"]
+            )
 
         return output_dict

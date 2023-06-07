@@ -1,6 +1,8 @@
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
+import multiprocessing as mp
+import datasets
 
 import learn2learn as l2l
 import PIL
@@ -47,10 +49,10 @@ class MiniImageNetFewShotClassificationDataset(
         super(MiniImageNetFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.MiniImagenet(
-                root=dataset_root,
-                mode=set_name,
-                download=download,
+            dataset_dict=datasets.load_dataset(
+                path="Antreas/mini_imagenet",
+                cache_dir=dataset_root,
+                num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -60,23 +62,11 @@ class MiniImageNetFewShotClassificationDataset(
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            input_target_annotation_keys=dict(
-                inputs="image",
-                targets="label",
-                target_annotations="label",
-            ),
             support_set_input_transform=support_set_input_transform,
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
-            split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 64,
-                FewShotSuperSplitSetOptions.VAL: 16,
-                FewShotSuperSplitSetOptions.TEST: 20,
-            },
-            # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
-            subset_split_name_list=["train", "validation", "test"],
-            label_extractor_fn=lambda x: bytes_to_string(x),
+            split_as_original=True,
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -127,7 +117,7 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_classes_per_set=5,
         min_num_samples_per_class=2,
         min_num_queries_per_class=2,
-        num_classes_per_set=10,
+        num_classes_per_set=20,
         num_samples_per_class=15,
         num_queries_per_class=15,
         variable_num_samples_per_class=True,
@@ -141,16 +131,9 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-from rich import print
+def key_mapper(input_tuple):
+    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
-# def key_mapper(input_dict):
-#     return {
-#         "image": input_dict["image"],
-#         "labels": input_dict["labels"],
-#     }
-
-
-def key_mapper(input_dict):
     input_dict["image"]["image"]["support_set"] = [
         T.ToPILImage()(item)
         for item in input_dict["image"]["image"]["support_set"]
@@ -179,21 +162,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 

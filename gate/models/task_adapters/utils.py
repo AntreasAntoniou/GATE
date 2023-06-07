@@ -122,8 +122,6 @@ def get_similarities(
     modality_a_features: torch.Tensor,
     modality_b_features: torch.Tensor,
     temperature_parameter: torch.Tensor,
-    return_loss: bool = True,
-    is_irregular_shape: bool = False,
 ) -> torch.Tensor:
     """
     Args:
@@ -131,9 +129,6 @@ def get_similarities(
         tensor_modality_b: Tensor, shape [seq_len, embedding_dim]
     """
 
-    # print(
-    #     f"modality_a_features.shape: {modality_a_features.shape}, modality_b_features.shape: {modality_b_features.shape}"
-    # )
     modality_a_features = modality_a_features / modality_a_features.norm(
         p=2, dim=-1, keepdim=True
     )
@@ -152,36 +147,46 @@ def get_similarities(
         f"{modality_b_name}_to_{modality_a_name}_similarities"
     ] = similarities[f"{modality_a_name}_to_{modality_b_name}_similarities"].T
 
-    if return_loss:
-        contrastive_losses_dict = {
-            f"{key.replace('_similarities', '_loss')}": contrastive_loss(
-                value, is_irregular_shape=is_irregular_shape
-            )
-            for key, value in similarities.items()
-        }
-
-        contrastive_accuracy_dict = {
-            f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
-                value, is_irregular_shape=is_irregular_shape
-            )
-            for key, value in similarities.items()
-        }
-
-        contrastive_accuracy_top_5_dict = {
-            f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
-                value, k=5, is_irregular_shape=is_irregular_shape
-            )
-            for key, value in similarities.items()
-        }
-
-        return (
-            similarities
-            | contrastive_losses_dict
-            | contrastive_accuracy_dict
-            | contrastive_accuracy_top_5_dict
-        )
-
     return similarities
+
+
+def compute_zero_shot_loss_and_metrics(
+    similarities: Dict[str, torch.Tensor],
+    is_irregular_shape: bool = False,
+):
+    if isinstance(is_irregular_shape, List):
+        is_irregular_shape = is_irregular_shape[0]
+
+    contrastive_losses_dict = {
+        f"{key.replace('_similarities', '_loss')}": contrastive_loss(
+            value, is_irregular_shape=is_irregular_shape
+        )
+        for key, value in similarities.items()
+    }
+
+    loss = torch.mean(torch.stack(list(contrastive_losses_dict.values())))
+
+    contrastive_accuracy_dict = {
+        f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
+            value, is_irregular_shape=is_irregular_shape
+        )
+        for key, value in similarities.items()
+    }
+
+    contrastive_accuracy_top_5_dict = {
+        f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
+            value, k=5, is_irregular_shape=is_irregular_shape
+        )
+        for key, value in similarities.items()
+    }
+
+    return (
+        similarities
+        | contrastive_losses_dict
+        | contrastive_accuracy_dict
+        | contrastive_accuracy_top_5_dict
+        | {"is_irregular_shape": is_irregular_shape, "loss": loss}
+    )
 
 
 def extract_all_possible_pairs(batch_dict):

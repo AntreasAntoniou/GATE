@@ -44,11 +44,19 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 import torchvision.transforms as T
 
 
-def transform_wrapper(inputs: Dict, target_size=224):
-    print(inputs)
+def transform_wrapper(inputs: Dict, target_size: int = 224):
+    image = inputs["image"]
+    image = T.Resize((target_size, target_size))(image)
+
+    annotation = inputs["annotation"]
+    annotation = T.Resize((target_size, target_size))(annotation)
+    annotation = np.array(annotation)
+    annotation = torch.from_numpy(annotation)
+    annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+
     return {
         "image": inputs["image"],
-        "labels": np.fromImage.open(inputs["annotation"]),
+        "labels": annotation.long(),
     }
 
 
@@ -58,7 +66,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=11,
+    num_classes=150,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
@@ -86,5 +94,5 @@ if __name__ == "__main__":
     dataset_dict = build_gate_dataset()
 
     for item in dataset_dict["train"]:
-        print(item)
+        print(item["labels"])
         break

@@ -12,7 +12,6 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:

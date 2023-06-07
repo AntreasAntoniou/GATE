@@ -98,8 +98,6 @@ def generalized_dice_loss(logits, labels, label_dim, num_classes):
 
 
 def roc_auc_score(logits, labels, label_dim, num_classes):
-    logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
-    labels = labels.permute(0, 2, 3, 1).reshape(-1)
     return loss_adapter(
         loss_fn=monai.metrics.compute_roc_auc,
         logits=logits,

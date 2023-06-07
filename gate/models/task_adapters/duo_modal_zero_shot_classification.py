@@ -6,7 +6,10 @@ import torch.nn.functional as F
 from tqdm.auto import tqdm
 
 from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.utils import get_similarities
+from gate.models.task_adapters.utils import (
+    compute_zero_shot_loss_and_metrics,
+    get_similarities,
+)
 
 
 class DuoModalZeroShotModel(BaseModule):
@@ -47,13 +50,18 @@ class DuoModalZeroShotModel(BaseModule):
                 modality_b_num_features, projection_num_features, bias=False
             )
 
+    def compute_loss_and_metrics(self, logits, **kwargs):
+        return compute_zero_shot_loss_and_metrics(
+            similarities=logits["similarities"],
+            is_irregular_shape=logits["is_irregular_shape"],
+        )
+
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
-        return_loss: bool = True,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
         modalities = [image, text, audio, video]
@@ -122,14 +130,23 @@ class DuoModalZeroShotModel(BaseModule):
             modality_a_features = self.modality_a_linear(modality_a_features)
             modality_b_features = self.modality_b_linear(modality_b_features)
 
-        metrics_dict = get_similarities(
+        similarities_dict = get_similarities(
             modality_a_name=self.modality_a_identifier,
             modality_a_features=modality_a_features,
             modality_b_name=self.modality_b_identifier,
             modality_b_features=modality_b_features,
             temperature_parameter=self.temperature_parameter,
-            return_loss=return_loss,
-            is_irregular_shape=is_irregular_shape,
+        )
+        output_dict = {
+            "logits": {
+                "similarities": similarities_dict,
+                "is_irregular_shape": is_irregular_shape,
+            },
+            "labels": similarities_dict,
+        }
+
+        metrics_dict = self.compute_loss_and_metrics(
+            logits=output_dict["logits"]
         )
 
         losses_list = [
@@ -138,7 +155,8 @@ class DuoModalZeroShotModel(BaseModule):
         if len(losses_list) > 0:
             loss = torch.mean(torch.stack(losses_list))
             metrics_dict["loss"] = loss
-        return metrics_dict
+
+        return output_dict | metrics_dict
 
 
 from accelerate import Accelerator

@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from rich import print
 from timm.models.vision_transformer import Block, PatchEmbed
 
 from gate.models.task_adapters import BaseModule
@@ -108,22 +109,31 @@ from gate.metrics.segmentation import (
     diff_sigmoid_focal_loss,
     generalized_dice_loss,
     miou_loss,
-    normalized_surface_dice_loss,
     roc_auc_score,
 )
 
 
 def metrics(logits, labels, label_dim, num_classes):
-    logits = logits.detach()
+    logits: torch.Tensor = logits.detach().float()
+    labels: torch.Tensor = labels.detach()
+    logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
+    labels = labels.reshape(-1)
     return {
-        "roc_auc_score": roc_auc_score(logits, labels, label_dim, num_classes),
-        "miou_loss": miou_loss(logits, labels, label_dim, num_classes),
-        "dice_loss": dice_loss(logits, labels, label_dim, num_classes),
-        # "normalized_surface_dice_loss": normalized_surface_dice_loss(
-        #     logits, labels, label_dim, num_classes
-        # ),
-        "generalized_dice_loss": generalized_dice_loss(
-            logits, labels, label_dim, num_classes
+        "roc_auc_score": torch.tensor(
+            roc_auc_score(
+                logits, labels, num_classes=logits.shape[1], label_dim=1
+            )
+        ),
+        "miou_loss": torch.tensor(
+            miou_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
+        ),
+        "dice_loss": torch.tensor(
+            dice_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
+        ),
+        "generalized_dice_loss": torch.tensor(
+            generalized_dice_loss(
+                logits, labels, num_classes=logits.shape[1], label_dim=1
+            )
         ),
     }
 
@@ -135,7 +145,7 @@ def optimization_loss(logits, labels):
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-
+    # print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
     cross_entropy_loss = F.cross_entropy(logits, labels)
@@ -144,7 +154,12 @@ def optimization_loss(logits, labels):
 
     loss = cross_entropy_loss + dice_loss + focal_loss
 
-    return loss
+    return {
+        "loss": loss,
+        "cross_entropy_loss": cross_entropy_loss,
+        "dice_loss": dice_loss,
+        "focal_loss": focal_loss,
+    }
 
 
 class PositionalEncoding(nn.Module):
@@ -181,9 +196,9 @@ class SegmentationViT(nn.Module):
         encoder_model: nn.Module,
         model_type: str = "vit",
         embed_dim: int = 768,
-        decoder_embed_dim: int = 768,
-        decoder_depth: int = 2,
-        decoder_num_heads: int = 8,
+        decoder_embed_dim: int = 512,
+        decoder_depth: int = 1,
+        decoder_num_heads: int = 4,
         mlp_ratio: int = 4.0,
         norm_layer: int = nn.LayerNorm,
         num_classes: int = 100,
@@ -232,22 +247,24 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
 
+        self.channel_projection = nn.Conv2d(
+            in_channels=decoder_embed_dim,
+            out_channels=num_classes,
+            kernel_size=1,
+        )
+
         self.upsample_blocks = nn.ModuleList(
             [
                 ResidualConvBlock(
-                    in_channels=self.decoder_embedding_dimension,
-                    out_channels=self.decoder_embedding_dimension,
+                    in_channels=num_classes,
+                    out_channels=num_classes,
                 )
                 for _ in range(decoder_depth)
             ]
         )
         self.additional_projection = None
-        self.decoder_normalization = norm_layer(
-            self.decoder_embedding_dimension
-        )
-        self.class_decoder = nn.Conv2d(
-            self.decoder_embedding_dimension, num_classes, kernel_size=1
-        )
+        self.decoder_normalization = norm_layer(decoder_embed_dim)
+        self.class_decoder = nn.Conv2d(num_classes, num_classes, kernel_size=1)
 
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
@@ -266,7 +283,28 @@ class SegmentationViT(nn.Module):
             nn.init.constant_(module.bias, 0)
             nn.init.constant_(module.weight, 1.0)
 
-    def forward(self, image, labels: Optional[torch.Tensor] = None):
+    def compute_loss_and_metrics(
+        self, logits, labels: Optional[torch.Tensor] = None
+    ):
+        output = {}
+        if labels is not None:
+            output = optimization_loss(logits, labels)
+            # output |= metrics(
+            #     logits,
+            #     labels,
+            #     label_dim=1,
+            #     num_classes=self.num_classes,
+            # )
+            # print(output)
+
+        return output
+
+    def forward(
+        self,
+        image,
+        labels: Optional[torch.Tensor] = None,
+        return_loss_and_metrics: bool = True,
+    ):
         """
             Forward pass for the segmentation model.
 
@@ -276,20 +314,50 @@ class SegmentationViT(nn.Module):
         Returns:
             torch.Tensor: Segmentation map.
         """
+        import time
+
+        start_time = time.time()
+
         batch, _, height, width = image.shape
+        print(f"Line 1: {time.time() - start_time} seconds")
 
+        start_time = time.time()
         features = self.encoder(image)["image"]["raw_features"]
-        decoder_inputs = self.decoder(features)
+        print(f"Line 2: {time.time() - start_time} seconds")
 
+        start_time = time.time()
+        print(f"stem features.shape: {features.shape}")
+        print(f"Line 3: {time.time() - start_time} seconds")
+
+        start_time = time.time()
+        decoder_inputs = self.decoder(features)
+        print(f"Line 4: {time.time() - start_time} seconds")
+
+        start_time = time.time()
         class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
+        print(f"Line 5: {time.time() - start_time} seconds")
+
+        start_time = time.time()
         decoder_inputs = self.positional_encoding(decoder_inputs)
+        print(f"Line 6: {time.time() - start_time} seconds")
+
+        start_time = time.time()
         decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
+        print(f"Line 7: {time.time() - start_time} seconds")
 
         for block in self.decoder_blocks:
+            start_time = time.time()
             decoder_inputs = block(decoder_inputs)
+            print(f"decoder_inputs.shape: {decoder_inputs.shape}")
+            print(f"Line 8: {time.time() - start_time} seconds")
 
+        start_time = time.time()
         decoder_inputs = self.decoder_normalization(decoder_inputs)
+        print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
+        print(f"Line 9: {time.time() - start_time} seconds")
+
         if decoder_inputs.shape[1] != self.num_patches + 1:
+            start_time = time.time()
             if self.additional_projection is None:
                 self.additional_projection = nn.Conv1d(
                     decoder_inputs.shape[1],
@@ -297,35 +365,54 @@ class SegmentationViT(nn.Module):
                     kernel_size=1,
                 ).to(decoder_inputs.device)
             decoder_inputs = self.additional_projection(decoder_inputs)
+            print(
+                f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
+            )
+            print(f"Line 10: {time.time() - start_time} seconds")
 
+        start_time = time.time()
         decoder_inputs = self.pre_upsample_projection(decoder_inputs)
+        print(
+            f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
+        )
+        print(f"Line 11: {time.time() - start_time} seconds")
+
+        start_time = time.time()
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape
         feature_map_size = int(sequence**0.5)
         decoder_inputs = decoder_inputs.view(
             batch, channels, feature_map_size, feature_map_size
         )
+        decoder_inputs = self.channel_projection(decoder_inputs)
+        print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
+        print(f"Line 12: {time.time() - start_time} seconds")
 
         for block in self.upsample_blocks:
+            start_time = time.time()
             decoder_inputs = block(decoder_inputs)
+            print(
+                f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
+            )
+            print(f"Line 13: {time.time() - start_time} seconds")
 
+        start_time = time.time()
         decoder_inputs = F.interpolate(
             decoder_inputs, size=(height, width), mode="bilinear"
         )
-        output = self.class_decoder(decoder_inputs)
+        print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
+        print(f"Line 14: {time.time() - start_time} seconds")
 
-        if labels is not None:
-            output = {
-                "loss": optimization_loss(output, labels),
-                "logits": output,
-            }
-            output |= metrics(
-                output["logits"],
-                labels,
-                label_dim=1,
-                num_classes=self.num_classes,
+        print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
+        output = self.class_decoder(decoder_inputs)
+        print(f"class decoder output.shape: {output.shape}")
+        output = {"logits": output}
+
+        start_time = time.time()
+        if return_loss_and_metrics:
+            output |= self.compute_loss_and_metrics(
+                logits=output["logits"], labels=labels
             )
-        else:
-            output = {"logits": output}
+        print(f"Line 15: {time.time() - start_time} seconds")
 
         return output

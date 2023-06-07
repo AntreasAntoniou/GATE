@@ -16,14 +16,21 @@ class BackboneWithLinear(BaseModule):
         num_clip_features,
         num_classes: int,
         modality: str,
+        allow_on_model_metric_computation: bool = True,
     ):
         super().__init__()
         self.model = model
         self.modality = modality
         self.linear = nn.Linear(num_clip_features, num_classes)
         self.num_classes = num_classes
+        self.allow_on_model_metric_computation = (
+            allow_on_model_metric_computation
+        )
 
-    def compute_metrics(self, logits, labels):
+    def compute_loss_and_metrics(self, logits, labels):
+        if not self.allow_on_model_metric_computation:
+            return {}
+
         if not isinstance(labels, torch.Tensor):
             labels = torch.tensor(labels).to(logits.device)
 
@@ -48,6 +55,7 @@ class BackboneWithLinear(BaseModule):
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
+        return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
             x = self.model(**input_dict)[self.modality]["features"]
@@ -66,12 +74,11 @@ class BackboneWithLinear(BaseModule):
 
         x = self.linear(x)
 
-        if labels is not None:
-            return self.compute_metrics(x, labels) | {"logits": x}
-
-        return x
-
-    def get_transforms(self):
-        return {
-            "image": rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
-        }
+        if (
+            labels is not None
+            and return_loss_and_metrics
+            and self.allow_on_model_metric_computation
+        ):
+            return self.compute_loss_and_metrics(x, labels) | {"logits": x}
+        else:
+            return {"logits": x}

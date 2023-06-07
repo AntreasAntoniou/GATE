@@ -12,6 +12,7 @@ from accelerate import Accelerator
 from rich import print
 
 from gate.boilerplate.utils import get_logger
+from gate.metrics.core import accuracy_top_k
 from gate.models.core import reinit
 from gate.models.task_adapters import BaseModule
 
@@ -112,6 +113,23 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
     def init_weights(self):
         reinit(self)
 
+    def compute_loss_and_metrics(self, logits, labels):
+        if not isinstance(labels, torch.Tensor):
+            labels = torch.tensor(labels).to(logits.device)
+
+        accuracy_top_1 = accuracy_top_k(logits, labels, k=1)
+        accuracy_top_5 = accuracy_top_k(
+            logits, labels, k=min(5, self.num_classes)
+        )
+
+        loss = F.cross_entropy(logits, labels)
+
+        return {
+            "loss": loss,
+            "accuracy_top_1": accuracy_top_1,
+            "accuracy_top_5": accuracy_top_5,
+        }
+
     def forward(
         self,
         input_dict: Optional[Dict] = None,
@@ -119,6 +137,8 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
+        labels: Optional[torch.Tensor] = None,
+        return_loss_and_metrics: bool = False,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
             x = {self.modality: input_dict[self.modality]}
@@ -152,4 +172,11 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         ]  # [batch_size, num_backbone_features]
         x = self.linear(x)  # [batch_size, num_classes]
 
-        return x
+        output_dict = {"logits": x}
+
+        if return_loss_and_metrics and labels is not None:
+            output_dict |= self.compute_loss_and_metrics(
+                logits=output_dict["logits"], labels=labels
+            )
+
+        return output_dict

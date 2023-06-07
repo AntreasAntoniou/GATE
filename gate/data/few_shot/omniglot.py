@@ -1,6 +1,8 @@
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
+import multiprocessing as mp
+import datasets
 
 import learn2learn as l2l
 import torch
@@ -21,7 +23,7 @@ logger = get_logger(
 
 
 def preprocess_transforms(sample: Tuple):
-    image_transforms = T.Compose([T.Resize((28, 28))])
+    image_transforms = T.Compose([T.Resize((224, 224))])
     image = image_transforms(sample[0])
     label = sample[1]
     return {"image": image, "label": label}
@@ -51,9 +53,10 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
         super(OmniglotFewShotClassificationDataset, self).__init__(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
-            dataset_class=lambda set_name: l2l.vision.datasets.FullOmniglot(
-                root=dataset_root,
-                download=download,
+            dataset_dict=datasets.load_dataset(
+                path="Antreas/omniglot",
+                cache_dir=dataset_root,
+                num_proc=mp.cpu_count(),
             ),
             preprocess_transforms=preprocess_transforms,
             split_name=split_name,
@@ -63,23 +66,15 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             num_queries_per_class=num_queries_per_class,
             variable_num_samples_per_class=variable_num_samples_per_class,
             variable_num_classes_per_set=variable_num_classes_per_set,
-            input_target_annotation_keys=dict(
-                inputs="image",
-                targets="label",
-                target_annotations="label",
-            ),
             support_set_input_transform=support_set_input_transform,
             query_set_input_transform=query_set_input_transform,
             support_set_target_transform=support_set_target_transform,
             query_set_target_transform=query_set_target_transform,
             split_percentage={
-                FewShotSuperSplitSetOptions.TRAIN: 1200 / 1623 * 100,
-                FewShotSuperSplitSetOptions.VAL: 200 / 1623 * 100,
-                FewShotSuperSplitSetOptions.TEST: 223 / 1623 * 100,
+                FewShotSuperSplitSetOptions.TRAIN: float(1200 / 1623),
+                FewShotSuperSplitSetOptions.VAL: float(200 / 1623),
+                FewShotSuperSplitSetOptions.TEST: float(223 / 1623),
             },
-            # split_config=l2l.vision.datasets.fgvc_fungi.SPLITS,
-            subset_split_name_list=["all"],
-            label_extractor_fn=lambda x: bytes_to_string(x),
             min_num_classes_per_set=min_num_classes_per_set,
             min_num_samples_per_class=min_num_samples_per_class,
             min_num_queries_per_class=min_num_queries_per_class,
@@ -111,7 +106,7 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
         min_num_classes_per_set=2,
         min_num_samples_per_class=2,
         min_num_queries_per_class=2,
-        num_classes_per_set=50,
+        num_classes_per_set=20,
         num_samples_per_class=15,
         num_queries_per_class=5,
         variable_num_samples_per_class=True,
@@ -125,25 +120,22 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-from rich import print
-
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+omniglot_transforms = T.Compose([lambda x: 1.0 - x, T.ToPILImage()])
 
 
-def key_mapper(input_dict):
-    input_dict["image"]["image"]["support_set"] = torch.stack(
-        [
-            pad_image(single_to_three_channel(item), target_size=(224, 224))
-            for item in input_dict["image"]["image"]["support_set"]
-        ]
-    )
+def key_mapper(input_tuple):
+    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
 
-    input_dict["image"]["image"]["query_set"] = torch.stack(
-        [
-            pad_image(single_to_three_channel(item), target_size=(224, 224))
-            for item in input_dict["image"]["image"]["query_set"]
-        ]
-    )
+    input_dict["image"]["image"]["support_set"] = [
+        omniglot_transforms(item)
+        for item in input_dict["image"]["image"]["support_set"]
+    ]
+
+    input_dict["image"]["image"]["query_set"] = [
+        omniglot_transforms(item)
+        for item in input_dict["image"]["image"]["query_set"]
+    ]
 
     return {
         "image": input_dict["image"],
@@ -160,38 +152,21 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
 ) -> dict:
-    # rand_augment = rand_augment_transform("rand-m9-mstd0.5-inc1", hparams={})
-    # single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
-
-    # def train_augment(input_dict):
-    #     x = input_dict["image"]
-    #     x = T.ToTensor()(x)
-    #     # print(x.shape)
-    #     if x.shape[0] == 1:
-    #         x = single_to_three_channel(x)
-    #     x = T.ToPILImage()(x)
-    #     input_dict["image"] = rand_augment(x)
-
-    #     return input_dict
-
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),
         infinite_sampling=True,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir, num_episodes=600),
         infinite_sampling=False,
-        item_keys=["image", "labels"],
         transforms=[key_mapper, transforms],
     )
 
