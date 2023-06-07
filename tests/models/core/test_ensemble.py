@@ -1,9 +1,9 @@
 import pytest
 import torch
-from torch import nn
-from torch.testing import assert_close
 from rich import print
 from rich.traceback import install
+from torch import nn
+from torch.testing import assert_close
 
 install()
 

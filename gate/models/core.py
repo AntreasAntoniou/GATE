@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
-from rich import print
 
 import torch
 import torch.nn as nn
-from gate.boilerplate.utils import get_logger
+from rich import print
 
+from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__, set_rich=True)
 

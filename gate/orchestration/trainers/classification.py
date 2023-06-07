@@ -11,12 +11,12 @@ from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k
-from gate.orchestration.trainers import Trainer, TrainerOutput
 from gate.metrics.multi_class_classification import (
     average_precision_score,
     brier_score_loss,
     roc_auc_score,
 )
+from gate.orchestration.trainers import Trainer, TrainerOutput
 
 logger = get_logger(__name__)
 
