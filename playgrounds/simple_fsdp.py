@@ -187,13 +187,15 @@ def main(
 
 
 if __name__ == "__main__":
-    model = build_gate_model()
+    model_and_transform = build_gate_model()
+    transform = model_and_transform.transform
+    model = model_and_transform.model
     rank = 0
 
     batch_size = 64
-    dataset = build_gate_dataset(
-        data_dir="/data1/", transforms=model.transform
-    )["train"]
+    dataset = build_gate_dataset(data_dir="/data1/", transforms=transform)[
+        "train"
+    ]
     epochs = 1
     lr = 1e-5
     gamma = 0.7
@@ -206,7 +208,7 @@ if __name__ == "__main__":
     mp.spawn(
         main,
         (
-            model.model,
+            model,
             rank,
             WORLD_SIZE,
             batch_size,
