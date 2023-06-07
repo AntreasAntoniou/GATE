@@ -40,9 +40,6 @@ from gate.models.task_specific_models.zero_shot_classification.clip import (
     build_gate_model,
 )
 
-dataset = build_dataset("train", data_dir="/data1/")
-model = build_gate_model()
-
 
 def setup(rank, world_size):
     os.environ["MASTER_ADDR"] = "localhost"
@@ -63,11 +60,10 @@ def train(model, rank, dataloader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(dataloader):
         data, target = data.to(rank), target.to(rank)
         optimizer.zero_grad()
-        output = model(data)
-        loss = F.nll_loss(output, target, reduction="sum")
-        loss.backward()
+        output = model(data)["image_text"]["image_text"]
+        output["loss"].backward()
         optimizer.step()
-        ddp_loss[0] += loss.item()
+        ddp_loss[0] += output["loss"].item()
         ddp_loss[1] += len(data)
 
     dist.all_reduce(ddp_loss, op=dist.ReduceOp.SUM)
@@ -109,7 +105,7 @@ def test(model, rank, dataloader):
         )
 
 
-def fsdp_main(
+def main(
     model,
     rank,
     world_size,
@@ -119,6 +115,7 @@ def fsdp_main(
     lr,
     gamma,
     save_model,
+    seed,
 ):
     setup(rank, world_size)
 
@@ -184,3 +181,37 @@ def fsdp_main(
             torch.save(states, "mnist_cnn.pt")
 
     cleanup()
+
+
+if __name__ == "__main__":
+    model = build_gate_model()
+    rank = 0
+
+    batch_size = 64
+    dataset = build_dataset("train", data_dir="/data1/")
+    epochs = 1
+    lr = 1e-5
+    gamma = 0.7
+    save_model = True
+    seed = 42
+
+    torch.manual_seed(seed)
+
+    WORLD_SIZE = torch.cuda.device_count()
+    mp.spawn(
+        main,
+        (
+            model,
+            rank,
+            WORLD_SIZE,
+            batch_size,
+            dataset,
+            epochs,
+            lr,
+            gamma,
+            save_model,
+            seed,
+        ),
+        nprocs=WORLD_SIZE,
+        join=True,
+    )
