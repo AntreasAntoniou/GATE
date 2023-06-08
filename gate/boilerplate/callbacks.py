@@ -371,6 +371,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
             logger.info(e)
 
     def start_with_timeout(self):
+        self.start_time = time.time()
         self.start()
 
 
