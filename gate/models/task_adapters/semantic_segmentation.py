@@ -350,11 +350,11 @@ class SegmentationViT(nn.Module):
         decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
         print(f"Line 7: {time.time() - start_time} seconds")
 
-        for block in self.decoder_blocks:
-            start_time = time.time()
-            decoder_inputs = block(decoder_inputs)
-            print(f"decoder_inputs.shape: {decoder_inputs.shape}")
-            print(f"Line 8: {time.time() - start_time} seconds")
+        # for block in self.decoder_blocks:
+        #     start_time = time.time()
+        #     decoder_inputs = block(decoder_inputs)
+        #     print(f"decoder_inputs.shape: {decoder_inputs.shape}")
+        #     print(f"Line 8: {time.time() - start_time} seconds")
 
         start_time = time.time()
         decoder_inputs = self.decoder_normalization(decoder_inputs)
