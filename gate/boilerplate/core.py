@@ -266,9 +266,8 @@ class Learner(nn.Module):
 
         self.trainer.end_training(global_step=self.global_step)
 
-        while len(self.background_threads) > 0:
-            self.check_manage_background_threads()
-            sleep(1)
+        for background_thread in self.background_threads:
+            background_thread.join()
 
         logger.debug("Training finished 🎉")
 
@@ -281,6 +280,7 @@ class Learner(nn.Module):
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
                     thread.start_with_timeout()
+                    break
                 else:
                     # Check if the thread has been running for too long
                     elapsed_time = time.time() - thread.start_time
