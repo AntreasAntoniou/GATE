@@ -185,6 +185,7 @@ class PositionalEncoding(nn.Module):
         pe[0, :, 1::2] = torch.cos(position * div_term).to(x.device)
         if self.positional_encoding is None:
             self.positional_encoding = pe
+        self.positional_encoding = self.positional_encoding.to(x.device)
         x = x + self.positional_encoding[: x.size(0)]
         return x
 
