@@ -82,13 +82,11 @@ class ResidualConvBlock(nn.Module):
         self.activation1 = nn.GELU()
         self.norm1 = nn.InstanceNorm2d(out_channels)
 
-        self.conv2 = nn.Conv2d(
+        self.conv2 = nn.ConvTranspose2d(
             out_channels,
             out_channels,
-            kernel_size=7,
-            stride=1,
-            padding=3,
-            padding_mode="replicate",
+            kernel_size=4,
+            stride=4,
         )
         self.activation2 = nn.GELU()
         self.norm2 = nn.InstanceNorm2d(out_channels)
@@ -274,7 +272,7 @@ class SegmentationViT(nn.Module):
                     in_channels=num_classes,
                     out_channels=num_classes,
                 )
-                for _ in range(2)
+                for _ in range(1)
             ]
         )
         self.additional_projection = None
