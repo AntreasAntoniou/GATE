@@ -88,7 +88,7 @@ class ResidualConvBlock(nn.Module):
         self.norm2 = nn.InstanceNorm2d(out_channels)
         self.activation2 = nn.GELU()
         self.up = nn.Upsample(
-            scale_factor=2, mode="bilinear", align_corners=True
+            scale_factor=4, mode="bilinear", align_corners=True
         )
 
     def forward(self, x):
@@ -167,6 +167,7 @@ class PositionalEncoding(nn.Module):
         self,
     ):
         super().__init__()
+        self.positional_encoding = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -182,7 +183,9 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(1, max_len, d_model).to(x.device)
         pe[0, :, 0::2] = torch.sin(position * div_term).to(x.device)
         pe[0, :, 1::2] = torch.cos(position * div_term).to(x.device)
-        x = x + pe[: x.size(0)]
+        if self.positional_encoding is None:
+            self.positional_encoding = pe
+        x = x + self.positional_encoding[: x.size(0)]
         return x
 
 
