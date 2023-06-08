@@ -152,7 +152,7 @@ def optimization_loss(logits, labels):
     dice_loss = diff_dice_loss(logits, labels)
     focal_loss = diff_sigmoid_focal_loss(logits, labels)
 
-    loss = cross_entropy_loss + dice_loss + focal_loss
+    loss = dice_loss + focal_loss
 
     return {
         "loss": loss,
@@ -237,7 +237,7 @@ class SegmentationViT(nn.Module):
                     qkv_bias=True,
                     norm_layer=norm_layer,
                 )
-                for _ in range(decoder_depth)
+                for _ in range(1)
             ]
         )
 
@@ -259,7 +259,7 @@ class SegmentationViT(nn.Module):
                     in_channels=num_classes,
                     out_channels=num_classes,
                 )
-                for _ in range(decoder_depth)
+                for _ in range(2)
             ]
         )
         self.additional_projection = None
