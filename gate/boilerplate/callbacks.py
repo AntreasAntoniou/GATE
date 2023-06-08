@@ -348,6 +348,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         timeout: int = 10 * 60,
     ):
         super().__init__()
+        self.daemon = True
         self.repo_name = repo_name
         self.repo_owner = repo_owner
         self.checkpoint_path = checkpoint_path
