@@ -76,14 +76,14 @@ class ResidualConvBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, stride=1, padding=1
+        self.conv1 = nn.ConvTranspose2d(
+            in_channels, out_channels, kernel_size=4, stride=4
         )
         self.norm1 = nn.InstanceNorm2d(out_channels)
         self.activation1 = nn.GELU()
 
-        self.conv2 = nn.Conv2d(
-            out_channels, out_channels, kernel_size=3, stride=1, padding=1
+        self.conv2 = nn.ConvTranspose2d(
+            out_channels, out_channels, kernel_size=4, stride=4
         )
         self.norm2 = nn.InstanceNorm2d(out_channels)
         self.activation2 = nn.GELU()
@@ -92,14 +92,14 @@ class ResidualConvBlock(nn.Module):
         )
 
     def forward(self, x):
-        residual = x
+        residual = self.up(x)
         out = self.conv1(x)
         out = self.norm1(out)
         out = self.activation1(out)
         out = self.conv2(out)
         out = self.norm2(out)
         out = self.activation2(out)
-        out = self.up(out + residual)
+        out = out + residual
         return out
 
 
