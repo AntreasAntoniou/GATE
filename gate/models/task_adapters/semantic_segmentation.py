@@ -412,9 +412,9 @@ class SegmentationViT(nn.Module):
             print(f"Line 13: {time.time() - start_time} seconds")
 
         # start_time = time.time()
-        # decoder_inputs = F.interpolate(
-        #     decoder_inputs, size=(height, width), mode="bilinear"
-        # )
+        decoder_inputs = F.interpolate(
+            decoder_inputs, size=(height, width), mode="bilinear"
+        )
         # print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
         # print(f"Line 14: {time.time() - start_time} seconds")
 
