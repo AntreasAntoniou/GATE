@@ -610,7 +610,7 @@ class Learner(nn.Module):
             best_global_step,
             best_metric,
         ) = self.evaluator.get_best_model_global_step_and_metric(
-            metric_name, higher_is_better, kth_best=kth_best
+            metric_name, higher_is_better, kth_best=10
         )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
@@ -625,7 +625,11 @@ class Learner(nn.Module):
                 hf_cache_dir=self.hf_cache_dir,
                 model_name=f"ckpt_{global_step}",
             )
-            download_dict_list.append(download_dict)
+            if download_dict["validation_passed"] is True:
+                download_dict_list.append(download_dict)
+
+            if len(download_dict_list) == kth_best:
+                break
 
         models = []
 
