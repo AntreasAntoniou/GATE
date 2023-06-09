@@ -130,6 +130,21 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
         )
 
 
+@configurable(group="evaluator", name="image_semantic_segmentation")
+class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            experiment_tracker,
+            source_modality="image",
+            target_modality="image",
+            model_selection_metric_name="mean_iou-epoch-mean",
+            model_selection_metric_higher_is_better=True,
+        )
+
+
 @configurable(group="evaluator", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationEvaluator):
     def __init__(
