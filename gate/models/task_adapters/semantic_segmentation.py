@@ -113,39 +113,39 @@ class ResidualConvBlock(nn.Module):
 
 
 from gate.metrics.segmentation import (
-    dice_loss,
+    # dice_loss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
     fast_miou,
-    generalized_dice_loss,
-    miou_loss,
-    roc_auc_score,
+    # generalized_dice_loss,
+    # miou_loss,
+    # roc_auc_score,
 )
 
 
-def metrics(logits, labels, label_dim, num_classes):
-    logits: torch.Tensor = logits.detach().float()
-    labels: torch.Tensor = labels.detach()
-    logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-    labels = labels.reshape(-1)
-    return {
-        "roc_auc_score": torch.tensor(
-            roc_auc_score(
-                logits, labels, num_classes=logits.shape[1], label_dim=1
-            )
-        ),
-        "miou_loss": torch.tensor(
-            miou_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
-        ),
-        "dice_loss": torch.tensor(
-            dice_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
-        ),
-        "generalized_dice_loss": torch.tensor(
-            generalized_dice_loss(
-                logits, labels, num_classes=logits.shape[1], label_dim=1
-            )
-        ),
-    }
+# def metrics(logits, labels, label_dim, num_classes):
+#     logits: torch.Tensor = logits.detach().float()
+#     labels: torch.Tensor = labels.detach()
+#     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
+#     labels = labels.reshape(-1)
+#     return {
+#         "roc_auc_score": torch.tensor(
+#             roc_auc_score(
+#                 logits, labels, num_classes=logits.shape[1], label_dim=1
+#             )
+#         ),
+#         "miou_loss": torch.tensor(
+#             miou_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
+#         ),
+#         "dice_loss": torch.tensor(
+#             dice_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
+#         ),
+#         "generalized_dice_loss": torch.tensor(
+#             generalized_dice_loss(
+#                 logits, labels, num_classes=logits.shape[1], label_dim=1
+#             )
+#         ),
+#     }
 
 
 def optimization_loss(logits, labels):
