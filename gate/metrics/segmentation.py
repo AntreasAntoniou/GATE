@@ -292,15 +292,15 @@ def mean_iou(
     metrics["per_category_iou"] = iou
     metrics["per_category_accuracy"] = acc
 
-    if nan_to_num is not None:
-        metrics = dict(
-            {
-                metric: torch.nan_to_num(
-                    metric_value, nan=torch.tensor(nan_to_num)
-                )
-                for metric, metric_value in metrics.items()
-            }
-        )
+    # if nan_to_num is not None:
+    #     metrics = dict(
+    #         {
+    #             metric: torch.nan_to_num(
+    #                 metric_value, nan=torch.tensor(nan_to_num)
+    #             )
+    #             for metric, metric_value in metrics.items()
+    #         }
+    #     )
 
     return metrics
 

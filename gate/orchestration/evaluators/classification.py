@@ -43,7 +43,6 @@ class StepOutput:
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
         output_dict = model.forward(batch)
-        print(output_dict)
         output_dict = output_dict[self.target_modality][self.source_modality]
 
         loss = output_dict["loss"]
