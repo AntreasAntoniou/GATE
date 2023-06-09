@@ -329,48 +329,48 @@ class SegmentationViT(nn.Module):
         """
         import time
 
-        start_time = time.time()
+        # start_time = time.time()
 
         batch, _, height, width = image.shape
-        print(f"Line 1: {time.time() - start_time} seconds")
+        # print(f"Line 1: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         features = self.encoder(image)["image"]["raw_features"]
-        print(f"Line 2: {time.time() - start_time} seconds")
+        # print(f"Line 2: {time.time() - start_time} seconds")
 
-        start_time = time.time()
-        print(f"stem features.shape: {features.shape}")
-        print(f"Line 3: {time.time() - start_time} seconds")
+        # start_time = time.time()
+        # print(f"stem features.shape: {features.shape}")
+        # print(f"Line 3: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = self.decoder(features)
-        print(f"Line 4: {time.time() - start_time} seconds")
+        # print(f"Line 4: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
-        print(f"Line 5: {time.time() - start_time} seconds")
+        # print(f"Line 5: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = self.positional_encoding(decoder_inputs)
-        print(f"Line 6: {time.time() - start_time} seconds")
+        # print(f"Line 6: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
-        print(f"Line 7: {time.time() - start_time} seconds")
+        # print(f"Line 7: {time.time() - start_time} seconds")
 
-        # for block in self.decoder_blocks:
-        #     start_time = time.time()
-        #     decoder_inputs = block(decoder_inputs)
-        #     print(f"decoder_inputs.shape: {decoder_inputs.shape}")
-        #     print(f"Line 8: {time.time() - start_time} seconds")
+        for block in self.decoder_blocks:
+            start_time = time.time()
+            decoder_inputs = block(decoder_inputs)
+            # print(f"decoder_inputs.shape: {decoder_inputs.shape}")
+            # print(f"Line 8: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = self.decoder_normalization(decoder_inputs)
-        print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
-        print(f"Line 9: {time.time() - start_time} seconds")
+        # print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
+        # print(f"Line 9: {time.time() - start_time} seconds")
 
         if decoder_inputs.shape[1] != self.num_patches + 1:
-            start_time = time.time()
+            # start_time = time.time()
             if self.additional_projection is None:
                 self.additional_projection = nn.Conv1d(
                     decoder_inputs.shape[1],
@@ -378,19 +378,19 @@ class SegmentationViT(nn.Module):
                     kernel_size=1,
                 ).to(decoder_inputs.device)
             decoder_inputs = self.additional_projection(decoder_inputs)
-            print(
-                f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
-            )
-            print(f"Line 10: {time.time() - start_time} seconds")
+            # print(
+            #     f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
+            # )
+            # print(f"Line 10: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = self.pre_upsample_projection(decoder_inputs)
-        print(
-            f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
-        )
-        print(f"Line 11: {time.time() - start_time} seconds")
+        # print(
+        #     f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
+        # )
+        # print(f"Line 11: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape
         feature_map_size = int(sequence**0.5)
@@ -398,16 +398,16 @@ class SegmentationViT(nn.Module):
             batch, channels, feature_map_size, feature_map_size
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
-        print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
-        print(f"Line 12: {time.time() - start_time} seconds")
+        # print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
+        # print(f"Line 12: {time.time() - start_time} seconds")
 
         for block in self.upsample_blocks:
-            start_time = time.time()
+            # start_time = time.time()
             decoder_inputs = block(decoder_inputs)
-            print(
-                f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
-            )
-            print(f"Line 13: {time.time() - start_time} seconds")
+            # print(
+            #     f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
+            # )
+            # print(f"Line 13: {time.time() - start_time} seconds")
 
         # start_time = time.time()
         decoder_inputs = F.interpolate(
@@ -417,16 +417,16 @@ class SegmentationViT(nn.Module):
         # print(f"Line 14: {time.time() - start_time} seconds")
 
         # print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
-        # output = self.class_decoder(decoder_inputs)
+        output = self.class_decoder(decoder_inputs)
         # print(f"class decoder output.shape: {output.shape}")
-        output = decoder_inputs
+        # output = decoder_inputs
         output = {"logits": output}
 
-        start_time = time.time()
+        # start_time = time.time()
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
             )
-        print(f"Line 15: {time.time() - start_time} seconds")
+        # print(f"Line 15: {time.time() - start_time} seconds")
 
         return output
