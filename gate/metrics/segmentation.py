@@ -175,6 +175,83 @@ def diff_sigmoid_focal_loss(
     return loss.mean()
 
 
+import torch
+
+
+def intersect_and_union(pred_label, label, num_labels, ignore_index):
+    mask = label != ignore_index
+    pred_label = pred_label[mask]
+    label = label[mask]
+
+    intersect = pred_label[pred_label == label]
+
+    area_intersect = torch.histc(
+        intersect.float(), bins=num_labels, min=0, max=num_labels - 1
+    )
+    area_pred_label = torch.histc(
+        pred_label.float(), bins=num_labels, min=0, max=num_labels - 1
+    )
+    area_label = torch.histc(
+        label.float(), bins=num_labels, min=0, max=num_labels - 1
+    )
+
+    area_union = area_pred_label + area_label - area_intersect
+
+    return area_intersect, area_union, area_pred_label, area_label
+
+
+def total_intersect_and_union(results, gt_seg_maps, num_labels, ignore_index):
+    total_area_intersect = torch.zeros((num_labels,), dtype=torch.float64)
+    total_area_union = torch.zeros((num_labels,), dtype=torch.float64)
+    total_area_pred_label = torch.zeros((num_labels,), dtype=torch.float64)
+    total_area_label = torch.zeros((num_labels,), dtype=torch.float64)
+    for result, gt_seg_map in zip(results, gt_seg_maps):
+        (
+            area_intersect,
+            area_union,
+            area_pred_label,
+            area_label,
+        ) = intersect_and_union(result, gt_seg_map, num_labels, ignore_index)
+        total_area_intersect += area_intersect
+        total_area_union += area_union
+        total_area_pred_label += area_pred_label
+        total_area_label += area_label
+    return (
+        total_area_intersect,
+        total_area_union,
+        total_area_pred_label,
+        total_area_label,
+    )
+
+
+def mean_iou(predictions, labels, num_labels, ignore_index):
+    (
+        total_area_intersect,
+        total_area_union,
+        total_area_pred_label,
+        total_area_label,
+    ) = total_intersect_and_union(
+        results=predictions,
+        gt_seg_maps=labels,
+        num_labels=num_labels,
+        ignore_index=ignore_index,
+    )
+
+    all_acc = total_area_intersect.sum() / total_area_label.sum()
+    iou = total_area_intersect / total_area_union
+    acc = total_area_intersect / total_area_label
+
+    metrics = dict()
+
+    metrics["mean_iou"] = torch.nanmean(iou)
+    metrics["mean_accuracy"] = torch.nanmean(acc)
+    metrics["overall_accuracy"] = all_acc
+    metrics["per_category_iou"] = iou
+    metrics["per_category_accuracy"] = acc
+
+    return metrics
+
+
 def fast_miou(
     logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 0
 ):
@@ -214,8 +291,8 @@ def fast_miou(
     # in all classes of a dataset (e.g. ADE20k). The background label will be replaced by 255.
     # The default value is False.
 
-    mean_iou = evaluate.load("mean_iou")
-    return mean_iou.compute(
+    # mean_iou = evaluate.load("mean_iou")
+    return mean_iou(
         predictions=logits,
         references=labels,
         num_labels=num_classes,
