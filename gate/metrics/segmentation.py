@@ -224,14 +224,14 @@ def total_intersect_and_union(results, gt_seg_maps, num_labels, ignore_index):
     )
 
 
-def mean_iou(predictions, labels, num_labels, ignore_index):
+def mean_iou(logits, labels, num_labels, ignore_index):
     (
         total_area_intersect,
         total_area_union,
         total_area_pred_label,
         total_area_label,
     ) = total_intersect_and_union(
-        results=predictions,
+        results=logits,
         gt_seg_maps=labels,
         num_labels=num_labels,
         ignore_index=ignore_index,
@@ -293,8 +293,8 @@ def fast_miou(
 
     # mean_iou = evaluate.load("mean_iou")
     return mean_iou(
-        predictions=logits,
-        references=labels,
+        logits=logits,
+        labels=labels,
         num_labels=num_classes,
         ignore_index=ignore_index,
         nan_to_num=1e-8,
