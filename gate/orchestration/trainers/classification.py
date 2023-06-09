@@ -41,13 +41,17 @@ class ClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        start_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        logger.info(f"Forward time {time.time() - start_time}")
 
         loss = output_dict["loss"]
 
+        start_time = time.time()
         accelerator.backward(loss)
+        logger.info(f"Backward time {time.time() - start_time}")
 
         for key, value in output_dict.items():
             if isinstance(value, torch.Tensor):
@@ -69,8 +73,9 @@ class ClassificationTrainer(Trainer):
         accelerator: Accelerator,
     ) -> TrainerOutput:
         model.train()
-
+        start_time = time.time()
         self.optimizer.zero_grad()
+        logger.info(f"Zero grad time {time.time() - start_time}")
 
         step_output: StepOutput = self.step(
             model=model,
@@ -79,8 +84,10 @@ class ClassificationTrainer(Trainer):
             accelerator=accelerator,
         )
 
+        start_time = time.time()
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
+        logger.info(f"Step time {time.time() - start_time}")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
@@ -96,6 +103,25 @@ class ClassificationTrainer(Trainer):
 
 @configurable(group="trainer", name="image_classification")
 class ImageClassificationTrainer(ClassificationTrainer):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer,
+            scheduler,
+            scheduler_interval,
+            experiment_tracker,
+            source_modality="image",
+            target_modality="image",
+        )
+
+
+@configurable(group="trainer", name="image_semantic_segmentation")
+class ImageSemanticSegmentationTrainer(ClassificationTrainer):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
