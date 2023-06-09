@@ -80,7 +80,7 @@ class ClassificationTrainer(Trainer):
         start_time = time.time()
         self.optimizer.zero_grad()
         logger.info(f"Zero grad time {time.time() - start_time}")
-
+        start_time = time.time()
         step_output: StepOutput = self.step(
             model=model,
             batch=batch,
@@ -88,7 +88,6 @@ class ClassificationTrainer(Trainer):
             accelerator=accelerator,
         )
 
-        start_time = time.time()
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
         logger.info(f"Step time {time.time() - start_time}")
