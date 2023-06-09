@@ -469,14 +469,11 @@ def count_files_recursive(directory: str) -> int:
 
 import wandb
 import numpy as np
-
-
-import wandb
 import torch
 
 
 def log_wandb_masks(
-    experiment_tracker: wandb.wandb_run.Run,
+    experiment_tracker: Any,
     images: torch.Tensor,
     logits: torch.Tensor,
     labels: torch.Tensor,
