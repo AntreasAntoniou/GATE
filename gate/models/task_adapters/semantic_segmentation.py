@@ -244,9 +244,9 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
         self.decoder_config = SamMaskDecoderConfig(
-            hidden_size=self.num_classes,
-            iou_head_hidden_dim=self.num_classes,
-            mlp_dim=8 * self.num_classes,
+            hidden_size=decoder_embed_dim,
+            iou_head_hidden_dim=decoder_embed_dim,
+            mlp_dim=4 * self.num_classes,
         )
         self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -322,7 +322,6 @@ class SegmentationViT(nn.Module):
         decoder_inputs = decoder_inputs.view(
             batch, channels, feature_map_size, feature_map_size
         )
-        decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
         decoder_inputs = self.positional_encoding(decoder_inputs)
 
@@ -330,18 +329,22 @@ class SegmentationViT(nn.Module):
         # dense_embeddings: torch.Size([1, 256, 64, 64]),
         # image_embeddings: torch.Size([1, 256, 64, 64]),
         # image_positional_embeddings: torch.Size([1, 256, 64, 64])
+
         print(
-            f"decoder_inputs: {decoder_inputs.shape}, position: {self.positional_encoding.positional_encoding.shape}, "
-            f"dense_embeddings: {decoder_inputs.shape}, image_embeddings: {decoder_inputs.shape}, "
+            f"position: {self.positional_encoding.positional_encoding.shape}, "
+            f"image_embeddings: {decoder_inputs.shape}, dense_embeddings: {decoder_inputs.shape}, "
             f"image_positional_embeddings: {self.positional_encoding.positional_encoding.shape}"
         )
+
         mask_predictions, _, _ = self.decoder(
             image_embeddings=decoder_inputs,
             image_positional_embeddings=self.positional_encoding.positional_encoding,
             sparse_prompt_embeddings=torch.zeros(decoder_inputs.shape).to(
                 decoder_inputs.device
             ),
-            dense_prompt_embeddings=decoder_inputs,
+            dense_prompt_embeddings=torch.zeros(decoder_inputs.shape).to(
+                decoder_inputs.device
+            ),
             multimask_output=False,
             output_attentions=None,
         )
@@ -356,9 +359,5 @@ class SegmentationViT(nn.Module):
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
             )
-            # output["ae_loss"] = F.mse_loss(
-            #     input=output["pixel_predictions"], target=image
-            # )
-            # output["loss"] += output["ae_loss"]
 
         return output
