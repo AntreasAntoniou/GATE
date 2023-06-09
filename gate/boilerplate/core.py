@@ -267,7 +267,8 @@ class Learner(nn.Module):
         self.trainer.end_training(global_step=self.global_step)
 
         for background_thread in self.background_threads:
-            background_thread.join()
+            if background_thread.is_alive() and not background_thread.done:
+                background_thread.join()
 
         logger.debug("Training finished 🎉")
 
@@ -320,9 +321,7 @@ class Learner(nn.Module):
             logger.debug("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
 
-        while len(self.background_threads) > 0:
-            self.check_manage_background_threads()
-            sleep(1)
+        self.check_manage_background_threads()
 
         logger.debug("Validation finished 🎉")
 
@@ -344,9 +343,7 @@ class Learner(nn.Module):
 
         self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
 
-        while len(self.background_threads) > 0:
-            self.check_manage_background_threads()
-            sleep(1)
+        self.check_manage_background_threads()
 
         logger.debug("Testing finished 🎉")
 
