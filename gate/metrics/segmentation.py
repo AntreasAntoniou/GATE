@@ -1,6 +1,12 @@
+import time
 import monai
 import torch
 import torch.nn.functional as F
+import evaluate
+
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def one_hot_encoding(tensor, num_classes, dim):
@@ -169,9 +175,6 @@ def diff_sigmoid_focal_loss(
     return loss.mean()
 
 
-import evaluate
-
-
 def fast_miou(
     logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 0
 ):
@@ -196,15 +199,20 @@ def fast_miou(
     # Inputs
     # Mandatory inputs
 
-    # predictions (List[ndarray]): List of predicted segmentation maps, each of shape (height, width). Each segmentation map can be of a different size.
-    # references (List[ndarray]): List of ground truth segmentation maps, each of shape (height, width). Each segmentation map can be of a different size.
+    # predictions (List[ndarray]): List of predicted segmentation maps, each of shape (height, width).
+    # Each segmentation map can be of a different size.
+    # references (List[ndarray]): List of ground truth segmentation maps, each of shape (height, width).
+    # Each segmentation map can be of a different size.
     # num_labels (int): Number of classes (categories).
     # ignore_index (int): Index that will be ignored during evaluation.
     # Optional inputs
 
     # nan_to_num (int): If specified, NaN values will be replaced by the number defined by the user.
     # label_map (dict): If specified, dictionary mapping old label indices to new label indices.
-    # reduce_labels (bool): Whether or not to reduce all label values of segmentation maps by 1. Usually used for datasets where 0 is used for background, and background itself is not included in all classes of a dataset (e.g. ADE20k). The background label will be replaced by 255. The default value is False.
+    # reduce_labels (bool): Whether or not to reduce all label values of segmentation maps by 1.
+    # Usually used for datasets where 0 is used for background, and background itself is not included
+    # in all classes of a dataset (e.g. ADE20k). The background label will be replaced by 255.
+    # The default value is False.
 
     mean_iou = evaluate.load("mean_iou")
     return mean_iou.compute(
