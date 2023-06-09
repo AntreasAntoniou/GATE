@@ -87,7 +87,7 @@ class ResidualConvBlock(nn.Module):
             out_channels,
             out_channels,
             kernel_size=7,
-            stride=2,
+            stride=1,
         )
         self.activation2 = nn.GELU()
         self.norm2 = nn.InstanceNorm2d(out_channels)
