@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from rich import print
 from timm.models.vision_transformer import Block
+from transformers import SamMaskDecoderConfig, SamModel
+from transformers.models.sam.modeling_sam import SamFeedForward, SamMaskDecoder
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
@@ -117,39 +119,10 @@ class ResidualConvBlock(nn.Module):
 
 
 from gate.metrics.segmentation import (
-    # dice_loss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
     fast_miou,
-    # generalized_dice_loss,
-    # miou_loss,
-    # roc_auc_score,
 )
-
-
-# def metrics(logits, labels, label_dim, num_classes):
-#     logits: torch.Tensor = logits.detach().float()
-#     labels: torch.Tensor = labels.detach()
-#     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-#     labels = labels.reshape(-1)
-#     return {
-#         "roc_auc_score": torch.tensor(
-#             roc_auc_score(
-#                 logits, labels, num_classes=logits.shape[1], label_dim=1
-#             )
-#         ),
-#         "miou_loss": torch.tensor(
-#             miou_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
-#         ),
-#         "dice_loss": torch.tensor(
-#             dice_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
-#         ),
-#         "generalized_dice_loss": torch.tensor(
-#             generalized_dice_loss(
-#                 logits, labels, num_classes=logits.shape[1], label_dim=1
-#             )
-#         ),
-#     }
 
 
 def optimization_loss(logits, labels):
@@ -248,38 +221,14 @@ class SegmentationViT(nn.Module):
             embed_dim, self.decoder_embedding_dimension, bias=True
         )
         self.decoder_spatial_matcher = None
-        self.decoder_blocks = nn.ModuleList(
-            [
-                Block(
-                    dim=self.decoder_embedding_dimension,
-                    num_heads=decoder_num_heads,
-                    mlp_ratio=mlp_ratio,
-                    qkv_bias=True,
-                    norm_layer=norm_layer,
-                )
-                for _ in range(decoder_depth)
-            ]
-        )
 
         self.channel_projection = nn.Conv2d(
             in_channels=decoder_embed_dim,
             out_channels=num_classes,
             kernel_size=1,
         )
-
-        self.upsample_blocks = nn.ModuleList(
-            [
-                ResidualConvBlock(
-                    in_channels=num_classes,
-                    out_channels=num_classes,
-                )
-                for _ in range(4)
-            ]
-        )
-        self.additional_projection = None
-        self.decoder_normalization = norm_layer(decoder_embed_dim)
-        self.class_decoder = nn.Conv2d(num_classes, num_classes, kernel_size=1)
-
+        self.decoder_config = SamMaskDecoderConfig()
+        self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
         self.init_weights()
@@ -301,7 +250,6 @@ class SegmentationViT(nn.Module):
         self, logits, labels: Optional[torch.Tensor] = None
     ):
         output_dict = {}
-        # logger.info("COMPUTE LOSS AND METRICS, NOTICE ME SENPAI")
         if labels is not None:
             output_dict = optimization_loss(logits, labels)
             if not self.training:
@@ -349,11 +297,6 @@ class SegmentationViT(nn.Module):
             )
         decoder_inputs = self.decoder_spatial_matcher(decoder_inputs)
 
-        for block in self.decoder_blocks:
-            decoder_inputs = block(decoder_inputs)
-
-        decoder_inputs = self.decoder_normalization(decoder_inputs)
-
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape
         feature_map_size = int(sequence**0.5)
@@ -362,19 +305,28 @@ class SegmentationViT(nn.Module):
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
 
-        for block in self.upsample_blocks:
-            decoder_inputs = block(decoder_inputs)
-
-        decoder_inputs = F.interpolate(
-            decoder_inputs, size=(height, width), mode="bilinear"
+        mask_predictions, _, _ = self.decoder(
+            image_embeddings=decoder_inputs,
+            image_positional_embeddings=self.self.positional_encoding.positional_encoding,
+            sparse_prompt_embeddings=decoder_inputs,
+            dense_prompt_embeddings=decoder_inputs,
+            multimask_output=False,
+            output_attentions=None,
         )
-        output = self.class_decoder(decoder_inputs)
-        output = decoder_inputs
-        output = {"logits": output}
+
+        print(f"mask_predictions: {mask_predictions.shape}")
+
+        output = {
+            "logits": mask_predictions,
+        }
 
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
             )
+            # output["ae_loss"] = F.mse_loss(
+            #     input=output["pixel_predictions"], target=image
+            # )
+            # output["loss"] += output["ae_loss"]
 
         return output
