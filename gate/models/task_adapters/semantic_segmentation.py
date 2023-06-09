@@ -161,7 +161,7 @@ def optimization_loss(logits, labels):
     dice_loss = diff_dice_loss(logits, labels)
     focal_loss = diff_sigmoid_focal_loss(logits, labels)
 
-    loss = dice_loss + focal_loss
+    loss = dice_loss + focal_loss + cross_entropy_loss
 
     return {
         "loss": loss,
