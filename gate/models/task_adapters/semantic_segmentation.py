@@ -306,8 +306,8 @@ class SegmentationViT(nn.Module):
         if labels is not None:
             output_dict = optimization_loss(logits, labels)
 
-            # metrics = fast_miou(logits, labels)
-            # output_dict = output_dict | metrics
+            metrics = fast_miou(logits, labels)
+            output_dict = output_dict | metrics
 
         return output_dict
 
