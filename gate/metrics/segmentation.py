@@ -173,30 +173,33 @@ SMOOTH = 1e-6
 
 
 def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
-    # You can comment out this line if you are passing tensors of equal shape
-    # But if you are passing output from UNet or something it will most probably
-    # be with the BATCH x 1 x H x W shape
-    print(logits.shape, labels.shape)
-    logits = logits.argmax(dim=1).squeeze(
-        1
-    )  # BATCH x 1 x H x W => BATCH x H x W
+    """
+    Compute mean Intersection over Union (IoU) for a batch of predicted segmentation masks and ground truth labels.
+
+    Args:
+        logits (torch.Tensor): Predicted segmentation masks, shape (batch_size, num_classes, height, width).
+        labels (torch.Tensor): Ground truth labels, shape (batch_size, 1, height, width).
+
+    Returns:
+        mean_iou (torch.Tensor): Mean IoU for the batch.
+    """
+    # Ensure the logits are a probability distribution (i.e., softmax has been applied)
+    # Then, get the predicted class for each pixel (shape: batch_size, height, width)
+    logits = logits.argmax(dim=1)
+
+    # Remove the channel dimension from labels (shape: batch_size, height, width)
     labels = labels.squeeze(1)
 
-    print(logits.shape, labels.shape)
-
+    # Compute the intersection and union for each image in the batch
     intersection = (
         (logits & labels).float().sum((1, 2))
-    )  # Will be zero if Truth=0 or Prediction=0
-    union = (logits | labels).float().sum((1, 2))  # Will be zero if both are 0
+    )  # Sum over height and width dimensions
+    union = (logits | labels).float().sum((1, 2))
 
-    iou = (intersection + SMOOTH) / (
-        union + SMOOTH
-    )  # We smooth our devision to avoid 0/0
+    # Compute IoU for each image in the batch, adding a small value to the denominator to avoid division by zero
+    iou = (intersection + SMOOTH) / (union + SMOOTH)
 
-    thresholded = (
-        torch.clamp(20 * (iou - 0.5), 0, 10).ceil() / 10
-    )  # This is equal to comparing with thresolds
+    # Compute the mean IoU for the batch
+    mean_iou = iou.mean()
 
-    return (
-        thresholded.mean()
-    )  # Or thresholded.mean() if you are interested in average across the batch
+    return mean_iou

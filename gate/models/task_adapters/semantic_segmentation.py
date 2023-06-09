@@ -129,7 +129,7 @@ def metrics(logits, labels, label_dim, num_classes):
     labels = labels.reshape(-1)
     return {
         "roc_auc_score": torch.tensor(
-            roc_auc_score(
+            roc_auc_xscore(
                 logits, labels, num_classes=logits.shape[1], label_dim=1
             )
         ),
