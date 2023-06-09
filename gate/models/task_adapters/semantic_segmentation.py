@@ -352,6 +352,8 @@ class SegmentationViT(nn.Module):
             "logits": mask_predictions,
         }
 
+        print(mask_predictions)
+
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels

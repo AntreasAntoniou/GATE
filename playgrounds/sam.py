@@ -17,7 +17,7 @@ masks = processor.image_processor.post_process_masks(
     inputs["original_sizes"].cpu(),
     inputs["reshaped_input_sizes"].cpu(),
 )
-print(masks[0].shape)
+print(outputs[0].shape)
 
 # decoder_config = SamMaskDecoderConfig()
 # decoder = SamMaskDecoder(config=self.decoder_config)
