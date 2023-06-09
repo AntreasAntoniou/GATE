@@ -360,7 +360,7 @@ class SegmentationViT(nn.Module):
             # print(f"decoder_inputs.shape: {decoder_inputs.shape}")
             # print(f"Line 8: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = self.decoder_normalization(decoder_inputs)
         # print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
         # print(f"Line 9: {time.time() - start_time} seconds")
@@ -379,14 +379,14 @@ class SegmentationViT(nn.Module):
             # )
             # print(f"Line 10: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = self.pre_upsample_projection(decoder_inputs)
         # print(
         #     f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
         # )
         # print(f"Line 11: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape
         feature_map_size = int(sequence**0.5)
@@ -398,14 +398,14 @@ class SegmentationViT(nn.Module):
         # print(f"Line 12: {time.time() - start_time} seconds")
 
         for block in self.upsample_blocks:
-            start_time = time.time()
+            # start_time = time.time()
             decoder_inputs = block(decoder_inputs)
             # print(
             #     f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
             # )
             # print(f"Line 13: {time.time() - start_time} seconds")
 
-        start_time = time.time()
+        # start_time = time.time()
         decoder_inputs = F.interpolate(
             decoder_inputs, size=(height, width), mode="bilinear"
         )
@@ -418,7 +418,7 @@ class SegmentationViT(nn.Module):
         output = decoder_inputs
         output = {"logits": output}
 
-        start_time = time.time()
+        # start_time = time.time()
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
