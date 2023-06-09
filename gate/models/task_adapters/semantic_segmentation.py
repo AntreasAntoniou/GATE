@@ -306,6 +306,7 @@ class SegmentationViT(nn.Module):
             output = optimization_loss(logits, labels)
             if not self.training:
                 output |= fast_miou(logits, labels)
+                print(f"output: {output}")
 
         return output
 
