@@ -145,6 +145,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model_selection_metric_higher_is_better=True,
         )
 
+    @collect_metrics
     def step(self, model, batch, global_step, accelerator: Accelerator):
         start_time = time.time()
         output_dict = model.forward(batch)
