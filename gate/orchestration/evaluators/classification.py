@@ -156,7 +156,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         if "logits" in output_dict:
             output_dict["seg_episode"] = {
                 "image": batch["image"],
-                "logits": output_dict["logits"],
+                "logits": output_dict["logits"].argmax(dim=1).unsqueeze(1),
                 "label": batch["labels"],
                 "label_idx_to_description": {
                     i: i for i in range(output_dict["logits"].shape[1])
