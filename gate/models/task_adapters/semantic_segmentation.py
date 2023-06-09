@@ -240,14 +240,10 @@ class SegmentationViT(nn.Module):
 
         self.channel_projection = nn.Conv2d(
             in_channels=decoder_embed_dim,
-            out_channels=num_classes,
+            out_channels=256,
             kernel_size=1,
         )
-        self.decoder_config = SamMaskDecoderConfig(
-            hidden_size=decoder_embed_dim,
-            iou_head_hidden_dim=decoder_embed_dim,
-            mlp_dim=4 * self.num_classes,
-        )
+        self.decoder_config = SamMaskDecoderConfig()
         self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
@@ -322,6 +318,7 @@ class SegmentationViT(nn.Module):
         decoder_inputs = decoder_inputs.view(
             batch, channels, feature_map_size, feature_map_size
         )
+        decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
         decoder_inputs = self.positional_encoding(decoder_inputs)
 
