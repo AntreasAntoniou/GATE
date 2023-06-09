@@ -53,6 +53,12 @@ class ClassificationTrainer(Trainer):
         accelerator.backward(loss)
         logger.info(f"Backward time {time.time() - start_time}")
 
+        temp_output_dict = {}
+        for key, value in output_dict.items():
+            if isinstance(value, torch.Tensor):
+                temp_output_dict[key] = value.detach().cpu()
+        output_dict = temp_output_dict
+
         for key, value in output_dict.items():
             if isinstance(value, torch.Tensor):
                 self.current_epoch_dict[key].append(value.detach().cpu())
