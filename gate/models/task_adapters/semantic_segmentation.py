@@ -201,7 +201,7 @@ class PositionalEncoding(nn.Module):
             self.positional_encoding = pe
 
         self.positional_encoding = self.positional_encoding.to(x.device)
-        x = x + self.positional_encoding[: x.size(0)]
+        x = x + self.positional_encoding.repeat(x.shape[0], 1, 1)
         return x
 
 
@@ -244,8 +244,13 @@ class SegmentationViT(nn.Module):
         self.positional_encoding = PositionalEncoding()
 
         self.decoder_embedding_dimension = decoder_embed_dim
-        self.decoder = nn.Linear(
+        self.decoder_feature_matcher = nn.Linear(
             embed_dim, self.decoder_embedding_dimension, bias=True
+        )
+        self.decoder_spatial_matcher = nn.Conv1d(
+            self.num_patches + 1,
+            int(math.floor(math.sqrt(self.num_patches))) ** 2,
+            kernel_size=1,
         )
         self.decoder_blocks = nn.ModuleList(
             [
@@ -258,12 +263,6 @@ class SegmentationViT(nn.Module):
                 )
                 for _ in range(decoder_depth)
             ]
-        )
-
-        self.pre_upsample_projection = nn.Conv1d(
-            self.num_patches + 1,
-            int(math.floor(math.sqrt(self.num_patches))) ** 2,
-            kernel_size=1,
         )
 
         self.channel_projection = nn.Conv2d(
@@ -349,7 +348,7 @@ class SegmentationViT(nn.Module):
         # print(f"Line 3: {time.time() - start_time} seconds")
 
         # start_time = time.time()
-        decoder_inputs = self.decoder(features)
+        decoder_inputs = self.decoder_feature_matcher(features)
         # print(f"Line 4: {time.time() - start_time} seconds")
 
         # start_time = time.time()
@@ -363,6 +362,7 @@ class SegmentationViT(nn.Module):
         # start_time = time.time()
         decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
         # print(f"Line 7: {time.time() - start_time} seconds")
+        decoder_inputs = self.decoder_spatial_matcher(decoder_inputs)
 
         for block in self.decoder_blocks:
             # start_time = time.time()
@@ -375,22 +375,22 @@ class SegmentationViT(nn.Module):
         # print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
         # print(f"Line 9: {time.time() - start_time} seconds")
 
-        if decoder_inputs.shape[1] != self.num_patches + 1:
-            # start_time = time.time()
-            if self.additional_projection is None:
-                self.additional_projection = nn.Conv1d(
-                    decoder_inputs.shape[1],
-                    self.num_patches + 1,
-                    kernel_size=1,
-                ).to(decoder_inputs.device)
-            decoder_inputs = self.additional_projection(decoder_inputs)
-            # print(
-            #     f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
-            # )
-            # print(f"Line 10: {time.time() - start_time} seconds")
+        # if decoder_inputs.shape[1] != self.num_patches + 1:
+        #     # start_time = time.time()
+        #     if self.additional_projection is None:
+        #         self.additional_projection = nn.Conv1d(
+        #             decoder_inputs.shape[1],
+        #             self.num_patches + 1,
+        #             kernel_size=1,
+        #         ).to(decoder_inputs.device)
+        #     decoder_inputs = self.additional_projection(decoder_inputs)
+        # print(
+        #     f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
+        # )
+        # print(f"Line 10: {time.time() - start_time} seconds")
 
         # start_time = time.time()
-        decoder_inputs = self.pre_upsample_projection(decoder_inputs)
+
         # print(
         #     f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
         # )
