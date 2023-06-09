@@ -176,9 +176,12 @@ def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
     # You can comment out this line if you are passing tensors of equal shape
     # But if you are passing output from UNet or something it will most probably
     # be with the BATCH x 1 x H x W shape
+    print(logits.shape, labels.shape)
     logits = logits.argmax(dim=1).squeeze(
         1
     )  # BATCH x 1 x H x W => BATCH x H x W
+
+    print(logits.shape, labels.shape)
 
     intersection = (
         (logits & labels).float().sum((1, 2))
