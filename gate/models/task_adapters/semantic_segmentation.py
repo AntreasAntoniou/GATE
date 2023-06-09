@@ -278,7 +278,7 @@ class SegmentationViT(nn.Module):
                     in_channels=num_classes,
                     out_channels=num_classes,
                 )
-                for _ in range(3)
+                for _ in range(4)
             ]
         )
         self.additional_projection = None
