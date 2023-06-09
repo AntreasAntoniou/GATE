@@ -180,6 +180,7 @@ def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
     logits = logits.argmax(dim=1).squeeze(
         1
     )  # BATCH x 1 x H x W => BATCH x H x W
+    labels = labels.squeeze(1)
 
     print(logits.shape, labels.shape)
 
