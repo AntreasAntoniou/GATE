@@ -113,7 +113,9 @@ class BackgroundLogging(threading.Thread):
                 )
                 if "seg_episode" in metric_key:
                     seg_episode = computed_value
-                    self.experiment_tracker
+                    print(
+                        f"Shape of logits: {seg_episode['logits'].shape}, Shape of labels: {seg_episode['label'].shape}, Shape of image: {seg_episode['image'].shape}"
+                    )
                     log_wandb_masks(
                         experiment_tracker=self.experiment_tracker,
                         images=seg_episode["image"],
