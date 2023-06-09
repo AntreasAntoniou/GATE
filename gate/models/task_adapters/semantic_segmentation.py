@@ -336,14 +336,14 @@ class SegmentationViT(nn.Module):
         mask_predictions, _, _ = self.decoder(
             image_embeddings=decoder_inputs,
             image_positional_embeddings=self.positional_encoding.positional_encoding,
-            sparse_prompt_embeddings=torch.zeros(decoder_inputs.shape).to(
-                decoder_inputs.device
-            ),
+            sparse_prompt_embeddings=torch.zeros(
+                decoder_inputs.shape[0], 1, 1, 256
+            ).to(decoder_inputs.device),
             dense_prompt_embeddings=torch.zeros(decoder_inputs.shape).to(
                 decoder_inputs.device
             ),
             multimask_output=False,
-            output_attentions=None,
+            output_attentions=False,
         )
 
         print(f"mask_predictions: {mask_predictions.shape}")
