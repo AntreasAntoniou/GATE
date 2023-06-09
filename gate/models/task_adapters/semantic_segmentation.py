@@ -303,7 +303,7 @@ class SegmentationViT(nn.Module):
         output = {}
         if labels is not None:
             output = optimization_loss(logits, labels)
-            output["miou"] = fast_miou(logits, labels)
+            output |= fast_miou(logits, labels)
 
         return output
 
