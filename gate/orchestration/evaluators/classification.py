@@ -159,7 +159,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
                 "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
                 "label": batch["labels"].squeeze(1),
                 "label_idx_to_description": {
-                    i: i for i in range(output_dict["logits"].shape[1])
+                    i: str(i) for i in range(output_dict["logits"].shape[1])
                 },
             }
 
