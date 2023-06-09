@@ -479,7 +479,7 @@ def log_wandb_masks(
     labels: torch.Tensor,
     label_idx_to_description: Dict[int, str],
     num_to_log: int = 5,
-    to_bgr: bool = True,
+    to_bgr: bool = False,
 ):
     def wb_mask(bg_img, pred_mask, true_mask):
         return wandb.Image(
