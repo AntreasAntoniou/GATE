@@ -500,8 +500,8 @@ def log_wandb_masks(
     mask_list = []
     for i in range(min(num_to_log, len(images))):
         bg_image = T.ToPILImage()(images[i])
-        prediction_mask = logits[i]
-        true_mask = labels[i]
+        prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
+        true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
 
         mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
 
