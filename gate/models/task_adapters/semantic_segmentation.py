@@ -305,12 +305,13 @@ class SegmentationViT(nn.Module):
         # logger.info("COMPUTE LOSS AND METRICS, NOTICE ME SENPAI")
         if labels is not None:
             output_dict = optimization_loss(logits, labels)
-            try:
-                metrics = fast_miou(logits, labels)
-            except Exception as e:
-                logger.info(f"Exception: {e}")
-                metrics = {}
-            output_dict = output_dict | metrics
+            if not self.training:
+                try:
+                    metrics = fast_miou(logits, labels)
+                except Exception as e:
+                    logger.info(f"Exception: {e}")
+                    metrics = {}
+                output_dict = output_dict | metrics
 
         return output_dict
 
