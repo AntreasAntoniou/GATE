@@ -301,16 +301,15 @@ class SegmentationViT(nn.Module):
     def compute_loss_and_metrics(
         self, logits, labels: Optional[torch.Tensor] = None
     ):
-        output = {}
-        logger.info(f"COMPUTE LOSS AND METRICS, NOTICE ME SENPAI")
+        output_dict = {}
+        logger.info("COMPUTE LOSS AND METRICS, NOTICE ME SENPAI")
         if labels is not None:
-            output = optimization_loss(logits, labels)
+            output_dict = optimization_loss(logits, labels)
 
-            # metrics = fast_miou(logits, labels)
-            # logger.info(f"output: {output}, metrics: {metrics}")
-            # output = {**output, **metrics}
+            metrics = fast_miou(logits, labels)
+            output_dict = output_dict | metrics
 
-        return output
+        return output_dict
 
     def forward(
         self,
