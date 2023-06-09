@@ -302,7 +302,7 @@ class SegmentationViT(nn.Module):
         self, logits, labels: Optional[torch.Tensor] = None
     ):
         output_dict = {}
-        logger.info("COMPUTE LOSS AND METRICS, NOTICE ME SENPAI")
+        # logger.info("COMPUTE LOSS AND METRICS, NOTICE ME SENPAI")
         if labels is not None:
             output_dict = optimization_loss(logits, labels)
 
