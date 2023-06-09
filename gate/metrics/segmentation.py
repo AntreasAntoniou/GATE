@@ -205,13 +205,13 @@ def intersect_and_union(
 
     area_intersect = torch.histogram(
         intersect.float(), bins=num_labels, range=(0, num_labels - 1)
-    )
+    )[0]
     area_pred_label = torch.histogram(
         pred_label.float(), bins=num_labels, range=(0, num_labels - 1)
-    )
+    )[0]
     area_label = torch.histogram(
         label.float(), bins=num_labels, range=(0, num_labels - 1)
-    )
+    )[0]
 
     area_union = area_pred_label + area_label - area_intersect
 
