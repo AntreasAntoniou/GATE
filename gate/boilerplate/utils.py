@@ -471,13 +471,18 @@ import wandb
 import numpy as np
 
 
+import wandb
+import torch
+
+
 def log_wandb_masks(
-    experiment_tracker,
-    images,
-    logits,
-    labels,
-    label_idx_to_description,
-    num_to_log=5,
+    experiment_tracker: wandb.wandb_run.Run,
+    images: torch.Tensor,
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    label_idx_to_description: Dict[int, str],
+    num_to_log: int = 5,
+    to_bgr: bool = True,
 ):
     def wb_mask(bg_img, pred_mask, true_mask):
         return wandb.Image(
@@ -494,14 +499,19 @@ def log_wandb_masks(
             },
         )
 
-    def tensor_to_np(tensor):
-        return (tensor.permute(1, 2, 0).detach().cpu().numpy()).astype(
-            np.uint8
+    def tensor_to_image(tensor):
+        img_np = (
+            (tensor.permute(1, 2, 0).detach().cpu() * 255)
+            .numpy()
+            .astype(np.uint8)
         )
+        if to_bgr:
+            img_np = img_np[..., ::-1]
+        return img_np
 
     mask_list = []
     for i in range(min(num_to_log, len(images))):
-        bg_image = tensor_to_np(images[i] * 255)
+        bg_image = tensor_to_image(images[i])
         prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
         true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
 
