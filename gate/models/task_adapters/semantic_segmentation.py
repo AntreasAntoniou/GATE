@@ -304,11 +304,17 @@ class SegmentationViT(nn.Module):
             batch, channels, feature_map_size, feature_map_size
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
+        decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
+
+        # torch.Size([1, 1, 2, 256]),
+        # dense_embeddings: torch.Size([1, 256, 64, 64]),
+        # image_embeddings: torch.Size([1, 256, 64, 64]),
+        # image_positional_embeddings: torch.Size([1, 256, 64, 64])
 
         mask_predictions, _, _ = self.decoder(
             image_embeddings=decoder_inputs,
             image_positional_embeddings=self.positional_encoding.positional_encoding,
-            sparse_prompt_embeddings=torch.zeros(0).to(decoder_inputs.device),
+            sparse_prompt_embeddings=decoder_inputs,
             dense_prompt_embeddings=decoder_inputs,
             multimask_output=False,
             output_attentions=None,
