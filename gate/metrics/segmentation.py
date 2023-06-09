@@ -352,3 +352,52 @@ def fast_miou(
         ignore_index=ignore_index,
         nan_to_num=1e-8,
     )
+
+
+def fast_miou_numpy(
+    logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 0
+):
+    """
+    Compute mean Intersection over Union (IoU) for a batch of predicted segmentation masks and ground truth labels.
+
+    Args:
+        logits (torch.Tensor): Predicted segmentation masks, shape (batch_size, num_classes, height, width).
+        labels (torch.Tensor): Ground truth labels, shape (batch_size, 1, height, width).
+
+    Returns:
+        mean_iou (torch.Tensor): Mean IoU for the batch.
+    """
+    # Ensure the logits are a probability distribution (i.e., softmax has been applied)
+    # Then, get the predicted class for each pixel (shape: batch_size, height, width)
+    num_classes = logits.shape[1]
+    logits = logits.argmax(dim=1)
+
+    # Remove the channel dimension from labels (shape: batch_size, height, width)
+    labels = labels.squeeze(1)
+
+    # Inputs
+    # Mandatory inputs
+
+    # predictions (List[ndarray]): List of predicted segmentation maps, each of shape (height, width).
+    # Each segmentation map can be of a different size.
+    # references (List[ndarray]): List of ground truth segmentation maps, each of shape (height, width).
+    # Each segmentation map can be of a different size.
+    # num_labels (int): Number of classes (categories).
+    # ignore_index (int): Index that will be ignored during evaluation.
+    # Optional inputs
+
+    # nan_to_num (int): If specified, NaN values will be replaced by the number defined by the user.
+    # label_map (dict): If specified, dictionary mapping old label indices to new label indices.
+    # reduce_labels (bool): Whether or not to reduce all label values of segmentation maps by 1.
+    # Usually used for datasets where 0 is used for background, and background itself is not included
+    # in all classes of a dataset (e.g. ADE20k). The background label will be replaced by 255.
+    # The default value is False.
+
+    mean_iou_numpy = evaluate.load("mean_iou")
+    return mean_iou_numpy.compute(
+        predictions=logits,
+        references=labels,
+        num_labels=num_classes,
+        ignore_index=ignore_index,
+        nan_to_num=1e-8,
+    )
