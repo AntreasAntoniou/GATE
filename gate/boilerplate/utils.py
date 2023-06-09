@@ -465,3 +465,46 @@ def count_files_recursive(directory: str) -> int:
         file_count += len(files)
 
     return file_count
+
+
+import wandb
+import numpy as np
+
+
+def log_wandb_masks(
+    experiment_tracker,
+    images,
+    logits,
+    labels,
+    label_idx_to_description,
+    num_to_log=5,
+):
+    def wb_mask(bg_img, pred_mask, true_mask):
+        return wandb.Image(
+            bg_img,
+            masks={
+                "prediction": {
+                    "mask_data": pred_mask,
+                    "class_labels": label_idx_to_description,
+                },
+                "ground truth": {
+                    "mask_data": true_mask,
+                    "class_labels": label_idx_to_description,
+                },
+            },
+        )
+
+    def tensor_to_np(tensor):
+        return (tensor.permute(1, 2, 0).detach().cpu().numpy() * 255).astype(
+            np.uint8
+        )
+
+    mask_list = []
+    for i in range(min(num_to_log, len(images))):
+        bg_image = tensor_to_np(images[i])
+        prediction_mask = logits[i].astype(np.uint8)
+        true_mask = labels[i].astype(np.uint8)
+
+        mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
+
+    experiment_tracker.log({"segmentation_episode": mask_list})

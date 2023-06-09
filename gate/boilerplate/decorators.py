@@ -14,7 +14,7 @@ from hydra_zen import builds, instantiate
 from rich import print
 from traitlets import default
 
-from gate.boilerplate.utils import get_logger
+from gate.boilerplate.utils import get_logger, log_wandb_masks
 
 logger = get_logger(__name__)
 
@@ -111,10 +111,24 @@ class BackgroundLogging(threading.Thread):
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
-                self.experiment_tracker.log(
-                    {f"{self.phase_name}/{metric_key}": value},
-                    step=self.global_step,
-                )
+                if "seg_episode" in metric_key:
+                    seg_episode = computed_value
+                    self.experiment_tracker
+                    log_wandb_masks(
+                        experiment_tracker=self.experiment_tracker,
+                        images=seg_episode["image"],
+                        logits=seg_episode["logits"],
+                        labels=seg_episode["label"],
+                        label_idx_to_description=seg_episode[
+                            "label_idx_to_description"
+                        ],
+                        num_to_log=5,
+                    )
+                else:
+                    self.experiment_tracker.log(
+                        {f"{self.phase_name}/{metric_key}": value},
+                        step=self.global_step,
+                    )
 
 
 def collect_metrics(func: Callable) -> Callable:
