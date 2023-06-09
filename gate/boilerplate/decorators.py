@@ -3,6 +3,7 @@ import importlib
 import inspect
 import pkgutil
 from collections import defaultdict
+import time
 from typing import Any, Callable, Dict, Optional
 
 import torch
@@ -112,11 +113,15 @@ def collect_metrics(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
         outputs = func(*args, **kwargs)
+        start_time = time.time()
         collect_metrics(
             metrics_dict=outputs.metrics,
             phase_name=outputs.phase_name,
             experiment_tracker=outputs.experiment_tracker,
             global_step=outputs.global_step,
+        )
+        logger.info(
+            f"Logging metrics took {time.time() - start_time} seconds."
         )
         return outputs
 
