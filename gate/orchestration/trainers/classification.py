@@ -53,6 +53,9 @@ class ClassificationTrainer(Trainer):
         accelerator.backward(loss)
         logger.info(f"Backward time {time.time() - start_time}")
 
+        if "logits" in output_dict:
+            del output_dict["logits"]
+
         temp_output_dict = {}
         for key, value in output_dict.items():
             if isinstance(value, torch.Tensor):
