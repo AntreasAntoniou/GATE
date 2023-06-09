@@ -176,9 +176,30 @@ def diff_sigmoid_focal_loss(
 
 
 import torch
+from typing import Optional, Dict
 
 
-def intersect_and_union(pred_label, label, num_labels, ignore_index):
+def intersect_and_union(
+    pred_label,
+    label,
+    num_labels,
+    ignore_index: int,
+    label_map: Optional[Dict[int, int]] = None,
+    reduce_labels: bool = False,
+):
+    if label_map is not None:
+        for old_id, new_id in label_map.items():
+            label[label == old_id] = new_id
+
+    # turn into PyTorch tensors
+    pred_label = torch.tensor(pred_label)
+    label = torch.tensor(label)
+
+    if reduce_labels:
+        label[label == 0] = 255
+        label = label - 1
+        label[label == 254] = 255
+
     mask = label != ignore_index
     pred_label = pred_label[mask]
     label = label[mask]
@@ -200,7 +221,14 @@ def intersect_and_union(pred_label, label, num_labels, ignore_index):
     return area_intersect, area_union, area_pred_label, area_label
 
 
-def total_intersect_and_union(results, gt_seg_maps, num_labels, ignore_index):
+def total_intersect_and_union(
+    results,
+    gt_seg_maps,
+    num_labels,
+    ignore_index: int,
+    label_map: Optional[Dict[int, int]] = None,
+    reduce_labels: bool = False,
+):
     total_area_intersect = torch.zeros((num_labels,), dtype=torch.float64)
     total_area_union = torch.zeros((num_labels,), dtype=torch.float64)
     total_area_pred_label = torch.zeros((num_labels,), dtype=torch.float64)
@@ -211,7 +239,14 @@ def total_intersect_and_union(results, gt_seg_maps, num_labels, ignore_index):
             area_union,
             area_pred_label,
             area_label,
-        ) = intersect_and_union(result, gt_seg_map, num_labels, ignore_index)
+        ) = intersect_and_union(
+            result,
+            gt_seg_map,
+            num_labels,
+            ignore_index,
+            label_map,
+            reduce_labels,
+        )
         total_area_intersect += area_intersect
         total_area_union += area_union
         total_area_pred_label += area_pred_label
@@ -224,30 +259,49 @@ def total_intersect_and_union(results, gt_seg_maps, num_labels, ignore_index):
     )
 
 
-def mean_iou(logits, labels, num_labels, ignore_index):
+def mean_iou(
+    logits,
+    labels,
+    num_labels,
+    ignore_index: int,
+    nan_to_num: Optional[int] = None,
+    label_map: Optional[Dict[int, int]] = None,
+    reduce_labels: bool = False,
+):
     (
         total_area_intersect,
         total_area_union,
         total_area_pred_label,
         total_area_label,
     ) = total_intersect_and_union(
-        results=logits,
-        gt_seg_maps=labels,
-        num_labels=num_labels,
-        ignore_index=ignore_index,
+        logits,
+        labels,
+        num_labels,
+        ignore_index,
+        label_map,
+        reduce_labels,
     )
+
+    # compute metrics
+    metrics = dict()
 
     all_acc = total_area_intersect.sum() / total_area_label.sum()
     iou = total_area_intersect / total_area_union
     acc = total_area_intersect / total_area_label
 
-    metrics = dict()
-
-    metrics["mean_iou"] = torch.nanmean(iou)
-    metrics["mean_accuracy"] = torch.nanmean(acc)
-    metrics["overall_accuracy"] = all_acc
+    metrics["mean_iou"] = torch.nanmean(iou).item()
+    metrics["mean_accuracy"] = torch.nanmean(acc).item()
+    metrics["overall_accuracy"] = all_acc.item()
     metrics["per_category_iou"] = iou
     metrics["per_category_accuracy"] = acc
+
+    if nan_to_num is not None:
+        metrics = dict(
+            {
+                metric: torch.nan_to_num(metric_value, nan=nan_to_num).numpy()
+                for metric, metric_value in metrics.items()
+            }
+        )
 
     return metrics
 
