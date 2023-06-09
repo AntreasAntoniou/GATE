@@ -321,10 +321,10 @@ def fast_miou(
     # Ensure the logits are a probability distribution (i.e., softmax has been applied)
     # Then, get the predicted class for each pixel (shape: batch_size, height, width)
     num_classes = logits.shape[1]
-    logits = logits.argmax(dim=1).float()
+    logits = logits.argmax(dim=1).detach().cpu()
 
     # Remove the channel dimension from labels (shape: batch_size, height, width)
-    labels = labels.squeeze(1).float()
+    labels = labels.squeeze(1).detach().cpu()
 
     # Inputs
     # Mandatory inputs
