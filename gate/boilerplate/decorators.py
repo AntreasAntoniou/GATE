@@ -3,6 +3,7 @@ import importlib
 import inspect
 import pkgutil
 from collections import defaultdict
+import threading
 import time
 from typing import Any, Callable, Dict, Optional
 
@@ -92,6 +93,30 @@ def register_configurables(
             _process_module(module_name)
 
 
+class BackgroundLogging(threading.Thread):
+    def __init__(
+        self, experiment_tracker, metrics_dict, phase_name, global_step
+    ):
+        super().__init__()
+        self.experiment_tracker = experiment_tracker
+        self.metrics_dict = metrics_dict
+        self.phase_name = phase_name
+        self.global_step = global_step
+
+    def run(self):
+        for metric_key, computed_value in self.metrics_dict.items():
+            if computed_value is not None:
+                value = (
+                    computed_value.detach()
+                    if isinstance(computed_value, torch.Tensor)
+                    else computed_value
+                )
+                self.experiment_tracker.log(
+                    {f"{self.phase_name}/{metric_key}": value},
+                    step=self.global_step,
+                )
+
+
 def collect_metrics(func: Callable) -> Callable:
     def collect_metrics(
         metrics_dict: dict(),
@@ -99,16 +124,10 @@ def collect_metrics(func: Callable) -> Callable:
         experiment_tracker: Any,
         global_step: int,
     ) -> None:
-        for metric_key, computed_value in metrics_dict.items():
-            if computed_value is not None:
-                value = (
-                    computed_value.detach()
-                    if isinstance(computed_value, torch.Tensor)
-                    else computed_value
-                )
-                wandb.log(
-                    {f"{phase_name}/{metric_key}": value}, step=global_step
-                )
+        logging_thread = BackgroundLogging(
+            wandb, metrics_dict, phase_name, global_step
+        )
+        logging_thread.start()
 
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
