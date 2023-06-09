@@ -191,29 +191,26 @@ def intersect_and_union(
         for old_id, new_id in label_map.items():
             label[label == old_id] = new_id
 
-    # turn into PyTorch tensors
-    pred_label = torch.tensor(pred_label)
-    label = torch.tensor(label)
-
     if reduce_labels:
         label[label == 0] = 255
         label = label - 1
         label[label == 254] = 255
 
     mask = label != ignore_index
+    mask = torch.not_equal(label, ignore_index)
     pred_label = pred_label[mask]
     label = label[mask]
 
     intersect = pred_label[pred_label == label]
 
-    area_intersect = torch.histc(
-        intersect.float(), bins=num_labels, min=0, max=num_labels - 1
+    area_intersect = torch.histogram(
+        intersect.float(), bins=num_labels, range=(0, num_labels - 1)
     )
-    area_pred_label = torch.histc(
-        pred_label.float(), bins=num_labels, min=0, max=num_labels - 1
+    area_pred_label = torch.histogram(
+        pred_label.float(), bins=num_labels, range=(0, num_labels - 1)
     )
-    area_label = torch.histc(
-        label.float(), bins=num_labels, min=0, max=num_labels - 1
+    area_label = torch.histogram(
+        label.float(), bins=num_labels, range=(0, num_labels - 1)
     )
 
     area_union = area_pred_label + area_label - area_intersect
@@ -289,16 +286,18 @@ def mean_iou(
     iou = total_area_intersect / total_area_union
     acc = total_area_intersect / total_area_label
 
-    metrics["mean_iou"] = torch.nanmean(iou).item()
-    metrics["mean_accuracy"] = torch.nanmean(acc).item()
-    metrics["overall_accuracy"] = all_acc.item()
+    metrics["mean_iou"] = torch.nanmean(iou)
+    metrics["mean_accuracy"] = torch.nanmean(acc)
+    metrics["overall_accuracy"] = all_acc
     metrics["per_category_iou"] = iou
     metrics["per_category_accuracy"] = acc
 
     if nan_to_num is not None:
         metrics = dict(
             {
-                metric: torch.nan_to_num(metric_value, nan=nan_to_num).numpy()
+                metric: torch.nan_to_num(
+                    metric_value, nan=torch.tensor(nan_to_num)
+                )
                 for metric, metric_value in metrics.items()
             }
         )
