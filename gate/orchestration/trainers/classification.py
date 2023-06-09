@@ -55,9 +55,7 @@ class ClassificationTrainer(Trainer):
 
         for key, value in output_dict.items():
             if isinstance(value, torch.Tensor):
-                self.current_epoch_dict[key].append(
-                    value.detach().float().mean().cpu()
-                )
+                self.current_epoch_dict[key].append(value.detach().cpu())
 
         return StepOutput(
             output_metrics_dict=output_dict,
