@@ -78,7 +78,7 @@ class ResidualConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv1 = nn.ConvTranspose2d(
-            in_channels, out_channels, kernel_size=4, stride=4
+            in_channels, out_channels, kernel_size=7, stride=2
         )
         self.activation1 = nn.GELU()
         self.norm1 = nn.InstanceNorm2d(out_channels)
@@ -86,15 +86,13 @@ class ResidualConvBlock(nn.Module):
         self.conv2 = nn.ConvTranspose2d(
             out_channels,
             out_channels,
-            kernel_size=4,
-            stride=4,
+            kernel_size=7,
+            stride=2,
         )
         self.activation2 = nn.GELU()
         self.norm2 = nn.InstanceNorm2d(out_channels)
 
-        self.up = nn.Upsample(
-            scale_factor=4, mode="bilinear", align_corners=True
-        )
+        self.up1 = None
 
     def forward(self, x):
         residual = x
@@ -103,7 +101,13 @@ class ResidualConvBlock(nn.Module):
         out = self.activation1(out)
         out = self.norm1(out)
 
-        out = self.up(residual) + out
+        if self.up1 is None:
+            self.up1 = nn.Upsample(
+                size=(out.shape[2], out.shape[3]),
+                mode="bilinear",
+                align_corners=True,
+            )
+        out = self.up1(residual) + out
 
         out = self.conv2(out)
         out = self.activation2(out)
@@ -212,8 +216,8 @@ class SegmentationViT(nn.Module):
         model_type: str = "vit",
         embed_dim: int = 768,
         decoder_embed_dim: int = 512,
-        decoder_depth: int = 1,
-        decoder_num_heads: int = 4,
+        decoder_depth: int = 4,
+        decoder_num_heads: int = 8,
         mlp_ratio: int = 4.0,
         norm_layer: int = nn.LayerNorm,
         num_classes: int = 100,
@@ -252,7 +256,7 @@ class SegmentationViT(nn.Module):
                     qkv_bias=True,
                     norm_layer=norm_layer,
                 )
-                for _ in range(1)
+                for _ in range(decoder_depth)
             ]
         )
 
@@ -400,15 +404,15 @@ class SegmentationViT(nn.Module):
             batch, channels, feature_map_size, feature_map_size
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
-        # print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
+        print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
         # print(f"Line 12: {time.time() - start_time} seconds")
 
         for block in self.upsample_blocks:
             # start_time = time.time()
             decoder_inputs = block(decoder_inputs)
-            # print(
-            #     f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
-            # )
+            print(
+                f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
+            )
             # print(f"Line 13: {time.time() - start_time} seconds")
 
         # start_time = time.time()
