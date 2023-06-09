@@ -115,6 +115,7 @@ from gate.metrics.segmentation import (
     dice_loss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
+    fast_miou,
     generalized_dice_loss,
     miou_loss,
     roc_auc_score,
@@ -302,13 +303,7 @@ class SegmentationViT(nn.Module):
         output = {}
         if labels is not None:
             output = optimization_loss(logits, labels)
-            # output |= metrics(
-            #     logits,
-            #     labels,
-            #     label_dim=1,
-            #     num_classes=self.num_classes,
-            # )
-            # print(output)
+            output["miou"] = fast_miou(logits, labels)
 
         return output
 
