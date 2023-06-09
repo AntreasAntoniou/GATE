@@ -306,7 +306,10 @@ class SegmentationViT(nn.Module):
         if labels is not None:
             output_dict = optimization_loss(logits, labels)
             logger.info(f"\n\n\n\n output_dict: {output_dict} \n\n\n\n")
-            metrics = fast_miou(logits, labels)
+            try:
+                metrics = fast_miou(logits, labels)
+            except Exception as e:
+                logger.info(f"\n\n\n\n {e} \n\n\n\n")
             logger.info(f"\n\n\n\n metrics: {metrics} \n\n\n\n")
             output_dict = output_dict | metrics
 
