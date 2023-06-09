@@ -190,7 +190,7 @@ class PositionalEncoding(nn.Module):
             self.positional_encoding = pe
 
         self.positional_encoding = self.positional_encoding.to(x.device)
-        x = x + self.positional_encoding.repeat(x.shape[0], 1, 1)
+        x = x + self.positional_encoding[: x.shape[0]]
         return x
 
 
