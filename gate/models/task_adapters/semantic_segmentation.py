@@ -1,5 +1,6 @@
 import math
 from functools import partial
+import time
 from typing import Dict, Optional
 
 import numpy as np
@@ -7,10 +8,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from rich import print
-from timm.models.vision_transformer import Block, PatchEmbed
+from timm.models.vision_transformer import Block
+from gate.boilerplate.utils import get_logger
 
-from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.utils import get_similarities
+logger = get_logger(__name__)
 
 
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
@@ -129,7 +130,7 @@ def metrics(logits, labels, label_dim, num_classes):
     labels = labels.reshape(-1)
     return {
         "roc_auc_score": torch.tensor(
-            roc_auc_xscore(
+            roc_auc_score(
                 logits, labels, num_classes=logits.shape[1], label_dim=1
             )
         ),
@@ -302,8 +303,14 @@ class SegmentationViT(nn.Module):
     ):
         output = {}
         if labels is not None:
+            start_time = time.time()
             output = optimization_loss(logits, labels)
+            logger.info(
+                f"optimization_loss: {time.time() - start_time} seconds"
+            )
+            start_time = time.time()
             output |= fast_miou(logits, labels)
+            logger.info(f"fast_miou: {time.time() - start_time} seconds")
 
         return output
 
