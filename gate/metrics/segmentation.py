@@ -187,9 +187,7 @@ def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
     intersection = (
         (logits & labels).float().sum((1, 2))
     )  # Will be zero if Truth=0 or Prediction=0
-    union = (
-        (logits | labels).float().sum((1, 2))
-    )  # Will be zzero if both are 0
+    union = (logits | labels).float().sum((1, 2))  # Will be zero if both are 0
 
     iou = (intersection + SMOOTH) / (
         union + SMOOTH
