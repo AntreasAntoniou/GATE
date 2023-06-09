@@ -124,8 +124,18 @@ def collect_metrics(func: Callable) -> Callable:
         experiment_tracker: Any,
         global_step: int,
     ) -> None:
+        detached_metrics_dict = {}
+        for metric_key, computed_value in metrics_dict.items():
+            if computed_value is not None:
+                value = (
+                    computed_value.detach()
+                    if isinstance(computed_value, torch.Tensor)
+                    else computed_value
+                )
+                detached_metrics_dict[metric_key] = value
+
         logging_thread = BackgroundLogging(
-            wandb, metrics_dict, phase_name, global_step
+            wandb, detached_metrics_dict, phase_name, global_step
         )
         logging_thread.start()
 
