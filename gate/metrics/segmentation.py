@@ -212,5 +212,5 @@ def fast_miou(
         references=labels,
         num_labels=num_classes,
         ignore_index=ignore_index,
-        nan_to_num=None,
+        nan_to_num=1e-8,
     )
