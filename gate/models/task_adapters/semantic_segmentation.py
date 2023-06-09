@@ -326,7 +326,11 @@ class SegmentationViT(nn.Module):
         # dense_embeddings: torch.Size([1, 256, 64, 64]),
         # image_embeddings: torch.Size([1, 256, 64, 64]),
         # image_positional_embeddings: torch.Size([1, 256, 64, 64])
-
+        print(
+            f"decoder_inputs: {decoder_inputs.shape}, position: {self.positional_encoding.positional_encoding.shape}, "
+            f"dense_embeddings: {decoder_inputs.shape}, image_embeddings: {decoder_inputs.shape}, "
+            f"image_positional_embeddings: {self.positional_encoding.positional_encoding.shape}"
+        )
         mask_predictions, _, _ = self.decoder(
             image_embeddings=decoder_inputs,
             image_positional_embeddings=self.positional_encoding.positional_encoding,
