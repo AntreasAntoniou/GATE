@@ -308,7 +308,7 @@ class SegmentationViT(nn.Module):
 
             metrics = fast_miou(logits, labels)
             logger.info(f"output: {output}, metrics: {metrics}")
-            output = {**output, **metrics}
+            # output = {**output, **metrics}
 
         return output
 
