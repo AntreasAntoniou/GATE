@@ -145,6 +145,37 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model_selection_metric_higher_is_better=True,
         )
 
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        start_time = time.time()
+        output_dict = model.forward(batch)
+        logger.info(f"forward time: {time.time() - start_time}")
+        output_dict = output_dict[self.target_modality][self.source_modality]
+
+        loss = output_dict["loss"]
+
+        if "logits" in output_dict:
+            output_dict["seg_episode"] = {
+                "image": batch["image"],
+                "logits": output_dict["logits"],
+                "label": batch["labels"],
+                "label_idx_to_description": {
+                    i: i for i in range(output_dict["logits"].shape[1])
+                },
+            }
+
+            del output_dict["logits"]
+
+        for key, value in output_dict.items():
+            if isinstance(value, torch.Tensor):
+                self.current_epoch_dict[key].append(
+                    value.detach().float().mean().cpu()
+                )
+
+        return StepOutput(
+            metrics=output_dict,
+            loss=loss,
+        )
+
 
 @configurable(group="evaluator", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationEvaluator):
