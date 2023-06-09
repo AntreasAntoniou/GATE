@@ -502,8 +502,8 @@ def log_wandb_masks(
     mask_list = []
     for i in range(min(num_to_log, len(images))):
         bg_image = tensor_to_np(images[i] * 255)
-        prediction_mask = tensor_to_np(logits[i]).astype(np.uint8)
-        true_mask = tensor_to_np(labels[i]).astype(np.uint8)
+        prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
+        true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
 
         mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
 
