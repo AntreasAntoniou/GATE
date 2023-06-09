@@ -472,6 +472,15 @@ import numpy as np
 import torch
 import torchvision.transforms as T
 
+import torch
+
+
+def normalize_image(image: torch.Tensor) -> torch.Tensor:
+    min_val = torch.min(image)
+    max_val = torch.max(image)
+    normalized_image = (image - min_val) / (max_val - min_val)
+    return normalized_image
+
 
 def log_wandb_masks(
     experiment_tracker: Any,
@@ -499,7 +508,7 @@ def log_wandb_masks(
 
     mask_list = []
     for i in range(min(num_to_log, len(images))):
-        bg_image = T.ToPILImage()(images[i])
+        bg_image = T.ToPILImage()(normalize_image(images[i]))
         prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
         true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
 
