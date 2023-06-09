@@ -199,6 +199,9 @@ def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
     # Compute IoU for each image in the batch, adding a small value to the denominator to avoid division by zero
     iou = (intersection + SMOOTH) / (union + SMOOTH)
 
+    # Handle the special case where both intersection and union are 0
+    iou[intersection == 0] = 0
+
     # Compute the mean IoU for the batch
     mean_iou = iou.mean()
 
