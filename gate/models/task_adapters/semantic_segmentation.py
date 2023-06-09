@@ -307,7 +307,7 @@ class SegmentationViT(nn.Module):
             output_dict = optimization_loss(logits, labels)
 
             metrics = fast_miou(logits, labels)
-            logger.info(f"metrics: {metrics}")
+            logger.info(f"\n\n\n\n metrics: {metrics} \n\n\n\n")
             output_dict = output_dict | metrics
 
         return output_dict
