@@ -470,6 +470,7 @@ def count_files_recursive(directory: str) -> int:
 import wandb
 import numpy as np
 import torch
+import torchvision.transforms as T
 
 
 def log_wandb_masks(
@@ -496,21 +497,11 @@ def log_wandb_masks(
             },
         )
 
-    def tensor_to_image(tensor):
-        img_np = (
-            (tensor.permute(1, 2, 0).detach().cpu() * 255)
-            .numpy()
-            .astype(np.uint8)
-        )
-        if to_bgr:
-            img_np = img_np[..., ::-1]
-        return img_np
-
     mask_list = []
     for i in range(min(num_to_log, len(images))):
-        bg_image = tensor_to_image(images[i])
-        prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
-        true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
+        bg_image = T.ToPILImage()(images[i])
+        prediction_mask = logits[i]
+        true_mask = labels[i]
 
         mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
 
