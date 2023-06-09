@@ -169,10 +169,12 @@ def diff_sigmoid_focal_loss(
     return loss.mean()
 
 
-SMOOTH = 1e-6
+import evaluate
 
 
-def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
+def fast_miou(
+    logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 255
+):
     """
     Compute mean Intersection over Union (IoU) for a batch of predicted segmentation masks and ground truth labels.
 
@@ -185,24 +187,16 @@ def fast_miou(logits: torch.Tensor, labels: torch.Tensor):
     """
     # Ensure the logits are a probability distribution (i.e., softmax has been applied)
     # Then, get the predicted class for each pixel (shape: batch_size, height, width)
+    num_classes = logits.shape[1]
     logits = logits.argmax(dim=1)
 
     # Remove the channel dimension from labels (shape: batch_size, height, width)
     labels = labels.squeeze(1)
 
-    # Compute the intersection and union for each image in the batch
-    intersection = (
-        (logits & labels).float().sum((1, 2))
-    )  # Sum over height and width dimensions
-    union = (logits | labels).float().sum((1, 2))
-
-    # Compute IoU for each image in the batch, adding a small value to the denominator to avoid division by zero
-    iou = (intersection + SMOOTH) / (union + SMOOTH)
-
-    # Handle the special case where both intersection and union are 0
-    iou[intersection == 0] = 0
-
-    # Compute the mean IoU for the batch
-    mean_iou = iou.mean()
-
-    return mean_iou
+    mean_iou = evaluate.load("mean_iou")
+    return mean_iou.compute(
+        predictions=logits,
+        references=labels,
+        num_labels=num_classes,
+        ignore_index=ignore_index,
+    )
