@@ -159,11 +159,18 @@ class PositionalEncoding(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            x: Tensor, shape [batch_size, seq_len, embedding_dim]
+            x: Tensor, shape [batch_size, seq_len, embedding_dim] or [batch_size, channels, height, width]
         """
+        is_image_based = len(x.shape) == 4
         if self.positional_encoding is None:
-            max_len = x.shape[1]
-            d_model = x.shape[2]
+            if len(x.shape) == 4:
+                # [batch_size, channels, height, width]
+                max_len = x.shape[2] * x.shape[3]
+                d_model = x.shape[1]
+            else:
+                max_len = x.shape[1]
+                d_model = x.shape[2]
+
             position = torch.arange(max_len).unsqueeze(1).to(x.device)
             div_term = torch.exp(
                 torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
@@ -171,6 +178,15 @@ class PositionalEncoding(nn.Module):
             pe = torch.zeros(1, max_len, d_model).to(x.device)
             pe[0, :, 0::2] = torch.sin(position * div_term).to(x.device)
             pe[0, :, 1::2] = torch.cos(position * div_term).to(x.device)
+
+            if is_image_based:
+                pe = pe.reshape(
+                    1,
+                    x.shape[2],
+                    x.shape[3],
+                    x.shape[1],
+                ).permute(0, 3, 1, 2)
+
             self.positional_encoding = pe
 
         self.positional_encoding = self.positional_encoding.to(x.device)
