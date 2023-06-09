@@ -279,18 +279,19 @@ class Learner(nn.Module):
             if not thread.done:
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
-                    thread.start_with_timeout()
+                    thread.start()
                     break
                 else:
                     # Check if the thread has been running for too long
-                    elapsed_time = time.time() - thread.start_time
-                    if elapsed_time > TIME_LIMIT:
-                        print(
-                            f"Thread {thread} has been running for too long. Stopping it."
-                        )
-                        exit()  # experiment kills itself to prevent upload mechanism from completely halting the program
-                        # Here you can stop the thread. However, keep in mind that stopping a thread is tricky in Python.
-                        # You might need to set a flag that the thread checks regularly and stops itself when the flag is set.
+                    if thread.start_time is not None:
+                        elapsed_time = time.time() - thread.start_time
+                        if elapsed_time > TIME_LIMIT:
+                            print(
+                                f"Thread {thread} has been running for too long. Stopping it."
+                            )
+                            exit()  # experiment kills itself to prevent upload mechanism from completely halting the program
+                            # Here you can stop the thread. However, keep in mind that stopping a thread is tricky in Python.
+                            # You might need to set a flag that the thread checks regularly and stops itself when the flag is set.
             else:
                 self.background_threads.remove(thread)
                 print(f"Removing thread {thread} since it is done")

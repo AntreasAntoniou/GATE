@@ -359,6 +359,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         self.start_time = None
 
     def run(self):
+        self.start_time = time.time()
         while not self.done:
             try:
                 self.hf_api.upload_folder(
@@ -371,10 +372,6 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
 
             except Exception as e:
                 logger.info(e)
-
-    def start_with_timeout(self):
-        self.start_time = time.time()
-        self.start()
 
 
 class UploadCheckpointsToHuggingFace(Callback):
