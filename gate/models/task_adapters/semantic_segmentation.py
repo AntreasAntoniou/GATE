@@ -299,7 +299,6 @@ class SegmentationViT(nn.Module):
 
         decoder_inputs = self.decoder_feature_matcher(features)
         class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
-        decoder_inputs = self.positional_encoding(decoder_inputs)
         decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
 
         if self.decoder_spatial_matcher is None:
@@ -321,6 +320,7 @@ class SegmentationViT(nn.Module):
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
+        decoder_inputs = self.positional_encoding(decoder_inputs)
 
         # torch.Size([1, 1, 2, 256]),
         # dense_embeddings: torch.Size([1, 256, 64, 64]),
