@@ -145,7 +145,6 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model_selection_metric_higher_is_better=True,
         )
 
-    @collect_metrics
     def step(self, model, batch, global_step, accelerator: Accelerator):
         start_time = time.time()
         output_dict = model.forward(batch)
@@ -176,6 +175,18 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             metrics=output_dict,
             loss=loss,
         )
+
+    @collect_metrics
+    def validation_step(
+        self, model, batch, global_step, accelerator: Accelerator
+    ):
+        return super().validation_step(model, batch, global_step, accelerator)
+
+    @collect_metrics
+    def testing_step(
+        self, model, batch, global_step, accelerator: Accelerator
+    ):
+        return super().testing_step(model, batch, global_step, accelerator)
 
 
 @configurable(group="evaluator", name="visual_relational_reasoning")
