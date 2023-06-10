@@ -161,10 +161,13 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
                     i: str(i) for i in range(output_dict["logits"].shape[1])
                 },
             }
-            output_dict["ae_episode"] = {
-                "image": batch["image"],
-                "recon": output_dict["decoded_image"].detach(),
-            }
+            try:
+                output_dict["ae_episode"] = {
+                    "image": batch["image"],
+                    "recon": output_dict["decoded_image"].detach(),
+                }
+            except Exception as e:
+                logger.info(f"Exception: {e}")
 
             del output_dict["logits"]
             del output_dict["decoded_image"]
