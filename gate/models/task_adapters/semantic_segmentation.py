@@ -243,7 +243,9 @@ class SegmentationViT(nn.Module):
             out_channels=256,
             kernel_size=1,
         )
-        self.decoder_config = SamMaskDecoderConfig()
+        self.decoder_config = SamMaskDecoderConfig(
+            num_multimask_outputs=num_classes
+        )
         self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
