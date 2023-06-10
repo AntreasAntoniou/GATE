@@ -62,7 +62,6 @@ class ClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    @collect_metrics
     def validation_step(
         self,
         model,
@@ -89,7 +88,6 @@ class ClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    @collect_metrics
     def testing_step(
         self,
         model,
@@ -181,13 +179,23 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
-        return super().validation_step(model, batch, global_step, accelerator)
+        output: EvaluatorOutput = super().validation_step(
+            model, batch, global_step, accelerator
+        )
+        seg_episode = output.metrics["seg_episode"].cpu()
+        output.metrics = {"seg_episode": seg_episode}
+        return output
 
     @collect_metrics
     def testing_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
-        return super().testing_step(model, batch, global_step, accelerator)
+        output: EvaluatorOutput = super().testing_step(
+            model, batch, global_step, accelerator
+        )
+        seg_episode = output.metrics["seg_episode"].cpu()
+        output.metrics = {"seg_episode": seg_episode}
+        return output
 
 
 @configurable(group="evaluator", name="visual_relational_reasoning")
