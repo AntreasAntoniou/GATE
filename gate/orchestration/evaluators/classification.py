@@ -163,10 +163,11 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             }
             output_dict["ae_episode"] = {
                 "image": batch["image"],
-                "recon": output_dict["decoded_image"],
+                "recon": output_dict["decoded_image"].detach(),
             }
 
             del output_dict["logits"]
+            del output_dict["decoded_image"]
 
         for key, value in output_dict.items():
             if isinstance(value, torch.Tensor):
