@@ -113,9 +113,9 @@ class BackgroundLogging(threading.Thread):
                 )
                 if "seg_episode" in metric_key:
                     seg_episode = computed_value
-                    print(
-                        f"Shape of logits: {seg_episode['logits'].shape}, Shape of labels: {seg_episode['label'].shape}, Shape of image: {seg_episode['image'].shape}"
-                    )
+                    # print(
+                    #     f"Shape of logits: {seg_episode['logits'].shape}, Shape of labels: {seg_episode['label'].shape}, Shape of image: {seg_episode['image'].shape}"
+                    # )
                     log_wandb_masks(
                         experiment_tracker=self.experiment_tracker,
                         images=seg_episode["image"],
@@ -158,16 +158,16 @@ def collect_metrics(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
         outputs = func(*args, **kwargs)
-        start_time = time.time()
+        # start_time = time.time()
         collect_metrics(
             metrics_dict=outputs.metrics,
             phase_name=outputs.phase_name,
             experiment_tracker=outputs.experiment_tracker,
             global_step=outputs.global_step,
         )
-        logger.info(
-            f"Logging metrics took {time.time() - start_time} seconds."
-        )
+        # logger.info(
+        #     f"Logging metrics took {time.time() - start_time} seconds."
+        # )
         return outputs
 
     return wrapper_collect_metrics
