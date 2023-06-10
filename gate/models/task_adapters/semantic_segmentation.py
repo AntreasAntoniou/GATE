@@ -247,7 +247,7 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
         self.decoder_config = SamMaskDecoderConfig(
-            num_multimask_outputs=num_classes
+            num_multimask_outputs=num_classes + 3
         )
         self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -360,12 +360,21 @@ class SegmentationViT(nn.Module):
         # print(f"mask_predictions: {mask_predictions.shape}")
 
         output = {
-            "logits": mask_predictions[:, 0],
+            "logits": mask_predictions[:, 0, :-3],
+            "decoded_image": mask_predictions[:, 0, -3:],
         }
-
+        decoded_image = mask_predictions[:, 0, -3:]
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
             )
+            ae_loss = F.mse_loss(
+                F.interpolate(
+                    decoded_image, size=(image.shape[2], image.shape[3])
+                ),
+                image,
+            )
+            output["ae_loss"] = ae_loss
+            output["loss"] += ae_loss
 
         return output

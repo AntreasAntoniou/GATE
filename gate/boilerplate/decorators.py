@@ -14,7 +14,11 @@ from hydra_zen import builds, instantiate
 from rich import print
 from traitlets import default
 
-from gate.boilerplate.utils import get_logger, log_wandb_masks
+from gate.boilerplate.utils import (
+    get_logger,
+    log_wandb_images,
+    log_wandb_masks,
+)
 
 logger = get_logger(__name__)
 
@@ -122,6 +126,14 @@ class BackgroundLogging(threading.Thread):
                         label_idx_to_description=seg_episode[
                             "label_idx_to_description"
                         ],
+                        global_step=self.global_step,
+                    )
+                elif "ae_episode" in metric_key:
+                    ae_episode = value
+                    log_wandb_images(
+                        experiment_tracker=self.experiment_tracker,
+                        images=ae_episode["image"],
+                        reconstructions=ae_episode["recon"],
                         global_step=self.global_step,
                     )
                 else:

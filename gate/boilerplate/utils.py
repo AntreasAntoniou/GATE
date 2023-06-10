@@ -482,6 +482,30 @@ def normalize_image(image: torch.Tensor) -> torch.Tensor:
     return normalized_image
 
 
+def log_wandb_images(
+    experiment_tracker: Any,
+    images: torch.Tensor,
+    reconstructions: torch.Tensor,
+    global_step: int = 0,
+):
+    episode_list = []
+    for i in range(images.shape[0]):
+        image = images[i]
+        reconstruction = reconstructions[i]
+        normalized_image = normalize_image(image)
+        normalized_reconstruction = normalize_image(reconstruction)
+        episode_list.append(
+            {
+                "original_image": wandb.Image(normalized_image),
+                "reconstructed_image": wandb.Image(normalized_reconstruction),
+            },
+        )
+    experiment_tracker.log(
+        {"autoencoder_episode": episode_list},
+        step=global_step,
+    )
+
+
 def log_wandb_masks(
     experiment_tracker: Any,
     images: torch.Tensor,
