@@ -343,9 +343,7 @@ class SegmentationViT(nn.Module):
             sparse_prompt_embeddings=torch.zeros(
                 decoder_inputs.shape[0], 1, 1, 256
             ).to(decoder_inputs.device),
-            dense_prompt_embeddings=torch.zeros(decoder_inputs.shape).to(
-                decoder_inputs.device
-            ),
+            dense_prompt_embeddings=decoder_inputs,
             multimask_output=True,
             output_attentions=False,
         )
