@@ -116,6 +116,7 @@ class BackgroundLogging(threading.Thread):
                     else computed_value
                 )
                 if "seg_episode" in metric_key:
+                    print("logging seg episode")
                     seg_episode = value
 
                     log_wandb_masks(
@@ -129,6 +130,7 @@ class BackgroundLogging(threading.Thread):
                         global_step=self.global_step,
                     )
                 elif "ae_episode" in metric_key:
+                    print("logging ae episode")
                     ae_episode = value
                     log_wandb_images(
                         experiment_tracker=self.experiment_tracker,
@@ -137,7 +139,6 @@ class BackgroundLogging(threading.Thread):
                         global_step=self.global_step,
                     )
                 else:
-                    print(f"{self.phase_name}/{metric_key}: {value}")
                     self.experiment_tracker.log(
                         {f"{self.phase_name}/{metric_key}": value},
                         step=self.global_step,
