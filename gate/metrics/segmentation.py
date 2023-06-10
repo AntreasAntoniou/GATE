@@ -139,7 +139,7 @@ def diff_dice_loss(inputs, targets):
 
 
 def diff_sigmoid_focal_loss(
-    inputs, targets, alpha: float = 0.25, gamma: float = 2
+    inputs, targets, alpha: float = 0.75, gamma: float = 2
 ):
     """
     Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
