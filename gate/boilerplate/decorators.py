@@ -112,7 +112,7 @@ class BackgroundLogging(threading.Thread):
                     else computed_value
                 )
                 if "seg_episode" in metric_key:
-                    seg_episode = computed_value
+                    seg_episode = value
 
                     log_wandb_masks(
                         experiment_tracker=self.experiment_tracker,
@@ -125,6 +125,7 @@ class BackgroundLogging(threading.Thread):
                         num_to_log=5,
                     )
                 else:
+                    print(f"{self.phase_name}/{metric_key}: {value}")
                     self.experiment_tracker.log(
                         {f"{self.phase_name}/{metric_key}": value},
                         step=self.global_step,
@@ -132,43 +133,6 @@ class BackgroundLogging(threading.Thread):
 
 
 def collect_metrics(func: Callable) -> Callable:
-    def collect_metrics(
-        metrics_dict: dict(),
-        phase_name: str,
-        experiment_tracker: Any,
-        global_step: int,
-    ) -> None:
-        detached_metrics_dict = {}
-        for metric_key, computed_value in metrics_dict.items():
-            if computed_value is not None:
-                value = (
-                    computed_value.detach()
-                    if isinstance(computed_value, torch.Tensor)
-                    else computed_value
-                )
-                detached_metrics_dict[metric_key] = value
-
-            for metric_key, computed_value in detached_metrics_dict.items():
-                wandb.log(
-                    {f"{phase_name}/{metric_key}": value},
-                    step=global_step,
-                )
-
-    @functools.wraps(func)
-    def wrapper_collect_metrics(*args, **kwargs):
-        outputs = func(*args, **kwargs)
-        collect_metrics(
-            metrics_dict=outputs.metrics,
-            phase_name=outputs.phase_name,
-            experiment_tracker=outputs.experiment_tracker,
-            global_step=outputs.global_step,
-        )
-        return outputs
-
-    return wrapper_collect_metrics
-
-
-def collect_metrics_in_background(func: Callable) -> Callable:
     def collect_metrics(
         metrics_dict: dict(),
         phase_name: str,
