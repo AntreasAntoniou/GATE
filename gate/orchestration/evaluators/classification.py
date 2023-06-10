@@ -8,7 +8,11 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.decorators import (
+    collect_metrics,
+    collect_metrics_in_background,
+    configurable,
+)
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k
@@ -42,9 +46,7 @@ class StepOutput:
 
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # start_time = time.time()
         output_dict = model.forward(batch)
-        # logger.info(f"forward time: {time.time() - start_time}")
         output_dict = output_dict[self.target_modality][self.source_modality]
 
         loss = output_dict["loss"]
@@ -176,13 +178,13 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             loss=loss,
         )
 
-    @collect_metrics
+    @collect_metrics_in_background
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
         return super().validation_step(model, batch, global_step, accelerator)
 
-    @collect_metrics
+    @collect_metrics_in_background
     def testing_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):

@@ -113,9 +113,7 @@ class BackgroundLogging(threading.Thread):
                 )
                 if "seg_episode" in metric_key:
                     seg_episode = computed_value
-                    # print(
-                    #     f"Shape of logits: {seg_episode['logits'].shape}, Shape of labels: {seg_episode['label'].shape}, Shape of image: {seg_episode['image'].shape}"
-                    # )
+
                     log_wandb_masks(
                         experiment_tracker=self.experiment_tracker,
                         images=seg_episode["image"],
@@ -150,6 +148,43 @@ def collect_metrics(func: Callable) -> Callable:
                 )
                 detached_metrics_dict[metric_key] = value
 
+            for metric_key, computed_value in detached_metrics_dict.items():
+                wandb.log(
+                    {f"{phase_name}/{metric_key}": value},
+                    step=global_step,
+                )
+
+    @functools.wraps(func)
+    def wrapper_collect_metrics(*args, **kwargs):
+        outputs = func(*args, **kwargs)
+        collect_metrics(
+            metrics_dict=outputs.metrics,
+            phase_name=outputs.phase_name,
+            experiment_tracker=outputs.experiment_tracker,
+            global_step=outputs.global_step,
+        )
+        return outputs
+
+    return wrapper_collect_metrics
+
+
+def collect_metrics_in_background(func: Callable) -> Callable:
+    def collect_metrics(
+        metrics_dict: dict(),
+        phase_name: str,
+        experiment_tracker: Any,
+        global_step: int,
+    ) -> None:
+        detached_metrics_dict = {}
+        for metric_key, computed_value in metrics_dict.items():
+            if computed_value is not None:
+                value = (
+                    computed_value.detach()
+                    if isinstance(computed_value, torch.Tensor)
+                    else computed_value
+                )
+                detached_metrics_dict[metric_key] = value
+
         logging_thread = BackgroundLogging(
             wandb, detached_metrics_dict, phase_name, global_step
         )
@@ -158,16 +193,12 @@ def collect_metrics(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
         outputs = func(*args, **kwargs)
-        # start_time = time.time()
         collect_metrics(
             metrics_dict=outputs.metrics,
             phase_name=outputs.phase_name,
             experiment_tracker=outputs.experiment_tracker,
             global_step=outputs.global_step,
         )
-        # logger.info(
-        #     f"Logging metrics took {time.time() - start_time} seconds."
-        # )
         return outputs
 
     return wrapper_collect_metrics
