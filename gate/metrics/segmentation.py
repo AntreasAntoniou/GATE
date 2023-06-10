@@ -289,8 +289,8 @@ def mean_iou(
     metrics["mean_iou"] = torch.nanmean(iou)
     metrics["mean_accuracy"] = torch.nanmean(acc)
     metrics["overall_accuracy"] = all_acc
-    metrics["per_category_iou"] = iou
-    metrics["per_category_accuracy"] = acc
+    # metrics["per_category_iou"] = iou
+    # metrics["per_category_accuracy"] = acc
 
     if nan_to_num is not None:
         metrics = dict(
