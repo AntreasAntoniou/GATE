@@ -182,7 +182,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         output: EvaluatorOutput = super().validation_step(
             model, batch, global_step, accelerator
         )
-        seg_episode = output.metrics["seg_episode"].cpu()
+        seg_episode = output.metrics["seg_episode"]
         output.metrics = {"seg_episode": seg_episode}
         return output
 
@@ -193,7 +193,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         output: EvaluatorOutput = super().testing_step(
             model, batch, global_step, accelerator
         )
-        seg_episode = output.metrics["seg_episode"].cpu()
+        seg_episode = output.metrics["seg_episode"]
         output.metrics = {"seg_episode": seg_episode}
         return output
 
