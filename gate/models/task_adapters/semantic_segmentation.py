@@ -135,6 +135,8 @@ def optimization_loss(logits, labels):
     # print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
+    # get number of unique classes
+
     cross_entropy_loss = F.cross_entropy(logits, labels)
     dice_loss = diff_dice_loss(logits, labels)
     focal_loss = diff_sigmoid_focal_loss(logits, labels)
