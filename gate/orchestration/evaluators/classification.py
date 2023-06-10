@@ -10,7 +10,6 @@ from accelerate import Accelerator
 
 from gate.boilerplate.decorators import (
     collect_metrics,
-    collect_metrics_in_background,
     configurable,
 )
 from gate.boilerplate.utils import get_logger
