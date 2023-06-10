@@ -42,9 +42,9 @@ class StepOutput:
 
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
+        # start_time = time.time()
         output_dict = model.forward(batch)
-        logger.info(f"forward time: {time.time() - start_time}")
+        # logger.info(f"forward time: {time.time() - start_time}")
         output_dict = output_dict[self.target_modality][self.source_modality]
 
         loss = output_dict["loss"]
@@ -146,9 +146,9 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
+        # start_time = time.time()
         output_dict = model.forward(batch)
-        logger.info(f"forward time: {time.time() - start_time}")
+        # logger.info(f"forward time: {time.time() - start_time}")
         output_dict = output_dict[self.target_modality][self.source_modality]
 
         loss = output_dict["loss"]
