@@ -122,7 +122,7 @@ class BackgroundLogging(threading.Thread):
                         label_idx_to_description=seg_episode[
                             "label_idx_to_description"
                         ],
-                        num_to_log=5,
+                        global_step=self.global_step,
                     )
                 else:
                     print(f"{self.phase_name}/{metric_key}: {value}")

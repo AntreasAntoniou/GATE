@@ -488,8 +488,7 @@ def log_wandb_masks(
     logits: torch.Tensor,
     labels: torch.Tensor,
     label_idx_to_description: Dict[int, str],
-    num_to_log: int = 5,
-    to_bgr: bool = False,
+    global_step: int = 0,
 ):
     def wb_mask(bg_img, pred_mask, true_mask):
         return wandb.Image(
@@ -507,11 +506,13 @@ def log_wandb_masks(
         )
 
     mask_list = []
-    for i in range(min(num_to_log, len(images))):
+    for i in range(len(images)):
         bg_image = T.ToPILImage()(normalize_image(images[i]))
         prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
         true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
 
         mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
 
-    experiment_tracker.log({"segmentation_episode": mask_list})
+    experiment_tracker.log(
+        {"segmentation_episode": mask_list}, step=global_step
+    )
