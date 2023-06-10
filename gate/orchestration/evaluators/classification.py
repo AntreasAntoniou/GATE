@@ -178,13 +178,13 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             loss=loss,
         )
 
-    @collect_metrics_in_background
+    @collect_metrics
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
         return super().validation_step(model, batch, global_step, accelerator)
 
-    @collect_metrics_in_background
+    @collect_metrics
     def testing_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
