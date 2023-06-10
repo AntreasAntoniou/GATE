@@ -358,20 +358,21 @@ class SegmentationViT(nn.Module):
         )
 
         # print(f"mask_predictions: {mask_predictions.shape}")
-
+        decoded_image = mask_predictions[:, 0, -3:]
+        decoded_image = F.interpolate(
+            decoded_image, size=(image.shape[2], image.shape[3])
+        )
         output = {
             "logits": mask_predictions[:, 0, :-3],
-            "decoded_image": mask_predictions[:, 0, -3:],
+            "decoded_image": decoded_image,
         }
-        decoded_image = mask_predictions[:, 0, -3:]
+
         if return_loss_and_metrics:
             output |= self.compute_loss_and_metrics(
                 logits=output["logits"], labels=labels
             )
             ae_loss = F.mse_loss(
-                F.interpolate(
-                    decoded_image, size=(image.shape[2], image.shape[3])
-                ),
+                decoded_image,
                 image,
             )
             output["ae_loss"] = ae_loss
