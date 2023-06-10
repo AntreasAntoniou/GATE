@@ -115,6 +115,7 @@ class BackgroundLogging(threading.Thread):
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
+                print(f"logging {metric_key}")
                 if "seg_episode" in metric_key:
                     print("logging seg episode")
                     seg_episode = value
