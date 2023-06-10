@@ -351,7 +351,7 @@ class SegmentationViT(nn.Module):
         print(f"mask_predictions: {mask_predictions.shape}")
 
         output = {
-            "logits": mask_predictions,
+            "logits": mask_predictions[:, 0],
         }
 
         print(mask_predictions)
