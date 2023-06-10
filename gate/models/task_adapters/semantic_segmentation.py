@@ -368,14 +368,17 @@ class SegmentationViT(nn.Module):
         }
 
         if return_loss_and_metrics:
-            output |= self.compute_loss_and_metrics(
-                logits=output["logits"], labels=labels
-            )
-            ae_loss = F.mse_loss(
-                decoded_image,
-                image,
-            )
-            output["ae_loss"] = ae_loss
-            output["loss"] += ae_loss
+            try:
+                output |= self.compute_loss_and_metrics(
+                    logits=output["logits"], labels=labels
+                )
+                ae_loss = F.mse_loss(
+                    decoded_image,
+                    image,
+                )
+                output["ae_loss"] = ae_loss
+                output["loss"] += ae_loss
+            except Exception as e:
+                logger.info(f"Exception: {e}")
 
         return output
