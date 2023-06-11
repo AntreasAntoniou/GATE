@@ -161,8 +161,9 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
                     i: str(i) for i in range(output_dict["logits"].shape[1])
                 },
             }
-            print("HERE")
+
             try:
+                print(f"storing ae episode")
                 output_dict["ae_episode"] = {
                     "image": batch["image"],
                     "recon": output_dict["decoded_image"].detach(),
