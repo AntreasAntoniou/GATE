@@ -421,11 +421,11 @@ class SegmentationViT(nn.Module):
         decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = self.upscale_net1(decoder_inputs)
         decoder_inputs = self.detail_conv1(decoder_inputs)
-        logger.info(f"decoder_inputs: {decoder_inputs.shape}")
+        # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         decoder_inputs = self.upscale_net2(decoder_inputs)
         decoder_inputs = self.detail_conv2(decoder_inputs)
-        logger.info(f"decoder_inputs: {decoder_inputs.shape}")
+        # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
         # decoder_inputs = self.detail_conv3(decoder_inputs)
