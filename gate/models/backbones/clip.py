@@ -7,6 +7,7 @@ import torch.nn as nn
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
+from torchvision import transforms as T
 
 from gate.models.backbones import (
     Modality,
@@ -99,9 +100,8 @@ class CLIPAdapter(nn.Module):
     def get_transforms(self):
         def image_transforms(x):
             return self.preprocessor(
-                images=x,
+                images=T.Resize(size=(224, 224))(x),
                 do_center_crop=False,
-                size=(224, 224),
                 return_tensors="pt",
             ).pixel_values.squeeze(0)
 
