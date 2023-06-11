@@ -392,9 +392,9 @@ class SegmentationViT(nn.Module):
         decoder_inputs = self.detail_conv2(decoder_inputs)
         logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
-        decoder_inputs = self.upscale_net3(decoder_inputs)
-        decoder_inputs = self.detail_conv3(decoder_inputs)
-        logger.info(f"decoder_inputs: {decoder_inputs.shape}")
+        # decoder_inputs = self.upscale_net3(decoder_inputs)
+        # decoder_inputs = self.detail_conv3(decoder_inputs)
+        # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
         decoder_inputs = self.positional_encoding(decoder_inputs)
