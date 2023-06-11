@@ -215,6 +215,10 @@ def optimization_loss(logits, labels):
         "cross_entropy_loss": cross_entropy_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
+        "background_loss": background_loss,
+        "background_cross_entropy_loss": background_cross_entropy_loss,
+        "background_dice_loss": background_dice_loss,
+        "background_focal_loss": background_focal_loss,
     }
 
 
