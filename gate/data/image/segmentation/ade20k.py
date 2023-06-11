@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from datasets import load_dataset
 from PIL import Image
+import torchvision.transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
@@ -41,10 +42,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
-import torchvision.transforms as T
-
-
-def transform_wrapper(inputs: Dict, target_size: int = 256):
+def transform_wrapper(inputs: Dict, target_size: int = 224):
     image = inputs["image"]
     image = T.Resize((target_size, target_size))(image)
 
