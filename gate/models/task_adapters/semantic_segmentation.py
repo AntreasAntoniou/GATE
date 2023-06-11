@@ -72,7 +72,7 @@ def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False):
     return pos_embed
 
 
-class ResidualConvBlock(nn.Module):
+class ResidualUpscaleConvBlock(nn.Module):
     """
     📝 Residual Convolutional Block
     """
@@ -238,6 +238,7 @@ class SegmentationViT(nn.Module):
         self.decoder_feature_matcher = nn.Linear(
             embed_dim, self.decoder_embedding_dimension, bias=True
         )
+
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
 
@@ -246,6 +247,14 @@ class SegmentationViT(nn.Module):
             out_channels=256,
             kernel_size=1,
         )
+
+        self.upscale_net1 = ResidualUpscaleConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.upscale_net2 = ResidualUpscaleConvBlock(
+            in_channels=256, out_channels=256
+        )
+
         self.decoder_config = SamMaskDecoderConfig(
             num_multimask_outputs=num_classes + 3
         )
@@ -324,6 +333,8 @@ class SegmentationViT(nn.Module):
             batch, channels, feature_map_size, feature_map_size
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
+        decoder_inputs = self.upscale_net1(decoder_inputs)
+        decoder_inputs = self.upscale_net2(decoder_inputs)
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
         decoder_inputs = self.positional_encoding(decoder_inputs)
 
@@ -357,7 +368,6 @@ class SegmentationViT(nn.Module):
             output_attentions=False,
         )
 
-        # print(f"mask_predictions: {mask_predictions.shape}")
         decoded_image = mask_predictions[:, 0, -3:]
         decoded_image = F.interpolate(
             decoded_image, size=(image.shape[2], image.shape[3])
