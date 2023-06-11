@@ -130,7 +130,8 @@ class BackgroundLogging(threading.Thread):
                         ],
                         global_step=self.global_step,
                     )
-                elif "ae_episode" in metric_key:
+                    continue
+                if "ae_episode" in metric_key:
                     print("logging ae episode")
                     ae_episode = value
                     log_wandb_images(
@@ -139,11 +140,12 @@ class BackgroundLogging(threading.Thread):
                         reconstructions=ae_episode["recon"],
                         global_step=self.global_step,
                     )
-                else:
-                    self.experiment_tracker.log(
-                        {f"{self.phase_name}/{metric_key}": value},
-                        step=self.global_step,
-                    )
+                    continue
+
+                self.experiment_tracker.log(
+                    {f"{self.phase_name}/{metric_key}": value},
+                    step=self.global_step,
+                )
 
 
 def collect_metrics(func: Callable) -> Callable:

@@ -163,7 +163,6 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             }
 
             try:
-                print(f"storing ae episode")
                 output_dict["ae_episode"] = {
                     "image": batch["image"],
                     "recon": output_dict["decoded_image"].detach(),
