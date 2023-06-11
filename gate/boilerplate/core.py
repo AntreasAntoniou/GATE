@@ -290,7 +290,10 @@ class Learner(nn.Module):
                             print(
                                 f"Thread {thread} has been running for too long. Stopping it."
                             )
-                            exit()  # experiment kills itself to prevent upload mechanism from completely halting the program
+                            raise ValueError(
+                                f"Thread {thread} has been running for too long. Stopping it."
+                            )
+                            # experiment kills itself to prevent upload mechanism from completely halting the program
                             # Here you can stop the thread. However, keep in mind that stopping a thread is tricky in Python.
                             # You might need to set a flag that the thread checks regularly and stops itself when the flag is set.
             else:
