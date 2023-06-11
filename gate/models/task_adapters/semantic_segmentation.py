@@ -431,7 +431,7 @@ class SegmentationViT(nn.Module):
         # decoder_inputs = self.detail_conv3(decoder_inputs)
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
-        decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
+        decoder_inputs = F.interpolate(decoder_inputs, size=(56, 56))
         decoder_inputs = self.positional_encoding(decoder_inputs)
 
         # torch.Size([1, 1, 2, 256]),
@@ -462,10 +462,6 @@ class SegmentationViT(nn.Module):
             ),
             multimask_output=True,
             output_attentions=False,
-        )
-
-        mask_predictions = F.interpolate(
-            mask_predictions, size=(image.shape[2], image.shape[3])
         )
 
         decoded_image = mask_predictions[:, 0, -3:]
