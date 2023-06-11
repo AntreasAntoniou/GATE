@@ -174,13 +174,41 @@ def optimization_loss(logits, labels):
     # print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
+
+    non_background_indices = labels != 0
+    non_background_logits = logits[non_background_indices]
+    non_background_labels = labels[non_background_indices]
+
+    background_indices = labels == 0
+    background_logits = logits[background_indices]
+    background_labels = labels[background_indices]
+
     # get number of unique classes
 
-    cross_entropy_loss = F.cross_entropy(logits, labels)
-    dice_loss = diff_dice_loss(logits, labels)
-    focal_loss = diff_sigmoid_focal_loss(logits, labels)
+    cross_entropy_loss = F.cross_entropy(
+        non_background_logits, non_background_labels
+    )
+    dice_loss = diff_dice_loss(non_background_logits, non_background_labels)
+    focal_loss = diff_sigmoid_focal_loss(
+        non_background_logits, non_background_labels
+    )
 
-    loss = cross_entropy_loss
+    background_cross_entropy_loss = F.cross_entropy(
+        background_logits, background_labels
+    )
+    background_dice_loss = diff_dice_loss(background_logits, background_labels)
+    background_focal_loss = diff_sigmoid_focal_loss(
+        background_logits, background_labels
+    )
+    background_loss = (
+        background_cross_entropy_loss
+        + background_dice_loss
+        + background_focal_loss
+    )
+
+    loss = (
+        cross_entropy_loss + dice_loss + focal_loss + 0.001 * background_loss
+    )
 
     return {
         "loss": loss,
