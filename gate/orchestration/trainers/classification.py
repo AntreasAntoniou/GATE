@@ -41,17 +41,17 @@ class ClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
+        # start_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-        logger.info(f"Forward time {time.time() - start_time}")
+        # logger.info(f"Forward time {time.time() - start_time}")
 
         loss = output_dict["loss"]
 
-        start_time = time.time()
+        # start_time = time.time()
         accelerator.backward(loss)
-        logger.info(f"Backward time {time.time() - start_time}")
+        # logger.info(f"Backward time {time.time() - start_time}")
 
         if "logits" in output_dict:
             del output_dict["logits"]
@@ -80,10 +80,10 @@ class ClassificationTrainer(Trainer):
         accelerator: Accelerator,
     ) -> TrainerOutput:
         model.train()
-        start_time = time.time()
+        # start_time = time.time()
         self.optimizer.zero_grad()
-        logger.info(f"Zero grad time {time.time() - start_time}")
-        start_time = time.time()
+        # logger.info(f"Zero grad time {time.time() - start_time}")
+        # start_time = time.time()
         step_output: StepOutput = self.step(
             model=model,
             batch=batch,
@@ -93,7 +93,7 @@ class ClassificationTrainer(Trainer):
 
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
-        logger.info(f"Step time {time.time() - start_time}")
+        # logger.info(f"Step time {time.time() - start_time}")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
