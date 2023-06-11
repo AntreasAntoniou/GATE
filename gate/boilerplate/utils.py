@@ -494,9 +494,11 @@ def log_wandb_images(
         reconstruction = reconstructions[i]
         normalized_image = normalize_image(image)
         normalized_reconstruction = normalize_image(reconstruction)
-        episode_list.append(
-            torch.cat([normalized_image, normalized_reconstruction], dim=2)
+        ae_episode = torch.cat(
+            [normalized_image, normalized_reconstruction], dim=2
         )
+        ae_episode = wandb.Image(ae_episode)
+        episode_list.append(ae_episode)
 
     experiment_tracker.log(
         {"autoencoder_episode": episode_list},
