@@ -296,6 +296,15 @@ class SegmentationViT(nn.Module):
         self.upscale_net3 = ResidualUpscaleConvBlock(
             in_channels=256, out_channels=256
         )
+        self.detail_conv1 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv2 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv3 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
 
         self.decoder_config = SamMaskDecoderConfig(
             num_multimask_outputs=num_classes + 3
@@ -376,12 +385,15 @@ class SegmentationViT(nn.Module):
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = self.upscale_net1(decoder_inputs)
+        decoder_inputs = self.detail_conv1(decoder_inputs)
         logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         decoder_inputs = self.upscale_net2(decoder_inputs)
+        decoder_inputs = self.detail_conv2(decoder_inputs)
         logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         decoder_inputs = self.upscale_net3(decoder_inputs)
+        decoder_inputs = self.detail_conv3(decoder_inputs)
         logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
