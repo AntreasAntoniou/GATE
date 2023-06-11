@@ -118,6 +118,45 @@ class ResidualUpscaleConvBlock(nn.Module):
         return out
 
 
+class ResidualConvBlock(nn.Module):
+    """
+    📝 Residual Convolutional Block
+    """
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            in_channels, out_channels, kernel_size=3, stride=1, padding=1
+        )
+        self.activation1 = nn.GELU()
+        self.norm1 = nn.InstanceNorm2d(out_channels)
+
+        self.conv2 = nn.Conv2d(
+            out_channels,
+            out_channels,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+        )
+        self.activation2 = nn.GELU()
+        self.norm2 = nn.InstanceNorm2d(out_channels)
+
+    def forward(self, x):
+        residual = x
+
+        out = self.conv1(x)
+        out = self.activation1(out)
+        out = self.norm1(out)
+
+        out = out + residual
+
+        out = self.conv2(out)
+        out = self.activation2(out)
+        out = self.norm2(out)
+
+        return out
+
+
 from gate.metrics.segmentation import (
     diff_dice_loss,
     diff_sigmoid_focal_loss,
@@ -337,8 +376,14 @@ class SegmentationViT(nn.Module):
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = self.upscale_net1(decoder_inputs)
+        logger.info(f"decoder_inputs: {decoder_inputs.shape}")
+
         decoder_inputs = self.upscale_net2(decoder_inputs)
+        logger.info(f"decoder_inputs: {decoder_inputs.shape}")
+
         decoder_inputs = self.upscale_net3(decoder_inputs)
+        logger.info(f"decoder_inputs: {decoder_inputs.shape}")
+
         decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
         decoder_inputs = self.positional_encoding(decoder_inputs)
 
