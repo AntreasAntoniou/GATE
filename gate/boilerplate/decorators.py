@@ -115,9 +115,9 @@ class BackgroundLogging(threading.Thread):
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
-                print(f"logging {metric_key}")
+                # print(f"logging {metric_key}")
                 if "seg_episode" in metric_key:
-                    print("logging seg episode")
+                    # print("logging seg episode")
                     seg_episode = value
 
                     log_wandb_masks(
@@ -132,7 +132,7 @@ class BackgroundLogging(threading.Thread):
                     )
                     continue
                 if "ae_episode" in metric_key:
-                    print("logging ae episode")
+                    # print("logging ae episode")
                     ae_episode = value
                     log_wandb_images(
                         experiment_tracker=self.experiment_tracker,
