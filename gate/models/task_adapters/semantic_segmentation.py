@@ -464,12 +464,14 @@ class SegmentationViT(nn.Module):
             output_attentions=False,
         )
 
-        decoded_image = mask_predictions[:, 0, -3:]
-        decoded_image = F.interpolate(
-            decoded_image, size=(image.shape[2], image.shape[3])
+        mask_predictions = F.interpolate(
+            mask_predictions, size=(image.shape[2], image.shape[3])
         )
+
+        decoded_image = mask_predictions[:, 0, -3:]
+        mask_predictions = mask_predictions[:, 0, :-3]
         output = {
-            "logits": mask_predictions[:, 0, :-3],
+            "logits": mask_predictions,
             "decoded_image": decoded_image,
         }
 
