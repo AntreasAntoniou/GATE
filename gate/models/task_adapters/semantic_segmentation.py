@@ -103,6 +103,10 @@ class ResidualUpscaleConvBlock(nn.Module):
         out = self.activation1(out)
         out = self.norm1(out)
 
+        out = self.conv2(out)
+        out = self.activation2(out)
+        out = self.norm2(out)
+
         if self.up1 is None:
             self.up1 = nn.Upsample(
                 size=(out.shape[2], out.shape[3]),
@@ -110,10 +114,6 @@ class ResidualUpscaleConvBlock(nn.Module):
                 align_corners=True,
             )
         residual = self.up1(residual)
-
-        out = self.conv2(out)
-        out = self.activation2(out)
-        out = self.norm2(out)
 
         return out + residual
 
