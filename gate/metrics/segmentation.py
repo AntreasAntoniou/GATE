@@ -471,6 +471,9 @@ class FocalLoss(torch.nn.Module):
         else:
             target = target.view(-1, 1)
 
+        logger.info(
+            f"output shape: {output.shape}, target shape: {target.shape}"
+        )
         logpt = self.ce_fn(output, target)
         pt = torch.exp(-logpt)
         loss = ((1 - pt) ** self.gamma) * self.alpha * logpt
