@@ -327,12 +327,16 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
 
+        self.mask_conv = nn.Conv2d(
+            in_channels=256,
+            out_channels=self.num_classes,
+            kernel_size=1,
+        )
+
         self.upscale_net1 = ResidualUpscaleConvBlock(
             in_channels=256, out_channels=256
         )
-        self.upscale_net2 = ResidualUpscaleConvBlock(
-            in_channels=256, out_channels=256
-        )
+
         self.detail_conv1_0 = ResidualConvBlock(
             in_channels=256, out_channels=256
         )
@@ -343,6 +347,10 @@ class SegmentationViT(nn.Module):
             in_channels=256, out_channels=256
         )
         self.detail_conv1_3 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+
+        self.upscale_net2 = ResidualUpscaleConvBlock(
             in_channels=256, out_channels=256
         )
         self.detail_conv2_0 = ResidualConvBlock(
@@ -358,10 +366,42 @@ class SegmentationViT(nn.Module):
             in_channels=256, out_channels=256
         )
 
-        self.decoder_config = SamMaskDecoderConfig(
-            num_multimask_outputs=num_classes + 3
+        self.upscale_net3 = ResidualUpscaleConvBlock(
+            in_channels=256, out_channels=256
         )
-        self.decoder = SamMaskDecoder(config=self.decoder_config)
+        self.detail_conv3_0 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv3_1 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv3_2 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv3_3 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+
+        self.upscale_net4 = ResidualUpscaleConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv4_0 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv4_1 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv4_2 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv4_3 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+
+        # self.decoder_config = SamMaskDecoderConfig(
+        #     num_multimask_outputs=num_classes
+        # )
+        # self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
         self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
@@ -453,6 +493,7 @@ class SegmentationViT(nn.Module):
             batch, channels, feature_map_size, feature_map_size
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
+
         decoder_inputs = self.upscale_net1(decoder_inputs)
         decoder_inputs = self.detail_conv1_0(decoder_inputs)
         decoder_inputs = self.detail_conv1_1(decoder_inputs)
@@ -465,50 +506,63 @@ class SegmentationViT(nn.Module):
         decoder_inputs = self.detail_conv2_1(decoder_inputs)
         decoder_inputs = self.detail_conv2_2(decoder_inputs)
         decoder_inputs = self.detail_conv2_3(decoder_inputs)
+
+        decoder_inputs = F.interpolate(decoder_inputs, size=(56, 56))
+
+        decoder_inputs = self.upscale_net3(decoder_inputs)
+        decoder_inputs = self.detail_conv3_0(decoder_inputs)
+        decoder_inputs = self.detail_conv3_1(decoder_inputs)
+        decoder_inputs = self.detail_conv3_2(decoder_inputs)
+        decoder_inputs = self.detail_conv3_3(decoder_inputs)
+
+        decoder_inputs = self.upscale_net4(decoder_inputs)
+        decoder_inputs = self.detail_conv4_0(decoder_inputs)
+        decoder_inputs = self.detail_conv4_1(decoder_inputs)
+        decoder_inputs = self.detail_conv4_2(decoder_inputs)
+        decoder_inputs = self.detail_conv4_3(decoder_inputs)
+
+        mask_predictions = self.mask_conv(decoder_inputs)
+
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
         # decoder_inputs = self.detail_conv3(decoder_inputs)
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
-        decoder_inputs = F.interpolate(decoder_inputs, size=(56, 56))
-        decoder_inputs = self.positional_encoding(decoder_inputs)
+        # decoder_inputs = self.positional_encoding(decoder_inputs)
 
-        # torch.Size([1, 1, 2, 256]),
-        # dense_embeddings: torch.Size([1, 256, 64, 64]),
-        # image_embeddings: torch.Size([1, 256, 64, 64]),
-        # image_positional_embeddings: torch.Size([1, 256, 64, 64])
+        # # torch.Size([1, 1, 2, 256]),
+        # # dense_embeddings: torch.Size([1, 256, 64, 64]),
+        # # image_embeddings: torch.Size([1, 256, 64, 64]),
+        # # image_positional_embeddings: torch.Size([1, 256, 64, 64])
 
-        # print(
-        #     f"position: {self.positional_encoding.positional_encoding.shape}, "
-        #     f"image_embeddings: {decoder_inputs.shape}, dense_embeddings: {decoder_inputs.shape}, "
-        #     f"image_positional_embeddings: {self.positional_encoding.positional_encoding.shape}"
+        # # print(
+        # #     f"position: {self.positional_encoding.positional_encoding.shape}, "
+        # #     f"image_embeddings: {decoder_inputs.shape}, dense_embeddings: {decoder_inputs.shape}, "
+        # #     f"image_positional_embeddings: {self.positional_encoding.positional_encoding.shape}"
+        # # )
+        # if self.dense_prompt_embeddings is None:
+        #     self.dense_prompt_embeddings = nn.Parameter(
+        #         torch.randn(size=(1, *decoder_inputs.shape[1:])).to(
+        #             decoder_inputs.device
+        #         )
+        #     )
+
+        # mask_predictions, _, _ = self.decoder(
+        #     image_embeddings=decoder_inputs,
+        #     image_positional_embeddings=self.positional_encoding.positional_encoding,
+        #     sparse_prompt_embeddings=torch.zeros(
+        #         decoder_inputs.shape[0], 1, 1, 256
+        #     ).to(decoder_inputs.device),
+        #     dense_prompt_embeddings=self.dense_prompt_embeddings.repeat(
+        #         [decoder_inputs.shape[0], 1, 1, 1]
+        #     ),
+        #     multimask_output=True,
+        #     output_attentions=False,
         # )
-        if self.dense_prompt_embeddings is None:
-            self.dense_prompt_embeddings = nn.Parameter(
-                torch.randn(size=(1, *decoder_inputs.shape[1:])).to(
-                    decoder_inputs.device
-                )
-            )
 
-        mask_predictions, _, _ = self.decoder(
-            image_embeddings=decoder_inputs,
-            image_positional_embeddings=self.positional_encoding.positional_encoding,
-            sparse_prompt_embeddings=torch.zeros(
-                decoder_inputs.shape[0], 1, 1, 256
-            ).to(decoder_inputs.device),
-            dense_prompt_embeddings=self.dense_prompt_embeddings.repeat(
-                [decoder_inputs.shape[0], 1, 1, 1]
-            ),
-            multimask_output=True,
-            output_attentions=False,
-        )
-
-        decoded_image = mask_predictions[:, 0, -3:]
-        mask_predictions = mask_predictions[:, 0, :-3]
         output = {
             "logits": mask_predictions,
-            "decoded_image": decoded_image,
         }
 
         if return_loss_and_metrics:
