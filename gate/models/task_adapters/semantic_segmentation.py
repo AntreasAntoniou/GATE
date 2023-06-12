@@ -109,13 +109,13 @@ class ResidualUpscaleConvBlock(nn.Module):
                 mode="bilinear",
                 align_corners=True,
             )
-        out = self.up1(residual) + out
+        residual = self.up1(residual)
 
         out = self.conv2(out)
         out = self.activation2(out)
         out = self.norm2(out)
 
-        return out
+        return out + residual
 
 
 class ResidualConvBlock(nn.Module):
@@ -148,13 +148,11 @@ class ResidualConvBlock(nn.Module):
         out = self.activation1(out)
         out = self.norm1(out)
 
-        out = out + residual
-
         out = self.conv2(out)
         out = self.activation2(out)
         out = self.norm2(out)
 
-        return out
+        return out + residual
 
 
 from gate.metrics.segmentation import (
