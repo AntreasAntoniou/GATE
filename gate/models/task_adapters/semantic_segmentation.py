@@ -318,7 +318,7 @@ class SegmentationViT(nn.Module):
 
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
-        hidden_size = 64
+        hidden_size = 256
 
         self.channel_projection = nn.Conv2d(
             in_channels=decoder_embed_dim,
