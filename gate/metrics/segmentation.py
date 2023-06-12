@@ -485,6 +485,9 @@ class FocalLoss(torch.nn.Module):
     def forward(self, logits, labels):
         logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
         labels = labels.permute(0, 2, 3, 1).reshape(-1)
+        logger.info(
+            f"logits shape: {logits.shape}, labels shape: {labels.shape}"
+        )
         # labels = one_hot(labels, logits.shape[1])
         inputs = tuple(list(logits) + [labels])
         return self._aux_forward(*inputs)
