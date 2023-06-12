@@ -29,7 +29,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     data = load_dataset(
         "scene_parse",
         "instance_segmentation",
-        split="train[:100]"
+        split="train[:100]",
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
     )
