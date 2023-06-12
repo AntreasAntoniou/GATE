@@ -454,23 +454,6 @@ class FocalLoss(torch.nn.Module):
         return loss
 
     def _base_forward(self, output, target):
-        if output.dim() > 2:
-            output = output.contiguous().view(
-                output.size(0), output.size(1), -1
-            )
-            output = output.transpose(1, 2)
-            output = output.contiguous().view(-1, output.size(2)).squeeze()
-        if target.dim() == 4:
-            target = target.contiguous().view(
-                target.size(0), target.size(1), -1
-            )
-            target = target.transpose(1, 2)
-            target = target.contiguous().view(-1, target.size(2)).squeeze()
-        elif target.dim() == 3:
-            target = target.view(-1)
-        else:
-            target = target.view(-1, 1)
-
         logger.info(
             f"output shape: {output.shape}, target shape: {target.shape}"
         )
