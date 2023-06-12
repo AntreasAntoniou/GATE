@@ -565,6 +565,7 @@ class SegmentationViT(nn.Module):
 
         output = {
             "logits": mask_predictions,
+            "decoded_image": mask_predictions[:, :3, :, :],
         }
 
         if return_loss_and_metrics:
