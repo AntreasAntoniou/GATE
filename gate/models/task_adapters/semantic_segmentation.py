@@ -190,7 +190,7 @@ def optimization_loss(logits, labels):
     )
     dice_loss = diff_dice_loss(non_background_logits, non_background_labels)
     focal_loss = diff_sigmoid_focal_loss(
-        non_background_logits, non_background_labels
+        non_background_logits, non_background_labels, alpha=0.25, gamma=2.0
     )
 
     background_cross_entropy_loss = F.cross_entropy(
@@ -198,7 +198,10 @@ def optimization_loss(logits, labels):
     )
     background_dice_loss = diff_dice_loss(background_logits, background_labels)
     background_focal_loss = diff_sigmoid_focal_loss(
-        background_logits, background_labels
+        background_logits,
+        background_labels,
+        alpha=0.25,
+        gamma=2.0,
     )
     background_loss = (
         # 0.1 * background_cross_entropy_loss
