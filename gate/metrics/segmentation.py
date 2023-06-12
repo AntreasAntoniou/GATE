@@ -447,7 +447,7 @@ class FocalLoss(torch.nn.Module):
     def _aux_forward(self, *inputs, **kwargs):
         *preds, target = tuple(inputs)
 
-        loss = self._base_forward(preds[0], target)
+        loss = self._base_forward(preds, target)
         for i in range(1, len(preds)):
             aux_loss = self._base_forward(preds[i], target)
             loss += self.aux_weight * aux_loss
