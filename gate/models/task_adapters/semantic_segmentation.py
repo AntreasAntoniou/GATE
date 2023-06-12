@@ -213,7 +213,7 @@ def optimization_loss(logits, labels):
         cross_entropy_loss
         # dice_loss
         # + focal_loss
-        + 0.01 * background_loss
+        + 0.1 * background_loss
     )
 
     return {
@@ -331,16 +331,28 @@ class SegmentationViT(nn.Module):
         self.upscale_net2 = ResidualUpscaleConvBlock(
             in_channels=256, out_channels=256
         )
-        self.upscale_net3 = ResidualUpscaleConvBlock(
+        self.detail_conv1_0 = ResidualConvBlock(
             in_channels=256, out_channels=256
         )
-        self.detail_conv1 = ResidualConvBlock(
+        self.detail_conv1_1 = ResidualConvBlock(
             in_channels=256, out_channels=256
         )
-        self.detail_conv2 = ResidualConvBlock(
+        self.detail_conv1_2 = ResidualConvBlock(
             in_channels=256, out_channels=256
         )
-        self.detail_conv3 = ResidualConvBlock(
+        self.detail_conv1_3 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv2_0 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv2_1 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv2_2 = ResidualConvBlock(
+            in_channels=256, out_channels=256
+        )
+        self.detail_conv2_3 = ResidualConvBlock(
             in_channels=256, out_channels=256
         )
 
@@ -423,11 +435,17 @@ class SegmentationViT(nn.Module):
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
         decoder_inputs = self.upscale_net1(decoder_inputs)
-        decoder_inputs = self.detail_conv1(decoder_inputs)
+        decoder_inputs = self.detail_conv1_0(decoder_inputs)
+        decoder_inputs = self.detail_conv1_1(decoder_inputs)
+        decoder_inputs = self.detail_conv1_2(decoder_inputs)
+        decoder_inputs = self.detail_conv1_3(decoder_inputs)
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         decoder_inputs = self.upscale_net2(decoder_inputs)
-        decoder_inputs = self.detail_conv2(decoder_inputs)
+        decoder_inputs = self.detail_conv2_0(decoder_inputs)
+        decoder_inputs = self.detail_conv2_1(decoder_inputs)
+        decoder_inputs = self.detail_conv2_2(decoder_inputs)
+        decoder_inputs = self.detail_conv2_3(decoder_inputs)
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
