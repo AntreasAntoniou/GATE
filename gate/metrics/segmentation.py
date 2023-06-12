@@ -450,9 +450,6 @@ class FocalLoss(torch.nn.Module):
         return loss
 
     def _base_forward(self, output, target):
-        logger.info(
-            f"output shape: {output.shape}, target shape: {target.shape}"
-        )
         logpt = self.ce_fn(output, target)
         pt = torch.exp(-logpt)
         loss = ((1 - pt) ** self.gamma) * self.alpha * logpt
@@ -464,9 +461,7 @@ class FocalLoss(torch.nn.Module):
     def forward(self, logits, labels):
         logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
         labels = labels.permute(0, 2, 3, 1).reshape(-1)
-        logger.info(
-            f"logits shape: {logits.shape}, labels shape: {labels.shape}"
-        )
+
         return self._aux_forward(logits, labels)
 
 
