@@ -174,10 +174,11 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             del output_dict["decoded_image"]
 
         for key, value in output_dict.items():
-            if isinstance(value, torch.Tensor):
-                self.current_epoch_dict[key].append(
-                    value.detach().float().mean().cpu()
-                )
+            if "loss" in key or "iou" in key or "accuracy" in key:
+                if isinstance(value, torch.Tensor):
+                    self.current_epoch_dict[key].append(
+                        value.detach().float().mean().cpu()
+                    )
 
         return StepOutput(
             metrics=output_dict,
