@@ -403,21 +403,16 @@ def fast_miou_numpy(
     )
 
 
-import torch
-import torch.nn.functional as F
-from typing import Optional, Union
-
-
-def one_hot(labels: torch.Tensor, num_classes: int) -> torch.Tensor:
+def one_hot(labels: torch.Tensor, num_classes: int):
     """
     Convert labels to one-hot vectors.
 
     Args:
-        labels (torch.Tensor): A 1D tensor of shape (N,) containing the class labels.
+        labels (torch.Tensor): A 1D tensor containing the class labels.
         num_classes (int): The number of distinct classes.
 
     Returns:
-        torch.Tensor: A 2D tensor of one-hot encoded labels with shape (N, num_classes).
+        torch.Tensor: A 2D tensor of one-hot encoded labels with shape (len(labels), num_classes).
     """
     one_hot_vectors = torch.zeros(
         labels.size(0), num_classes, dtype=torch.float32, device=labels.device
@@ -429,13 +424,13 @@ def one_hot(labels: torch.Tensor, num_classes: int) -> torch.Tensor:
 class FocalLoss(torch.nn.Module):
     def __init__(
         self,
-        alpha: float = 0.5,
-        gamma: float = 2,
-        weight: Optional[torch.Tensor] = None,
-        aux: bool = True,
-        aux_weight: float = 0.2,
-        ignore_index: int = -1,
-        size_average: bool = True,
+        alpha=0.5,
+        gamma=2,
+        weight=None,
+        aux=True,
+        aux_weight=0.2,
+        ignore_index=-1,
+        size_average=True,
     ):
         super().__init__()
         self.alpha = alpha
@@ -449,18 +444,15 @@ class FocalLoss(torch.nn.Module):
             weight=self.weight, ignore_index=self.ignore_index
         )
 
-    def _aux_forward(
-        self, logits: torch.Tensor, labels: torch.Tensor
-    ) -> torch.Tensor:
+    def _aux_forward(self, logits, labels):
         loss = self._base_forward(logits, labels)
-        for i in range(1, len(logits)):
-            aux_loss = self._base_forward(logits[i], labels)
-            loss += self.aux_weight * aux_loss
+
         return loss
 
-    def _base_forward(
-        self, output: torch.Tensor, target: torch.Tensor
-    ) -> torch.Tensor:
+    def _base_forward(self, output, target):
+        logger.info(
+            f"output shape: {output.shape}, target shape: {target.shape}"
+        )
         logpt = self.ce_fn(output, target)
         pt = torch.exp(-logpt)
         loss = ((1 - pt) ** self.gamma) * self.alpha * logpt
@@ -469,51 +461,37 @@ class FocalLoss(torch.nn.Module):
         else:
             return loss.sum()
 
-    def forward(
-        self, logits: torch.Tensor, labels: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Compute the focal loss.
-
-        Args:
-            logits (torch.Tensor): The input tensor of shape (N, C, H, W), where N is the batch size,
-                                   C is the number of classes, and H and W are the height and width
-                                   of the input, respectively.
-            labels (torch.Tensor): The target tensor of shape (N, H, W).
-
-        Returns:
-            torch.Tensor: The focal loss.
-        """
+    def forward(self, logits, labels):
         logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
         labels = labels.permute(0, 2, 3, 1).reshape(-1)
+        logger.info(
+            f"logits shape: {logits.shape}, labels shape: {labels.shape}"
+        )
         return self._aux_forward(logits, labels)
 
 
 class BinaryDiceLoss(torch.nn.Module):
-    def __init__(self, smooth: float = 1, p: int = 2, reduction: str = "mean"):
+    """Dice loss of binary class
+    Args:
+        smooth: A float number to smooth loss, and avoid NaN error, default: 1
+        p: Denominator value: \sum{x^p} + \sum{y^p}, default: 2
+        predict: A tensor of shape [N, *]
+        target: A tensor of shape same with predict
+        reduction: Reduction method to apply, return mean over batch if 'mean',
+            return sum if 'sum', return a tensor of shape [N,] if 'none'
+    Returns:
+        Loss tensor according to arg reduction
+    Raise:
+        Exception if unexpected reduction
+    """
+
+    def __init__(self, smooth=1, p=2, reduction="mean"):
         super(BinaryDiceLoss, self).__init__()
         self.smooth = smooth
         self.p = p
         self.reduction = reduction
 
-    def forward(
-        self,
-        predict: torch.Tensor,
-        target: torch.Tensor,
-        valid_mask: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Compute the binary dice loss.
-
-        Args:
-            predict (torch.Tensor): The input tensor of shape (N, H*W), where N is the batch size,
-                                    and H and W are the height and width of the input, respectively.
-            target (torch.Tensor): The target tensor of shape (N, H*W).
-            valid_mask (torch.Tensor): The valid mask tensor of shape (N, H*W).
-
-        Returns:
-            torch.Tensor: The binary dice loss.
-        """
+    def forward(self, predict, target, valid_mask):
         assert (
             predict.shape[0] == target.shape[0]
         ), "predict & target batch size don't match"
@@ -522,13 +500,15 @@ class BinaryDiceLoss(torch.nn.Module):
         valid_mask = valid_mask.contiguous().view(valid_mask.shape[0], -1)
 
         num = (
-            torch.sum(predict * target * valid_mask, dim=1) * 2
-        ) + self.smooth
+            torch.sum(torch.mul(predict, target) * valid_mask, dim=1) * 2
+            + self.smooth
+        )
         den = (
             torch.sum(
                 (predict.pow(self.p) + target.pow(self.p)) * valid_mask, dim=1
             )
-        ) + self.smooth
+            + self.smooth
+        )
 
         loss = 1 - num / den
 
@@ -539,17 +519,14 @@ class BinaryDiceLoss(torch.nn.Module):
         elif self.reduction == "none":
             return loss
         else:
-            raise Exception(f"Unexpected reduction {self.reduction}")
+            raise Exception("Unexpected reduction {}".format(self.reduction))
 
 
 class DiceLoss(torch.nn.Module):
+    """Dice loss, need one hot encode input"""
+
     def __init__(
-        self,
-        weight: Optional[torch.Tensor] = None,
-        aux: bool = True,
-        aux_weight: float = 0.4,
-        ignore_index: int = -1,
-        **kwargs,
+        self, weight=None, aux=True, aux_weight=0.4, ignore_index=-1, **kwargs
     ):
         super(DiceLoss, self).__init__()
         self.kwargs = kwargs
@@ -558,12 +535,7 @@ class DiceLoss(torch.nn.Module):
         self.aux = aux
         self.aux_weight = aux_weight
 
-    def _base_forward(
-        self,
-        predict: torch.Tensor,
-        target: torch.Tensor,
-        valid_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    def _base_forward(self, predict, target, valid_mask):
         dice = BinaryDiceLoss(**self.kwargs)
         total_loss = 0
         predict = F.softmax(predict, dim=1)
@@ -573,46 +545,25 @@ class DiceLoss(torch.nn.Module):
                 dice_loss = dice(predict[:, i], target[..., i], valid_mask)
                 if self.weight is not None:
                     assert (
-                        target.shape[1] == self.weight.shape[0]
-                    ), f"Expect weight shape {target.shape[1]}, get{self.weight.shape[0]}"
+                        self.weight.shape[0] == target.shape[1]
+                    ), "Expect weight shape [{}], get[{}]".format(
+                        target.shape[1], self.weight.shape[0]
+                    )
                     dice_loss *= self.weights[i]
                 total_loss += dice_loss
 
-        return total_loss
+        return total_loss / target.shape[-1]
 
-    def forward(
-        self, logits: torch.Tensor, labels: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Compute the dice loss.
-
-        Args:
-            logits (torch.Tensor): The input tensor of shape (N, C, H, W), where N is the batch size,
-                                   C is the number of classes, and H and W are the height and width
-                                   of the input, respectively.
-            labels (torch.Tensor): The target tensor of shape (N, H, W).
-
-        Returns:
-            torch.Tensor: The dice loss.
-        """
-        labels = one_hot(labels, logits.shape[1])
-        valid_mask = (labels.sum(dim=1) > 0).float()
-        logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-        labels = labels.permute(0, 2, 3, 1).reshape(-1, labels.shape[1])
-
-        if self.aux:
-            return self._aux_forward(logits, labels, valid_mask)
-        else:
-            return self._base_forward(logits, labels, valid_mask)
-
-    def _aux_forward(
-        self,
-        logits: torch.Tensor,
-        labels: torch.Tensor,
-        valid_mask: torch.Tensor,
-    ) -> torch.Tensor:
+    def _aux_forward(self, logits, labels):
+        valid_mask = (labels != self.ignore_index).long()
         loss = self._base_forward(logits, labels, valid_mask)
-        for i in range(1, len(logits)):
-            aux_loss = self._base_forward(logits[i], labels, valid_mask)
-            loss += self.aux_weight * aux_loss
         return loss
+
+    def forward(self, logits, labels):
+        logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
+        labels = (
+            labels.permute(0, 2, 3, 1).reshape(-1, labels.shape[1]).squeeze(1)
+        )
+        labels = one_hot(torch.clamp_min(labels, 0), logits.shape[1])
+
+        return self._aux_forward(logits, labels)
