@@ -370,8 +370,8 @@ class SegmentationViT(nn.Module):
         self.init_weights()
 
     def optimization_loss(self, logits, labels):
-        dice_loss = self.dice_loss(logits, labels)
         focal_loss = self.focal_loss(logits, labels)
+        dice_loss = self.dice_loss(logits, labels)
 
         loss = dice_loss + focal_loss
         return {
