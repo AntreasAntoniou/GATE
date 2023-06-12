@@ -158,6 +158,8 @@ class ResidualConvBlock(nn.Module):
 
 
 from gate.metrics.segmentation import (
+    DiceLoss,
+    FocalLoss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
     fast_miou,
@@ -362,7 +364,21 @@ class SegmentationViT(nn.Module):
         self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
+        self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
+        self.dice_loss = DiceLoss(ignore_index=0)
+
         self.init_weights()
+
+    def optimization_loss(self, logits, labels):
+        dice_loss = self.dice_loss(logits, labels)
+        focal_loss = self.focal_loss(logits, labels)
+
+        loss = dice_loss + focal_loss
+        return {
+            "loss": loss,
+            "dice_loss": dice_loss,
+            "focal_loss": focal_loss,
+        }
 
     def init_weights(self):
         torch.nn.init.normal_(self.class_token, std=0.02)
@@ -382,7 +398,7 @@ class SegmentationViT(nn.Module):
     ):
         output_dict = {}
         if labels is not None:
-            output_dict = optimization_loss(logits, labels)
+            output_dict = self.optimization_loss(logits, labels)
             if not self.training:
                 try:
                     metrics = fast_miou(logits, labels)
