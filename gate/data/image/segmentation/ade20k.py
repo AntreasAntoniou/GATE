@@ -29,15 +29,14 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     data = load_dataset(
         "scene_parse_150",
         "instance_segmentation",
-        split="train[:100]",
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
     )
 
     dataset_dict = {
-        "train": data,
-        "val": data,
-        "test": data,
+        "train": data["train"],
+        "val": data["validation"],
+        "test": data["test"],
     }
 
     return dataset_dict[set_name]
