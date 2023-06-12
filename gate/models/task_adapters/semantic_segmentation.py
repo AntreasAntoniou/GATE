@@ -201,14 +201,14 @@ def optimization_loss(logits, labels):
         background_logits, background_labels
     )
     background_loss = (
-        0.1 * background_cross_entropy_loss
-        + background_dice_loss
+        # 0.1 * background_cross_entropy_loss
+        background_dice_loss
         + background_focal_loss
     )
 
     loss = (
-        0.1 * cross_entropy_loss
-        + dice_loss
+        # 0.1 * cross_entropy_loss
+        dice_loss
         + focal_loss
         + 0.01 * background_loss
     )
