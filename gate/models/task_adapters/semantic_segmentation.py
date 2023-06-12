@@ -523,6 +523,8 @@ class SegmentationViT(nn.Module):
 
         mask_predictions = self.mask_conv(decoder_inputs)
 
+        mask_predictions = F.interpolate(mask_predictions, size=(224, 224))
+
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
