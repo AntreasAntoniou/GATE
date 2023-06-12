@@ -27,7 +27,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     rng = np.random.RandomState(42)
 
     data = load_dataset(
-        "scene_parse",
+        "scene_parse_150",
         "instance_segmentation",
         split="train[:100]",
         cache_dir=data_dir,
