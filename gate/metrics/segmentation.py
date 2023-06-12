@@ -532,22 +532,11 @@ class DiceLoss(torch.nn.Module):
 
     def _base_forward(self, predict, target, valid_mask):
         dice = BinaryDiceLoss(**self.kwargs)
-        total_loss = 0
         predict = F.softmax(predict, dim=1)
 
-        for i in range(target.shape[-1]):
-            if i != self.ignore_index:
-                dice_loss = dice(predict[:, i], target[..., i], valid_mask)
-                if self.weight is not None:
-                    assert (
-                        self.weight.shape[0] == target.shape[1]
-                    ), "Expect weight shape [{}], get[{}]".format(
-                        target.shape[1], self.weight.shape[0]
-                    )
-                    dice_loss *= self.weights[i]
-                total_loss += dice_loss
+        loss = dice(predict, target, valid_mask)
 
-        return total_loss / target.shape[-1]
+        return loss
 
     def _aux_forward(self, logits, labels):
         valid_mask = (labels != self.ignore_index).long()
