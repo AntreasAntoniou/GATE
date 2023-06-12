@@ -403,6 +403,24 @@ def fast_miou_numpy(
     )
 
 
+def one_hot(labels: torch.Tensor, num_classes: int):
+    """
+    Convert labels to one-hot vectors.
+
+    Args:
+        labels (torch.Tensor): A 1D tensor containing the class labels.
+        num_classes (int): The number of distinct classes.
+
+    Returns:
+        torch.Tensor: A 2D tensor of one-hot encoded labels with shape (len(labels), num_classes).
+    """
+    one_hot_vectors = torch.zeros(
+        labels.size(0), num_classes, dtype=torch.float32, device=labels.device
+    )
+    one_hot_vectors.scatter_(1, labels.unsqueeze(1), 1.0)
+    return one_hot_vectors
+
+
 class MixSoftmaxCrossEntropyLoss(torch.nn.CrossEntropyLoss):
     def __init__(self, aux=True, aux_weight=0.2, ignore_index=-1, **kwargs):
         super(MixSoftmaxCrossEntropyLoss, self).__init__(
@@ -507,6 +525,11 @@ class FocalLoss(torch.nn.Module):
             return loss.sum()
 
     def forward(self, logits, labels):
+        logits = logits.permute(0, 2, 3, 1).view(-1, logits.shape[1])
+        labels = (
+            logits.permute(0, 2, 3, 1).view(-1, labels.shape[1]).squeeze(1)
+        )
+        labels = one_hot(labels, logits.shape[1])
         inputs = tuple(list(logits) + [labels])
         return dict(loss=self._aux_forward(*inputs))
 
@@ -606,5 +629,11 @@ class DiceLoss(torch.nn.Module):
         return loss
 
     def forward(self, logits, labels):
+        logits = logits.permute(0, 2, 3, 1).view(-1, logits.shape[1])
+        labels = (
+            logits.permute(0, 2, 3, 1).view(-1, labels.shape[1]).squeeze(1)
+        )
+        labels = one_hot(labels, logits.shape[1])
+
         inputs = tuple(list(logits) + [labels])
         return dict(loss=self._aux_forward(*inputs))
