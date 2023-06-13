@@ -77,7 +77,7 @@ class TimmModel(nn.Module):
         # iterate over compose transforms and remove centercrop and resize
         print(f"{model_identifier} transforms: {temp_transforms}")
         for i, t in enumerate(temp_transforms):
-            print(f"{i} {t.__class__.__name__}}")
+            print(f"{i} {t.__class__.__name__}")
             if "CenterCrop" in t.__class__.__name__ or isinstance(t, T.Resize):
                 del self.transforms.transforms[i]
 
