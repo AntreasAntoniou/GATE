@@ -48,3 +48,61 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
         x = x.view(input_shape[0], input_shape[1], *x.shape[1:])
 
     return x
+
+
+import torch
+from torch import nn, Tensor
+import math
+
+
+def interpolate_position_encoding(
+    pos_embed: Tensor, x: Tensor, w: int, h: int, patch_size: int
+) -> Tensor:
+    """Interpolate the position encoding based on the input tensor dimensions.
+
+    This code is adapted from https://github.com/facebookresearch/dino/blob/main/vision_transformer.py#L174
+
+    Args:
+        pos_embed (Tensor): Position embedding tensor (B, N+1, D).
+        x (Tensor)       : Input tensor (B, N+1, D).
+        w (int)          : Width of the input.
+        h (int)          : Height of the input.
+        patch_size (int) : Patch size used in the patch embedding module.
+
+    Returns:
+        Tensor: Interpolated position encoding tensor (B, npatch+1, D).
+    """
+
+    N = pos_embed.shape[1] - 1
+    npatch = (w // patch_size) * (h // patch_size)
+
+    if npatch == N:
+        return pos_embed
+
+    class_pos_embed = pos_embed[:, 0]
+    patch_pos_embed = pos_embed[:, 1:]
+    dim = x.shape[-1]
+
+    w0 = w // patch_size
+    h0 = h // patch_size
+    w0, h0 = (
+        w0 + 0.1,
+        h0 + 0.1,
+    )  # Add a small number to avoid floating point errors
+
+    patch_pos_embed = nn.functional.interpolate(
+        patch_pos_embed.reshape(
+            1, int(math.sqrt(N)), int(math.sqrt(N)), dim
+        ).permute(0, 3, 1, 2),
+        scale_factor=(w0 / math.sqrt(N), h0 / math.sqrt(N)),
+        mode="bicubic",
+    )
+
+    assert (
+        int(w0) == patch_pos_embed.shape[-2]
+        and int(h0) == patch_pos_embed.shape[-1]
+    )
+
+    patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, dim)
+
+    return torch.cat((class_pos_embed.unsqueeze(0), patch_pos_embed), dim=1)
