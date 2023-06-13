@@ -421,133 +421,80 @@ def one_hot(labels: torch.Tensor, num_classes: int):
     return one_hot_vectors
 
 
-class FocalLoss(torch.nn.Module):
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class FocalLoss(nn.Module):
     def __init__(
-        self,
-        alpha=0.5,
-        gamma=2,
-        weight=None,
-        aux=True,
-        aux_weight=0.2,
-        ignore_index=-1,
-        size_average=True,
+        self, alpha=0.25, gamma=2.0, reduction="mean", ignore_index=None
     ):
-        super().__init__()
+        super(FocalLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
-        self.weight = weight
+        self.reduction = reduction
         self.ignore_index = ignore_index
-        self.aux = aux
-        self.aux_weight = aux_weight
-        self.size_average = size_average
-        self.ce_fn = torch.nn.CrossEntropyLoss(
-            weight=self.weight, ignore_index=self.ignore_index
-        )
-
-    def _aux_forward(self, logits, labels):
-        loss = self._base_forward(logits, labels)
-
-        return loss
-
-    def _base_forward(self, output, target):
-        logpt = self.ce_fn(output, target)
-        pt = torch.exp(-logpt)
-        loss = ((1 - pt) ** self.gamma) * self.alpha * logpt
-        if self.size_average:
-            return loss.mean()
-        else:
-            return loss.sum()
 
     def forward(self, logits, labels):
-        logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-        labels = labels.permute(0, 2, 3, 1).reshape(-1)
+        b, c, h, w = logits.shape
+        logits = logits.permute(0, 2, 3, 1).contiguous()
+        logits = logits.view(-1, c)
+        labels = labels.view(-1)
 
-        return self._aux_forward(logits, labels)
+        if self.ignore_index is not None:
+            mask = labels != self.ignore_index
+            logits = logits[mask]
+            labels = labels[mask]
 
-
-class BinaryDiceLoss(torch.nn.Module):
-    """Dice loss of binary class
-    Args:
-        smooth: A float number to smooth loss, and avoid NaN error, default: 1
-        p: Denominator value: \sum{x^p} + \sum{y^p}, default: 2
-        predict: A tensor of shape [N, *]
-        target: A tensor of shape same with predict
-        reduction: Reduction method to apply, return mean over batch if 'mean',
-            return sum if 'sum', return a tensor of shape [N,] if 'none'
-    Returns:
-        Loss tensor according to arg reduction
-    Raise:
-        Exception if unexpected reduction
-    """
-
-    def __init__(self, smooth=1, p=2, reduction="mean"):
-        super(BinaryDiceLoss, self).__init__()
-        self.smooth = smooth
-        self.p = p
-        self.reduction = reduction
-
-    def forward(self, predict, target, valid_mask):
-        assert (
-            predict.shape[0] == target.shape[0]
-        ), "predict & target batch size don't match"
-        predict = predict.contiguous().view(predict.shape[0], -1)
-        target = target.contiguous().view(target.shape[0], -1)
-        valid_mask = valid_mask.contiguous().view(valid_mask.shape[0], -1)
-
-        num = (
-            torch.sum(torch.mul(predict, target) * valid_mask, dim=1) * 2
-            + self.smooth
-        )
-        den = (
-            torch.sum(
-                (predict.pow(self.p) + target.pow(self.p)) * valid_mask, dim=1
-            )
-            + self.smooth
-        )
-
-        loss = 1 - num / den
+        ce_loss = F.cross_entropy(logits, labels, reduction="none")
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
 
         if self.reduction == "mean":
-            return loss.mean()
+            return focal_loss.mean()
         elif self.reduction == "sum":
-            return loss.sum()
-        elif self.reduction == "none":
-            return loss
+            return focal_loss.sum()
         else:
-            raise Exception("Unexpected reduction {}".format(self.reduction))
+            return focal_loss
 
 
-class DiceLoss(torch.nn.Module):
-    """Dice loss, need one hot encode input"""
-
-    def __init__(
-        self, weight=None, aux=True, aux_weight=0.4, ignore_index=-1, **kwargs
-    ):
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.0, reduction="mean", ignore_index=None):
         super(DiceLoss, self).__init__()
-        self.kwargs = kwargs
-        self.weight = weight
+        self.smooth = smooth
+        self.reduction = reduction
         self.ignore_index = ignore_index
-        self.aux = aux
-        self.aux_weight = aux_weight
-
-    def _base_forward(self, predict, target, valid_mask):
-        dice = BinaryDiceLoss(**self.kwargs)
-        predict = F.softmax(predict, dim=1)
-
-        loss = dice(predict, target, valid_mask)
-
-        return loss
-
-    def _aux_forward(self, logits, labels):
-        valid_mask = (labels != self.ignore_index).long()
-        loss = self._base_forward(logits, labels, valid_mask)
-        return loss
 
     def forward(self, logits, labels):
-        logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-        labels = (
-            labels.permute(0, 2, 3, 1).reshape(-1, labels.shape[1]).squeeze(1)
-        )
-        labels = one_hot(torch.clamp_min(labels, 0), logits.shape[1])
+        b, c, h, w = logits.shape
+        logits = F.softmax(logits, dim=1)
 
-        return self._aux_forward(logits, labels)
+        labels_one_hot = torch.zeros_like(logits)
+        labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
+
+        if self.ignore_index is not None:
+            ignore_mask = (labels != self.ignore_index).unsqueeze(1)
+            labels_one_hot *= ignore_mask
+
+        intersection = torch.sum(logits * labels_one_hot, dim=(2, 3))
+        union = torch.sum(logits, dim=(2, 3)) + torch.sum(
+            labels_one_hot, dim=(2, 3)
+        )
+
+        dice_scores = (2.0 * intersection + self.smooth) / (
+            union + self.smooth
+        )
+        dice_loss = 1.0 - dice_scores
+
+        if self.reduction == "mean":
+            return dice_loss.mean()
+        elif self.reduction == "sum":
+            return dice_loss.sum()
+        else:
+            return dice_loss
