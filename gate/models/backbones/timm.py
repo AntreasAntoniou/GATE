@@ -9,7 +9,7 @@ import timm
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
-from timm.data import resolve_data_config
+from timm.data import InterpolationMode, resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
@@ -82,14 +82,8 @@ class TimmModel(nn.Module):
             is_training=False,
         )
 
-        transform_names = [
-            transform.__class__.__name__
-            for transform in self.transforms.transforms
-        ]
-        # print(f"{model_identifier} transforms: {transform_names}")
-
         self.transforms = T.Compose(
-            [T.Resize(size=img_size)]
+            [T.Resize(size=img_size, interpolation=InterpolationMode.BICUBIC)]
             + [
                 transform
                 for transform in self.transforms.transforms
