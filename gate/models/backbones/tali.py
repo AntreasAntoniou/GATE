@@ -249,7 +249,7 @@ class TALINet(nn.Module):
             model_config = config["model"]
             del model_config["_target_"]
             model_config = DictConfig(model_config)
-            self.model = self.model = TALIModel(**model_config)
+            self.model = TALIModel(**model_config)
 
             self.accelerator = accelerate.Accelerator()
             self.model = self.accelerator.prepare(self.model)
