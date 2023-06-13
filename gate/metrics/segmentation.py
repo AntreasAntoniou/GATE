@@ -531,7 +531,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         weight=None,
         reduction="mean",
         ignore_index=None,
-        dynamic_weights=False,
+        dynamic_weights=True,
     ):
         super(WeightedCrossEntropyLoss, self).__init__()
         self.weight = weight

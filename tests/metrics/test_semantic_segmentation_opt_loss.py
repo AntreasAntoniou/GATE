@@ -1,7 +1,11 @@
 import torch
 import pytest
 
-from gate.metrics.segmentation import DiceLoss, FocalLoss
+from gate.metrics.segmentation import (
+    DiceLoss,
+    FocalLoss,
+    WeightedCrossEntropyLoss,
+)
 
 
 @pytest.fixture
@@ -40,3 +44,19 @@ def test_focal_loss_value(logits, labels):
     focal_loss = FocalLoss()
     loss = focal_loss(logits, labels)
     assert 0 <= loss.item(), "FocalLoss should return a non-negative value"
+
+
+def test_weighted_cross_entropy_loss_shape(logits, labels):
+    weighted_cross_entropy_loss = WeightedCrossEntropyLoss()
+    loss = weighted_cross_entropy_loss(logits, labels)
+    assert loss.shape == torch.Size(
+        []
+    ), "WeightedCrossEntropyLoss should return a scalar loss"
+
+
+def test_weighted_cross_entropy_loss_value(logits, labels):
+    weighted_cross_entropy_loss = WeightedCrossEntropyLoss()
+    loss = weighted_cross_entropy_loss(logits, labels)
+    assert (
+        0 <= loss.item()
+    ), "WeightedCrossEntropyLoss should return a non-negative value"
