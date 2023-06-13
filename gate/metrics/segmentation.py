@@ -525,7 +525,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         self,
         weight=None,
         reduction="mean",
-        ignore_index=None,
+        ignore_index: int = -1,
         dynamic_weights=True,
     ):
         super(WeightedCrossEntropyLoss, self).__init__()
@@ -535,7 +535,11 @@ class WeightedCrossEntropyLoss(nn.Module):
         self.dynamic_weights = dynamic_weights
 
     def forward(self, logits, labels):
-        labels = labels.squeeze(1)
+        labels = labels.squeeze(1).view(-1)
+        logits = (
+            logits.permute(0, 2, 3, 1).contiguous().view(-1, logits.shape[1])
+        )
+
         if self.dynamic_weights:
             num_classes = logits.shape[1]
             weight = compute_class_weights(labels, num_classes)
