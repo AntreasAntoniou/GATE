@@ -86,7 +86,7 @@ class TimmModel(nn.Module):
             transform.__class__.__name__
             for transform in self.transforms.transforms
         ]
-        print(f"{model_identifier} transforms: {transform_names}")
+        # print(f"{model_identifier} transforms: {transform_names}")
 
         self.transforms = T.Compose(
             [T.Resize(size=img_size)]
@@ -94,7 +94,7 @@ class TimmModel(nn.Module):
                 transform
                 for transform in self.transforms.transforms
                 if "CenterCrop" not in transform.__class__.__name__
-                or "Resize" not in transform.__class__.__name__
+                and "Resize" not in transform.__class__.__name__
             ]
         )
         # iterate over compose transforms and remove centercrop and resize
