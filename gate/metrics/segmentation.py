@@ -474,6 +474,7 @@ class DiceLoss(nn.Module):
     def forward(self, logits, labels):
         b, c, h, w = logits.shape
         logits = F.softmax(logits, dim=1)
+        labels = labels.view(-1)
 
         labels_one_hot = torch.zeros_like(logits)
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
