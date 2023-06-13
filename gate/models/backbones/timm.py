@@ -76,7 +76,8 @@ class TimmModel(nn.Module):
         )
 
         self.transforms = T.Compose(
-            [
+            [T.resize(size=(224, 224))]
+            + [
                 transform
                 for transform in self.transforms.transforms
                 if "CenterCrop" not in transform.__class__.__name__
