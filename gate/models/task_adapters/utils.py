@@ -157,15 +157,18 @@ def compute_zero_shot_loss_and_metrics(
     if isinstance(is_irregular_shape, List):
         is_irregular_shape = is_irregular_shape[0]
 
+    start_time = time.time()
     contrastive_losses_dict = {
         f"{key.replace('_similarities', '_loss')}": contrastive_loss(
             value, is_irregular_shape=is_irregular_shape
         )
         for key, value in similarities.items()
     }
+    logger.info(f"Contrastive loss took {time.time() - start_time} seconds")
 
     loss = torch.mean(torch.stack(list(contrastive_losses_dict.values())))
 
+    start_time = time.time()
     contrastive_accuracy_dict = {
         f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
             value, is_irregular_shape=is_irregular_shape
@@ -173,12 +176,18 @@ def compute_zero_shot_loss_and_metrics(
         for key, value in similarities.items()
     }
 
+    logger.info(
+        f"Contrastive accuracy took {time.time() - start_time} seconds"
+    )
+
+    start_time = time.time()
     contrastive_accuracy_top_5_dict = {
         f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
             value, k=5, is_irregular_shape=is_irregular_shape
         )
         for key, value in similarities.items()
     }
+    logger.info(f"Top 5 accuracy took {time.time() - start_time} seconds")
 
     return (
         similarities
