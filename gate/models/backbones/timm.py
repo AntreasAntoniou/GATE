@@ -70,24 +70,30 @@ class TimmModel(nn.Module):
                 img_size=(224, 224),
                 num_classes=0,  # remove classifier nn.Linear
             )
+            img_size = (224, 224)
+
         except Exception as e:
             self.model = timm.create_model(
                 model_name=model_identifier,
                 pretrained=pretrained,
                 num_classes=0,  # remove classifier nn.Linear
             )
+            img_size = self.model.default_cfg["input_size"]
 
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
-            **resolve_data_config(self.model.pretrained_cfg, model=self.model)
+            **resolve_data_config(
+                self.model.pretrained_cfg, model=self.model, is_training=False
+            )
         )
 
         self.transforms = T.Compose(
-            [T.Resize(size=(224, 224))]
+            [T.Resize(size=img_size)]
             + [
                 transform
                 for transform in self.transforms.transforms
                 if "CenterCrop" not in transform.__class__.__name__
+                or "Resize" not in transform.__class__.__name__
             ]
         )
         # iterate over compose transforms and remove centercrop and resize
