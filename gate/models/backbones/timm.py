@@ -63,20 +63,12 @@ class TimmModel(nn.Module):
     ):
         super().__init__()
 
-        try:
-            self.model = timm.create_model(
-                model_name=model_identifier,
-                pretrained=pretrained,
-                img_size=(224, 224),
-                num_classes=0,  # remove classifier nn.Linear
-            )
+        self.model = timm.create_model(
+            model_name=model_identifier,
+            pretrained=pretrained,
+            num_classes=0,  # remove classifier nn.Linear
+        )
 
-        except Exception as e:
-            self.model = timm.create_model(
-                model_name=model_identifier,
-                pretrained=pretrained,
-                num_classes=0,  # remove classifier nn.Linear
-            )
         img_size = self.model.default_cfg["input_size"][-2:]
 
         # get model specific transforms (normalization, resize)
@@ -89,6 +81,12 @@ class TimmModel(nn.Module):
             ),
             is_training=False,
         )
+
+        transform_names = [
+            transform.__class__.__name__
+            for transform in self.transforms.transforms
+        ]
+        print(f"{model_identifier} transforms: {transform_names}")
 
         self.transforms = T.Compose(
             [T.Resize(size=img_size)]
