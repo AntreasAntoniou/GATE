@@ -401,7 +401,7 @@ class SegmentationViT(nn.Module):
             num_multimask_outputs=num_classes
         )
         self.decoder = SamMaskDecoder(config=self.decoder_config)
-        self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.class_token = nn.Parameter(torch.randn(1, 1, embed_dim))
 
         self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
@@ -469,6 +469,10 @@ class SegmentationViT(nn.Module):
 
         batch, _, height, width = image.shape
         features = self.encoder(image)["image"]["raw_features"]
+        if len(features.shape) == 4:
+            features = features.permute([0, 2, 3, 1]).reshape(
+                features.shape[0], -1, features.shape[1]
+            )
 
         decoder_inputs = self.decoder_feature_matcher(features)
         class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
