@@ -47,7 +47,7 @@ def test_focal_loss_value(logits, labels):
 
 
 def test_weighted_cross_entropy_loss_shape(logits, labels):
-    weighted_cross_entropy_loss = WeightedCrossEntropyLoss()
+    weighted_cross_entropy_loss = WeightedCrossEntropyLoss(ignore_index=0)
     loss = weighted_cross_entropy_loss(logits, labels)
     assert loss.shape == torch.Size(
         []
@@ -55,7 +55,7 @@ def test_weighted_cross_entropy_loss_shape(logits, labels):
 
 
 def test_weighted_cross_entropy_loss_value(logits, labels):
-    weighted_cross_entropy_loss = WeightedCrossEntropyLoss()
+    weighted_cross_entropy_loss = WeightedCrossEntropyLoss(ignore_index=0)
     loss = weighted_cross_entropy_loss(logits, labels)
     assert (
         0 <= loss.item()
