@@ -48,6 +48,9 @@ def contrastive_accuracy_top_k(
     else:
         targets = torch.arange(logits.shape[0]).to(logits.device)
 
+    num_classes = logits.shape[-1]
+    k = min(k, num_classes)  # Adjust k to be within the valid range
+
     top_k_indices = torch.topk(logits, k, dim=-1).indices
     targets_match = top_k_indices == targets.view(-1, 1)
     accuracy = torch.mean(targets_match.any(dim=-1).float())
@@ -188,7 +191,7 @@ def compute_zero_shot_loss_and_metrics(
         )
         for key, value in similarities.items()
     }
-    logger.debug(f"Top 5 accuracy took {time.time() - start_time} seconds")
+    logger.info(f"Top 5 accuracy took {time.time() - start_time} seconds")
 
     return (
         similarities
