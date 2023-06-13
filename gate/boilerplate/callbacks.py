@@ -362,11 +362,11 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         self.start_time = time.time()
         while not self.done:
             try:
-                # self.hf_api.upload_folder(
-                #     repo_id=f"{self.repo_owner}/{self.repo_name}",
-                #     folder_path=self.checkpoint_path,
-                #     path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
-                # )
+                self.hf_api.upload_folder(
+                    repo_id=f"{self.repo_owner}/{self.repo_name}",
+                    folder_path=self.checkpoint_path,
+                    path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+                )
 
                 self.done = True
 
