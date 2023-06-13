@@ -500,3 +500,76 @@ class DiceLoss(nn.Module):
             return dice_loss.sum()
         else:
             return dice_loss
+
+
+def compute_class_weights(labels, num_classes, ignore_index=None):
+    if ignore_index is not None:
+        mask = labels != ignore_index
+        labels = labels.clone()
+        labels[~mask] = 0
+
+    class_counts = torch.zeros(num_classes, dtype=torch.float).to(
+        labels.device
+    )
+
+    for cls in range(num_classes):
+        class_counts[cls] = torch.sum(labels == cls).float()
+
+    # To avoid division by zero, add a small epsilon
+    epsilon = 1e-6
+    class_weights = 1.0 / (class_counts + epsilon)
+
+    # Normalize the weights so that they sum up to 1
+    class_weights /= class_weights.sum()
+
+    return class_weights
+
+
+class WeightedCrossEntropyLoss(nn.Module):
+    def __init__(
+        self,
+        weight=None,
+        reduction="mean",
+        ignore_index=None,
+        dynamic_weights=False,
+    ):
+        super(WeightedCrossEntropyLoss, self).__init__()
+        self.weight = weight
+        self.reduction = reduction
+        self.ignore_index = ignore_index
+        self.dynamic_weights = dynamic_weights
+
+    def forward(self, logits, labels):
+        labels = labels.squeeze(1)
+        if self.dynamic_weights:
+            num_classes = logits.shape[1]
+            weight = compute_class_weights(
+                labels, num_classes, ignore_index=self.ignore_index
+            )
+        else:
+            weight = self.weight
+
+        if self.ignore_index is not None:
+            mask = (labels != self.ignore_index).float()
+            labels = labels.clone()
+            labels[mask == 0] = 0
+
+            weight = torch.ones_like(logits) * weight.view(1, -1, 1, 1)
+            weight = torch.gather(weight, 1, labels.unsqueeze(1))
+            weight[mask.unsqueeze(1) == 0] = 1.0
+        else:
+            weight = None
+
+        ce_loss = F.cross_entropy(
+            logits, labels, weight=weight, reduction="none"
+        )
+
+        if self.ignore_index is not None:
+            ce_loss *= mask
+
+        if self.reduction == "mean":
+            return ce_loss.mean()
+        elif self.reduction == "sum":
+            return ce_loss.sum()
+        else:
+            return ce_loss
