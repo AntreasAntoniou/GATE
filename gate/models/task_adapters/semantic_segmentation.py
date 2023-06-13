@@ -405,6 +405,7 @@ class SegmentationViT(nn.Module):
 
         self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
+        self.first_forward = True
 
         self.init_weights()
 
@@ -469,6 +470,13 @@ class SegmentationViT(nn.Module):
 
         batch, _, height, width = image.shape
         features = self.encoder(image)["image"]["raw_features"]
+
+        if self.first_forward:
+            logger.info(f"Features shape: {features.shape}")
+            logger.info(
+                f"Mean: {features.mean()}, Std: {features.std()}, Max: {features.max()}, Min: {features.min()}"
+            )
+
         if len(features.shape) == 4:
             features = features.permute([0, 2, 3, 1]).reshape(
                 features.shape[0], -1, features.shape[1]
