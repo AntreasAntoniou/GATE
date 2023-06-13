@@ -81,7 +81,7 @@ class Config:
     eval_batch_size: int = EVAL_BATCH_SIZE
     train_iters: int = TRAIN_ITERS
     resume: bool = RESUME
-    resume_from_checkpoint: Optional[int] = None
+    resume_from_checkpoint: Optional[str] = None
     print_config: bool = True
     num_workers: int = NUM_WORKERS
     prefetch_factor: int = PREFETCH_FACTOR
