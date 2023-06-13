@@ -78,7 +78,7 @@ class TimmModel(nn.Module):
                 pretrained=pretrained,
                 num_classes=0,  # remove classifier nn.Linear
             )
-            img_size = self.model.default_cfg["input_size"]
+            img_size = self.model.default_cfg["input_size"][-2:]
 
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
