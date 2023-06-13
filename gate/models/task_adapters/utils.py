@@ -191,7 +191,7 @@ def compute_zero_shot_loss_and_metrics(
         )
         for key, value in similarities.items()
     }
-    logger.info(f"Top 5 accuracy took {time.time() - start_time} seconds")
+    logger.debug(f"Top 5 accuracy took {time.time() - start_time} seconds")
 
     return (
         similarities
