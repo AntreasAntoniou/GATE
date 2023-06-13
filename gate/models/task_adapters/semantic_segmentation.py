@@ -426,16 +426,6 @@ class SegmentationViT(nn.Module):
 
     def init_weights(self):
         torch.nn.init.normal_(self.class_token, std=0.02)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            torch.nn.init.xavier_uniform_(module.weight)
-            if module.bias is not None:
-                nn.init.constant_(module.bias, 0)
-        elif isinstance(module, nn.LayerNorm):
-            nn.init.constant_(module.bias, 0)
-            nn.init.constant_(module.weight, 1.0)
 
     def compute_loss_and_metrics(
         self, logits, labels: Optional[torch.Tensor] = None
