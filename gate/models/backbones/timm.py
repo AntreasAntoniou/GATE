@@ -63,12 +63,19 @@ class TimmModel(nn.Module):
     ):
         super().__init__()
 
-        self.model = timm.create_model(
-            model_name=model_identifier,
-            pretrained=pretrained,
-            img_size=(224, 224),
-            num_classes=0,  # remove classifier nn.Linear
-        )
+        try:
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                pretrained=pretrained,
+                img_size=(224, 224),
+                num_classes=0,  # remove classifier nn.Linear
+            )
+        except Exception as e:
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                pretrained=pretrained,
+                num_classes=0,  # remove classifier nn.Linear
+            )
 
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
