@@ -63,8 +63,9 @@ class ClassificationTrainer(Trainer):
         output_dict = temp_output_dict
 
         for key, value in output_dict.items():
-            if isinstance(value, torch.Tensor):
-                self.current_epoch_dict[key].append(value.detach().cpu())
+            if "loss" in key or "iou" in key or "accuracy" in key:
+                if isinstance(value, torch.Tensor):
+                    self.current_epoch_dict[key].append(value.detach().cpu())
 
         return StepOutput(
             output_metrics_dict=output_dict,
