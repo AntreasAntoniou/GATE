@@ -558,10 +558,10 @@ class WeightedCrossEntropyLoss(nn.Module):
             weight = torch.gather(weight, 1, labels.unsqueeze(1))
             weight[mask.unsqueeze(1) == 0] = 1.0
         else:
-            weight = None
+            weight = weight.view(1, -1, 1, 1)
 
         ce_loss = F.cross_entropy(
-            logits, labels, weight=weight, reduction="none"
+            logits, labels, weight=weight.squeeze(), reduction="none"
         )
 
         if self.ignore_index is not None:
