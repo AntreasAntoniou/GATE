@@ -47,11 +47,12 @@ def contrastive_accuracy_top_k(
         targets = targets.reshape(-1)
     else:
         targets = torch.arange(logits.shape[0]).to(logits.device)
-    accuracy = [
-        any(logit.argsort(dim=-1, descending=True)[:k] == target)
-        for logit, target in zip(logits, targets)
-    ]
-    return torch.mean(torch.tensor(accuracy).float())
+
+    top_k_indices = torch.topk(logits, k, dim=-1).indices
+    targets_match = top_k_indices == targets.view(-1, 1)
+    accuracy = torch.mean(targets_match.any(dim=-1).float())
+
+    return accuracy
 
 
 def num_parameters(
