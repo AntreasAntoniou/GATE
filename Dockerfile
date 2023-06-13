@@ -47,9 +47,6 @@ RUN echo y | pip install --pre torch torchvision torchaudio --index-url https://
 
 RUN echo y | pip install --upgrade huggingface_hub evaluate
 
-RUN pip install -U openmim
-RUN mim install mmengine
-RUN mim install "mmcv>=2.0.0"
 
 ADD gate/ /app/gate
 RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
@@ -58,6 +55,5 @@ RUN echo y | pip install /app/[dev]
 
 # Expose SSH port
 EXPOSE 22
-
 
 ENTRYPOINT ["/bin/bash"]
