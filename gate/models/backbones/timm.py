@@ -76,7 +76,7 @@ class TimmModel(nn.Module):
         )
 
         self.transforms = T.Compose(
-            [T.resize(size=(224, 224))]
+            [T.Resize(size=(224, 224))]
             + [
                 transform
                 for transform in self.transforms.transforms
