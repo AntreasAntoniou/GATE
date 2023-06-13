@@ -158,6 +158,7 @@ class ResidualConvBlock(nn.Module):
 from gate.metrics.segmentation import (
     DiceLoss,
     FocalLoss,
+    WeightedCrossEntropyLoss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
     fast_miou,
@@ -405,19 +406,22 @@ class SegmentationViT(nn.Module):
 
         self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
-        self.first_forward = True
+        self.weighted_bce = WeightedCrossEntropyLoss()
+        self.debug_mode = True
 
         self.init_weights()
 
     def optimization_loss(self, logits, labels):
         focal_loss = self.focal_loss(logits, labels)
         dice_loss = self.dice_loss(logits, labels)
+        wce_loss = self.weighted_bce(logits, labels)
 
-        loss = dice_loss + focal_loss
+        loss = wce_loss
         return {
             "loss": loss,
             "dice_loss": dice_loss,
             "focal_loss": focal_loss,
+            "wce_loss": wce_loss,
         }
 
     def init_weights(self):
@@ -468,7 +472,7 @@ class SegmentationViT(nn.Module):
             torch.Tensor: Segmentation map.
         """
 
-        if self.first_forward:
+        if self.debug_mode:
             logger.info(f"Features shape: {image.shape}")
             logger.info(
                 f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
@@ -477,7 +481,7 @@ class SegmentationViT(nn.Module):
         batch, _, height, width = image.shape
         features = self.encoder(image)["image"]["raw_features"]
 
-        if self.first_forward:
+        if self.debug_mode:
             logger.info(f"Features shape: {features.shape}")
             logger.info(
                 f"Mean: {features.mean()}, Std: {features.std()}, Max: {features.max()}, Min: {features.min()}"
