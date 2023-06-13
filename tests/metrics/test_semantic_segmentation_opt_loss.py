@@ -10,7 +10,7 @@ from gate.metrics.segmentation import (
 
 @pytest.fixture
 def logits():
-    return torch.randn(4, 150, 224, 224) * 100
+    return torch.randn(4, 150, 224, 224)
 
 
 @pytest.fixture
