@@ -58,10 +58,11 @@ def build_model(
         num_patches=backbone_model.vision_model.num_patches,
     )
 
-    dummy_out = model.forward(x)
-
     # forward features for conv nets, and get the patches for the transformer manually
     # do the same for all others? sounds like the most general way to do this
+
+    x = torch.randn(2, 3, 224, 224)
+    dummy_out = model.forward(x)
 
     if not pretrained:
         model.init_weights()
