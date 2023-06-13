@@ -165,7 +165,7 @@ def compute_zero_shot_loss_and_metrics(
         )
         for key, value in similarities.items()
     }
-    logger.info(f"Contrastive loss took {time.time() - start_time} seconds")
+    logger.debug(f"Contrastive loss took {time.time() - start_time} seconds")
 
     loss = torch.mean(torch.stack(list(contrastive_losses_dict.values())))
 
@@ -177,7 +177,7 @@ def compute_zero_shot_loss_and_metrics(
         for key, value in similarities.items()
     }
 
-    logger.info(
+    logger.debug(
         f"Contrastive accuracy took {time.time() - start_time} seconds"
     )
 
@@ -188,7 +188,7 @@ def compute_zero_shot_loss_and_metrics(
         )
         for key, value in similarities.items()
     }
-    logger.info(f"Top 5 accuracy took {time.time() - start_time} seconds")
+    logger.debug(f"Top 5 accuracy took {time.time() - start_time} seconds")
 
     return (
         similarities
