@@ -329,6 +329,10 @@ class Learner(nn.Module):
         logger.debug("Validation finished 🎉")
 
     def start_testing(self, prefix):
+        for background_thread in self.background_threads:
+            if background_thread.is_alive() and not background_thread.done:
+                background_thread.join()
+
         self.callback_handler.on_testing_start(
             experiment=self, model=self.model
         )
