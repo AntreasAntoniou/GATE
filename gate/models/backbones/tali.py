@@ -164,7 +164,7 @@ class TALINet(nn.Module):
 
     def get_transforms(self):
         def image_transforms(x):
-            return self.preprocessor(
+            return self.image_text_preprocessor(
                 images=T.Resize(size=(224, 224))(x),
                 do_center_crop=False,
                 return_tensors="pt",
