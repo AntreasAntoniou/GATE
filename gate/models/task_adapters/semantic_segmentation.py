@@ -345,58 +345,11 @@ class SegmentationViT(nn.Module):
         self.detail_conv1_1 = ResidualConvBlock(
             in_channels=hidden_size, out_channels=hidden_size
         )
-        self.detail_conv1_2 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv1_3 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
 
         self.upscale_net2 = ResidualUpscaleConvBlock(
             in_channels=hidden_size, out_channels=hidden_size
         )
         self.detail_conv2_0 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv2_1 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv2_2 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv2_3 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-
-        self.upscale_net3 = ResidualUpscaleConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv3_0 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv3_1 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv3_2 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv3_3 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-
-        self.upscale_net4 = ResidualUpscaleConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv4_0 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv4_1 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv4_2 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv4_3 = ResidualConvBlock(
             in_channels=hidden_size, out_channels=hidden_size
         )
 
