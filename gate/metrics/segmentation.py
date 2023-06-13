@@ -502,12 +502,7 @@ class DiceLoss(nn.Module):
             return dice_loss
 
 
-def compute_class_weights(labels, num_classes, ignore_index=None):
-    if ignore_index is not None:
-        mask = labels != ignore_index
-        labels = labels.clone()
-        labels[~mask] = 0
-
+def compute_class_weights(labels, num_classes):
     class_counts = torch.zeros(num_classes, dtype=torch.float).to(
         labels.device
     )
@@ -543,9 +538,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         labels = labels.squeeze(1)
         if self.dynamic_weights:
             num_classes = logits.shape[1]
-            weight = compute_class_weights(
-                labels, num_classes, ignore_index=self.ignore_index
-            )
+            weight = compute_class_weights(labels, num_classes)
         else:
             weight = self.weight
 
