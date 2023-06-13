@@ -545,7 +545,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         ce_loss = F.cross_entropy(
             logits,
             labels,
-            weight=weight.view(-1),
+            weight=weight,
             reduction="none",
             ignore_index=self.ignore_index,
         )
