@@ -43,17 +43,16 @@ RUN echo y | pip install -r /app/requirements_dev.txt
 RUN export HF_HUB_ENABLE_HF_TRANSFER=1
 RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
 RUN pip install -e learn2learn
-RUN echo y | pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121 --upgrade
+RUN echo y | pip install huggingface_hub evaluate
 
-RUN echo y | pip install --upgrade huggingface_hub evaluate
-
+RUN echo y | pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 ADD gate/ /app/gate
-RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
-RUN find /app/ -name "*.pyc" -type f -delete
+# RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
+# RUN find /app/ -name "*.pyc" -type f -delete
 RUN echo y | pip install /app/[dev]
 
 # Expose SSH port
-EXPOSE 22
+# EXPOSE 22
 
 ENTRYPOINT ["/bin/bash"]
