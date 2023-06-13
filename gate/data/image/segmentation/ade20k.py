@@ -53,7 +53,7 @@ def transform_wrapper(inputs: Dict, target_size: int = 224):
     annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
 
     return {
-        "image": inputs["image"],
+        "image": image,
         "labels": annotation.long(),
     }
 
