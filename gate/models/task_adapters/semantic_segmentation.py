@@ -468,6 +468,12 @@ class SegmentationViT(nn.Module):
             torch.Tensor: Segmentation map.
         """
 
+        if self.first_forward:
+            logger.info(f"Features shape: {image.shape}")
+            logger.info(
+                f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
+            )
+
         batch, _, height, width = image.shape
         features = self.encoder(image)["image"]["raw_features"]
 
