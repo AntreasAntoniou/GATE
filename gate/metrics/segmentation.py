@@ -549,23 +549,13 @@ class WeightedCrossEntropyLoss(nn.Module):
         else:
             weight = self.weight
 
-        if self.ignore_index is not None:
-            mask = (labels != self.ignore_index).float()
-            labels = labels.clone()
-            labels[mask == 0] = 0
-
-            weight = torch.ones_like(logits) * weight.view(1, -1, 1, 1)
-            weight = torch.gather(weight, 1, labels.unsqueeze(1))
-            weight[mask.unsqueeze(1) == 0] = 1.0
-        else:
-            weight = weight.view(1, -1, 1, 1)
-
         ce_loss = F.cross_entropy(
-            logits, labels, weight=weight.squeeze(), reduction="none"
+            logits,
+            labels,
+            weight=weight.view(-1),
+            reduction="none",
+            ignore_index=self.ignore_index,
         )
-
-        if self.ignore_index is not None:
-            ce_loss *= mask
 
         if self.reduction == "mean":
             return ce_loss.mean()
