@@ -83,8 +83,12 @@ class TimmModel(nn.Module):
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
             **resolve_data_config(
-                self.model.pretrained_cfg, model=self.model, is_training=False
-            )
+                self.model.pretrained_cfg,
+                model=self.model,
+                verbose=True,
+                use_test_size=True,
+            ),
+            is_training=False,
         )
 
         self.transforms = T.Compose(
