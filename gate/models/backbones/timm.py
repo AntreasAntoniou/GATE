@@ -70,7 +70,6 @@ class TimmModel(nn.Module):
                 img_size=(224, 224),
                 num_classes=0,  # remove classifier nn.Linear
             )
-            img_size = (224, 224)
 
         except Exception as e:
             self.model = timm.create_model(
@@ -78,7 +77,7 @@ class TimmModel(nn.Module):
                 pretrained=pretrained,
                 num_classes=0,  # remove classifier nn.Linear
             )
-            img_size = self.model.default_cfg["input_size"][-2:]
+        img_size = self.model.default_cfg["input_size"][-2:]
 
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
