@@ -267,7 +267,9 @@ class PositionalEncoding(nn.Module):
                     x.shape[1],
                 ).permute(0, 3, 1, 2)
 
-            self.positional_encoding = pe
+            self.positional_encoding = torch.nn.Parameter(
+                pe, requires_grad=True
+            )
 
         self.positional_encoding = self.positional_encoding.to(x.device)
         x = x + self.positional_encoding[: x.shape[0]]
@@ -542,7 +544,7 @@ class SegmentationViT(nn.Module):
         # decoder_inputs = self.detail_conv3(decoder_inputs)
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
-        decoder_inputs = self.positional_encoding(decoder_inputs)
+        self.positional_encoding(decoder_inputs)
 
         # # torch.Size([1, 1, 2, 256]),
         # # dense_embeddings: torch.Size([1, 256, 64, 64]),
