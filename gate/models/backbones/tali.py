@@ -11,6 +11,7 @@ from rich import print
 from tali.models import MultiModalityConfig, TALIModel
 from tali.utils import download_model_with_name
 from transformers import CLIPProcessor, WhisperProcessor
+import torchvision.transforms as T
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
 from gate.models.backbones import (
@@ -163,9 +164,11 @@ class TALINet(nn.Module):
 
     def get_transforms(self):
         def image_transforms(x):
-            return self.image_text_preprocessor(
-                images=x, return_tensors="pt"
-            ).pixel_values
+            return self.preprocessor(
+                images=T.Resize(size=(224, 224))(x),
+                do_center_crop=False,
+                return_tensors="pt",
+            ).pixel_values.squeeze(0)
 
         def text_transforms(x):
             return self.image_text_preprocessor(
