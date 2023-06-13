@@ -66,6 +66,7 @@ class TimmModel(nn.Module):
         self.model = timm.create_model(
             model_name=model_identifier,
             pretrained=pretrained,
+            img_size=(224, 224),
             num_classes=0,  # remove classifier nn.Linear
         )
 
