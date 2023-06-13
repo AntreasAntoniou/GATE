@@ -73,13 +73,16 @@ class TimmModel(nn.Module):
         self.transforms = create_transform(
             **resolve_data_config(self.model.pretrained_cfg, model=self.model)
         )
-        temp_transforms = self.transforms.transforms
+
+        self.transforms = T.Compose(
+            [
+                transform
+                for transform in self.transforms.transforms
+                if "CenterCrop" not in transform.__class__.__name__
+                and not isinstance(transform, T.Resize)
+            ]
+        )
         # iterate over compose transforms and remove centercrop and resize
-        print(f"{model_identifier} transforms: {temp_transforms}")
-        for i, t in enumerate(temp_transforms):
-            print(f"{i} {t.__class__.__name__}")
-            if "CenterCrop" in t.__class__.__name__ or isinstance(t, T.Resize):
-                del self.transforms.transforms[i]
 
         print(f"{model_identifier} transforms: {self.transforms}")
         output_shape = self.get_output_shape()["raw_features"]
