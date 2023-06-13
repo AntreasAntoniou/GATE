@@ -403,8 +403,8 @@ class SegmentationViT(nn.Module):
         self.decoder = SamMaskDecoder(config=self.decoder_config)
         self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
 
-        self.focal_loss = FocalLoss(alpha=0.5, gamma=2)
-        self.dice_loss = DiceLoss()
+        self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
+        self.dice_loss = DiceLoss(ignore_index=0)
 
         self.init_weights()
 
