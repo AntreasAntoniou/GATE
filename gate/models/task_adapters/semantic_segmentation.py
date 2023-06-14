@@ -417,6 +417,7 @@ class SegmentationViT(nn.Module):
             )
 
         batch, _, height, width = image.shape
+        print(f"Batch: {batch}, Height: {height}, Width: {width}")
         features = self.encoder(image)["image"]["raw_features"]
 
         if self.debug_mode:
