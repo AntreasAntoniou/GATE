@@ -5,6 +5,7 @@ import threading
 from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, List, Union
+from numpy import False_
 
 import torch
 import torch.nn as nn
@@ -16,6 +17,23 @@ from .utils import get_logger
 
 logger = get_logger(__name__)
 hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
+
+import contextlib
+import os
+
+
+@contextlib.contextmanager
+def SuppressOutput():
+    with open(os.devnull, "w") as devnull:
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
 
 
 class Callback(ABC):
@@ -360,15 +378,20 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
 
     def run(self):
         self.start_time = time.time()
+        hf_logger = get_logger("huggingface_hub")
+        hf_logger.setLevel(logging.ERROR)
+        for handler in hf_logger.handlers:
+            handler.setLevel(logging.ERROR)
+
         while not self.done:
             try:
-                self.hf_api.upload_folder(
-                    repo_id=f"{self.repo_owner}/{self.repo_name}",
-                    folder_path=self.checkpoint_path,
-                    path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
-                    run_as_future=True,
-                )
-
+                with SuppressOutput():  # Add this line
+                    self.hf_api.upload_folder(
+                        repo_id=f"{self.repo_owner}/{self.repo_name}",
+                        folder_path=self.checkpoint_path,
+                        path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+                        run_as_future=False,
+                    )
                 self.done = True
 
             except Exception as e:
