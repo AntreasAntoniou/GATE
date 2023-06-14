@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
 from gate.models.backbones.clip import CLIPAdapter
 from gate.models.core import (
