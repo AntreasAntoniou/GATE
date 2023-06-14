@@ -29,7 +29,8 @@ natsort
 gdown
 gpath
 cython
-hf_transfer
+evaluate
+huggingface_hub
 einops
 git+https://github.com/kiyoon/GulpIO2#egg=gulpio2
 git+https://github.com/huggingface/pytorch-image-models.git#egg=timm

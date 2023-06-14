@@ -41,12 +41,8 @@ ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
 ADD setup.py /app/
 RUN echo y | pip install -r /app/requirements_dev.txt
-RUN echo y | pip install huggingface_hub evaluate
-
 
 ADD gate/ /app/gate
-# RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
-# RUN find /app/ -name "*.pyc" -type f -delete
 RUN echo y | pip install /app/[dev]
 
 # Expose SSH port
