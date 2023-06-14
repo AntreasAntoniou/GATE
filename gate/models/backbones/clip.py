@@ -69,7 +69,7 @@ class CLIPAdapter(nn.Module):
         self.text_num_features = self.clip.text_embed_dim
 
     def modify_expected_image_size(self, image_size: int):
-        config = self.clip.config
+        config = self.clip.vision_model.config
         config.image_size = image_size
         self.clip.vision_model.embeddings.position_embedding = (
             CLIPVisionEmbeddings(config)
