@@ -42,9 +42,6 @@ class CLIPAdapter(nn.Module):
         self.tokenizer = self.preprocessor.tokenizer
         self.clip = CLIPModel.from_pretrained(model_name)
 
-        if image_size is not None:
-            self.modify_expected_image_size(image_size)
-
         if not pretrained:
             self.clip.init_weights()
 
@@ -65,15 +62,16 @@ class CLIPAdapter(nn.Module):
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
+        if image_size is not None:
+            self.modify_expected_image_size(image_size)
+
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
 
     def modify_expected_image_size(self, image_size: int):
         config = self.vision_model.config
         config.image_size = image_size
-        self.vision_model.embeddings.position_embedding = CLIPVisionEmbeddings(
-            config
-        )
+        self.vision_model.embeddings = CLIPVisionEmbeddings(config)
 
     def init_weights(self):
         reinit(self)
