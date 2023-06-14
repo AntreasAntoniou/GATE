@@ -366,6 +366,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
                     repo_id=f"{self.repo_owner}/{self.repo_name}",
                     folder_path=self.checkpoint_path,
                     path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+                    run_as_future=True,
                 )
 
                 self.done = True
