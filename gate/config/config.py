@@ -43,6 +43,7 @@ from gate.config.variables import (
     SEED,
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
+    HYDRATED_NUM_WORKERS,
 )
 from gate.data.core import collate_fn_with_token_pad
 
@@ -131,7 +132,7 @@ def collect_config_store():
         name="default",
         node=dataloader_config(
             batch_size=1,
-            num_workers=NUM_WORKERS,
+            num_workers=HYDRATED_NUM_WORKERS,
             pin_memory=PIN_MEMORY,
             shuffle=True,
             prefetch_factor=PREFETCH_FACTOR,

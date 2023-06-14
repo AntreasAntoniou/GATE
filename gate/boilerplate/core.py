@@ -274,7 +274,7 @@ class Learner(nn.Module):
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
-        TIME_LIMIT = 3600  # 10 minutes
+        TIME_LIMIT = 60 * 60  # 60 minutes
         STOP_THREAD_FLAG = "_stop_thread"
 
         for thread in self.background_threads:
