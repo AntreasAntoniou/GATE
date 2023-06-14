@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import accelerate
 import torch
 import torch.nn as nn
+from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 import yaml
 from omegaconf import DictConfig
 from rich import print
@@ -93,6 +94,13 @@ class TALINet(nn.Module):
 
     def init_weights(self):
         reinit(self)
+
+    def modify_expected_image_size(self, image_size: int):
+        config = self.model.clip_model.config
+        config.image_size = image_size
+        self.model.clip_model.vision_model.embeddings.position_embedding = (
+            CLIPVisionEmbeddings(config)
+        )
 
     def forward(
         self,

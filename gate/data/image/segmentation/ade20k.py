@@ -42,20 +42,35 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
-def transform_wrapper(inputs: Dict, target_size: int = 224):
-    image = inputs["image"]
-    image = T.Resize((target_size, target_size))(image)
+class DatasetTransforms:
+    def __init__(self, input_size, target_size):
+        self.input_size = (
+            input_size
+            if isinstance(input_size, tuple) or isinstance(input_size, list)
+            else (input_size, input_size)
+        )
+        self.target_size = (
+            target_size
+            if isinstance(target_size, tuple) or isinstance(target_size, list)
+            else (target_size, target_size)
+        )
 
-    annotation = inputs["annotation"]
-    annotation = T.Resize((target_size, target_size))(annotation)
-    annotation = np.array(annotation)
-    annotation = torch.from_numpy(annotation)
-    annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+    def __call__(self, inputs: Dict):
+        image = inputs["image"]
+        image = T.Resize((self.input_size[0], self.input_size[1]))(image)
 
-    return {
-        "image": image,
-        "labels": annotation.long(),
-    }
+        annotation = inputs["annotation"]
+        annotation = T.Resize((self.target_size[0], self.target_size[1]))(
+            annotation
+        )
+        annotation = np.array(annotation)
+        annotation = torch.from_numpy(annotation)
+        annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+
+        return {
+            "image": image,
+            "labels": annotation.long(),
+        }
 
 
 @configurable(
@@ -65,23 +80,26 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=150,
+    image_size=512,
+    target_image_size=256,
 ) -> dict:
+    dataset_transforms = DatasetTransforms(image_size, target_image_size)
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[transform_wrapper, transforms],
+        transforms=[dataset_transforms, transforms],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[transform_wrapper, transforms],
+        transforms=[dataset_transforms, transforms],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[transform_wrapper, transforms],
+        transforms=[dataset_transforms, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

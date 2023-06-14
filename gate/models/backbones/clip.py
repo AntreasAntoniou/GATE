@@ -6,7 +6,10 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
+from transformers.models.clip.modeling_clip import (
+    CLIPOutput,
+    CLIPVisionEmbeddings,
+)
 from torchvision import transforms as T
 
 from gate.models.backbones import (
@@ -26,13 +29,21 @@ def forward_dict(self, x):
 
 
 class CLIPAdapter(nn.Module):
-    def __init__(self, model_name: str, pretrained: bool = True):
+    def __init__(
+        self,
+        model_name: str,
+        pretrained: bool = True,
+        image_size: Optional[int] = None,
+    ):
         super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
         self.tokenizer = self.preprocessor.tokenizer
         self.clip = CLIPModel.from_pretrained(model_name)
+
+        if image_size is not None:
+            self.modify_expected_image_size(image_size)
 
         if not pretrained:
             self.clip.init_weights()
@@ -56,6 +67,13 @@ class CLIPAdapter(nn.Module):
 
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
+
+    def modify_expected_image_size(self, image_size: int):
+        config = self.clip.config
+        config.image_size = image_size
+        self.clip.vision_model.embeddings.position_embedding = (
+            CLIPVisionEmbeddings(config)
+        )
 
     def init_weights(self):
         reinit(self)
