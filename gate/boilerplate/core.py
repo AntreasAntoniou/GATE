@@ -281,7 +281,6 @@ class Learner(nn.Module):
             if not thread.done:
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
-                    thread.start_time = time.time()
                     thread.start()
                     break
                 else:
@@ -308,7 +307,6 @@ class Learner(nn.Module):
                 if not thread.done:
                     if not thread.is_alive():
                         print(f"Starting thread {thread}")
-                        thread.start_time = time.time()
                         thread.start()
                         break
                     else:
