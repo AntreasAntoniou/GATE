@@ -69,6 +69,13 @@ class TALINet(nn.Module):
             whisper_model_name
         )
 
+        self.video_num_features = None
+        self.image_num_features = None
+        self.text_num_features = None
+        self.audio_num_features = None
+
+        self.image_num_patches = None
+
         if hasattr(self.model, "video_linear_layer"):
             self.video_num_features = self.model.video_linear_layer.in_features
 
