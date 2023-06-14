@@ -43,6 +43,7 @@ HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
 HYDRATED_LABEL_IDX_TO_CLASS_NAME = "${dataset.label_idx_to_class_name}"
 HYDRATED_NUM_CLASSES = "${dataset.num_classes}"
+HYDRATED_IMAGE_SIZE = "${dataset.image_size}"
 HYDRATED_TRAINER_CONFIG = "${trainer}"
 HYDRATED_EVALUATOR_CONFIG = "${evaluator}"
 

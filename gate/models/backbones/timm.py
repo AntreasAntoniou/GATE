@@ -59,6 +59,7 @@ class TimmModel(nn.Module):
     def __init__(
         self,
         model_identifier: str = "hf_hub:timm/vit_large_patch14_clip_224.openai_ft_in12k_in1k",
+        model_input_shape: Optional[List[int]] = None,
         pretrained: bool = True,
     ):
         super().__init__()
@@ -67,6 +68,7 @@ class TimmModel(nn.Module):
             model_name=model_identifier,
             pretrained=pretrained,
             num_classes=0,  # remove classifier nn.Linear
+            img_size=model_input_shape,
         )
 
         img_size = self.model.default_cfg["input_size"][-2:]
