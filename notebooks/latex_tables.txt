@@ -1,185 +1,30 @@
-% c100 dataset table
+% dr dataset table
 \begin{table}[htbp]
-\caption{Results for the c100 dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
+\caption{Results for the dr dataset}
+\begin{tabular}{|l|c|c|c|c|c|c|}\hline
+Experiment & auc-macro & bs-macro & aps-macro\\
 \hline
-augreg-vit-base16-224-in1k & 80.97 & 53.81\\
+augreg-vit-base16-224-in1k & 0.80 ± 0.00 & 0.09 ± 0.00 & 0.49 ± 0.00\\
 \hline
-clip-vit-base16-224 & 76.69 & 49.80\\
+clip-vit-base16-224 & 0.80 ± 0.00 & 0.08 ± 0.00 & 0.49 ± 0.00\\
 \hline
-deit3-base-patch16-224-fb-in1k & 88.69 & 64.72\\
+deit3-base-patch16-224-fb-in1k & 0.81 ± 0.00 & 0.09 ± 0.00 & 0.50 ± 0.00\\
 \hline
-dino-vit-base16-224 & 86.70 & 62.59\\
+dino-vit-base16-224 & 0.79 ± 0.00 & 0.09 ± 0.00 & 0.48 ± 0.00\\
 \hline
-efficientnetv2-rw-s-ra2-in1k & 68.00 & 37.21\\
+efficientnetv2-rw-s-ra2-in1k & 0.78 ± 0.00 & 0.09 ± 0.00 & 0.43 ± 0.00\\
 \hline
-flexivit-base-1200ep-in1k & 90.59 & 68.52\\
+flexivit-base-1200ep-in1k & 0.81 ± 0.00 & 0.08 ± 0.00 & 0.52 ± 0.00\\
 \hline
-laion-vit-base16-224 & 91.45 & 71.52\\
+laion-vit-base16-224 & 0.80 ± 0.00 & 0.08 ± 0.00 & 0.47 ± 0.00\\
 \hline
-resnet50-a1-in1k & 81.89 & 54.34\\
+resnet50-a1-in1k & 0.81 ± 0.00 & 0.08 ± 0.00 & 0.51 ± 0.00\\
 \hline
-resnext50-32x4d-a1-in1k & 85.41 & 57.95\\
+resnext50-32x4d-a1-in1k & 0.83 ± 0.00 & 0.08 ± 0.00 & 0.53 ± 0.00\\
 \hline
-sam-vit-base16-224-in1k & 46.74 & 27.18\\
+sam-vit-base16-224-in1k & 0.80 ± 0.00 & 0.08 ± 0.00 & 0.48 ± 0.00\\
 \hline
-wide-resnet50-2-tv-in1k & 35.81 & 18.73\\
-\hline
-\end{tabular}
-\end{table}
-
-% omnifs dataset table
-\begin{table}[htbp]
-\caption{Results for the omnifs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 0.99\\
-\hline
-clip-vit-base16-224 & 0.99\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.99\\
-\hline
-dino-vit-base16-224 & 0.99\\
-\hline
-flexivit-base-1200ep-in1k & 0.99\\
-\hline
-laion-vit-base16-224 & 0.99\\
-\hline
-resnet50-a1-in1k & 0.98\\
-\hline
-resnext50-32x4d-a1-in1k & 0.99\\
-\hline
-sam-vit-base16-224-in1k & 0.99\\
-\hline
-wide-resnet50-2-tv-in1k & 0.97\\
-\hline
-\end{tabular}
-\end{table}
-
-% nycc dataset table
-\begin{table}[htbp]
-\caption{Results for the nycc dataset}
-\begin{tabular}{|l|c|c|c|c|}\hline
-Experiment & text_to_image_accuracy-epoch-mean & image_to_text_accuracy-epoch-mean & text_to_image_accuracy_top_5-epoch-mean & image_to_text_accuracy_top_5-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 0.02 & 0.02 & 0.09 & 0.09\\
-\hline
-clip-vit-base16-224 & 0.05 & 0.07 & 0.17 & 0.18\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.03 & 0.03 & 0.12 & 0.11\\
-\hline
-dino-vit-base16-224 & 0.03 & 0.03 & 0.11 & 0.12\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.02 & 0.02 & 0.09 & 0.09\\
-\hline
-flexivit-base-1200ep-in1k & 0.09 & 0.09 & 0.33 & 0.32\\
-\hline
-laion-vit-base16-224 & 0.04 & 0.04 & 0.14 & 0.13\\
-\hline
-resnet50-a1-in1k & 0.03 & 0.03 & 0.11 & 0.12\\
-\hline
-resnext50-32x4d-a1-in1k & 0.02 & 0.02 & 0.09 & 0.08\\
-\hline
-sam-vit-base16-224-in1k & 0.04 & 0.04 & 0.15 & 0.15\\
-\hline
-wide-resnet50-2-tv-in1k & 0.01 & 0.01 & 0.04 & 0.04\\
-\hline
-\end{tabular}
-\end{table}
-
-% flickr30k dataset table
-\begin{table}[htbp]
-\caption{Results for the flickr30k dataset}
-\begin{tabular}{|l|c|c|c|c|}\hline
-Experiment & text_to_image_accuracy-epoch-mean & image_to_text_accuracy-epoch-mean & text_to_image_accuracy_top_5-epoch-mean & image_to_text_accuracy_top_5-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 0.02 & 0.02 & 0.10 & 0.09\\
-\hline
-clip-vit-base16-224 & 0.05 & 0.05 & 0.15 & 0.16\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.03 & 0.03 & 0.11 & 0.11\\
-\hline
-dino-vit-base16-224 & 0.03 & 0.03 & 0.12 & 0.10\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.02 & 0.02 & 0.09 & 0.09\\
-\hline
-flexivit-base-1200ep-in1k & 0.03 & 0.02 & 0.10 & 0.10\\
-\hline
-laion-vit-base16-224 & 0.04 & 0.04 & 0.13 & 0.13\\
-\hline
-resnet50-a1-in1k & 0.02 & 0.02 & 0.09 & 0.08\\
-\hline
-resnext50-32x4d-a1-in1k & 0.08 & 0.07 & 0.31 & 0.30\\
-\hline
-sam-vit-base16-224-in1k & 0.04 & 0.05 & 0.15 & 0.14\\
-\hline
-wide-resnet50-2-tv-in1k & 0.01 & 0.01 & 0.04 & 0.04\\
-\hline
-\end{tabular}
-\end{table}
-
-% cubfs dataset table
-\begin{table}[htbp]
-\caption{Results for the cubfs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 0.96\\
-\hline
-clip-vit-base16-224 & 0.96\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.97\\
-\hline
-dino-vit-base16-224 & 0.96\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.95\\
-\hline
-flexivit-base-1200ep-in1k & 0.98\\
-\hline
-laion-vit-base16-224 & 0.98\\
-\hline
-resnet50-a1-in1k & 0.92\\
-\hline
-resnext50-32x4d-a1-in1k & 0.94\\
-\hline
-sam-vit-base16-224-in1k & 0.97\\
-\hline
-wide-resnet50-2-tv-in1k & 0.77\\
-\hline
-\end{tabular}
-\end{table}
-
-% airfs dataset table
-\begin{table}[htbp]
-\caption{Results for the airfs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 0.92\\
-\hline
-augreg-vit-base16-224-in1k-1337 & 0.72\\
-\hline
-clip-vit-base16-224 & 0.96\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.94\\
-\hline
-dino-vit-base16-224 & 0.95\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.92\\
-\hline
-flexivit-base-1200ep-in1k & 0.95\\
-\hline
-laion-vit-base16-224 & 0.97\\
-\hline
-resnet50-a1-in1k & 0.92\\
-\hline
-resnext50-32x4d-a1-in1k & 0.92\\
-\hline
-sam-vit-base16-224-in1k & 0.93\\
-\hline
-wide-resnet50-2-tv-in1k & 0.83\\
+wide-resnet50-2-tv-in1k & 0.80 ± 0.00 & 0.08 ± 0.00 & 0.43 ± 0.00\\
 \hline
 \end{tabular}
 \end{table}
@@ -187,316 +32,92 @@ wide-resnet50-2-tv-in1k & 0.83\\
 % svhn dataset table
 \begin{table}[htbp]
 \caption{Results for the svhn dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 98.39 & 89.82\\
-\hline
-clip-vit-base16-224 & 99.54 & 95.79\\
-\hline
-deit3-base-patch16-224-fb-in1k & 99.11 & 93.03\\
-\hline
-dino-vit-base16-224 & 99.18 & 92.55\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 96.79 & 77.28\\
-\hline
-flexivit-base-1200ep-in1k & 99.28 & 94.29\\
-\hline
-laion-vit-base16-224 & 99.57 & 95.88\\
-\hline
-resnet50-a1-in1k & 99.29 & 92.42\\
-\hline
-resnext50-32x4d-a1-in1k & 99.36 & 93.67\\
-\hline
-sam-vit-base16-224-in1k & 98.75 & 90.98\\
-\hline
-wide-resnet50-2-tv-in1k & 98.97 & 93.31\\
-\hline
-\end{tabular}
-\end{table}
-
-% stl10 dataset table
-\begin{table}[htbp]
-\caption{Results for the stl10 dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 99.71 & 93.68\\
-\hline
-clip-vit-base16-224 & 99.89 & 96.89\\
-\hline
-deit3-base-patch16-224-fb-in1k & 99.89 & 97.61\\
-\hline
-dino-vit-base16-224 & 99.73 & 95.36\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 99.29 & 86.80\\
-\hline
-flexivit-base-1200ep-in1k & 99.91 & 97.35\\
-\hline
-laion-vit-base16-224 & 99.90 & 95.80\\
-\hline
-resnet50-a1-in1k & 99.50 & 90.65\\
-\hline
-resnext50-32x4d-a1-in1k & 99.73 & 92.91\\
-\hline
-sam-vit-base16-224-in1k & 99.17 & 90.20\\
-\hline
-wide-resnet50-2-tv-in1k & 98.23 & 75.82\\
-\hline
-\end{tabular}
-\end{table}
-
-% winogr dataset table
-\begin{table}[htbp]
-\caption{Results for the winogr dataset}
 \begin{tabular}{|l|c|c|c|c|}\hline
-Experiment & text_to_image_accuracy-epoch-mean & image_to_text_accuracy-epoch-mean & text_to_image_accuracy_top_5-epoch-mean & image_to_text_accuracy_top_5-epoch-mean\\
+Experiment & acc@5 & acc@1\\
 \hline
-clip-vit-base16-224-1337 & 0.51 & 0.53 & 1.00 & 1.00\\
+augreg-vit-base16-224-in1k & 98.39 ± 0.00 & 89.82 ± 0.00\\
 \hline
-resnext50-32x4d-a1-in1k & 0.50 & 0.50 & 1.00 & 1.00\\
+clip-vit-base16-224 & 99.54 ± 0.02 & 95.79 ± 0.47\\
 \hline
-timm-vit-base16-224-1337 & 0.51 & 0.53 & 1.00 & 1.00\\
+deit3-base-patch16-224-fb-in1k & 99.11 ± 0.00 & 93.03 ± 0.00\\
 \hline
-\end{tabular}
-\end{table}
-
-% fungifs dataset table
-\begin{table}[htbp]
-\caption{Results for the fungifs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
+dino-vit-base16-224 & 99.18 ± 0.02 & 92.55 ± 0.19\\
 \hline
-augreg-vit-base16-224-in1k & 0.82\\
+efficientnetv2-rw-s-ra2-in1k & 96.79 ± 2.33 & 77.28 ± 10.24\\
 \hline
-clip-vit-base16-224 & 0.89\\
+flexivit-base-1200ep-in1k & 99.28 ± 0.09 & 94.29 ± 0.51\\
 \hline
-deit3-base-patch16-224-fb-in1k & 0.87\\
+laion-vit-base16-224 & 99.57 ± 0.02 & 95.88 ± 0.43\\
 \hline
-dino-vit-base16-224 & 0.83\\
+resnet50-a1-in1k & 99.29 ± 0.02 & 92.42 ± 0.19\\
 \hline
-flexivit-base-1200ep-in1k & 0.87\\
+resnext50-32x4d-a1-in1k & 99.36 ± 0.04 & 93.67 ± 0.28\\
 \hline
-laion-vit-base16-224 & 0.89\\
+sam-vit-base16-224-in1k & 98.75 ± 0.26 & 90.98 ± 0.00\\
 \hline
-resnet50-a1-in1k & 0.76\\
-\hline
-resnext50-32x4d-a1-in1k & 0.81\\
-\hline
-sam-vit-base16-224-in1k & 0.85\\
-\hline
-wide-resnet50-2-tv-in1k & 0.45\\
+wide-resnet50-2-tv-in1k & 98.97 ± 0.04 & 93.31 ± 0.49\\
 \hline
 \end{tabular}
 \end{table}
 
-% miniinfs dataset table
+% flickr30k dataset table
 \begin{table}[htbp]
-\caption{Results for the miniinfs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
+\caption{Results for the flickr30k dataset}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}\hline
+Experiment & txt2img acc & img2txt acc & text to image acc@5 & image to text acc@5\\
 \hline
-augreg-vit-base16-224-in1k & 0.25\\
+augreg-vit-base16-224-in1k & 0.02 ± 0.00 & 0.02 ± 0.00 & 0.10 ± 0.00 & 0.09 ± 0.00\\
 \hline
-deit3-base-patch16-224-fb-in1k & 0.23\\
+clip-vit-base16-224 & 0.05 ± 0.00 & 0.05 ± 0.00 & 0.15 ± 0.00 & 0.16 ± 0.00\\
 \hline
-dino-vit-base16-224 & 0.95\\
+deit3-base-patch16-224-fb-in1k & 0.03 ± 0.00 & 0.03 ± 0.00 & 0.11 ± 0.00 & 0.11 ± 0.00\\
 \hline
-flexivit-base-1200ep-in1k & 0.22\\
+dino-vit-base16-224 & 0.03 ± 0.00 & 0.03 ± 0.00 & 0.12 ± 0.00 & 0.10 ± 0.00\\
 \hline
-laion-vit-base16-224 & 0.21\\
+efficientnetv2-rw-s-ra2-in1k & 0.02 ± 0.00 & 0.02 ± 0.00 & 0.09 ± 0.00 & 0.09 ± 0.00\\
 \hline
-resnet50-a1-in1k & 0.23\\
+flexivit-base-1200ep-in1k & 0.03 ± 0.00 & 0.02 ± 0.00 & 0.10 ± 0.00 & 0.10 ± 0.00\\
 \hline
-resnext50-32x4d-a1-in1k & 0.80\\
+laion-vit-base16-224 & 0.04 ± 0.00 & 0.04 ± 0.00 & 0.13 ± 0.00 & 0.13 ± 0.00\\
 \hline
-sam-vit-base16-224-in1k & 0.99\\
+resnet50-a1-in1k & 0.02 ± 0.00 & 0.02 ± 0.00 & 0.09 ± 0.00 & 0.08 ± 0.00\\
 \hline
-wide-resnet50-2-tv-in1k & 0.21\\
+resnext50-32x4d-a1-in1k & 0.08 ± 0.05 & 0.07 ± 0.05 & 0.31 ± 0.19 & 0.30 ± 0.18\\
+\hline
+sam-vit-base16-224-in1k & 0.04 ± 0.00 & 0.05 ± 0.00 & 0.15 ± 0.00 & 0.14 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.01 ± 0.00 & 0.01 ± 0.00 & 0.04 ± 0.00 & 0.04 ± 0.00\\
 \hline
 \end{tabular}
 \end{table}
 
-% in1k dataset table
+% nycc dataset table
 \begin{table}[htbp]
-\caption{Results for the in1k dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
+\caption{Results for the nycc dataset}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}\hline
+Experiment & txt2img acc & img2txt acc & text to image acc@5 & image to text acc@5\\
 \hline
-augreg-vit-base16-224-in1k & 93.31 & 78.88\\
+augreg-vit-base16-224-in1k & 0.02 ± 0.00 & 0.02 ± 0.00 & 0.09 ± 0.00 & 0.09 ± 0.00\\
 \hline
-clip-vit-base16-224 & 93.04 & 72.95\\
+clip-vit-base16-224 & 0.05 ± 0.00 & 0.07 ± 0.00 & 0.17 ± 0.00 & 0.18 ± 0.00\\
 \hline
-deit3-base-patch16-224-fb-in1k & 94.01 & 81.94\\
+deit3-base-patch16-224-fb-in1k & 0.03 ± 0.00 & 0.03 ± 0.00 & 0.12 ± 0.00 & 0.11 ± 0.00\\
 \hline
-dino-vit-base16-224 & 89.51 & 69.24\\
+dino-vit-base16-224 & 0.03 ± 0.00 & 0.03 ± 0.00 & 0.11 ± 0.00 & 0.12 ± 0.00\\
 \hline
-efficientnetv2-rw-s-ra2-in1k & 92.81 & 77.72\\
+efficientnetv2-rw-s-ra2-in1k & 0.02 ± 0.00 & 0.02 ± 0.00 & 0.09 ± 0.00 & 0.09 ± 0.00\\
 \hline
-flexivit-base-1200ep-in1k & 95.44 & 83.07\\
+flexivit-base-1200ep-in1k & 0.09 ± 0.07 & 0.09 ± 0.06 & 0.33 ± 0.21 & 0.32 ± 0.20\\
 \hline
-laion-vit-base16-224 & 93.98 & 75.54\\
+laion-vit-base16-224 & 0.04 ± 0.00 & 0.04 ± 0.00 & 0.14 ± 0.00 & 0.13 ± 0.00\\
 \hline
-resnet50-a1-in1k & 91.14 & 73.53\\
+resnet50-a1-in1k & 0.03 ± 0.00 & 0.03 ± 0.00 & 0.11 ± 0.00 & 0.12 ± 0.00\\
 \hline
-resnext50-32x4d-a1-in1k & 92.87 & 76.82\\
+resnext50-32x4d-a1-in1k & 0.02 ± 0.00 & 0.02 ± 0.00 & 0.09 ± 0.00 & 0.08 ± 0.00\\
 \hline
-wide-resnet50-2-tv-in1k & 13.82 & 4.52\\
+sam-vit-base16-224-in1k & 0.04 ± 0.00 & 0.04 ± 0.00 & 0.15 ± 0.00 & 0.15 ± 0.00\\
 \hline
-\end{tabular}
-\end{table}
-
-% chx dataset table
-\begin{table}[htbp]
-\caption{Results for the chx dataset}
-\begin{tabular}{|l|c|c|c|}\hline
-Experiment & auc-macro & bs-macro & aps-macro\\
-\hline
-augreg-vit-base16-224-in1k & 0.76 & 0.20 & 0.52\\
-\hline
-clip-vit-base16-224 & 0.77 & 0.18 & 0.55\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.78 & 0.18 & 0.56\\
-\hline
-dino-vit-base16-224 & 0.79 & 0.18 & 0.56\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.69 & 0.23 & 0.42\\
-\hline
-flexivit-base-1200ep-in1k & 0.67 & 0.16 & 0.35\\
-\hline
-laion-vit-base16-224 & 0.79 & 0.18 & 0.57\\
-\hline
-resnet50-a1-in1k & 0.79 & 0.18 & 0.56\\
-\hline
-resnext50-32x4d-a1-in1k & 0.80 & 0.18 & 0.57\\
-\hline
-sam-vit-base16-224-in1k & 0.77 & 0.20 & 0.51\\
-\hline
-wide-resnet50-2-tv-in1k & 0.75 & 0.20 & 0.50\\
-\hline
-\end{tabular}
-\end{table}
-
-% dr dataset table
-\begin{table}[htbp]
-\caption{Results for the dr dataset}
-\begin{tabular}{|l|c|c|c|}\hline
-Experiment & auc-macro & bs-macro & aps-macro\\
-\hline
-augreg-vit-base16-224-in1k & 0.80 & 0.09 & 0.49\\
-\hline
-clip-vit-base16-224 & 0.80 & 0.08 & 0.49\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.81 & 0.09 & 0.50\\
-\hline
-dino-vit-base16-224 & 0.79 & 0.09 & 0.48\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.78 & 0.09 & 0.43\\
-\hline
-flexivit-base-1200ep-in1k & 0.81 & 0.08 & 0.52\\
-\hline
-laion-vit-base16-224 & 0.80 & 0.08 & 0.47\\
-\hline
-resnet50-a1-in1k & 0.81 & 0.08 & 0.51\\
-\hline
-resnext50-32x4d-a1-in1k & 0.83 & 0.08 & 0.53\\
-\hline
-sam-vit-base16-224-in1k & 0.80 & 0.08 & 0.48\\
-\hline
-wide-resnet50-2-tv-in1k & 0.80 & 0.08 & 0.43\\
-\hline
-\end{tabular}
-\end{table}
-
-% vggfs dataset table
-\begin{table}[htbp]
-\caption{Results for the vggfs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 0.96\\
-\hline
-clip-vit-base16-224 & 0.97\\
-\hline
-deit3-base-patch16-224-fb-in1k & 0.97\\
-\hline
-dino-vit-base16-224 & 0.97\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 0.94\\
-\hline
-flexivit-base-1200ep-in1k & 0.97\\
-\hline
-laion-vit-base16-224 & 0.98\\
-\hline
-resnet50-a1-in1k & 0.91\\
-\hline
-resnext50-32x4d-a1-in1k & 0.88\\
-\hline
-sam-vit-base16-224-in1k & 0.96\\
-\hline
-wide-resnet50-2-tv-in1k & 0.81\\
-\hline
-\end{tabular}
-\end{table}
-
-% clvr dataset table
-\begin{table}[htbp]
-\caption{Results for the clvr dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 99.35 & 53.62\\
-\hline
-clip-vit-base16-224 & NA & 53.86\\
-\hline
-deit3-base-patch16-224-fb-in1k & 99.33 & 54.32\\
-\hline
-dino-vit-base16-224 & 99.36 & 54.85\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 99.13 & 52.82\\
-\hline
-flexivit-base-1200ep-in1k & 99.33 & 53.34\\
-\hline
-laion-vit-base16-224 & 99.37 & 53.69\\
-\hline
-resnet50-a1-in1k & 94.72 & 41.11\\
-\hline
-resnext50-32x4d-a1-in1k & 95.74 & 42.39\\
-\hline
-sam-vit-base16-224-in1k & 99.31 & 53.09\\
-\hline
-wide-resnet50-2-tv-in1k & 96.21 & 41.79\\
-\hline
-\end{tabular}
-\end{table}
-
-% f101 dataset table
-\begin{table}[htbp]
-\caption{Results for the f101 dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 95.10 & 81.34\\
-\hline
-clip-vit-base16-224 & 98.30 & 90.03\\
-\hline
-deit3-base-patch16-224-fb-in1k & 96.50 & 83.76\\
-\hline
-dino-vit-base16-224 & 96.17 & 83.92\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 94.57 & 79.29\\
-\hline
-flexivit-base-1200ep-in1k & 97.39 & 87.67\\
-\hline
-laion-vit-base16-224 & 98.16 & 89.75\\
-\hline
-resnet50-a1-in1k & 95.66 & 82.54\\
-\hline
-resnext50-32x4d-a1-in1k & 95.60 & 81.84\\
-\hline
-sam-vit-base16-224-in1k & 95.31 & 80.55\\
-\hline
-wide-resnet50-2-tv-in1k & 87.43 & 65.25\\
+wide-resnet50-2-tv-in1k & 0.01 ± 0.00 & 0.01 ± 0.00 & 0.04 ± 0.00 & 0.04 ± 0.00\\
 \hline
 \end{tabular}
 \end{table}
@@ -504,90 +125,59 @@ wide-resnet50-2-tv-in1k & 87.43 & 65.25\\
 % p365 dataset table
 \begin{table}[htbp]
 \caption{Results for the p365 dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 78.45 & 46.41\\
-\hline
-clip-vit-base16-224 & 84.23 & 52.95\\
-\hline
-deit3-base-patch16-224-fb-in1k & 81.20 & 49.44\\
-\hline
-dino-vit-base16-224 & 82.09 & 50.81\\
-\hline
-flexivit-base-1200ep-in1k & 81.16 & 49.47\\
-\hline
-laion-vit-base16-224 & 85.81 & 55.28\\
-\hline
-resnet50-a1-in1k & 78.92 & 46.47\\
-\hline
-resnext50-32x4d-a1-in1k & 80.16 & 48.07\\
-\hline
-sam-vit-base16-224-in1k & 75.34 & 43.42\\
-\hline
-wide-resnet50-2-tv-in1k & 59.94 & 30.13\\
-\hline
-\end{tabular}
-\end{table}
-
-% clvrmath dataset table
-\begin{table}[htbp]
-\caption{Results for the clvrmath dataset}
-\begin{tabular}{|l|c|c|}\hline
-Experiment & accuracy_top_5-epoch-mean & accuracy_top_1-epoch-mean\\
-\hline
-augreg-vit-base16-224-in1k & 91.45 & 30.61\\
-\hline
-clip-vit-base16-224 & 99.13 & 59.47\\
-\hline
-deit3-base-patch16-224-fb-in1k & 91.09 & 33.71\\
-\hline
-dino-vit-base16-224 & 90.04 & 28.80\\
-\hline
-efficientnetv2-rw-s-ra2-in1k & 83.88 & 28.54\\
-\hline
-flexivit-base-1200ep-in1k & 90.33 & 34.18\\
-\hline
-laion-vit-base16-224 & 99.74 & 73.62\\
-\hline
-resnet50-a1-in1k & 61.71 & 14.93\\
-\hline
-resnext50-32x4d-a1-in1k & 64.48 & 14.80\\
-\hline
-sam-vit-base16-224-in1k & 98.71 & 55.31\\
-\hline
-wide-resnet50-2-tv-in1k & 58.59 & 14.80\\
-\hline
-\end{tabular}
-\end{table}
-
-% pokeset dataset table
-\begin{table}[htbp]
-\caption{Results for the pokeset dataset}
 \begin{tabular}{|l|c|c|c|c|}\hline
-Experiment & text_to_image_accuracy-epoch-mean & image_to_text_accuracy-epoch-mean & text_to_image_accuracy_top_5-epoch-mean & image_to_text_accuracy_top_5-epoch-mean\\
+Experiment & acc@5 & acc@1\\
 \hline
-augreg-vit-base16-224-in1k & 0.51 & 0.53 & 0.62 & 0.60\\
+augreg-vit-base16-224-in1k & 78.45 ± 1.89 & 46.41 ± 2.15\\
 \hline
-clip-vit-base16-224 & 0.73 & 0.70 & 0.93 & 0.89\\
+clip-vit-base16-224 & 84.23 ± 0.00 & 52.95 ± 0.00\\
 \hline
-deit3-base-patch16-224-fb-in1k & 0.53 & 0.52 & 0.61 & 0.62\\
+deit3-base-patch16-224-fb-in1k & 81.20 ± 1.20 & 49.44 ± 1.46\\
 \hline
-dino-vit-base16-224 & 0.53 & 0.55 & 0.66 & 0.65\\
+dino-vit-base16-224 & 82.09 ± 2.02 & 50.81 ± 2.38\\
 \hline
-efficientnetv2-rw-s-ra2-in1k & 0.53 & 0.53 & 0.63 & 0.67\\
+flexivit-base-1200ep-in1k & 81.16 ± 0.00 & 49.47 ± 0.00\\
 \hline
-flexivit-base-1200ep-in1k & 0.59 & 0.57 & 0.75 & 0.70\\
+laion-vit-base16-224 & 85.81 ± 1.35 & 55.28 ± 1.69\\
 \hline
-laion-vit-base16-224 & 0.59 & 0.56 & 0.80 & 0.71\\
+resnet50-a1-in1k & 78.92 ± 0.00 & 46.47 ± 0.00\\
 \hline
-resnet50-a1-in1k & 0.15 & 0.15 & 0.33 & 0.37\\
+resnext50-32x4d-a1-in1k & 80.16 ± 0.11 & 48.07 ± 0.17\\
 \hline
-resnext50-32x4d-a1-in1k & 0.41 & 0.38 & 0.54 & 0.52\\
+sam-vit-base16-224-in1k & 75.34 ± 4.52 & 43.42 ± 4.91\\
 \hline
-sam-vit-base16-224-in1k & 0.52 & 0.53 & 0.65 & 0.64\\
+wide-resnet50-2-tv-in1k & 59.94 ± 11.66 & 30.13 ± 9.54\\
 \hline
-wide-resnet50-2-tv-in1k & 0.10 & 0.05 & 0.31 & 0.24\\
+\end{tabular}
+\end{table}
+
+% chx dataset table
+\begin{table}[htbp]
+\caption{Results for the chx dataset}
+\begin{tabular}{|l|c|c|c|c|c|c|}\hline
+Experiment & auc-macro & bs-macro & aps-macro\\
+\hline
+augreg-vit-base16-224-in1k & 0.76 ± 0.00 & 0.20 ± 0.00 & 0.52 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.77 ± 0.00 & 0.18 ± 0.00 & 0.55 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.78 ± 0.00 & 0.18 ± 0.00 & 0.56 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.79 ± 0.00 & 0.18 ± 0.00 & 0.56 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 0.69 ± 0.00 & 0.23 ± 0.00 & 0.42 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.67 ± 0.00 & 0.16 ± 0.00 & 0.35 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.79 ± 0.00 & 0.18 ± 0.00 & 0.57 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.79 ± 0.00 & 0.18 ± 0.00 & 0.56 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.80 ± 0.00 & 0.18 ± 0.00 & 0.57 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.77 ± 0.00 & 0.20 ± 0.00 & 0.51 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.75 ± 0.00 & 0.20 ± 0.00 & 0.50 ± 0.00\\
 \hline
 \end{tabular}
 \end{table}
@@ -595,30 +185,444 @@ wide-resnet50-2-tv-in1k & 0.10 & 0.05 & 0.31 & 0.24\\
 % dtextfs dataset table
 \begin{table}[htbp]
 \caption{Results for the dtextfs dataset}
-\begin{tabular}{|l|c|}\hline
-Experiment & accuracy_top_1-epoch-mean\\
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
 \hline
-augreg-vit-base16-224-in1k & 0.81\\
+augreg-vit-base16-224-in1k & 0.81 ± 0.00\\
 \hline
-clip-vit-base16-224 & 0.82\\
+clip-vit-base16-224 & 0.82 ± 0.00\\
 \hline
-deit3-base-patch16-224-fb-in1k & 0.85\\
+deit3-base-patch16-224-fb-in1k & 0.85 ± 0.00\\
 \hline
-dino-vit-base16-224 & 0.84\\
+dino-vit-base16-224 & 0.84 ± 0.00\\
 \hline
-efficientnetv2-rw-s-ra2-in1k & 0.82\\
+efficientnetv2-rw-s-ra2-in1k & 0.82 ± 0.00\\
 \hline
-flexivit-base-1200ep-in1k & 0.83\\
+flexivit-base-1200ep-in1k & 0.83 ± 0.00\\
 \hline
-laion-vit-base16-224 & 0.88\\
+laion-vit-base16-224 & 0.88 ± 0.00\\
 \hline
-resnet50-a1-in1k & 0.63\\
+resnet50-a1-in1k & 0.63 ± 0.00\\
 \hline
-resnext50-32x4d-a1-in1k & 0.69\\
+resnext50-32x4d-a1-in1k & 0.69 ± 0.00\\
 \hline
-sam-vit-base16-224-in1k & 0.85\\
+sam-vit-base16-224-in1k & 0.85 ± 0.00\\
 \hline
-wide-resnet50-2-tv-in1k & 0.61\\
+wide-resnet50-2-tv-in1k & 0.61 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% f101 dataset table
+\begin{table}[htbp]
+\caption{Results for the f101 dataset}
+\begin{tabular}{|l|c|c|c|c|}\hline
+Experiment & acc@5 & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 95.10 ± 0.00 & 81.34 ± 0.00\\
+\hline
+clip-vit-base16-224 & 98.30 ± 0.13 & 90.03 ± 0.27\\
+\hline
+deit3-base-patch16-224-fb-in1k & 96.50 ± 0.03 & 83.76 ± 0.16\\
+\hline
+dino-vit-base16-224 & 96.17 ± 0.41 & 83.92 ± 0.69\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 94.57 ± 1.12 & 79.29 ± 3.03\\
+\hline
+flexivit-base-1200ep-in1k & 97.39 ± 0.00 & 87.67 ± 0.00\\
+\hline
+laion-vit-base16-224 & 98.16 ± 0.07 & 89.75 ± 0.19\\
+\hline
+resnet50-a1-in1k & 95.66 ± 0.00 & 82.54 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 95.60 ± 0.46 & 81.84 ± 1.44\\
+\hline
+sam-vit-base16-224-in1k & 95.31 ± 0.07 & 80.55 ± 0.25\\
+\hline
+wide-resnet50-2-tv-in1k & 87.43 ± 3.50 & 65.25 ± 7.17\\
+\hline
+\end{tabular}
+\end{table}
+
+% stl10 dataset table
+\begin{table}[htbp]
+\caption{Results for the stl10 dataset}
+\begin{tabular}{|l|c|c|c|c|}\hline
+Experiment & acc@5 & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 99.71 ± 0.00 & 93.68 ± 0.00\\
+\hline
+clip-vit-base16-224 & 99.89 ± 0.03 & 96.89 ± 0.02\\
+\hline
+deit3-base-patch16-224-fb-in1k & 99.89 ± 0.02 & 97.61 ± 0.12\\
+\hline
+dino-vit-base16-224 & 99.73 ± 0.03 & 95.36 ± 0.14\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 99.29 ± 0.06 & 86.80 ± 0.12\\
+\hline
+flexivit-base-1200ep-in1k & 99.91 ± 0.00 & 97.35 ± 0.00\\
+\hline
+laion-vit-base16-224 & 99.90 ± 0.00 & 95.80 ± 0.00\\
+\hline
+resnet50-a1-in1k & 99.50 ± 0.00 & 90.65 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 99.73 ± 0.00 & 92.91 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 99.17 ± 0.00 & 90.20 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 98.23 ± 0.25 & 75.82 ± 3.47\\
+\hline
+\end{tabular}
+\end{table}
+
+% pokeset dataset table
+\begin{table}[htbp]
+\caption{Results for the pokeset dataset}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}\hline
+Experiment & txt2img acc & img2txt acc & text to image acc@5 & image to text acc@5\\
+\hline
+augreg-vit-base16-224-in1k & 0.51 ± 0.00 & 0.53 ± 0.00 & 0.62 ± 0.00 & 0.60 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.73 ± 0.00 & 0.70 ± 0.00 & 0.93 ± 0.00 & 0.89 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.53 ± 0.00 & 0.52 ± 0.00 & 0.61 ± 0.00 & 0.62 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.53 ± 0.00 & 0.55 ± 0.00 & 0.66 ± 0.00 & 0.65 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 0.53 ± 0.00 & 0.53 ± 0.00 & 0.63 ± 0.00 & 0.67 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.59 ± 0.00 & 0.57 ± 0.00 & 0.75 ± 0.00 & 0.70 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.71 ± 0.12 & 0.66 ± 0.10 & 0.88 ± 0.07 & 0.83 ± 0.11\\
+\hline
+resnet50-a1-in1k & 0.15 ± 0.00 & 0.15 ± 0.00 & 0.33 ± 0.00 & 0.37 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.48 ± 0.07 & 0.45 ± 0.07 & 0.62 ± 0.08 & 0.61 ± 0.09\\
+\hline
+sam-vit-base16-224-in1k & 0.52 ± 0.00 & 0.53 ± 0.00 & 0.65 ± 0.00 & 0.64 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.33 ± 0.23 & 0.29 ± 0.24 & 0.51 ± 0.20 & 0.48 ± 0.23\\
+\hline
+\end{tabular}
+\end{table}
+
+% in1k dataset table
+\begin{table}[htbp]
+\caption{Results for the in1k dataset}
+\begin{tabular}{|l|c|c|c|c|}\hline
+Experiment & acc@5 & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 93.31 ± 0.37 & 78.88 ± 0.55\\
+\hline
+clip-vit-base16-224 & 93.04 ± 0.90 & 72.95 ± 2.21\\
+\hline
+deit3-base-patch16-224-fb-in1k & 94.01 ± 0.00 & 81.94 ± 0.00\\
+\hline
+dino-vit-base16-224 & 89.51 ± 0.08 & 69.24 ± 0.08\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 92.81 ± 0.03 & 77.72 ± 0.03\\
+\hline
+flexivit-base-1200ep-in1k & 95.44 ± 0.00 & 83.07 ± 0.00\\
+\hline
+laion-vit-base16-224 & 93.98 ± 1.26 & 75.54 ± 2.84\\
+\hline
+resnet50-a1-in1k & 91.14 ± 0.22 & 73.53 ± 0.38\\
+\hline
+resnext50-32x4d-a1-in1k & 92.87 ± 0.61 & 76.82 ± 1.18\\
+\hline
+wide-resnet50-2-tv-in1k & 13.82 ± 4.84 & 4.52 ± 2.01\\
+\hline
+\end{tabular}
+\end{table}
+
+% c100 dataset table
+\begin{table}[htbp]
+\caption{Results for the c100 dataset}
+\begin{tabular}{|l|c|c|c|c|}\hline
+Experiment & acc@5 & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 80.97 ± 1.12 & 53.81 ± 0.33\\
+\hline
+clip-vit-base16-224 & 76.69 ± 14.11 & 49.80 ± 20.16\\
+\hline
+deit3-base-patch16-224-fb-in1k & 88.69 ± 0.54 & 64.72 ± 0.91\\
+\hline
+dino-vit-base16-224 & 86.70 ± 0.16 & 62.59 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 68.00 ± 3.65 & 37.21 ± 3.77\\
+\hline
+flexivit-base-1200ep-in1k & 90.59 ± 1.40 & 68.52 ± 2.25\\
+\hline
+laion-vit-base16-224 & 91.45 ± 0.12 & 71.52 ± 0.48\\
+\hline
+resnet50-a1-in1k & 81.89 ± 2.10 & 54.34 ± 2.35\\
+\hline
+resnext50-32x4d-a1-in1k & 85.41 ± 0.00 & 57.95 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 46.74 ± 33.73 & 27.18 ± 23.89\\
+\hline
+wide-resnet50-2-tv-in1k & 35.81 ± 30.74 & 18.73 ± 16.76\\
+\hline
+\end{tabular}
+\end{table}
+
+% winogr dataset table
+\begin{table}[htbp]
+\caption{Results for the winogr dataset}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}\hline
+Experiment & txt2img acc & img2txt acc & text to image acc@5 & image to text acc@5\\
+\hline
+clip-vit-base16-224-1337 & 0.51 ± 0.00 & 0.53 ± 0.00 & 1.00 ± 0.00 & 1.00 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.43 ± 0.02 & 0.48 ± 0.03 & 1.00 ± 0.00 & 1.00 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.50 ± 0.00 & 0.50 ± 0.00 & 1.00 ± 0.00 & 1.00 ± 0.00\\
+\hline
+timm-vit-base16-224-1337 & 0.51 ± 0.00 & 0.53 ± 0.00 & 1.00 ± 0.00 & 1.00 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.49 ± 0.00 & 0.50 ± 0.00 & 1.00 ± 0.00 & 1.00 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% omnifs dataset table
+\begin{table}[htbp]
+\caption{Results for the omnifs dataset}
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 0.99 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.99 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.99 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.99 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.99 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.99 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.98 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.99 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.99 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.97 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% clvr dataset table
+\begin{table}[htbp]
+\caption{Results for the clvr dataset}
+\begin{tabular}{|l|c|c|c|c|}\hline
+Experiment & acc@5 & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 99.35 ± 0.00 & 53.62 ± 0.00\\
+\hline
+clip-vit-base16-224 & NA & 53.86 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 99.33 ± 0.00 & 54.32 ± 0.00\\
+\hline
+dino-vit-base16-224 & 99.36 ± 0.00 & 54.85 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 99.13 ± 0.00 & 52.82 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 99.33 ± 0.00 & 53.34 ± 0.00\\
+\hline
+laion-vit-base16-224 & 99.37 ± 0.00 & 53.69 ± 0.00\\
+\hline
+resnet50-a1-in1k & 94.72 ± 0.00 & 41.11 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 95.74 ± 0.00 & 42.39 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 99.31 ± 0.00 & 53.09 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 96.21 ± 0.00 & 41.79 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% cubfs dataset table
+\begin{table}[htbp]
+\caption{Results for the cubfs dataset}
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 0.96 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.96 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.97 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.96 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 0.95 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.98 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.98 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.92 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.94 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.97 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.77 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% airfs dataset table
+\begin{table}[htbp]
+\caption{Results for the airfs dataset}
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 0.92 ± 0.00\\
+\hline
+augreg-vit-base16-224-in1k-1337 & 0.72 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.96 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.94 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.95 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 0.92 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.95 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.97 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.92 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.92 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.93 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.83 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% fungifs dataset table
+\begin{table}[htbp]
+\caption{Results for the fungifs dataset}
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 0.82 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.89 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.87 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.83 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.87 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.89 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.76 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.81 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.85 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.45 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% miniinfs dataset table
+\begin{table}[htbp]
+\caption{Results for the miniinfs dataset}
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 0.25 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.23 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.95 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.22 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.21 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.23 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.80 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.99 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.21 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% vggfs dataset table
+\begin{table}[htbp]
+\caption{Results for the vggfs dataset}
+\begin{tabular}{|l|c|c|}\hline
+Experiment & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 0.96 ± 0.00\\
+\hline
+clip-vit-base16-224 & 0.97 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 0.97 ± 0.00\\
+\hline
+dino-vit-base16-224 & 0.97 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 0.94 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 0.97 ± 0.00\\
+\hline
+laion-vit-base16-224 & 0.98 ± 0.00\\
+\hline
+resnet50-a1-in1k & 0.91 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 0.88 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 0.96 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 0.81 ± 0.00\\
+\hline
+\end{tabular}
+\end{table}
+
+% clvrmath dataset table
+\begin{table}[htbp]
+\caption{Results for the clvrmath dataset}
+\begin{tabular}{|l|c|c|c|c|}\hline
+Experiment & acc@5 & acc@1\\
+\hline
+augreg-vit-base16-224-in1k & 91.45 ± 0.00 & 30.61 ± 0.00\\
+\hline
+clip-vit-base16-224 & 99.13 ± 0.00 & 59.47 ± 0.00\\
+\hline
+deit3-base-patch16-224-fb-in1k & 91.09 ± 0.00 & 33.71 ± 0.00\\
+\hline
+dino-vit-base16-224 & 90.04 ± 0.00 & 28.80 ± 0.00\\
+\hline
+efficientnetv2-rw-s-ra2-in1k & 83.88 ± 0.00 & 28.54 ± 0.00\\
+\hline
+flexivit-base-1200ep-in1k & 90.33 ± 0.00 & 34.18 ± 0.00\\
+\hline
+laion-vit-base16-224 & 99.74 ± 0.00 & 73.62 ± 0.00\\
+\hline
+resnet50-a1-in1k & 61.71 ± 0.00 & 14.93 ± 0.00\\
+\hline
+resnext50-32x4d-a1-in1k & 64.48 ± 0.00 & 14.80 ± 0.00\\
+\hline
+sam-vit-base16-224-in1k & 98.71 ± 0.00 & 55.31 ± 0.00\\
+\hline
+wide-resnet50-2-tv-in1k & 58.59 ± 0.00 & 14.80 ± 0.00\\
 \hline
 \end{tabular}
 \end{table}
