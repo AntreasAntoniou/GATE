@@ -94,6 +94,7 @@ def build_gate_model(
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
+    image_size: int = 512,
 ):
     model_and_transform = build_model(
         model_name=model_name,
@@ -102,6 +103,7 @@ def build_gate_model(
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
+        image_size=image_size,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
