@@ -25,6 +25,7 @@ SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 RUN conda install -c conda-forge mamba -y
 RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat -y
 RUN mamba install -c conda-forge git-crypt nvitop -y
+RUN echo y | pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 
 RUN conda init bash
@@ -40,12 +41,8 @@ ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
 ADD setup.py /app/
 RUN echo y | pip install -r /app/requirements_dev.txt
-RUN export HF_HUB_ENABLE_HF_TRANSFER=1
-RUN git clone https://github.com/AntreasAntoniou/learn2learn.git
-RUN pip install -e learn2learn
 RUN echo y | pip install huggingface_hub evaluate
 
-RUN echo y | pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 ADD gate/ /app/gate
 # RUN find /app/ -name "__pycache__" -type d -exec rm -r {} +
