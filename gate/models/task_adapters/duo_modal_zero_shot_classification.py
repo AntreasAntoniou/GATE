@@ -84,7 +84,7 @@ class DuoModalZeroShotModel(BaseModule):
         modality_b_features = None
 
         is_irregular_shape = False
-        # print(f"image.shape: {image.shape}, text.shape: {text.shape}")
+
         start_time = time.time()
         if len(image.shape) == 5:
             image = image.view(-1, *image.shape[2:])
