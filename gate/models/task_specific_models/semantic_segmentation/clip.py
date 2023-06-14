@@ -61,7 +61,7 @@ def build_model(
     if not pretrained:
         model.init_weights()
 
-    transform_dict = backbone_model.get_transforms()
+    transform_dict = backbone_model.get_transforms(image_size=image_size)
 
     def transform_wrapper(inputs: Union[Dict, Any]):
         output_dict = {}
