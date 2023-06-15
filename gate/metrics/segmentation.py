@@ -562,13 +562,12 @@ class WeightedCrossEntropyLoss(nn.Module):
         :return: torch.Tensor representing the loss
         """
         labels = labels.squeeze(1)
-        class_weights = self.compute_class_weights(labels) * 1000
+        # class_weights = self.compute_class_weights(labels) * 1000
 
         # Perform standard cross-entropy loss computation
         loss = nn.functional.cross_entropy(
             logits,
             labels,
-            weight=class_weights,
             reduction=self.reduction,
             ignore_index=self.ignore_index,
         )
