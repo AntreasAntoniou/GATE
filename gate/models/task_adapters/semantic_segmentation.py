@@ -418,14 +418,22 @@ class SegmentationViT(nn.Module):
 
         self.upscale_net1 = UpscaleMultiBlock(
             in_features=hidden_size,
-            out_features=hidden_size,
+            out_features=hidden_size // 2,
             hidden_size=hidden_size,
             num_blocks=2,
             encoder_features=hidden_size,
         )
 
         self.upscale_net2 = UpscaleMultiBlock(
-            in_features=hidden_size,
+            in_features=hidden_size // 2,
+            out_features=hidden_size // 4,
+            hidden_size=hidden_size,
+            num_blocks=2,
+            encoder_features=hidden_size,
+        )
+
+        self.upscale_net3 = UpscaleMultiBlock(
+            in_features=hidden_size // 4,
             out_features=3,
             hidden_size=hidden_size,
             num_blocks=2,
@@ -445,7 +453,7 @@ class SegmentationViT(nn.Module):
         self.weighted_bce = WeightedCrossEntropyLoss(
             ignore_index=0, reduction="mean"
         )
-        self.debug_mode = False
+        self.debug_mode = True
 
     def optimization_loss(self, logits, labels):
         focal_loss = self.focal_loss(logits, labels)
@@ -565,14 +573,15 @@ class SegmentationViT(nn.Module):
         # decoder_inputs = self.detail_conv2_2(decoder_inputs)
         # decoder_inputs = self.detail_conv2_3(decoder_inputs)
 
-        decoder_inputs = F.interpolate(
-            encoder_features, size=(64, 64), mode="bicubic"
-        )
+        decoder_inputs = encoder_features
 
         outputs = self.upscale_net1(decoder_inputs, encoder_features)
         outputs = self.upscale_net2(outputs, encoder_features)
+        outputs = self.upscale_net3(outputs, encoder_features)
 
         mask_predictions = outputs
+        if self.debug_mode:
+            print(f"mask_predictions: {mask_predictions.shape}")
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
         # decoder_inputs = self.detail_conv3_0(decoder_inputs)
