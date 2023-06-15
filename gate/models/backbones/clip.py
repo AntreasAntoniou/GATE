@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 def forward_dict(self, x):
     output = self.legacy_forward(x, return_dict=False)
-    (last_hidden_state, pooled_output, encoder_outputs) = output
+    ((last_hidden_state, pooled_output), encoder_outputs) = output
     return {
         "features": pooled_output,
         "raw_features": last_hidden_state,
