@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import math
 from functools import partial
 import time
@@ -245,12 +246,14 @@ class UpscaleMultiBlock(nn.Module):
         )
 
         self.detail_conv = nn.Sequential(
-            {
-                f"upscale_block_{idx}": ResidualConvBlock(
-                    hidden_size, hidden_size
-                )
-                for idx in range(num_blocks)
-            }
+            OrderedDict(
+                {
+                    f"upscale_block_{idx}": ResidualConvBlock(
+                        hidden_size, hidden_size
+                    )
+                    for idx in range(num_blocks)
+                }
+            )
         )
 
         self.out_conv = nn.Conv2d(
