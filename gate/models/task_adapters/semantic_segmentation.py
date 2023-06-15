@@ -419,7 +419,7 @@ class SegmentationViT(nn.Module):
         self.upscale_net1 = UpscaleMultiBlock(
             in_features=hidden_size,
             out_features=hidden_size // 2,
-            hidden_size=hidden_size,
+            hidden_size=hidden_size // 2,
             num_blocks=2,
             encoder_features=hidden_size,
         )
@@ -427,7 +427,7 @@ class SegmentationViT(nn.Module):
         self.upscale_net2 = UpscaleMultiBlock(
             in_features=hidden_size // 2,
             out_features=hidden_size // 4,
-            hidden_size=hidden_size,
+            hidden_size=hidden_size // 4,
             num_blocks=2,
             encoder_features=hidden_size,
         )
@@ -435,7 +435,7 @@ class SegmentationViT(nn.Module):
         self.upscale_net3 = UpscaleMultiBlock(
             in_features=hidden_size // 4,
             out_features=3,
-            hidden_size=hidden_size,
+            hidden_size=hidden_size // 4,
             num_blocks=2,
             encoder_features=hidden_size,
         )
