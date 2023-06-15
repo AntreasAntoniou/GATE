@@ -312,7 +312,7 @@ class SegmentationViT(nn.Module):
         self.encoder = encoder_model
         self.num_patches = num_patches
         self.num_classes = num_classes
-        self.positional_encoding = PositionalEncoding()
+        self.positional_encoding = None
 
         self.decoder_embedding_dimension = decoder_embed_dim
 
@@ -498,8 +498,6 @@ class SegmentationViT(nn.Module):
         # decoder_inputs = self.detail_conv3(decoder_inputs)
         # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
 
-        self.positional_encoding(decoder_inputs)
-
         # # torch.Size([1, 1, 2, 256]),
         # # dense_embeddings: torch.Size([1, 256, 64, 64]),
         # # image_embeddings: torch.Size([1, 256, 64, 64]),
@@ -516,10 +514,14 @@ class SegmentationViT(nn.Module):
                     decoder_inputs.device
                 )
             )
+        if self.positional_encoding is None:
+            self.positional_encoding = nn.Parameter(
+                torch.randn(size=decoder_inputs.shape)
+            ).to(decoder_inputs.device)
 
         mask_predictions, _, _ = self.decoder(
             image_embeddings=decoder_inputs,
-            image_positional_embeddings=self.positional_encoding.positional_encoding,
+            image_positional_embeddings=self.positional_encoding,
             sparse_prompt_embeddings=torch.zeros(
                 decoder_inputs.shape[0], 1, 1, self.hidden_size
             ).to(decoder_inputs.device),
