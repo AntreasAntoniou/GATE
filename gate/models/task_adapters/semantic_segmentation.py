@@ -116,7 +116,11 @@ class ResidualUpscaleConvBlock(nn.Module):
             )
         residual = self.up1(residual)
 
-        return out + residual
+        frame = torch.zero_like(out)
+
+        frame[:, : residual.shape[1], :, :] = residual
+
+        return out + frame
 
 
 class ResidualConvBlock(nn.Module):
@@ -153,7 +157,11 @@ class ResidualConvBlock(nn.Module):
         out = self.activation2(out)
         out = self.norm2(out)
 
-        return out + residual
+        frame = torch.zero_like(out)
+
+        frame[:, : residual.shape[1], :, :] = residual
+
+        return out + frame
 
 
 from gate.metrics.segmentation import (
