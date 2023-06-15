@@ -544,7 +544,10 @@ class SegmentationViT(nn.Module):
                 # )
                 image = F.interpolate(
                     image,
-                    size=(labels.shape[-2], labels.shape[-1]),
+                    size=(
+                        mask_predictions.shape[-2],
+                        mask_predictions.shape[-1],
+                    ),
                     mode="bicubic",
                 )
 
