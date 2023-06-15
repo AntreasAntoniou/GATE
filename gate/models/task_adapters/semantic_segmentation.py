@@ -303,7 +303,7 @@ class UpscaleMultiBlock(nn.Module):
         if self.channel_mixing is None:
             self.channel_mixing = nn.Conv2d(
                 encoder_features.shape[1],
-                self.channel_mixing,
+                self.encoder_features,
                 kernel_size=1,
                 stride=1,
             )
