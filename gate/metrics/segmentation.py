@@ -543,7 +543,7 @@ class WeightedCrossEntropyLoss(nn.Module):
 
         if self.dynamic_weights:
             num_classes = logits.shape[1]
-            weight = compute_class_weights(labels, num_classes) * 100
+            weight = compute_class_weights(labels, num_classes)
         else:
             weight = self.weight
 
