@@ -539,13 +539,15 @@ class WeightedCrossEntropyLoss(nn.Module):
         :return: torch.Tensor with shape (num_classes,)
         """
         unique_labels, counts = torch.unique(labels, return_counts=True)
+        print(f"Unique labels: {unique_labels}, counts: {counts}")
         counts_float = counts.type(torch.float)
 
         # Apply the inverse of the class frequency
-        class_weights = 1 / counts_float
+        class_weights = 1 / counts_float + 1e-6
 
         # Normalize the vector using a softmax function
         class_weights = torch.softmax(class_weights, dim=0)
+        print(f"Class weights: {class_weights}")
 
         return class_weights
 
@@ -560,7 +562,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         :return: torch.Tensor representing the loss
         """
         labels = labels.squeeze(1)
-        class_weights = self.compute_class_weights(labels)
+        class_weights = self.compute_class_weights(labels) * 1000
 
         # Perform standard cross-entropy loss computation
         loss = nn.functional.cross_entropy(
