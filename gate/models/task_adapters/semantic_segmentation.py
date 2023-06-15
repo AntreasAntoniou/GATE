@@ -318,7 +318,7 @@ class SegmentationViT(nn.Module):
 
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
-        hidden_size = 256
+        hidden_size = 768
         self.hidden_size = hidden_size
 
         self.channel_projection = None
@@ -341,7 +341,10 @@ class SegmentationViT(nn.Module):
         )
 
         self.decoder_config = SamMaskDecoderConfig(
-            num_multimask_outputs=num_classes
+            num_multimask_outputs=num_classes,
+            hidden_size=hidden_size,
+            mlp_dim=hidden_size * 4,
+            num_hidden_layers=4,
         )
         self.decoder = SamMaskDecoder(config=self.decoder_config)
 
