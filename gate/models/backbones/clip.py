@@ -29,6 +29,7 @@ def forward_dict(self, x):
     )
     print(f"len(output): {len(output)}")
     (last_hidden_state, pooled_output, encoder_outputs) = output
+    encoder_outputs = torch.cat(encoder_outputs, dim=0)
     print(
         f"encoder_outputs: {encoder_outputs.shape}, last_hidden_state: {last_hidden_state.shape}, pooled_output: {pooled_output.shape}"
     )
