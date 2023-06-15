@@ -95,6 +95,8 @@ class ResidualUpscaleConvBlock(nn.Module):
         self.activation2 = nn.GELU()
         self.norm2 = nn.InstanceNorm2d(out_channels)
 
+        self.channel_mixing = None
+
         self.up1 = None
 
     def forward(self, x):
@@ -121,9 +123,14 @@ class ResidualUpscaleConvBlock(nn.Module):
             frame[:, : residual.shape[1], :, :] = residual
             residual = frame
         else:
-            frame = torch.zeros_like(residual)
-            frame[:, : out.shape[1], :, :] = out
-            out = frame
+            if self.channel_mixing is None:
+                self.channel_mixing = nn.Conv2d(
+                    residual.shape[1],
+                    out.shape[1],
+                    kernel_size=1,
+                    stride=1,
+                )
+            residual = self.channel_mixing(residual)
 
         return out + residual
 
@@ -148,6 +155,7 @@ class ResidualConvBlock(nn.Module):
             stride=1,
             padding=1,
         )
+        self.channel_mixing = None
         self.activation2 = nn.GELU()
         self.norm2 = nn.InstanceNorm2d(out_channels)
 
@@ -167,9 +175,14 @@ class ResidualConvBlock(nn.Module):
             frame[:, : residual.shape[1], :, :] = residual
             residual = frame
         else:
-            frame = torch.zeros_like(residual)
-            frame[:, : out.shape[1], :, :] = out
-            out = frame
+            if self.channel_mixing is None:
+                self.channel_mixing = nn.Conv2d(
+                    residual.shape[1],
+                    out.shape[1],
+                    kernel_size=1,
+                    stride=1,
+                )
+            residual = self.channel_mixing(residual)
 
         return out + residual
 
