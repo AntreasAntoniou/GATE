@@ -350,7 +350,6 @@ class SegmentationViT(nn.Module):
             num_multimask_outputs=num_classes
         )
         self.decoder = SamMaskDecoder(config=self.decoder_config)
-        self.class_token = nn.Parameter(torch.randn(1, 1, embed_dim))
 
         self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
@@ -432,20 +431,14 @@ class SegmentationViT(nn.Module):
                 features.shape[0], -1, features.shape[1]
             )
 
-        decoder_inputs = self.decoder_feature_matcher(features)
-        class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
-        decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
-
         if self.decoder_spatial_matcher is None:
             self.decoder_spatial_matcher = nn.Conv1d(
-                in_channels=decoder_inputs.shape[1],
-                out_channels=int(
-                    math.floor(math.sqrt(decoder_inputs.shape[1]))
-                )
+                in_channels=features.shape[1],
+                out_channels=int(math.floor(math.sqrt(features.shape[1])))
                 ** 2,
                 kernel_size=1,
             )
-        decoder_inputs = self.decoder_spatial_matcher(decoder_inputs)
+        decoder_inputs = self.decoder_spatial_matcher(features)
 
         decoder_inputs = decoder_inputs.permute([0, 2, 1])
         batch, channels, sequence = decoder_inputs.shape
