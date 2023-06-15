@@ -472,7 +472,9 @@ class SegmentationViT(nn.Module):
         # decoder_inputs = self.detail_conv2_2(decoder_inputs)
         # decoder_inputs = self.detail_conv2_3(decoder_inputs)
 
-        decoder_inputs = F.interpolate(decoder_inputs, size=(64, 64))
+        decoder_inputs = F.interpolate(
+            decoder_inputs, size=(64, 64), mode="bicubic"
+        )
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
         # decoder_inputs = self.detail_conv3_0(decoder_inputs)
@@ -528,17 +530,25 @@ class SegmentationViT(nn.Module):
             output_attentions=False,
         )
 
-        mask_predictions = mask_predictions[:, 0]
+        mask_predictions = mask_predictions[:, 0, :3]
 
         output = {
             "logits": mask_predictions,
+            "ae_output": decoder_inputs,
         }
 
         if return_loss_and_metrics:
             try:
-                output |= self.compute_loss_and_metrics(
-                    logits=output["logits"], labels=labels
+                # output |= self.compute_loss_and_metrics(
+                #     logits=output["logits"], labels=labels
+                # )
+                image = F.interpolate(
+                    image,
+                    size=(labels.shape[-2], labels.shape[-1]),
+                    mode="bicubic",
                 )
+
+                output["loss"] = F.l1_loss(image, labels)
                 # ae_loss = 0.1 * F.mse_loss(
                 #     decoded_image,
                 #     image,
