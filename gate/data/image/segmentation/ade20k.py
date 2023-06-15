@@ -57,12 +57,16 @@ class DatasetTransforms:
 
     def __call__(self, inputs: Dict):
         image = inputs["image"]
-        image = T.Resize((self.input_size[0], self.input_size[1]))(image)
+        image = T.Resize(
+            (self.input_size[0], self.input_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+        )(image)
 
         annotation = inputs["annotation"]
-        annotation = T.Resize((self.target_size[0], self.target_size[1]))(
-            annotation
-        )
+        annotation = T.Resize(
+            (self.target_size[0], self.target_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+        )(annotation)
         annotation = np.array(annotation)
         annotation = torch.from_numpy(annotation)
         annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
@@ -80,7 +84,7 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=150,
-    image_size=512,
+    image_size=1024,
     target_image_size=256,
 ) -> dict:
     dataset_transforms = DatasetTransforms(image_size, target_image_size)
