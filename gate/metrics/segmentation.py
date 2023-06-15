@@ -524,40 +524,50 @@ def compute_class_weights(labels, num_classes):
 class WeightedCrossEntropyLoss(nn.Module):
     def __init__(
         self,
-        weight=None,
         reduction="mean",
         ignore_index: int = -1,
-        dynamic_weights=True,
     ):
         super(WeightedCrossEntropyLoss, self).__init__()
-        self.weight = weight
         self.reduction = reduction
         self.ignore_index = ignore_index
-        self.dynamic_weights = dynamic_weights
 
-    def forward(self, logits, labels):
-        labels = labels.squeeze(1).view(-1)
-        logits = (
-            logits.permute(0, 2, 3, 1).contiguous().view(-1, logits.shape[1])
-        )
+    def compute_class_weights(self, labels: torch.Tensor) -> torch.Tensor:
+        """
+        Compute class weights based on label frequency.
 
-        if self.dynamic_weights:
-            num_classes = logits.shape[1]
-            weight = compute_class_weights(labels, num_classes)
-        else:
-            weight = self.weight
+        :param labels: torch.Tensor with shape (b, h, w)
+        :return: torch.Tensor with shape (num_classes,)
+        """
+        unique_labels, counts = torch.unique(labels, return_counts=True)
+        counts_float = counts.type(torch.float)
 
-        ce_loss = F.cross_entropy(
+        # Apply the inverse of the class frequency
+        class_weights = 1 / counts_float
+
+        # Normalize the vector using a softmax function
+        class_weights = torch.softmax(class_weights, dim=0)
+
+        return class_weights
+
+    def forward(
+        self, logits: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Compute the weighted cross-entropy loss.
+
+        :param logits: torch.Tensor with shape (b, num_classes, h, w)
+        :param labels: torch.Tensor with shape (b, h, w)
+        :return: torch.Tensor representing the loss
+        """
+        class_weights = self.compute_class_weights(labels)
+
+        # Perform standard cross-entropy loss computation
+        loss = nn.functional.cross_entropy(
             logits,
             labels,
-            weight=weight,
-            reduction="none",
+            weight=class_weights,
+            reduction=self.reduction,
             ignore_index=self.ignore_index,
         )
 
-        if self.reduction == "mean":
-            return ce_loss.mean()
-        elif self.reduction == "sum":
-            return ce_loss.sum()
-        else:
-            return ce_loss
+        return loss
