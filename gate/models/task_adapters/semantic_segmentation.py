@@ -409,7 +409,7 @@ class SegmentationViT(nn.Module):
 
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
-        hidden_size = 768
+        hidden_size = 128
         self.hidden_size = hidden_size
 
         self.channel_projection = None
@@ -582,9 +582,11 @@ class SegmentationViT(nn.Module):
         outputs = self.upscale_net1(decoder_inputs, encoder_features)
         if self.debug_mode:
             logger.info(f"outputs: {outputs.shape}")
+
         outputs = self.upscale_net2(outputs, encoder_features)
         if self.debug_mode:
             logger.info(f"outputs: {outputs.shape}")
+
         outputs = self.upscale_net3(outputs, encoder_features)
         if self.debug_mode:
             logger.info(f"outputs: {outputs.shape}")
