@@ -410,7 +410,8 @@ class SegmentationViT(nn.Module):
             )
 
         batch, _, height, width = image.shape
-        features = self.encoder(image)["image"]["raw_features"]
+        features = self.encoder(image)["image"]["per_layer_raw_features"]
+        print(len(features))
 
         if self.debug_mode:
             logger.info(f"Features shape: {features.shape}")
