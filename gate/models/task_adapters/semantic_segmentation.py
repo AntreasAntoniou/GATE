@@ -420,7 +420,7 @@ class SegmentationViT(nn.Module):
             in_features=hidden_size,
             out_features=hidden_size // 2,
             hidden_size=hidden_size // 2,
-            num_blocks=2,
+            num_blocks=1,
             encoder_features=hidden_size,
         )
 
@@ -428,7 +428,7 @@ class SegmentationViT(nn.Module):
             in_features=hidden_size // 2,
             out_features=hidden_size // 4,
             hidden_size=hidden_size // 4,
-            num_blocks=2,
+            num_blocks=1,
             encoder_features=hidden_size,
         )
 
@@ -453,7 +453,7 @@ class SegmentationViT(nn.Module):
         self.weighted_bce = WeightedCrossEntropyLoss(
             ignore_index=0, reduction="mean"
         )
-        self.debug_mode = False
+        self.debug_mode = True
 
     def optimization_loss(self, logits, labels):
         focal_loss = self.focal_loss(logits, labels)
