@@ -275,6 +275,8 @@ class UpscaleMultiBlock(nn.Module):
         encoder_features: int = 64,
     ):
         super().__init__()
+        self.channel_mixing = None
+        self.encoder_features = encoder_features
         self.upscale_net = ResidualUpscaleConvBlock(
             in_channels=in_features + encoder_features,
             out_channels=hidden_size,
@@ -298,6 +300,16 @@ class UpscaleMultiBlock(nn.Module):
     def forward(
         self, x: torch.Tensor, encoder_features: torch.Tensor
     ) -> torch.Tensor:
+        if self.channel_mixing is None:
+            self.channel_mixing = nn.Conv2d(
+                encoder_features.shape[1],
+                self.channel_mixing,
+                kernel_size=1,
+                stride=1,
+            )
+
+        encoder_features = self.channel_mixing(encoder_features)
+
         if (
             x.shape[-2] != encoder_features.shape[-2]
             or x.shape[-1] != encoder_features.shape[-1]
@@ -547,22 +559,20 @@ class SegmentationViT(nn.Module):
                 ** 2,
                 kernel_size=1,
             )
-        decoder_inputs = self.decoder_spatial_matcher(features)
+        encoder_features = self.decoder_spatial_matcher(features)
 
-        decoder_inputs = decoder_inputs.permute([0, 2, 1])
-        batch, channels, sequence = decoder_inputs.shape
+        encoder_features = encoder_features.permute([0, 2, 1])
+        batch, channels, sequence = encoder_features.shape
         feature_map_size = int(sequence**0.5)
-        decoder_inputs = decoder_inputs.view(
+        encoder_features = encoder_features.view(
             batch, channels, feature_map_size, feature_map_size
         )
         if self.channel_projection is None:
             self.channel_projection = nn.Conv2d(
-                in_channels=decoder_inputs.shape[1],
+                in_channels=encoder_features.shape[1],
                 out_channels=self.hidden_size,
                 kernel_size=1,
             )
-
-        encoder_features = self.channel_projection(decoder_inputs)
 
         # decoder_inputs = self.upscale_net1(decoder_inputs)
         # decoder_inputs = self.detail_conv1_0(decoder_inputs)
