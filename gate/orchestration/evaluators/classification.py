@@ -162,16 +162,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
                 },
             }
 
-            try:
-                output_dict["ae_episode"] = {
-                    "image": batch["image"],
-                    "recon": output_dict["decoded_image"].detach(),
-                }
-            except Exception as e:
-                logger.info(f"Exception: {e}")
-
             del output_dict["logits"]
-            del output_dict["decoded_image"]
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:

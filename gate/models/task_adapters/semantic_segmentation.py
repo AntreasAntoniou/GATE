@@ -355,7 +355,7 @@ class SegmentationViT(nn.Module):
         self.focal_loss = FocalLoss(alpha=0.5, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
         self.weighted_bce = WeightedCrossEntropyLoss(ignore_index=0)
-        self.debug_mode = True
+        self.debug_mode = False
 
         self.init_weights()
 
@@ -411,13 +411,12 @@ class SegmentationViT(nn.Module):
         """
 
         if self.debug_mode:
-            logger.info(f"Features shape: {image.shape}")
+            logger.info(f"Image shape: {image.shape}")
             logger.info(
                 f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
             )
 
         batch, _, height, width = image.shape
-        print(f"Batch: {batch}, Height: {height}, Width: {width}")
         features = self.encoder(image)["image"]["raw_features"]
 
         if self.debug_mode:
@@ -527,7 +526,6 @@ class SegmentationViT(nn.Module):
 
         output = {
             "logits": mask_predictions,
-            "decoded_image": mask_predictions[:, :3, :, :],
         }
 
         if return_loss_and_metrics:
