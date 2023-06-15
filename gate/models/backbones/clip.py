@@ -71,7 +71,9 @@ class CLIPAdapter(nn.Module):
     def modify_expected_image_size(self, image_size: int):
         config = self.vision_model.config
         config.image_size = image_size
-        self.vision_model.embeddings = CLIPVisionEmbeddings(config)
+        updated_embeddings = CLIPVisionEmbeddings(config)
+        print(f"config: {config}")
+        self.vision_model.embeddings = updated_embeddings
 
     def init_weights(self):
         reinit(self)
