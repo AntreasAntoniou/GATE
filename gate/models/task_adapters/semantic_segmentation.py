@@ -329,16 +329,16 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
 
-        self.upscale_net1 = ResidualUpscaleConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
+        # self.upscale_net1 = ResidualUpscaleConvBlock(
+        #     in_channels=hidden_size, out_channels=hidden_size
+        # )
 
-        self.detail_conv1_0 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
-        self.detail_conv1_1 = ResidualConvBlock(
-            in_channels=hidden_size, out_channels=hidden_size
-        )
+        # self.detail_conv1_0 = ResidualConvBlock(
+        #     in_channels=hidden_size, out_channels=hidden_size
+        # )
+        # self.detail_conv1_1 = ResidualConvBlock(
+        #     in_channels=hidden_size, out_channels=hidden_size
+        # )
 
         self.decoder_config = SamMaskDecoderConfig(
             num_multimask_outputs=3,
