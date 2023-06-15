@@ -576,12 +576,18 @@ class SegmentationViT(nn.Module):
         decoder_inputs = encoder_features
 
         outputs = self.upscale_net1(decoder_inputs, encoder_features)
+        if self.debug_mode:
+            logger.info(f"outputs: {outputs.shape}")
         outputs = self.upscale_net2(outputs, encoder_features)
+        if self.debug_mode:
+            logger.info(f"outputs: {outputs.shape}")
         outputs = self.upscale_net3(outputs, encoder_features)
+        if self.debug_mode:
+            logger.info(f"outputs: {outputs.shape}")
 
         mask_predictions = outputs
         if self.debug_mode:
-            print(f"mask_predictions: {mask_predictions.shape}")
+            logger.info(f"mask_predictions: {mask_predictions.shape}")
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
         # decoder_inputs = self.detail_conv3_0(decoder_inputs)
