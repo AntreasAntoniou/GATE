@@ -55,26 +55,18 @@ class CLIPAdapter(nn.Module):
         self.text_model = self.clip.text_model
         self.text_projection = self.clip.text_projection
 
-        setattr(
-            __obj=self.vision_model,
-            __name="legacy_forward",
-            __value=self.vision_model.forward,
-        )
-        setattr(
-            __obj=self.text_model,
-            __name="legacy_forward",
-            __value=self.text_model.forward,
-        )
+        # setattr signature: setattr(object, name, value)
+
+        setattr(self.vision_model, "legacy_forward", self.vision_model.forward)
+        setattr(self.text_model, "legacy_forward", self.text_model.forward)
 
         setattr(
-            __obj=self.vision_model,
-            __name="forward",
-            __value=forward_dict.__get__(self.vision_model),
+            self.vision_model,
+            "forward",
+            forward_dict.__get__(self.vision_model),
         )
         setattr(
-            __obj=self.text_model,
-            __name="forward",
-            __value=forward_dict.__get__(self.text_model),
+            self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
         if image_size is not None:
