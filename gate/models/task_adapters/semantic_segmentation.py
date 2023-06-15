@@ -548,7 +548,7 @@ class SegmentationViT(nn.Module):
                     mode="bicubic",
                 )
 
-                output["loss"] = F.l1_loss(image, labels)
+                output["loss"] = F.l1_loss(mask_predictions, image)
                 # ae_loss = 0.1 * F.mse_loss(
                 #     decoded_image,
                 #     image,
