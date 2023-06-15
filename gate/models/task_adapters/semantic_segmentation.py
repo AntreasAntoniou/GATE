@@ -521,7 +521,7 @@ class SegmentationViT(nn.Module):
             image_embeddings=decoder_inputs,
             image_positional_embeddings=self.positional_encoding.positional_encoding,
             sparse_prompt_embeddings=torch.zeros(
-                decoder_inputs.shape[0], 1, 1, 256
+                decoder_inputs.shape[0], 1, 1, self.hidden_size
             ).to(decoder_inputs.device),
             dense_prompt_embeddings=self.dense_prompt_embeddings.repeat(
                 [decoder_inputs.shape[0], 1, 1, 1]
@@ -534,7 +534,7 @@ class SegmentationViT(nn.Module):
 
         output = {
             "logits": mask_predictions,
-            "ae_output": decoder_inputs,
+            "ae_output": mask_predictions,
         }
 
         if return_loss_and_metrics:
