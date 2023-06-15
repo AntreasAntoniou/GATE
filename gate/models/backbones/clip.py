@@ -11,6 +11,7 @@ from transformers.models.clip.modeling_clip import (
     CLIPVisionEmbeddings,
 )
 from torchvision import transforms as T
+from gate.boilerplate.utils import get_logger
 
 from gate.models.backbones import (
     Modality,
@@ -18,6 +19,8 @@ from gate.models.backbones import (
     image_dim_reshape,
 )
 from gate.models.core import reinit
+
+logger = get_logger(__name__)
 
 
 def forward_dict(self, x):
@@ -72,7 +75,9 @@ class CLIPAdapter(nn.Module):
         config = self.vision_model.config
         config.image_size = image_size
         updated_embeddings = CLIPVisionEmbeddings(config)
-        print(f"config: {config}")
+        logger.info(
+            f"updating vision transformer embedding config to: {config}"
+        )
         self.vision_model.embeddings = updated_embeddings
 
     def init_weights(self):
@@ -119,6 +124,7 @@ class CLIPAdapter(nn.Module):
         def image_transforms(x):
             return self.preprocessor(
                 images=T.Resize(size=(image_size, image_size))(x),
+                do_resize=False,
                 do_center_crop=False,
                 return_tensors="pt",
             ).pixel_values.squeeze(0)
