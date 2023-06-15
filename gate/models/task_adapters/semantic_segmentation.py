@@ -245,8 +245,12 @@ class UpscaleMultiBlock(nn.Module):
         )
 
         self.detail_conv = nn.Sequential(
-            ResidualConvBlock(hidden_size, hidden_size)
-            for _ in range(num_blocks)
+            {
+                f"upscale_block_{idx}": ResidualConvBlock(
+                    hidden_size, hidden_size
+                )
+                for idx in range(num_blocks)
+            }
         )
 
         self.out_conv = nn.Conv2d(
