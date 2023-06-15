@@ -559,6 +559,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         :param labels: torch.Tensor with shape (b, h, w)
         :return: torch.Tensor representing the loss
         """
+        labels = labels.squeeze(1)
         class_weights = self.compute_class_weights(labels)
 
         # Perform standard cross-entropy loss computation
