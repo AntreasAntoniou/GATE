@@ -275,7 +275,10 @@ class UpscaleMultiBlock(nn.Module):
         encoder_features: int = 64,
     ):
         super().__init__()
+        self.in_channel_mixing = None
         self.channel_mixing = None
+
+        self.in_features = in_features
         self.encoder_features = encoder_features
         self.upscale_net = ResidualUpscaleConvBlock(
             in_channels=in_features + encoder_features,
@@ -307,6 +310,14 @@ class UpscaleMultiBlock(nn.Module):
                 kernel_size=1,
                 stride=1,
             )
+
+        if self.in_channel_mixing is None and x.shape[1] != self.in_features:
+            self.in_channel_mixing = nn.Conv2d(
+                x.shape[1], self.in_features, kernel_size=1, stride=1
+            )
+
+        if self.in_channel_mixing is not None:
+            x = self.in_channel_mixing(x)
 
         encoder_features = self.channel_mixing(encoder_features)
 
