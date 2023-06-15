@@ -341,7 +341,7 @@ class SegmentationViT(nn.Module):
         )
 
         self.decoder_config = SamMaskDecoderConfig(
-            num_multimask_outputs=num_classes,
+            num_multimask_outputs=3,
             hidden_size=hidden_size,
             mlp_dim=hidden_size * 4,
             num_hidden_layers=4,
@@ -530,7 +530,7 @@ class SegmentationViT(nn.Module):
             output_attentions=False,
         )
 
-        mask_predictions = mask_predictions[:, 0, :3]
+        mask_predictions = mask_predictions[:, 0]
 
         output = {
             "logits": mask_predictions,
