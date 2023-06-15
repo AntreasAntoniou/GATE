@@ -80,13 +80,13 @@ class ResidualUpscaleConvBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, stride=1
+        self.conv1 = nn.ConvTranspose2d(
+            in_channels, out_channels, kernel_size=3, stride=2
         )
         self.activation1 = nn.GELU()
         self.norm1 = nn.InstanceNorm2d(out_channels)
 
-        self.conv2 = nn.Conv2d(
+        self.conv2 = nn.ConvTranspose2d(
             out_channels,
             out_channels,
             kernel_size=3,
@@ -105,10 +105,6 @@ class ResidualUpscaleConvBlock(nn.Module):
         out = self.conv1(x)
         out = self.activation1(out)
         out = self.norm1(out)
-
-        out = F.interpolate(
-            out, scale_factor=2, mode="bicubic", align_corners=True
-        )
 
         out = self.conv2(out)
         out = self.activation2(out)
@@ -302,9 +298,9 @@ class UpscaleMultiBlock(nn.Module):
             x.shape[-2] != encoder_features.shape[-2]
             or x.shape[-1] != encoder_features.shape[-1]
         ):
-            x = F.interpolate(
-                x,
-                size=(encoder_features.shape[-2], encoder_features.shape[-1]),
+            encoder_features = F.interpolate(
+                encoder_features,
+                size=(x.shape[-2], x.shape[-1]),
                 mode="bicubic",
                 align_corners=True,
             )
