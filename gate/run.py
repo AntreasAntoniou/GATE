@@ -75,6 +75,7 @@ def pretty_print_parameters(model: nn.Module):
             str(param.device),
         )
 
+    print(table)
     return table
 
 
@@ -133,7 +134,7 @@ def run(cfg: Any) -> None:
     model = accelerator.prepare(model)
     transform: Optional[Callable] = model_and_transform.transform
 
-    logger.info(pretty_print_parameters(model))
+    pretty_print_parameters(model)
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
