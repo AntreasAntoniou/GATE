@@ -132,7 +132,7 @@ class BackgroundLogging(threading.Thread):
                     )
                     continue
                 if "ae_episode" in metric_key:
-                    # print("logging ae episode")
+                    print("logging ae episode")
                     ae_episode = value
                     log_wandb_images(
                         experiment_tracker=self.experiment_tracker,
