@@ -53,6 +53,30 @@ logger = get_logger(name=__name__)
 
 accelerator = Accelerator()
 
+from rich import print
+from rich.table import Table
+import torch
+from torch import nn
+
+
+def pretty_print_parameters(model: nn.Module):
+    table = Table(title="Model Parameters")
+
+    table.add_column("Name", justify="left")
+    table.add_column("Shape", justify="center")
+    table.add_column("Data Type", justify="center")
+    table.add_column("Device", justify="center")
+
+    for name, param in model.named_parameters():
+        table.add_row(
+            str(name),
+            str(tuple(param.shape)),
+            str(param.dtype),
+            str(param.device),
+        )
+
+    return table
+
 
 # function to handle the alarm signal
 def handle_alarm(signum, frame):
@@ -108,6 +132,8 @@ def run(cfg: Any) -> None:
     model: GATEModel = model_and_transform.model
     model = accelerator.prepare(model)
     transform: Optional[Callable] = model_and_transform.transform
+
+    logger.info(pretty_print_parameters(model))
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
