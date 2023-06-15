@@ -516,7 +516,7 @@ class SegmentationViT(nn.Module):
             )
         if self.positional_encoding is None:
             self.positional_encoding = nn.Parameter(
-                torch.randn(size=decoder_inputs.shape)
+                torch.randn(size=(1, *decoder_inputs.shape[1:]))
             ).to(decoder_inputs.device)
 
         mask_predictions, _, _ = self.decoder(
