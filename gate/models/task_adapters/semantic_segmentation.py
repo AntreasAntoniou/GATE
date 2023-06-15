@@ -436,7 +436,7 @@ class SegmentationViT(nn.Module):
             in_features=hidden_size // 4,
             out_features=3,
             hidden_size=hidden_size // 4,
-            num_blocks=2,
+            num_blocks=0,
             encoder_features=hidden_size,
         )
 
