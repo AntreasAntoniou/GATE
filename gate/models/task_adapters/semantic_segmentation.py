@@ -80,7 +80,7 @@ class ResidualUpscaleConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv1 = nn.ConvTranspose2d(
-            in_channels, out_channels, kernel_size=5, stride=2
+            in_channels, out_channels, kernel_size=3, stride=2
         )
         self.activation1 = nn.GELU()
         self.norm1 = nn.InstanceNorm2d(out_channels)
@@ -88,7 +88,7 @@ class ResidualUpscaleConvBlock(nn.Module):
         self.conv2 = nn.ConvTranspose2d(
             out_channels,
             out_channels,
-            kernel_size=5,
+            kernel_size=3,
             stride=1,
         )
         self.activation2 = nn.GELU()
@@ -110,7 +110,7 @@ class ResidualUpscaleConvBlock(nn.Module):
         if self.up1 is None:
             self.up1 = nn.Upsample(
                 size=(out.shape[2], out.shape[3]),
-                mode="bilinear",
+                mode="bicubic",
                 align_corners=True,
             )
         residual = self.up1(residual)
@@ -229,6 +229,57 @@ def optimization_loss(logits, labels):
     }
 
 
+class UpscaleMultiBlock(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        hidden_size: int,
+        out_features: int,
+        num_blocks: int = 2,
+        encoder_features: int = 64,
+    ):
+        super().__init__()
+        self.upscale_net = ResidualUpscaleConvBlock(
+            in_channels=in_features + encoder_features,
+            out_channels=hidden_size,
+        )
+
+        self.detail_conv = nn.Sequential(
+            [
+                ResidualConvBlock(hidden_size, hidden_size)
+                for _ in range(num_blocks)
+            ]
+        )
+
+        self.out_conv = nn.Conv2d(
+            hidden_size, out_features, kernel_size=1, stride=1
+        )
+
+    def forward(
+        self, x: torch.Tensor, encoder_features: torch.Tensor
+    ) -> torch.Tensor:
+        if (
+            x.shape[-2] != encoder_features.shape[-2]
+            or x.shape[-1] != encoder_features.shape[-1]
+        ):
+            x = F.interpolate(
+                x,
+                size=(encoder_features.shape[-2], encoder_features.shape[-1]),
+                mode="bicubic",
+                align_corners=True,
+            )
+
+        cat_features = torch.cat([x, encoder_features], dim=1)
+
+        out = self.upscale_net(cat_features)
+
+        out = self.detail_conv(out)
+
+        out = self.out_conv(out)
+
+        return out
+
+
 class PositionalEncoding(nn.Module):
     def __init__(
         self,
@@ -329,24 +380,27 @@ class SegmentationViT(nn.Module):
             kernel_size=1,
         )
 
-        # self.upscale_net1 = ResidualUpscaleConvBlock(
-        #     in_channels=hidden_size, out_channels=hidden_size
-        # )
-
-        # self.detail_conv1_0 = ResidualConvBlock(
-        #     in_channels=hidden_size, out_channels=hidden_size
-        # )
-        # self.detail_conv1_1 = ResidualConvBlock(
-        #     in_channels=hidden_size, out_channels=hidden_size
-        # )
-
-        self.decoder_config = SamMaskDecoderConfig(
-            num_multimask_outputs=3,
-            hidden_size=hidden_size,
-            mlp_dim=hidden_size * 4,
-            num_hidden_layers=4,
+        self.upscale_net1 = UpscaleMultiBlock(
+            in_features=hidden_size,
+            out_features=hidden_size,
+            num_blocks=2,
+            encoder_features=hidden_size,
         )
-        self.decoder = SamMaskDecoder(config=self.decoder_config)
+
+        self.upscale_net2 = UpscaleMultiBlock(
+            in_features=hidden_size,
+            out_features=3,
+            num_blocks=2,
+            encoder_features=hidden_size,
+        )
+
+        # self.decoder_config = SamMaskDecoderConfig(
+        #     num_multimask_outputs=3,
+        #     hidden_size=hidden_size,
+        #     mlp_dim=hidden_size * 4,
+        #     num_hidden_layers=4,
+        # )
+        # self.decoder = SamMaskDecoder(config=self.decoder_config)
 
         self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
@@ -420,6 +474,7 @@ class SegmentationViT(nn.Module):
                 features[:, 4],
                 features[:, 8],
                 features[:, 12],
+                features[:, 13],
             ],
             dim=2,
         )
@@ -457,7 +512,7 @@ class SegmentationViT(nn.Module):
                 kernel_size=1,
             )
 
-        decoder_inputs = self.channel_projection(decoder_inputs)
+        encoder_features = self.channel_projection(decoder_inputs)
 
         # decoder_inputs = self.upscale_net1(decoder_inputs)
         # decoder_inputs = self.detail_conv1_0(decoder_inputs)
@@ -473,8 +528,13 @@ class SegmentationViT(nn.Module):
         # decoder_inputs = self.detail_conv2_3(decoder_inputs)
 
         decoder_inputs = F.interpolate(
-            decoder_inputs, size=(64, 64), mode="bicubic"
+            encoder_features, size=(64, 64), mode="bicubic"
         )
+
+        outputs = self.upscale_net1(decoder_inputs, encoder_features)
+        outputs = self.upscale_net2(outputs, encoder_features)
+
+        mask_predictions = outputs
 
         # decoder_inputs = self.upscale_net3(decoder_inputs)
         # decoder_inputs = self.detail_conv3_0(decoder_inputs)
@@ -508,31 +568,31 @@ class SegmentationViT(nn.Module):
         # #     f"image_embeddings: {decoder_inputs.shape}, dense_embeddings: {decoder_inputs.shape}, "
         # #     f"image_positional_embeddings: {self.positional_encoding.positional_encoding.shape}"
         # # )
-        if self.dense_prompt_embeddings is None:
-            self.dense_prompt_embeddings = nn.Parameter(
-                torch.randn(size=(1, *decoder_inputs.shape[1:])).to(
-                    decoder_inputs.device
-                )
-            )
-        if self.positional_encoding is None:
-            self.positional_encoding = nn.Parameter(
-                torch.randn(size=(1, *decoder_inputs.shape[1:]))
-            ).to(decoder_inputs.device)
+        # if self.dense_prompt_embeddings is None:
+        #     self.dense_prompt_embeddings = nn.Parameter(
+        #         torch.randn(size=(1, *decoder_inputs.shape[1:])).to(
+        #             decoder_inputs.device
+        #         )
+        #     )
+        # if self.positional_encoding is None:
+        #     self.positional_encoding = nn.Parameter(
+        #         torch.randn(size=(1, *decoder_inputs.shape[1:]))
+        #     ).to(decoder_inputs.device)
 
-        mask_predictions, _, _ = self.decoder(
-            image_embeddings=decoder_inputs,
-            image_positional_embeddings=self.positional_encoding,
-            sparse_prompt_embeddings=torch.zeros(
-                decoder_inputs.shape[0], 1, 1, self.hidden_size
-            ).to(decoder_inputs.device),
-            dense_prompt_embeddings=self.dense_prompt_embeddings.repeat(
-                [decoder_inputs.shape[0], 1, 1, 1]
-            ),
-            multimask_output=True,
-            output_attentions=False,
-        )
+        # mask_predictions, _, _ = self.decoder(
+        #     image_embeddings=decoder_inputs,
+        #     image_positional_embeddings=self.positional_encoding,
+        #     sparse_prompt_embeddings=torch.zeros(
+        #         decoder_inputs.shape[0], 1, 1, self.hidden_size
+        #     ).to(decoder_inputs.device),
+        #     dense_prompt_embeddings=self.dense_prompt_embeddings.repeat(
+        #         [decoder_inputs.shape[0], 1, 1, 1]
+        #     ),
+        #     multimask_output=True,
+        #     output_attentions=False,
+        # )
 
-        mask_predictions = mask_predictions[:, 0]
+        # mask_predictions = mask_predictions[:, 0]
 
         output = {
             "logits": mask_predictions,
