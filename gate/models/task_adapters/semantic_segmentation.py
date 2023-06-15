@@ -315,9 +315,6 @@ class SegmentationViT(nn.Module):
         self.positional_encoding = PositionalEncoding()
 
         self.decoder_embedding_dimension = decoder_embed_dim
-        self.decoder_feature_matcher = nn.Linear(
-            embed_dim, self.decoder_embedding_dimension, bias=True
-        )
 
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
@@ -372,9 +369,6 @@ class SegmentationViT(nn.Module):
             "focal_loss": focal_loss,
             "wce_loss": wce_loss,
         }
-
-    def init_weights(self):
-        torch.nn.init.normal_(self.class_token, std=0.02)
 
     def compute_loss_and_metrics(
         self, logits, labels: Optional[torch.Tensor] = None
