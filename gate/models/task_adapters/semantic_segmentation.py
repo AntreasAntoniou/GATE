@@ -319,12 +319,9 @@ class SegmentationViT(nn.Module):
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
         hidden_size = 256
+        self.hidden_size = hidden_size
 
-        self.channel_projection = nn.Conv2d(
-            in_channels=decoder_embed_dim,
-            out_channels=hidden_size,
-            kernel_size=1,
-        )
+        self.channel_projection = None
 
         self.mask_conv = nn.Conv2d(
             in_channels=hidden_size,
@@ -411,7 +408,18 @@ class SegmentationViT(nn.Module):
 
         batch, _, height, width = image.shape
         features = self.encoder(image)["image"]["per_layer_raw_features"]
-        print(len(features))
+
+        # full_encoder_outputs: torch.Size([2, 14, 1025, 768])
+
+        features = torch.cat(
+            [
+                features[:, 0],
+                features[:, 4],
+                features[:, 8],
+                features[:, 12],
+            ],
+            dim=2,
+        )
 
         if self.debug_mode:
             logger.info(f"Features shape: {features.shape}")
@@ -439,6 +447,13 @@ class SegmentationViT(nn.Module):
         decoder_inputs = decoder_inputs.view(
             batch, channels, feature_map_size, feature_map_size
         )
+        if self.channel_projection is None:
+            self.channel_projection = nn.Conv2d(
+                in_channels=decoder_inputs.shape[1],
+                out_channels=self.hidden_size,
+                kernel_size=1,
+            )
+
         decoder_inputs = self.channel_projection(decoder_inputs)
 
         # decoder_inputs = self.upscale_net1(decoder_inputs)
