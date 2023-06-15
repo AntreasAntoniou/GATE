@@ -453,8 +453,8 @@ class SegmentationViT(nn.Module):
         )
         decoder_inputs = self.channel_projection(decoder_inputs)
 
-        decoder_inputs = self.upscale_net1(decoder_inputs)
-        decoder_inputs = self.detail_conv1_0(decoder_inputs)
+        # decoder_inputs = self.upscale_net1(decoder_inputs)
+        # decoder_inputs = self.detail_conv1_0(decoder_inputs)
         # decoder_inputs = self.detail_conv1_1(decoder_inputs)
         # decoder_inputs = self.detail_conv1_2(decoder_inputs)
         # decoder_inputs = self.detail_conv1_3(decoder_inputs)
