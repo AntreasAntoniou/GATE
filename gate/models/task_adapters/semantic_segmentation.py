@@ -3,6 +3,7 @@ import math
 from functools import partial
 import time
 from typing import Dict, Optional
+from datasets.table import pa
 
 import numpy as np
 import torch
@@ -80,17 +81,18 @@ class ResidualUpscaleConvBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.conv1 = nn.ConvTranspose2d(
-            in_channels, out_channels, kernel_size=3, stride=2
+        self.conv1 = nn.Conv2d(
+            in_channels, out_channels, kernel_size=3, stride=1, padding=1
         )
         self.activation1 = nn.GELU()
         self.norm1 = nn.InstanceNorm2d(out_channels)
 
-        self.conv2 = nn.ConvTranspose2d(
+        self.conv2 = nn.Conv2d(
             out_channels,
             out_channels,
             kernel_size=3,
             stride=1,
+            padding=1,
         )
         self.activation2 = nn.GELU()
         self.norm2 = nn.InstanceNorm2d(out_channels)
@@ -105,6 +107,8 @@ class ResidualUpscaleConvBlock(nn.Module):
         out = self.conv1(x)
         out = self.activation1(out)
         out = self.norm1(out)
+
+        out = F.interpolate(out, scale_factor=2, mode="bicubic")
 
         out = self.conv2(out)
         out = self.activation2(out)
