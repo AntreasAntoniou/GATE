@@ -514,7 +514,9 @@ def compute_class_weights(labels, num_classes):
     class_weights = 1.0 / (class_counts + epsilon)
 
     # Normalize the weights so that they sum up to 1
-    class_weights /= class_weights.sum()
+    class_weights -= class_weights.max()
+    class_weights = torch.exp(class_weights)
+    class_weights /= torch.sum(class_weights)
 
     return class_weights
 
