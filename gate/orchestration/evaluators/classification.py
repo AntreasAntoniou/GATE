@@ -197,7 +197,8 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model, batch, global_step, accelerator
         )
         seg_episode = output.metrics["seg_episode"]
-        output.metrics = {"seg_episode": seg_episode}
+        ae_episode = output.metrics["ae_episode"]
+        output.metrics = {"seg_episode": seg_episode, "ae_episode": ae_episode}
         return output
 
     @collect_metrics
