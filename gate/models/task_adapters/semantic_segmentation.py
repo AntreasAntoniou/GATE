@@ -117,11 +117,11 @@ class ResidualUpscaleConvBlock(nn.Module):
         residual = self.up1(residual)
 
         if out.shape[1] > residual.shape[1]:
-            frame = torch.zero_like(out)
+            frame = torch.zeros_like(out)
             frame[:, : residual.shape[1], :, :] = residual
             residual = frame
         else:
-            frame = torch.zero_like(residual)
+            frame = torch.zeros_like(residual)
             frame[:, : out.shape[1], :, :] = out
             out = frame
 
@@ -163,11 +163,11 @@ class ResidualConvBlock(nn.Module):
         out = self.norm2(out)
 
         if out.shape[1] > residual.shape[1]:
-            frame = torch.zero_like(out)
+            frame = torch.zeros_like(out)
             frame[:, : residual.shape[1], :, :] = residual
             residual = frame
         else:
-            frame = torch.zero_like(residual)
+            frame = torch.zeros_like(residual)
             frame[:, : out.shape[1], :, :] = out
             out = frame
 
