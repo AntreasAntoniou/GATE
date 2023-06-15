@@ -433,15 +433,15 @@ class SegmentationViT(nn.Module):
         )
 
         self.upscale_net1 = UpscaleMultiBlock(
-            in_features=hidden_size,
-            out_features=hidden_size // 4,
-            hidden_size=hidden_size // 4,
+            in_features=hidden_size // 8,
+            out_features=hidden_size // 8,
+            hidden_size=hidden_size // 8,
             num_blocks=0,
-            encoder_features=hidden_size // 4,
+            encoder_features=hidden_size // 8,
         )
 
         self.upscale_net2 = UpscaleMultiBlock(
-            in_features=hidden_size // 4,
+            in_features=hidden_size // 8,
             out_features=hidden_size // 8,
             hidden_size=hidden_size // 8,
             num_blocks=0,
@@ -451,9 +451,9 @@ class SegmentationViT(nn.Module):
         self.upscale_net3 = UpscaleMultiBlock(
             in_features=hidden_size // 8,
             out_features=3,
-            hidden_size=hidden_size // 16,
-            num_blocks=0,
-            encoder_features=hidden_size // 16,
+            hidden_size=hidden_size // 8,
+            num_blocks=2,
+            encoder_features=hidden_size // 8,
         )
 
         # self.decoder_config = SamMaskDecoderConfig(
