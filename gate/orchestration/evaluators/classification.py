@@ -162,20 +162,20 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
                 },
             }
 
-            output_dict["ae_episode"] = {
-                "image": F.interpolate(
-                    batch["image"],
-                    size=(
-                        output_dict["ae_output"].shape[2],
-                        output_dict["ae_output"].shape[3],
-                    ),
-                    mode="bicubic",
-                ),
-                "recon": output_dict["ae_output"],
-            }
+            # output_dict["ae_episode"] = {
+            #     "image": F.interpolate(
+            #         batch["image"],
+            #         size=(
+            #             output_dict["ae_output"].shape[2],
+            #             output_dict["ae_output"].shape[3],
+            #         ),
+            #         mode="bicubic",
+            #     ),
+            #     "recon": output_dict["ae_output"],
+            # }
 
             del output_dict["logits"]
-            del output_dict["ae_output"]
+            # del output_dict["ae_output"]
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
@@ -197,8 +197,10 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model, batch, global_step, accelerator
         )
         seg_episode = output.metrics["seg_episode"]
-        ae_episode = output.metrics["ae_episode"]
-        output.metrics = {"seg_episode": seg_episode, "ae_episode": ae_episode}
+        # ae_episode = output.metrics["ae_episode"]
+        output.metrics = {
+            "seg_episode": seg_episode
+        }  # , "ae_episode": ae_episode}
         return output
 
     @collect_metrics
@@ -209,8 +211,10 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model, batch, global_step, accelerator
         )
         seg_episode = output.metrics["seg_episode"]
-        ae_episode = output.metrics["ae_episode"]
-        output.metrics = {"seg_episode": seg_episode, "ae_episode": ae_episode}
+        # ae_episode = output.metrics["ae_episode"]
+        output.metrics = {
+            "seg_episode": seg_episode
+        }  # , "ae_episode": ae_episode}
         return output
 
 
