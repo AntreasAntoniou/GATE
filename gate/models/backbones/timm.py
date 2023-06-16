@@ -64,12 +64,19 @@ class TimmModel(nn.Module):
     ):
         super().__init__()
 
-        self.model = timm.create_model(
-            model_name=model_identifier,
-            pretrained=pretrained,
-            img_size=img_size,
-            features_only=True,
-        )
+        try:
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                pretrained=pretrained,
+                img_size=img_size,
+                features_only=True,
+            )
+        except Exception as e:
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                pretrained=pretrained,
+                features_only=True,
+            )
 
         img_size = self.model.default_cfg["input_size"][-2:]
 
