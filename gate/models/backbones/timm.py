@@ -8,6 +8,7 @@ import PIL.Image as Image
 import timm
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision.transforms as T
 from timm.data import InterpolationMode, resolve_data_config
 from timm.data.transforms_factory import create_transform
@@ -124,11 +125,10 @@ class TimmModel(nn.Module):
                     feature_shape[0], -1, feature_shape[1]
                 )  # output should have shape (batch_size, num_patches, num_features)
 
-        features = self.model.forward_head(raw_features, pre_logits=True)
-        predictions = self.model.forward_head(raw_features)
+        features = F.adaptive_avg_pool2d(raw_features, 1).squeeze(1)
 
         return {
-            "classifier": predictions,
+            "classifier": features,
             "features": features,
             "raw_features": raw_features_as_sequence,
             "per_layer_raw_features": per_layer_raw_features,
