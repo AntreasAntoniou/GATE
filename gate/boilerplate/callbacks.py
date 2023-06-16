@@ -366,7 +366,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         timeout: int = 10 * 60,
     ):
         super().__init__()
-        self.daemon = False
+        self.daemon = True
         self.repo_name = repo_name
         self.repo_owner = repo_owner
         self.checkpoint_path = checkpoint_path
@@ -383,7 +383,9 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         for handler in hf_logger.handlers:
             handler.setLevel(logging.ERROR)
 
-        while not self.done:
+        retry = 0
+
+        while not self.done and retry < 3:
             try:
                 with SuppressOutput():  # Add this line
                     self.hf_api.upload_folder(
@@ -396,6 +398,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
 
             except Exception as e:
                 logger.info(e)
+            retry += 1
 
 
 class UploadCheckpointsToHuggingFace(Callback):

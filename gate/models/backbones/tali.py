@@ -38,6 +38,7 @@ class TALINet(nn.Module):
         ] = "Antreas/tali-2-tali_image_text_base_patch16_224-wit_tali_image_text_dataset-2306",
         checkpoint_identifier: Optional[str] = "latest",
         pretrained: bool = True,
+        image_size: Optional[int] = None,
     ):
         super().__init__()
 
@@ -63,6 +64,14 @@ class TALINet(nn.Module):
         self.image_text_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
         )
+        if image_size is not None:
+            self.image_size = (
+                (image_size, image_size)
+                if isinstance(image_size, int)
+                else image_size
+            )
+        else:
+            self.image_size = (224, 224)
 
         self.tokenizer = self.image_text_preprocessor
 
@@ -180,7 +189,10 @@ class TALINet(nn.Module):
     def get_transforms(self):
         def image_transforms(x):
             return self.image_text_preprocessor(
-                images=T.Resize(size=(224, 224))(x),
+                images=T.Resize(size=(self.image_size[0], self.image_size[1]))(
+                    x
+                ),
+                do_resize=False,
                 do_center_crop=False,
                 return_tensors="pt",
             ).pixel_values.squeeze(0)
