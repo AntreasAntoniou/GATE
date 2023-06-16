@@ -43,6 +43,11 @@ def forward_dict(self, x):
     }
 
 
+class CLIPModelPaths:
+    laion_b_16: str = "laion/CLIP-ViT-B-16-laion2B-s34B-b88K"
+    openai_b_16: str = "openai/clip-vit-base-patch16"
+
+
 class CLIPAdapter(nn.Module):
     def __init__(
         self,
