@@ -469,7 +469,7 @@ class SegmentationViT(nn.Module):
 
         self.mask_output_conv = nn.Conv2d(
             in_channels=hidden_size // 16,
-            out_channels=self.num_classes,
+            out_channels=3,
             kernel_size=1,
             bias=False,
         )
