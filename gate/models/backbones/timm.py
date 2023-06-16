@@ -67,8 +67,8 @@ class TimmModel(nn.Module):
         self.model = timm.create_model(
             model_name=model_identifier,
             pretrained=pretrained,
-            num_classes=0,  # remove classifier nn.Linear
             img_size=img_size,
+            features_only=True,
         )
 
         img_size = self.model.default_cfg["input_size"][-2:]
@@ -104,8 +104,8 @@ class TimmModel(nn.Module):
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
 
-        raw_features = self.model.forward_features(x)
-        raw_features_as_sequence = raw_features
+        per_layer_raw_features = self.model(x)
+        raw_features = per_layer_raw_features[-1]
         if len(raw_features.shape) == 4:
             feature_shape = raw_features.shape
             if (
@@ -124,6 +124,7 @@ class TimmModel(nn.Module):
             "classifier": predictions,
             "features": features,
             "raw_features": raw_features_as_sequence,
+            "per_layer_raw_features": per_layer_raw_features,
         }
 
     def get_transforms(self):

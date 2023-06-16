@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
 from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.timm import TimmCLIPAdapter
@@ -33,6 +33,7 @@ def build_model(
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
+    image_size: int = 512,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -46,6 +47,7 @@ def build_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,
         pretrained=pretrained,
+        img_size=image_size,
     )
     model = SegmentationViT(
         encoder_model=backbone_model,
@@ -61,7 +63,7 @@ def build_model(
     # forward features for conv nets, and get the patches for the transformer manually
     # do the same for all others? sounds like the most general way to do this
 
-    x = torch.randn(2, 3, 224, 224)
+    x = torch.randn(2, 3, image_size, image_size)
     dummy_out = model.forward(x)
 
     if not pretrained:
@@ -89,7 +91,9 @@ def build_model(
 @configurable(
     group="model",
     name="timm-segmentation-transformer",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+    defaults=dict(
+        num_classes=HYDRATED_NUM_CLASSES, image_size=HYDRATED_IMAGE_SIZE
+    ),
 )
 def build_gate_model(
     timm_model_name: str = "resnet50.a1_in1k",
@@ -99,6 +103,7 @@ def build_gate_model(
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
+    image_size: int = 512,
 ):
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
@@ -108,6 +113,7 @@ def build_gate_model(
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
+        image_size=image_size,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
