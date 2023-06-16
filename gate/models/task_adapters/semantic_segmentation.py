@@ -406,6 +406,7 @@ class SimpleSegmentationDecoder(nn.Module):
             # Upscale the result to the target size
             start_time = time.time()
             processed_x = self.upsample(processed_x)
+            print(f"Upsampled shape: {processed_x.shape}")
             logger.debug(f"Upsampling took {time.time() - start_time} seconds")
             processed_features.append(processed_x)
 
