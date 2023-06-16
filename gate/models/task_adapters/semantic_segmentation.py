@@ -484,30 +484,32 @@ class SimpleSegmentationDecoder(nn.Module):
                     x = F.adaptive_avg_pool1d(x, target_sequence)
 
                     x = x.reshape(-1, num_features, square_root, square_root)
-            logger.info(f"Reshaping took {time.time() - start_time} seconds")
+            logger.debug(f"Reshaping took {time.time() - start_time} seconds")
             # Apply pixel-wise MLP
             # logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
             start_time = time.time()
             processed_x = mlp(x)
-            logger.info(f"MLP took {time.time() - start_time} seconds")
+            logger.debug(f"MLP took {time.time() - start_time} seconds")
             # Upscale the result to the target size
             start_time = time.time()
             processed_x = self.upsample(processed_x)
-            logger.info(f"Upsampling took {time.time() - start_time} seconds")
+            logger.debug(f"Upsampling took {time.time() - start_time} seconds")
             processed_features.append(processed_x)
 
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
         fused_features = torch.cat(processed_features, dim=1)
-        logger.info(f"Concatenation took {time.time() - start_time} seconds")
+        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
         fused_features = self.fuse_features(fused_features)
-        logger.info(f"Fusing features took {time.time() - start_time} seconds")
+        logger.debug(
+            f"Fusing features took {time.time() - start_time} seconds"
+        )
         start_time = time.time()
         class_features = self.final_conv(fused_features)
-        logger.info(
+        logger.debug(
             f"Final convolution took {time.time() - start_time} seconds"
         )
 
@@ -551,10 +553,10 @@ class SegmentationViT(nn.Module):
 
         self.decoder = None
 
-        self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=0)
-        self.dice_loss = DiceLoss(ignore_index=0)
+        self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=-1)
+        self.dice_loss = DiceLoss(ignore_index=-1)
         self.weighted_bce = WeightedCrossEntropyLoss(
-            ignore_index=0, reduction="mean"
+            ignore_index=-1, reduction="mean"
         )
         self.debug_mode = False
 
@@ -615,7 +617,8 @@ class SegmentationViT(nn.Module):
         batch, _, height, width = image.shape
         start_time = time.time()
         features = self.encoder(image)["image"]["per_layer_raw_features"]
-        logger.info(f"Encoder took {time.time() - start_time} seconds")
+        if self.debug_mode:
+            logger.info(f"Encoder took {time.time() - start_time} seconds")
 
         if self.decoder is None:
             self.decoder = SimpleSegmentationDecoder(
@@ -629,8 +632,9 @@ class SegmentationViT(nn.Module):
         if self.decoder is not None:
             mask_predictions = self.decoder(features)
 
-        logger.info(f"Decoder took {time.time() - start_time} seconds")
-        logger.info(f"Mask predictions shape: {mask_predictions.shape}")
+        if self.debug_mode:
+            logger.info(f"Decoder took {time.time() - start_time} seconds")
+            logger.info(f"Mask predictions shape: {mask_predictions.shape}")
 
         output = {
             "logits": mask_predictions,
