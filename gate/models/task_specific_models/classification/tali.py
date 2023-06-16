@@ -26,7 +26,7 @@ def create_model_with_linear(
     """
     return BackboneWithLinear(
         model=backbone_model,
-        num_clip_features=num_features,
+        num_in_features=num_features,
         num_classes=num_classes,
         modality=modality,
         allow_on_model_metric_computation=allow_on_model_metric_computation,
