@@ -431,6 +431,7 @@ class SimpleSegmentationDecoder(nn.Module):
         self.target_size = target_image_size
 
         self.pixel_wise_mlps = nn.ModuleList()
+
         for input_features in input_feature_maps:
             if len(input_features.shape) == 4:
                 in_channels = input_features.shape[1]
@@ -478,16 +479,8 @@ class SimpleSegmentationDecoder(nn.Module):
                 # If not, apply a linear projection
                 else:
                     target_sequence = square_root**2
-                    linear_proj = nn.Linear(
-                        sequence_length, target_sequence
-                    )  # Apply linear projection
                     x = x.permute([0, 2, 1])  # (b, features, sequence)
-                    x = x.reshape(
-                        -1, sequence_length
-                    )  # (b * features, sequence)
-                    x = linear_proj(x).reshape(
-                        -1, num_features, target_sequence
-                    )
+                    x = F.adaptive_avg_pool1d(x, target_sequence)
 
                     x = x.reshape(-1, num_features, square_root, square_root)
 
