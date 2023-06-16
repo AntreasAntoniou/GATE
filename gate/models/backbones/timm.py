@@ -142,7 +142,7 @@ class TimmModel(nn.Module):
         else:
             raw_features_as_sequence = raw_features
 
-        features = F.adaptive_avg_pool1d(raw_features, 1).squeeze(1)
+        features = raw_features.mean(dim=1)
 
         return {
             "classifier": features,
