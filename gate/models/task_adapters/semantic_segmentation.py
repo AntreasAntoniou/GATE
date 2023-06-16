@@ -451,7 +451,7 @@ class SimpleSegmentationDecoder(nn.Module):
         )
         self.final_conv = nn.Conv2d(hidden_size, num_classes, kernel_size=1)
         self.upsample = nn.Upsample(
-            size=self.target_size, mode="bicubic", align_corners=True
+            size=self.target_size, mode="bilinear", align_corners=True
         )
 
     def forward(self, input_list: list):
