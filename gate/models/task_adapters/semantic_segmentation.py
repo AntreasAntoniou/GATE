@@ -519,6 +519,7 @@ class SegmentationViT(nn.Module):
         decoder_embed_dim: int = 512,
         num_classes: int = 100,
         num_patches: int = 14,
+        **kwargs,
     ):
         """
         Construct a Vision Transformer for Semantic Segmentation.
