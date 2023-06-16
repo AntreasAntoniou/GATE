@@ -144,7 +144,12 @@ class TimmModel(nn.Module):
             )
         )
         output_dict = self.forward(self.transforms(img).unsqueeze(0))
-        shape_dict = {k: v.shape for k, v in output_dict.items()}
+        shape_dict = {
+            k: v.shape
+            if isinstance(v, torch.Tensor)
+            else [item.shape for item in v]
+            for k, v in output_dict.items()
+        }
         return shape_dict
 
 
