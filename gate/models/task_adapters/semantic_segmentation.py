@@ -390,6 +390,19 @@ class PositionalEncoding(nn.Module):
         return x
 
 
+import math
+
+
+def has_exact_square_root(s: int) -> bool:
+    # Get the size of the second dimension (s)
+
+    # Calculate the square root of s
+    root = math.sqrt(s)
+
+    # Check if the square root is an integer
+    return root.is_integer()
+
+
 class SegmentationViT(nn.Module):
     """
     Vision Transformer for Semantic Segmentation.
@@ -547,17 +560,24 @@ class SegmentationViT(nn.Module):
         features = self.encoder(image)["image"]["per_layer_raw_features"]
 
         # full_encoder_outputs: torch.Size([2, 14, 1025, 768])
+        features = [
+            F.interpolate(f, size=(64, 64), mode="bicubic") for f in features
+        ]
 
-        features = torch.cat(
-            [
-                features[:, 0],
-                features[:, 4],
-                features[:, 8],
-                features[:, 12],
-                features[:, 13],
-            ],
-            dim=2,
-        )
+        if len(features[0].shape) == 4:
+            features = torch.cat(
+                features,
+                dim=1,
+            )
+            features = features.permute([0, 2, 3, 1]).reshape(
+                features.shape[0], -1, features.shape[1]
+            )
+        elif len(features[0].shape) == 3:
+            features = torch.cat(features, dim=2)
+        else:
+            raise ValueError(
+                f"Features shape not supported: {features[0].shape}, must be 3 or 4 dim, but is {len(features[0].shape)} dim."
+            )
 
         if self.debug_mode:
             logger.info(f"Features shape: {features.shape}")
@@ -565,19 +585,17 @@ class SegmentationViT(nn.Module):
                 f"Mean: {features.mean()}, Std: {features.std()}, Max: {features.max()}, Min: {features.min()}"
             )
 
-        if len(features.shape) == 4:
-            features = features.permute([0, 2, 3, 1]).reshape(
-                features.shape[0], -1, features.shape[1]
-            )
-
-        if self.decoder_spatial_matcher is None:
+        if self.decoder_spatial_matcher is None and not has_exact_square_root(
+            features.shape[1]
+        ):
             self.decoder_spatial_matcher = nn.Conv1d(
                 in_channels=features.shape[1],
                 out_channels=int(math.floor(math.sqrt(features.shape[1])))
                 ** 2,
                 kernel_size=1,
             )
-        encoder_features = self.decoder_spatial_matcher(features)
+        if self.decoder_spatial_matcher is not None:
+            encoder_features = self.decoder_spatial_matcher(features)
 
         encoder_features = encoder_features.permute([0, 2, 1])
         batch, channels, sequence = encoder_features.shape
@@ -585,12 +603,12 @@ class SegmentationViT(nn.Module):
         encoder_features = encoder_features.view(
             batch, channels, feature_map_size, feature_map_size
         )
-        if self.channel_projection is None:
-            self.channel_projection = nn.Conv2d(
-                in_channels=encoder_features.shape[1],
-                out_channels=self.hidden_size,
-                kernel_size=1,
-            )
+        # if self.channel_projection is None:
+        #     self.channel_projection = nn.Conv2d(
+        #         in_channels=encoder_features.shape[1],
+        #         out_channels=self.hidden_size,
+        #         kernel_size=1,
+        #     )
 
         # decoder_inputs = self.upscale_net1(decoder_inputs)
         # decoder_inputs = self.detail_conv1_0(decoder_inputs)
