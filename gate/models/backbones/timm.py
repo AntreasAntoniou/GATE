@@ -70,7 +70,6 @@ class TimmModel(nn.Module):
                 model_name=model_identifier,
                 pretrained=pretrained,
                 img_size=img_size,
-                features_only=True,
             )
         except Exception as e:
             self.model = timm.create_model(
@@ -112,7 +111,17 @@ class TimmModel(nn.Module):
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
 
-        per_layer_raw_features = self.model(x)
+        if hasattr(self.model, "get_intermediate_layers"):
+            per_layer_raw_features = self.model.get_intermediate_layers(
+                x,
+                n=[i for i in range(len(self.model.blocks))],
+                reshape=False,
+                return_class_token=False,
+                norm=True,
+            )
+        else:
+            per_layer_raw_features = self.model(x)
+
         raw_features = per_layer_raw_features[-1]
         if len(raw_features.shape) == 4:
             feature_shape = raw_features.shape
@@ -124,6 +133,8 @@ class TimmModel(nn.Module):
                 ).reshape(
                     feature_shape[0], -1, feature_shape[1]
                 )  # output should have shape (batch_size, num_patches, num_features)
+        else:
+            raw_features_as_sequence = raw_features
 
         features = F.adaptive_avg_pool2d(raw_features, 1).squeeze(1)
 
