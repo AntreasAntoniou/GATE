@@ -417,12 +417,12 @@ class SimpleSegmentationDecoder(nn.Module):
         hidden_size: int = 256,
     ):
         """
-        SimpleSegmentationDecoder class for segmentation tasks.
+        🎭 SimpleSegmentationDecoder class for segmentation tasks.
 
         :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
         :param num_classes: Integer representing the number of classes to predict for segmentation.
         :param target_size: Tuple containing the height and width for the target output size.
-        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
+        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=256.
         """
         super().__init__()
         self.num_feature_maps = len(input_feature_maps)
@@ -433,16 +433,17 @@ class SimpleSegmentationDecoder(nn.Module):
         self.pixel_wise_mlps = nn.ModuleList()
 
         for input_features in input_feature_maps:
-            if len(input_features.shape) == 4:
-                in_channels = input_features.shape[1]
-            elif len(input_features.shape) == 3:
-                in_channels = input_features.shape[2]
+            in_channels = (
+                input_features.shape[1]
+                if len(input_features.shape) == 4
+                else input_features.shape[2]
+            )
 
             mlp = nn.Sequential(
                 nn.Conv2d(in_channels, hidden_size, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.ReLU(inplace=True),
                 nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.ReLU(inplace=True),
             )
             self.pixel_wise_mlps.append(mlp)
 
@@ -454,22 +455,25 @@ class SimpleSegmentationDecoder(nn.Module):
             size=self.target_size, mode="bilinear", align_corners=True
         )
 
+    @staticmethod
+    def process_input(mlp, x, upsample):
+        """Helper function to process input with the given mlp and upsample layers."""
+        processed_x = mlp(x)
+        processed_x = upsample(processed_x)
+        return processed_x
+
     def forward(self, input_list: list):
-        """
-        Forward pass of SimpleSegmentationDecoder.
+        num_streams = len(input_list)
+        gpu_available = torch.cuda.is_available()
 
-        📮 Passes the input list through pixel-wise MLPs, fuses the features, and upscales the result to the target size.
+        if gpu_available:
+            streams = [torch.cuda.Stream() for _ in range(num_streams)]
 
-        :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
-        :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
-        """
-        processed_features = []
-        for mlp, x in zip(self.pixel_wise_mlps, input_list):
-            # Check if input is (b, sequence, features)
-            start_time = time.time()
+        processed_features = [None] * num_streams
+        for idx, (mlp, x) in enumerate(zip(self.pixel_wise_mlps, input_list)):
             if len(x.shape) == 3:
-                sequence_length = x.shape[1]
                 num_features = x.shape[2]
+                sequence_length = x.shape[1]
                 square_root = int(math.sqrt(sequence_length))
 
                 # If the sequence has an exact square root, reshape it to (b, c, h, w) format
@@ -484,34 +488,29 @@ class SimpleSegmentationDecoder(nn.Module):
                     x = F.adaptive_avg_pool1d(x, target_sequence)
 
                     x = x.reshape(-1, num_features, square_root, square_root)
-            logger.debug(f"Reshaping took {time.time() - start_time} seconds")
-            # Apply pixel-wise MLP
-            # logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
-            start_time = time.time()
-            processed_x = mlp(x)
-            logger.debug(f"MLP took {time.time() - start_time} seconds")
-            # Upscale the result to the target size
-            start_time = time.time()
-            processed_x = self.upsample(processed_x)
-            logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-            processed_features.append(processed_x)
+
+            if gpu_available:
+                # Assign input tensors to a specific CUDA stream for concurrent GPU execution
+                orig_stream = torch.cuda.current_stream()
+                with torch.cuda.stream(streams[idx]):
+                    processed_x = self.process_input(mlp, x, self.upsample)
+                    processed_x.record_stream(orig_stream)
+                    processed_features[idx] = processed_x
+            else:
+                processed_features[idx] = self.process_input(
+                    mlp, x, self.upsample
+                )
+
+        if gpu_available:
+            # Synchronize the streams before concatenating
+            torch.cuda.synchronize()
 
         # Concatenate the processed features along the channel dimension
-        start_time = time.time()
         fused_features = torch.cat(processed_features, dim=1)
-        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
-        start_time = time.time()
         fused_features = self.fuse_features(fused_features)
-        logger.debug(
-            f"Fusing features took {time.time() - start_time} seconds"
-        )
-        start_time = time.time()
         class_features = self.final_conv(fused_features)
-        logger.debug(
-            f"Final convolution took {time.time() - start_time} seconds"
-        )
 
         return class_features
 
