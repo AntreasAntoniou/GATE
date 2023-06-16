@@ -521,14 +521,14 @@ class SimpleSegmentationDecoder(nn.Module):
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
-        fused_features = self.fuse_features_act(
-            self.fuse_features_norm(self.fuse_features(fused_features))
-        )
+        fused_features = self.fuse_features(fused_features)
+        fused_norm_features = self.fuse_features_norm(fused_features)
+        fused_act_features = self.fuse_features_act(fused_norm_features)
         logger.debug(
             f"Fusing features took {time.time() - start_time} seconds"
         )
         start_time = time.time()
-        class_features = self.final_conv(fused_features)
+        class_features = self.final_conv(fused_act_features)
         logger.debug(
             f"Final convolution took {time.time() - start_time} seconds"
         )
