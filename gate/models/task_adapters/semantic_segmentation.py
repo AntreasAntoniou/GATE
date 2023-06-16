@@ -500,7 +500,7 @@ class SegmentationViT(nn.Module):
         self.weighted_bce = WeightedCrossEntropyLoss(
             ignore_index=0, reduction="mean"
         )
-        self.debug_mode = False
+        self.debug_mode = True
 
     def optimization_loss(self, logits, labels):
         focal_loss = self.focal_loss(logits, labels)
