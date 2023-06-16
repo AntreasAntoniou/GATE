@@ -563,7 +563,7 @@ class SegmentationViT(nn.Module):
         dice_loss = self.dice_loss(logits, labels)
         wce_loss = self.weighted_bce(logits, labels)
 
-        loss = wce_loss
+        loss = focal_loss + dice_loss
         return {
             "loss": loss,
             "dice_loss": dice_loss,
