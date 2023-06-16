@@ -73,7 +73,6 @@ class BackboneWithLinear(BaseModule):
         if video is not None:
             x = self.model(video=video)["video"]["features"]
 
-        print(f"Linear input shape: {x.shape}")
         x = self.linear(x)
 
         if (
