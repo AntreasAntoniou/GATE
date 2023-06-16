@@ -613,7 +613,7 @@ class SegmentationViT(nn.Module):
             self.decoder = SimpleSegmentationDecoder(
                 input_feature_maps=features,
                 num_classes=self.num_classes,
-                target_size=(256, 256),
+                target_image_size=(256, 256),
                 hidden_size=self.decoder_embedding_dimension,
             )
 
