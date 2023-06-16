@@ -432,7 +432,7 @@ class SegmentationViT(nn.Module):
 
         self.decoder_spatial_matcher = None
         self.dense_prompt_embeddings = None
-        hidden_size = 512
+        hidden_size = 256
         self.hidden_size = hidden_size
 
         self.channel_projection = None
@@ -461,10 +461,17 @@ class SegmentationViT(nn.Module):
 
         self.upscale_net3 = UpscaleMultiBlock(
             in_features=hidden_size // 16,
-            out_features=3,
+            out_features=hidden_size // 16,
             hidden_size=hidden_size // 16,
-            num_blocks=2,
+            num_blocks=0,
             encoder_features=hidden_size // 16,
+        )
+
+        self.mask_output_conv = nn.Conv2d(
+            in_channels=hidden_size // 16,
+            out_channels=self.num_classes,
+            kernel_size=1,
+            bias=False,
         )
 
         # self.decoder_config = SamMaskDecoderConfig(
@@ -612,7 +619,7 @@ class SegmentationViT(nn.Module):
         if self.debug_mode:
             logger.info(f"outputs: {outputs.shape}")
 
-        mask_predictions = outputs
+        mask_predictions = self.mask_output_conv(outputs)
         if self.debug_mode:
             logger.info(f"mask_predictions: {mask_predictions.shape}")
 
