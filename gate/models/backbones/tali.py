@@ -35,7 +35,7 @@ class TALINet(nn.Module):
         whisper_model_name: str = "openai/whisper-small",
         model_repo_path: Optional[
             str
-        ] = "Antreas/tali-2-tali_image_text_base_patch16_224-wit_tali_image_text_dataset-2306",
+        ] = "Antreas/talip-godzilla-base16-wiva-sep-1337",
         checkpoint_identifier: Optional[str] = "latest",
         pretrained: bool = True,
         image_size: Optional[int] = None,
