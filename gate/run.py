@@ -88,8 +88,8 @@ def handle_alarm(signum, frame):
 # set the signal handler
 signal.signal(signal.SIGALRM, handle_alarm)
 
-# set an alarm for 60 minutes
-signal.alarm(60 * 60)
+# set an alarm for 200 minutes
+signal.alarm(60 * 200)
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
