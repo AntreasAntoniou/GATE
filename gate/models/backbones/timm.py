@@ -66,11 +66,17 @@ class TimmModel(nn.Module):
         super().__init__()
 
         try:
-            self.model = timm.create_model(
-                model_name=model_identifier,
-                pretrained=pretrained,
-                img_size=img_size,
-            )
+            if img_size is None:
+                self.model = timm.create_model(
+                    model_name=model_identifier,
+                    pretrained=pretrained,
+                )
+            else:
+                self.model = timm.create_model(
+                    model_name=model_identifier,
+                    img_size=img_size,
+                    pretrained=pretrained,
+                )
         except Exception as e:
             self.model = timm.create_model(
                 model_name=model_identifier,
