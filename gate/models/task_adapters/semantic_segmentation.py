@@ -2,7 +2,7 @@ from collections import OrderedDict
 import math
 from functools import partial
 import time
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from datasets.table import pa
 
 import numpy as np
@@ -11,7 +11,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from rich import print
 from timm.models.vision_transformer import Block
-from transformers import SamMaskDecoderConfig, SamModel
+from transformers import (
+    SamMaskDecoderConfig,
+    SamModel,
+    SegformerConfig,
+    SegformerDecodeHead,
+)
 from transformers.models.sam.modeling_sam import SamFeedForward, SamMaskDecoder
 from gate.boilerplate.utils import get_logger
 
@@ -403,6 +408,106 @@ def has_exact_square_root(s: int) -> bool:
     return root.is_integer()
 
 
+class SimpleSegmentationDecoder(nn.Module):
+    def __init__(
+        self,
+        input_feature_maps: List[torch.Tensor],
+        num_classes: int,
+        target_image_size: tuple,
+        hidden_size: int = 256,
+    ):
+        """
+        SimpleSegmentationDecoder class for segmentation tasks.
+
+        :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
+        :param num_classes: Integer representing the number of classes to predict for segmentation.
+        :param target_size: Tuple containing the height and width for the target output size.
+        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
+        """
+        super().__init__()
+        self.num_feature_maps = len(input_feature_maps)
+        self.hidden_size = hidden_size
+        self.num_classes = num_classes
+        self.target_size = target_image_size
+
+        self.pixel_wise_mlps = nn.ModuleList()
+        for input_features in input_feature_maps:
+            if len(input_features.shape) == 4:
+                in_channels = input_features.shape[1]
+            elif len(input_features.shape) == 3:
+                in_channels = input_features.shape[2]
+
+            mlp = nn.Sequential(
+                nn.Conv2d(in_channels, hidden_size, kernel_size=1),
+                nn.LeakyReLU(),
+                nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+                nn.LeakyReLU(),
+            )
+            self.pixel_wise_mlps.append(mlp)
+
+        self.fuse_features = nn.Conv2d(
+            hidden_size * self.num_feature_maps, hidden_size, kernel_size=1
+        )
+        self.final_conv = nn.Conv2d(hidden_size, num_classes, kernel_size=1)
+        self.upsample = nn.Upsample(
+            size=self.target_size, mode="bicubic", align_corners=True
+        )
+
+    def forward(self, input_list: list):
+        """
+        Forward pass of SimpleSegmentationDecoder.
+
+        📮 Passes the input list through pixel-wise MLPs, fuses the features, and upscales the result to the target size.
+
+        :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
+        :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
+        """
+        processed_features = []
+        for mlp, x in zip(self.pixel_wise_mlps, input_list):
+            # Check if input is (b, sequence, features)
+            if len(x.shape) == 3:
+                sequence_length = x.shape[1]
+                num_features = x.shape[2]
+                square_root = int(math.sqrt(sequence_length))
+
+                # If the sequence has an exact square root, reshape it to (b, c, h, w) format
+                if sequence_length == square_root * square_root:
+                    c = num_features
+                    h = w = square_root
+                    x = x.permute([0, 2, 1]).reshape(-1, c, h, w)
+                # If not, apply a linear projection
+                else:
+                    target_sequence = square_root**2
+                    linear_proj = nn.Linear(
+                        sequence_length, target_sequence
+                    )  # Apply linear projection
+                    x = x.permute([0, 2, 1])  # (b, features, sequence)
+                    x = x.reshape(
+                        -1, sequence_length
+                    )  # (b * features, sequence)
+                    x = linear_proj(x).reshape(
+                        -1, num_features, target_sequence
+                    )
+
+                    x = x.reshape(-1, num_features, square_root, square_root)
+
+            # Apply pixel-wise MLP
+            logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
+            processed_x = mlp(x)
+            # Upscale the result to the target size
+            processed_x = self.upsample(processed_x)
+            processed_features.append(processed_x)
+
+        # Concatenate the processed features along the channel dimension
+        fused_features = torch.cat(processed_features, dim=1)
+
+        # Fuse the features, apply the final convolution layers, and upscale to target size
+        fused_features = self.fuse_features(fused_features)
+        class_features = self.final_conv(fused_features)
+
+        return class_features
+
+
 class SegmentationViT(nn.Module):
     """
     Vision Transformer for Semantic Segmentation.
@@ -411,13 +516,7 @@ class SegmentationViT(nn.Module):
     def __init__(
         self,
         encoder_model: nn.Module,
-        model_type: str = "vit",
-        embed_dim: int = 768,
         decoder_embed_dim: int = 512,
-        decoder_depth: int = 4,
-        decoder_num_heads: int = 8,
-        mlp_ratio: int = 4.0,
-        norm_layer: int = nn.LayerNorm,
         num_classes: int = 100,
         num_patches: int = 14,
     ):
@@ -443,57 +542,7 @@ class SegmentationViT(nn.Module):
 
         self.decoder_embedding_dimension = decoder_embed_dim
 
-        self.decoder_spatial_matcher = None
-        self.dense_prompt_embeddings = None
-        hidden_size = 256
-        self.hidden_size = hidden_size
-
-        self.channel_projection = None
-
-        self.mask_conv = nn.Conv2d(
-            in_channels=hidden_size,
-            out_channels=self.num_classes,
-            kernel_size=1,
-        )
-
-        self.upscale_net1 = UpscaleMultiBlock(
-            in_features=hidden_size // 4,
-            out_features=hidden_size // 4,
-            hidden_size=hidden_size // 4,
-            num_blocks=0,
-            encoder_features=hidden_size // 4,
-        )
-
-        self.upscale_net2 = UpscaleMultiBlock(
-            in_features=hidden_size // 8,
-            out_features=hidden_size // 8,
-            hidden_size=hidden_size // 8,
-            num_blocks=0,
-            encoder_features=hidden_size // 8,
-        )
-
-        self.upscale_net3 = UpscaleMultiBlock(
-            in_features=hidden_size // 16,
-            out_features=hidden_size // 16,
-            hidden_size=hidden_size // 16,
-            num_blocks=0,
-            encoder_features=hidden_size // 16,
-        )
-
-        self.mask_output_conv = nn.Conv2d(
-            in_channels=hidden_size // 16,
-            out_channels=3,
-            kernel_size=1,
-            bias=False,
-        )
-
-        # self.decoder_config = SamMaskDecoderConfig(
-        #     num_multimask_outputs=3,
-        #     hidden_size=hidden_size,
-        #     mlp_dim=hidden_size * 4,
-        #     num_hidden_layers=4,
-        # )
-        # self.decoder = SamMaskDecoder(config=self.decoder_config)
+        self.decoder = None
 
         self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=0)
         self.dice_loss = DiceLoss(ignore_index=0)
@@ -559,176 +608,27 @@ class SegmentationViT(nn.Module):
         batch, _, height, width = image.shape
         features = self.encoder(image)["image"]["per_layer_raw_features"]
 
-        # full_encoder_outputs: torch.Size([2, 14, 1025, 768])
-        features = [
-            F.interpolate(f, size=(32, 32), mode="bicubic") for f in features
-        ]
-
-        if len(features[0].shape) == 4:
-            features = torch.cat(
-                features,
-                dim=1,
-            )
-            features = features.permute([0, 2, 3, 1]).reshape(
-                features.shape[0], -1, features.shape[1]
-            )
-        elif len(features[0].shape) == 3:
-            features = torch.cat(features, dim=2)
-        else:
-            raise ValueError(
-                f"Features shape not supported: {features[0].shape}, must be 3 or 4 dim, but is {len(features[0].shape)} dim."
+        if self.decoder is None:
+            self.decoder = SimpleSegmentationDecoder(
+                input_feature_maps=features,
+                num_classes=self.num_classes,
+                target_size=(256, 256),
+                hidden_size=self.decoder_embedding_dimension,
             )
 
-        if self.debug_mode:
-            logger.info(f"Features shape: {features.shape}")
-            logger.info(
-                f"Mean: {features.mean()}, Std: {features.std()}, Max: {features.max()}, Min: {features.min()}"
-            )
-
-        encoder_features = features
-
-        if self.decoder_spatial_matcher is None and not has_exact_square_root(
-            encoder_features.shape[1]
-        ):
-            self.decoder_spatial_matcher = nn.Conv1d(
-                in_channels=encoder_features.shape[1],
-                out_channels=int(
-                    math.floor(math.sqrt(encoder_features.shape[1]))
-                )
-                ** 2,
-                kernel_size=1,
-            )
-        if self.decoder_spatial_matcher is not None:
-            encoder_features = self.decoder_spatial_matcher(encoder_features)
-
-        encoder_features = encoder_features.permute([0, 2, 1])
-        batch, channels, sequence = encoder_features.shape
-        feature_map_size = int(sequence**0.5)
-        encoder_features = encoder_features.view(
-            batch, channels, feature_map_size, feature_map_size
-        )
-        # if self.channel_projection is None:
-        #     self.channel_projection = nn.Conv2d(
-        #         in_channels=encoder_features.shape[1],
-        #         out_channels=self.hidden_size,
-        #         kernel_size=1,
-        #     )
-
-        # decoder_inputs = self.upscale_net1(decoder_inputs)
-        # decoder_inputs = self.detail_conv1_0(decoder_inputs)
-        # decoder_inputs = self.detail_conv1_1(decoder_inputs)
-        # decoder_inputs = self.detail_conv1_2(decoder_inputs)
-        # decoder_inputs = self.detail_conv1_3(decoder_inputs)
-        # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
-
-        # decoder_inputs = self.upscale_net2(decoder_inputs)
-        # decoder_inputs = self.detail_conv2_0(decoder_inputs)
-        # decoder_inputs = self.detail_conv2_1(decoder_inputs)
-        # decoder_inputs = self.detail_conv2_2(decoder_inputs)
-        # decoder_inputs = self.detail_conv2_3(decoder_inputs)
-
-        decoder_inputs = encoder_features
-
-        outputs = self.upscale_net1(decoder_inputs, encoder_features)
-        if self.debug_mode:
-            logger.info(f"outputs: {outputs.shape}")
-
-        outputs = self.upscale_net2(outputs, encoder_features)
-        if self.debug_mode:
-            logger.info(f"outputs: {outputs.shape}")
-
-        outputs = self.upscale_net3(outputs, encoder_features)
-        if self.debug_mode:
-            logger.info(f"outputs: {outputs.shape}")
-
-        mask_predictions = self.mask_output_conv(outputs)
-        if self.debug_mode:
-            logger.info(f"mask_predictions: {mask_predictions.shape}")
-
-        # decoder_inputs = self.upscale_net3(decoder_inputs)
-        # decoder_inputs = self.detail_conv3_0(decoder_inputs)
-        # decoder_inputs = self.detail_conv3_1(decoder_inputs)
-        # decoder_inputs = self.detail_conv3_2(decoder_inputs)
-        # decoder_inputs = self.detail_conv3_3(decoder_inputs)
-
-        # decoder_inputs = self.upscale_net4(decoder_inputs)
-        # decoder_inputs = self.detail_conv4_0(decoder_inputs)
-        # decoder_inputs = self.detail_conv4_1(decoder_inputs)
-        # decoder_inputs = self.detail_conv4_2(decoder_inputs)
-        # decoder_inputs = self.detail_conv4_3(decoder_inputs)
-
-        # mask_predictions = self.mask_conv(decoder_inputs)
-
-        # mask_predictions = F.interpolate(mask_predictions, size=(224, 224))
-
-        # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
-
-        # decoder_inputs = self.upscale_net3(decoder_inputs)
-        # decoder_inputs = self.detail_conv3(decoder_inputs)
-        # logger.info(f"decoder_inputs: {decoder_inputs.shape}")
-
-        # # torch.Size([1, 1, 2, 256]),
-        # # dense_embeddings: torch.Size([1, 256, 64, 64]),
-        # # image_embeddings: torch.Size([1, 256, 64, 64]),
-        # # image_positional_embeddings: torch.Size([1, 256, 64, 64])
-
-        # # print(
-        # #     f"position: {self.positional_encoding.positional_encoding.shape}, "
-        # #     f"image_embeddings: {decoder_inputs.shape}, dense_embeddings: {decoder_inputs.shape}, "
-        # #     f"image_positional_embeddings: {self.positional_encoding.positional_encoding.shape}"
-        # # )
-        # if self.dense_prompt_embeddings is None:
-        #     self.dense_prompt_embeddings = nn.Parameter(
-        #         torch.randn(size=(1, *decoder_inputs.shape[1:])).to(
-        #             decoder_inputs.device
-        #         )
-        #     )
-        # if self.positional_encoding is None:
-        #     self.positional_encoding = nn.Parameter(
-        #         torch.randn(size=(1, *decoder_inputs.shape[1:]))
-        #     ).to(decoder_inputs.device)
-
-        # mask_predictions, _, _ = self.decoder(
-        #     image_embeddings=decoder_inputs,
-        #     image_positional_embeddings=self.positional_encoding,
-        #     sparse_prompt_embeddings=torch.zeros(
-        #         decoder_inputs.shape[0], 1, 1, self.hidden_size
-        #     ).to(decoder_inputs.device),
-        #     dense_prompt_embeddings=self.dense_prompt_embeddings.repeat(
-        #         [decoder_inputs.shape[0], 1, 1, 1]
-        #     ),
-        #     multimask_output=True,
-        #     output_attentions=False,
-        # )
-
-        # mask_predictions = mask_predictions[:, 0]
+        if self.decoder is not None:
+            mask_predictions = self.decoder(features)
 
         output = {
             "logits": mask_predictions,
-            "ae_output": mask_predictions,
         }
 
         if return_loss_and_metrics:
             try:
-                # output |= self.compute_loss_and_metrics(
-                #     logits=output["logits"], labels=labels
-                # )
-                image = F.interpolate(
-                    image,
-                    size=(
-                        mask_predictions.shape[-2],
-                        mask_predictions.shape[-1],
-                    ),
-                    mode="bicubic",
+                output |= self.compute_loss_and_metrics(
+                    logits=output["logits"], labels=labels
                 )
 
-                output["loss"] = F.l1_loss(mask_predictions, image)
-                # ae_loss = 0.1 * F.mse_loss(
-                #     decoded_image,
-                #     image,
-                # )
-                # output["ae_loss"] = ae_loss
-                # output["loss"] += ae_loss
             except Exception as e:
                 logger.info(f"Exception: {e}")
 
