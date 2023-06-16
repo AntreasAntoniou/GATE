@@ -492,7 +492,7 @@ class SimpleSegmentationDecoder(nn.Module):
                     x = x.reshape(-1, num_features, square_root, square_root)
 
             # Apply pixel-wise MLP
-            logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
+            # logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
             processed_x = mlp(x)
             # Upscale the result to the target size
             processed_x = self.upsample(processed_x)
