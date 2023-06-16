@@ -672,7 +672,12 @@ class SegmentationViT(nn.Module):
             logger.info(f"Mask predictions shape: {mask_predictions.shape}")
 
         output = {
-            "logits": mask_predictions,
+            "logits": F.interpolate(
+                mask_predictions,
+                size=(256, 256),
+                mode="bicubic",
+                align_corners=True,
+            )
         }
 
         if return_loss_and_metrics:
