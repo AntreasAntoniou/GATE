@@ -21,7 +21,7 @@ class BackboneWithLinear(BaseModule):
         super().__init__()
         self.model = model
         self.modality = modality
-        self.linear = nn.Linear(num_clip_features, num_classes)
+        self.linear = nn.LazyLinear(num_classes)
         self.num_classes = num_classes
         self.allow_on_model_metric_computation = (
             allow_on_model_metric_computation

@@ -83,8 +83,8 @@ class TimmModel(nn.Module):
                 pretrained=pretrained,
                 features_only=True,
             )
-            if img_size is None:
-                img_size = self.model.default_cfg["input_size"][-2:]
+        if img_size is None:
+            img_size = self.model.default_cfg["input_size"][-2:]
 
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
