@@ -571,8 +571,8 @@ class SegmentationViT(nn.Module):
 
         self.decoder = None
 
-        self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=-1)
-        self.dice_loss = DiceLoss(ignore_index=-1)
+        self.focal_loss = FocalLoss(alpha=0.25, gamma=2, ignore_index=0)
+        self.dice_loss = DiceLoss(ignore_index=0)
         self.weighted_bce = WeightedCrossEntropyLoss(
             ignore_index=-1, reduction="mean"
         )
