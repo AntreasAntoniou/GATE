@@ -17,7 +17,12 @@ from transformers import (
     SegformerConfig,
     SegformerDecodeHead,
 )
-from transformers.models.sam.modeling_sam import SamFeedForward, SamMaskDecoder
+from transformers.activations import AccurateGELUActivation
+from transformers.models.sam.modeling_sam import (
+    SamFeedForward,
+    SamLayerNorm,
+    SamMaskDecoder,
+)
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
@@ -440,16 +445,30 @@ class SimpleSegmentationDecoder(nn.Module):
 
             mlp = nn.Sequential(
                 nn.Conv2d(in_channels, hidden_size, kernel_size=1),
+                SamLayerNorm(
+                    normalized_shape=hidden_size, data_format="channels_first"
+                ),
                 nn.LeakyReLU(inplace=True),
                 nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+                SamLayerNorm(
+                    normalized_shape=hidden_size, data_format="channels_first"
+                ),
                 nn.LeakyReLU(inplace=True),
             )
             self.pixel_wise_mlps.append(mlp)
 
         self.fuse_features = nn.Conv2d(
-            hidden_size * self.num_feature_maps, hidden_size, kernel_size=1
+            hidden_size * self.num_feature_maps, hidden_size * 2, kernel_size=1
         )
-        self.final_conv = nn.Conv2d(hidden_size, num_classes, kernel_size=1)
+        self.fuse_features_norm = (
+            SamLayerNorm(
+                normalized_shape=hidden_size * 2, data_format="channels_first"
+            ),
+        )
+        self.fuse_features_act = AccurateGELUActivation()
+        self.final_conv = nn.Conv2d(
+            hidden_size * 2, num_classes, kernel_size=1
+        )
         self.upsample = nn.Upsample(
             size=self.target_size, mode="bilinear", align_corners=True
         )
@@ -503,7 +522,9 @@ class SimpleSegmentationDecoder(nn.Module):
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
-        fused_features = self.fuse_features(fused_features)
+        fused_features = self.fuse_features_act(
+            self.fuse_features_norm(self.fuse_features(fused_features))
+        )
         logger.debug(
             f"Fusing features took {time.time() - start_time} seconds"
         )
