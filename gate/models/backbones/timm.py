@@ -59,7 +59,7 @@ class TimmModel(nn.Module):
     def __init__(
         self,
         model_identifier: str = "hf_hub:timm/vit_large_patch14_clip_224.openai_ft_in12k_in1k",
-        model_input_shape: Optional[List[int]] = None,
+        img_size: Optional[List[int]] = None,
         pretrained: bool = True,
     ):
         super().__init__()
@@ -68,7 +68,7 @@ class TimmModel(nn.Module):
             model_name=model_identifier,
             pretrained=pretrained,
             num_classes=0,  # remove classifier nn.Linear
-            img_size=model_input_shape,
+            img_size=img_size,
         )
 
         img_size = self.model.default_cfg["input_size"][-2:]
@@ -146,6 +146,7 @@ class TimmCLIPAdapter(nn.Module):
         timm_model_name: str,
         clip_model_name: str,
         pretrained: bool = True,
+        img_size: Optional[List[int]] = None,
     ):
         super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
@@ -156,7 +157,9 @@ class TimmCLIPAdapter(nn.Module):
         self.clip = CLIPModel.from_pretrained(clip_model_name)
 
         self.vision_model = TimmModel(
-            model_identifier=timm_model_name, pretrained=pretrained
+            model_identifier=timm_model_name,
+            pretrained=pretrained,
+            img_size=img_size,
         )
         self.text_model = self.clip.text_model
 
