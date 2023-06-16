@@ -460,11 +460,10 @@ class SimpleSegmentationDecoder(nn.Module):
         self.fuse_features = nn.Conv2d(
             hidden_size * self.num_feature_maps, hidden_size * 2, kernel_size=1
         )
-        self.fuse_features_norm = (
-            SamLayerNorm(
-                normalized_shape=hidden_size * 2, data_format="channels_first"
-            ),
+        self.fuse_features_norm = SamLayerNorm(
+            normalized_shape=hidden_size * 2, data_format="channels_first"
         )
+
         self.fuse_features_act = AccurateGELUActivation()
         self.final_conv = nn.Conv2d(
             hidden_size * 2, num_classes, kernel_size=1
