@@ -561,7 +561,7 @@ class SegmentationViT(nn.Module):
 
         # full_encoder_outputs: torch.Size([2, 14, 1025, 768])
         features = [
-            F.interpolate(f, size=(64, 64), mode="bicubic") for f in features
+            F.interpolate(f, size=(32, 32), mode="bicubic") for f in features
         ]
 
         if len(features[0].shape) == 4:
