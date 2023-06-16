@@ -36,7 +36,7 @@ def create_model_with_linear(
 def build_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     whisper_model_name: str = "openai/whisper-small",
-    model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+    model_repo_path: str = "Antreas/talip-godzilla-base16-wiva-sep-1337",
     checkpoint_identifier: str = "latest",
     modality: str = "image",
     pretrained: bool = True,
@@ -89,7 +89,7 @@ def build_model(
 def build_gate_tali_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     whisper_model_name: str = "openai/whisper-small",
-    model_repo_path: str = "Antreas/tali-2-tali_omni_base_patch16_224-wit_tali_image_text_audio_video_dataset-2306",
+    model_repo_path: str = "Antreas/talip-godzilla-base16-wiva-sep-1337",
     checkpoint_identifier: str = "latest",
     modality: str = "image",
     pretrained: bool = True,
