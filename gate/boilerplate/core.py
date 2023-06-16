@@ -552,6 +552,8 @@ class Learner(nn.Module):
             },
         )
 
+        print(experiment_hyperparameters)
+
         torch.save(
             obj=experiment_hyperparameters,
             f=ckpt_save_path / "trainer_state.pt",
