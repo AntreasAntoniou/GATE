@@ -45,13 +45,13 @@ class ClassificationTrainer(Trainer):
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
-        logger.info(f"Forward time {time.time() - start_time}")
+        logger.debug(f"Forward time {time.time() - start_time}")
 
         loss = output_dict["loss"]
 
         start_time = time.time()
         accelerator.backward(loss)
-        logger.info(f"Backward time {time.time() - start_time}")
+        logger.debug(f"Backward time {time.time() - start_time}")
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
@@ -74,7 +74,7 @@ class ClassificationTrainer(Trainer):
         model.train()
         start_time = time.time()
         self.optimizer.zero_grad()
-        logger.info(f"Zero grad time {time.time() - start_time}")
+        logger.debug(f"Zero grad time {time.time() - start_time}")
         start_time = time.time()
         step_output: StepOutput = self.step(
             model=model,
@@ -82,12 +82,12 @@ class ClassificationTrainer(Trainer):
             global_step=global_step,
             accelerator=accelerator,
         )
-        logger.info(f"Step time {time.time() - start_time}")
+        logger.debug(f"Step time {time.time() - start_time}")
         start_time = time.time()
 
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
-        logger.info(f"Optimizer step time {time.time() - start_time}")
+        logger.debug(f"Optimizer step time {time.time() - start_time}")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
