@@ -440,9 +440,9 @@ class SimpleSegmentationDecoder(nn.Module):
 
             mlp = nn.Sequential(
                 nn.Conv2d(in_channels, hidden_size, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.LeakyReLU(inplace=True),
                 nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
-                nn.LeakyReLU(),
+                nn.LeakyReLU(inplace=True),
             )
             self.pixel_wise_mlps.append(mlp)
 
