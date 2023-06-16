@@ -53,15 +53,6 @@ class ClassificationTrainer(Trainer):
         accelerator.backward(loss)
         logger.info(f"Backward time {time.time() - start_time}")
 
-        if "logits" in output_dict:
-            del output_dict["logits"]
-
-        temp_output_dict = {}
-        for key, value in output_dict.items():
-            if isinstance(value, torch.Tensor):
-                temp_output_dict[key] = value.detach().cpu()
-        output_dict = temp_output_dict
-
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
                 if isinstance(value, torch.Tensor):
@@ -91,10 +82,12 @@ class ClassificationTrainer(Trainer):
             global_step=global_step,
             accelerator=accelerator,
         )
+        logger.info(f"Step time {time.time() - start_time}")
+        start_time = time.time()
 
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
-        logger.info(f"Step time {time.time() - start_time}")
+        logger.info(f"Optimizer step time {time.time() - start_time}")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
