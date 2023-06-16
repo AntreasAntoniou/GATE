@@ -542,7 +542,7 @@ class SegmentationViT(nn.Module):
     def __init__(
         self,
         encoder_model: nn.Module,
-        decoder_embed_dim: int = 512,
+        decoder_embed_dim: int = 64,
         num_classes: int = 100,
         num_patches: int = 14,
         **kwargs,
