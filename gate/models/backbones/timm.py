@@ -14,6 +14,7 @@ from timm.data import InterpolationMode, resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
+from gate.boilerplate.utils import get_logger
 
 from gate.models.backbones import Modality, image_dim_reshape
 from gate.models.core import reinit
@@ -56,6 +57,9 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     return x
 
 
+logger = get_logger(__name__)
+
+
 class TimmModel(nn.Module):
     def __init__(
         self,
@@ -66,23 +70,21 @@ class TimmModel(nn.Module):
         super().__init__()
 
         try:
-            if img_size is None:
-                self.model = timm.create_model(
-                    model_name=model_identifier,
-                    pretrained=pretrained,
-                )
-            else:
-                self.model = timm.create_model(
-                    model_name=model_identifier,
-                    img_size=img_size,
-                    pretrained=pretrained,
-                )
-        except Exception as e:
             self.model = timm.create_model(
                 model_name=model_identifier,
                 pretrained=pretrained,
                 features_only=True,
             )
+
+        except Exception as e:
+            logger.info(f"Could not load model {model_identifier} because {e}")
+
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                img_size=img_size,
+                pretrained=pretrained,
+            )
+        logger.info(f"Model {self.model} loaded")
         if img_size is None:
             img_size = self.model.default_cfg["input_size"][-2:]
 
@@ -126,7 +128,7 @@ class TimmModel(nn.Module):
                 norm=True,
             )
         else:
-            per_layer_raw_features = self.model(x)
+            per_layer_raw_features = [output for output in self.model(x)]
 
         raw_features = per_layer_raw_features[-1]
         if len(raw_features.shape) == 4:
@@ -142,7 +144,7 @@ class TimmModel(nn.Module):
         else:
             raw_features_as_sequence = raw_features
 
-        features = raw_features.mean(dim=1)
+        features = raw_features_as_sequence.mean(dim=1)
 
         return {
             "classifier": features,
