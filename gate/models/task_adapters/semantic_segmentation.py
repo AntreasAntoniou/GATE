@@ -466,6 +466,7 @@ class SimpleSegmentationDecoder(nn.Module):
         processed_features = []
         for mlp, x in zip(self.pixel_wise_mlps, input_list):
             # Check if input is (b, sequence, features)
+            start_time = time.time()
             if len(x.shape) == 3:
                 sequence_length = x.shape[1]
                 num_features = x.shape[2]
@@ -483,20 +484,32 @@ class SimpleSegmentationDecoder(nn.Module):
                     x = F.adaptive_avg_pool1d(x, target_sequence)
 
                     x = x.reshape(-1, num_features, square_root, square_root)
-
+            logger.info(f"Reshaping took {time.time() - start_time} seconds")
             # Apply pixel-wise MLP
             # logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
+            start_time = time.time()
             processed_x = mlp(x)
+            logger.info(f"MLP took {time.time() - start_time} seconds")
             # Upscale the result to the target size
+            start_time = time.time()
             processed_x = self.upsample(processed_x)
+            logger.info(f"Upsampling took {time.time() - start_time} seconds")
             processed_features.append(processed_x)
 
         # Concatenate the processed features along the channel dimension
+        start_time = time.time()
         fused_features = torch.cat(processed_features, dim=1)
+        logger.info(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
+        start_time = time.time()
         fused_features = self.fuse_features(fused_features)
+        logger.info(f"Fusing features took {time.time() - start_time} seconds")
+        start_time = time.time()
         class_features = self.final_conv(fused_features)
+        logger.info(
+            f"Final convolution took {time.time() - start_time} seconds"
+        )
 
         return class_features
 
@@ -600,7 +613,9 @@ class SegmentationViT(nn.Module):
             )
 
         batch, _, height, width = image.shape
+        start_time = time.time()
         features = self.encoder(image)["image"]["per_layer_raw_features"]
+        logger.info(f"Encoder took {time.time() - start_time} seconds")
 
         if self.decoder is None:
             self.decoder = SimpleSegmentationDecoder(
@@ -610,8 +625,10 @@ class SegmentationViT(nn.Module):
                 hidden_size=self.decoder_embedding_dimension,
             )
 
+        start_time = time.time()
         if self.decoder is not None:
             mask_predictions = self.decoder(features)
+        logger.info(f"Decoder took {time.time() - start_time} seconds")
 
         output = {
             "logits": mask_predictions,
