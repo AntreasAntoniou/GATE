@@ -628,7 +628,9 @@ class SegmentationViT(nn.Module):
         start_time = time.time()
         if self.decoder is not None:
             mask_predictions = self.decoder(features)
+
         logger.info(f"Decoder took {time.time() - start_time} seconds")
+        logger.info(f"Mask predictions shape: {mask_predictions.shape}")
 
         output = {
             "logits": mask_predictions,
