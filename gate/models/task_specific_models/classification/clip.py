@@ -7,7 +7,7 @@ import torch.nn as nn
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
+from gate.models.backbones.clip import CLIPAdapter, CLIPModelPaths
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -78,7 +78,7 @@ def build_model(
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 def build_gate_clip_model(
-    model_name: str = "openai/clip-vit-base-patch16",
+    model_name: str = CLIPModelPaths.openai_b_16,
     modality: str = "image",
     pretrained: bool = True,
     num_classes: int = 100,
