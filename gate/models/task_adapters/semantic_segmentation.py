@@ -639,10 +639,27 @@ class SegmentationViT(nn.Module):
             logger.info(f"Encoder took {time.time() - start_time} seconds")
 
         if self.decoder is None:
+            if len(features[0].shape) == 3:
+                sequence_lengths = [
+                    int(math.sqrt(x.shape[1])) for x in features
+                ]
+                largest_feature_map = max(sequence_lengths)
+                max_height = largest_feature_map
+                max_width = largest_feature_map
+            elif len(features[0].shape) == 4:
+                heights = [x.shape[2] for x in features]
+                max_height = max(heights)
+                widths = [x.shape[3] for x in features]
+                max_width = max(widths)
+            else:
+                raise ValueError(
+                    f"Unsupported feature map shape: {features[0].shape}"
+                )
+
             self.decoder = SimpleSegmentationDecoder(
                 input_feature_maps=features,
                 num_classes=self.num_classes,
-                target_image_size=(256, 256),
+                target_image_size=(max_height, max_width),
                 hidden_size=self.decoder_embedding_dimension,
             )
 
