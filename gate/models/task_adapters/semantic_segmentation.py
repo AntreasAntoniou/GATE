@@ -585,17 +585,21 @@ class SegmentationViT(nn.Module):
                 f"Mean: {features.mean()}, Std: {features.std()}, Max: {features.max()}, Min: {features.min()}"
             )
 
+        encoder_features = features
+
         if self.decoder_spatial_matcher is None and not has_exact_square_root(
-            features.shape[1]
+            encoder_features.shape[1]
         ):
             self.decoder_spatial_matcher = nn.Conv1d(
-                in_channels=features.shape[1],
-                out_channels=int(math.floor(math.sqrt(features.shape[1])))
+                in_channels=encoder_features.shape[1],
+                out_channels=int(
+                    math.floor(math.sqrt(encoder_features.shape[1]))
+                )
                 ** 2,
                 kernel_size=1,
             )
         if self.decoder_spatial_matcher is not None:
-            encoder_features = self.decoder_spatial_matcher(features)
+            encoder_features = self.decoder_spatial_matcher(encoder_features)
 
         encoder_features = encoder_features.permute([0, 2, 1])
         batch, channels, sequence = encoder_features.shape
