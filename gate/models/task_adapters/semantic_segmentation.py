@@ -802,12 +802,8 @@ class SegmentationViT(nn.Module):
         output = {"logits": logits.detach()}
 
         if return_loss_and_metrics:
-            try:
-                output |= self.compute_loss_and_metrics(
-                    logits=logits, labels=labels
-                )
-
-            except Exception as e:
-                logger.debug(f"Exception: {e}")
+            output |= self.compute_loss_and_metrics(
+                logits=logits, labels=labels
+            )
 
         return output
