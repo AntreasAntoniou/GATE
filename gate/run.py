@@ -146,10 +146,11 @@ def run(cfg: Any) -> None:
     log_wandb_parameters(config_dict, global_step)
 
     dataset: GATEDataset = instantiate(cfg.dataset, transforms=transform)
-    model.meta_data = dataset.meta_data
     train_dataset, val_dataset, test_dataset = get_datasets(
         dataset, global_step
     )
+
+    model.meta_data = train_dataset.meta_data
 
     train_dataloader = instantiate_dataloader(
         cfg, train_dataset, cfg.train_batch_size, shuffle=True
