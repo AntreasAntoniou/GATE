@@ -475,7 +475,7 @@ def create_hf_model_repo_and_download_maybe(
         idx = 0
 
         while not valid_model_downloaded:
-            if len(remote_ckpt_dict) < idx + 1:
+            if len(mixed_ckpt_list) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
                 return None
 
