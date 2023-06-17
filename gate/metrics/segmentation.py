@@ -308,7 +308,7 @@ def mean_iou(
     return metrics
 
 
-def fast_miou(
+def miou_metrics(
     logits: torch.Tensor,
     labels: torch.Tensor,
     ignore_index: int = 0,
@@ -360,8 +360,8 @@ def fast_miou(
     )
 
     iou = IoUMetric(ignore_index=ignore_index)
-    print(class_names)
-    iou.dataset_meta = class_names
+
+    iou.dataset_meta = {"classes": class_names}
 
     data_samples = [
         {

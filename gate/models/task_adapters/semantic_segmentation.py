@@ -152,7 +152,7 @@ from gate.metrics.segmentation import (
     WeightedCrossEntropyLoss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
-    fast_miou,
+    miou_metrics,
 )
 
 
@@ -708,7 +708,7 @@ class SegmentationViT(nn.Module):
         if labels is not None:
             output_dict = self.optimization_loss(logits, labels)
             if not self.training:
-                metrics = fast_miou(
+                metrics = miou_metrics(
                     logits, labels, self.ignore_index, self.class_names
                 )
                 output_dict = output_dict | metrics
