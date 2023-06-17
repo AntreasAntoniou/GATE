@@ -651,6 +651,7 @@ class Learner(nn.Module):
                 hf_repo_path=self.hf_repo_path,
                 hf_cache_dir=self.hf_cache_dir,
                 model_name=f"ckpt_{global_step}",
+                local_checkpoint_store_dir=self.checkpoints_dir,
             )
             if download_dict["validation_passed"] is True:
                 download_dict_list.append(download_dict)
