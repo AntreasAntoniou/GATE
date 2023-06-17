@@ -205,7 +205,19 @@ class GATEDataset(Dataset):
         self.dataset = dataset
         self.infinite_sampling = infinite_sampling
         self.transforms = transforms
-        self.meta_data = meta_data
+        self._meta_data = meta_data
+
+    @property
+    def meta_data(self) -> Optional[dict]:
+        return self._meta_data
+
+    @meta_data.setter
+    def meta_data(self, meta_data: dict) -> None:
+        self._meta_data = meta_data
+        if meta_data is not None:
+            for key, value in meta_data.items():
+                if hasattr(self.model, key):
+                    setattr(self.model, key, value)
 
     def __len__(self) -> int:
         if self.infinite_sampling:
