@@ -432,6 +432,149 @@ class SimpleSegmentationDecoder(nn.Module):
         return class_features
 
 
+class PreResizeSimpleSegmentationDecoder(nn.Module):
+    def __init__(
+        self,
+        input_feature_maps: List[torch.Tensor],
+        num_classes: int,
+        target_image_size: tuple,
+        hidden_size: int = 256,
+    ):
+        """
+        SimpleSegmentationDecoder class for segmentation tasks.
+
+        :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
+        :param num_classes: Integer representing the number of classes to predict for segmentation.
+        :param target_size: Tuple containing the height and width for the target output size.
+        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
+        """
+        super().__init__()
+        self.num_feature_maps = len(input_feature_maps)
+        self.hidden_size = hidden_size
+        self.num_classes = num_classes
+        self.target_image_size = target_image_size
+
+        self.pixel_wise_mlps = nn.ModuleList()
+        self.upsample = nn.Upsample(
+            size=self.target_size, mode="bilinear", align_corners=True
+        )
+
+        if len(input_feature_maps[0].shape) == 4:
+            input_feature_maps = [
+                self.upsample(x) if x.shape[-1] != target_image_size else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        elif len(input_feature_maps[0].shape) == 3:
+            input_feature_maps = [
+                x.permute([0, 2, 1]) for x in input_feature_maps
+            ]
+            input_feature_maps = [
+                self.upsample(x) if x.shape[1] != target_image_size[0] else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+            sequence_length = input_feature_maps.shape[2]
+            if not has_exact_square_root(sequence_length):
+                closest_square_root = int(math.sqrt(sequence_length))
+                input_feature_maps = F.adaptive_avg_pool1d(
+                    input_feature_maps, closest_square_root**2
+                ).reshape(
+                    input_feature_maps.shape[0],
+                    -1,
+                    closest_square_root,
+                    closest_square_root,
+                )
+
+        in_channels = input_feature_maps.shape[1]
+        self.mlp = nn.Sequential(
+            nn.Conv2d(in_channels, hidden_size, kernel_size=1),
+            SamLayerNorm(
+                normalized_shape=hidden_size, data_format="channels_first"
+            ),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+            SamLayerNorm(
+                normalized_shape=hidden_size, data_format="channels_first"
+            ),
+            nn.LeakyReLU(inplace=True),
+        )
+
+        self.fuse_features = nn.Conv2d(
+            hidden_size * self.num_feature_maps, hidden_size, kernel_size=1
+        )
+        self.fuse_features_norm = nn.LazyInstanceNorm2d()
+
+        self.fuse_features_act = AccurateGELUActivation()
+        self.final_conv = nn.Conv2d(hidden_size, num_classes, kernel_size=1)
+
+    def forward(self, input_list: list):
+        """
+        Forward pass of SimpleSegmentationDecoder.
+
+        📮 Passes the input list through pixel-wise MLPs, fuses the features, and upscales the result to the target size.
+
+        :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
+        :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
+        """
+        start_time = time.time()
+        input_feature_maps = input_list
+        if len(input_feature_maps[0].shape) == 4:
+            input_feature_maps = [
+                self.upsample(x)
+                if x.shape[-1] != self.target_image_size
+                else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        elif len(input_feature_maps[0].shape) == 3:
+            input_feature_maps = [
+                x.permute([0, 2, 1]) for x in input_feature_maps
+            ]
+            input_feature_maps = [
+                self.upsample(x)
+                if x.shape[1] != self.target_image_size[0]
+                else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+            sequence_length = input_feature_maps.shape[2]
+            if not has_exact_square_root(sequence_length):
+                closest_square_root = int(math.sqrt(sequence_length))
+                input_feature_maps = F.adaptive_avg_pool1d(
+                    input_feature_maps, closest_square_root**2
+                ).reshape(
+                    input_feature_maps.shape[0],
+                    -1,
+                    closest_square_root,
+                    closest_square_root,
+                )
+        logger.info(f"Upsampling took {time.time() - start_time} seconds")
+        start_time = time.time()
+        processed_features = self.mlp(input_feature_maps)
+        logger.info(f"MLP took {time.time() - start_time} seconds")
+        # Concatenate the processed features along the channel dimension
+        start_time = time.time()
+        fused_features = torch.cat(processed_features, dim=1)
+        logger.info(f"Concatenation took {time.time() - start_time} seconds")
+
+        # Fuse the features, apply the final convolution layers, and upscale to target size
+        start_time = time.time()
+        fused_features = self.fuse_features(fused_features)
+        fused_norm_features = self.fuse_features_norm(fused_features)
+        fused_act_features = self.fuse_features_act(fused_norm_features)
+        logger.info(f"Fusing features took {time.time() - start_time} seconds")
+        start_time = time.time()
+        class_features = self.final_conv(fused_act_features)
+        logger.info(
+            f"Final convolution took {time.time() - start_time} seconds"
+        )
+
+        return class_features
+
+
 class SegmentationViT(nn.Module):
     """
     Vision Transformer for Semantic Segmentation.
