@@ -270,6 +270,9 @@ class TALINet(nn.Module):
             if "latest" != checkpoint_identifier
             else None,
             get_latest=True if "latest" == checkpoint_identifier else False,
+            local_checkpoint_store_dir=pathlib.Path(
+                ".cache/huggingface/tali/"
+            ),
         )
         if download_dir is not None:
             config = yaml.safe_load(open(download_dir["config_filepath"]))

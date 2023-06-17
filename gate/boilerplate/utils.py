@@ -23,6 +23,8 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+from gate.config.variables import HF_OFFLINE_MODE
+
 
 def get_logger(
     name=__name__, logging_level: str = None, set_rich: bool = False
@@ -280,59 +282,65 @@ def download_model_with_name(
             if validated_ckpt_dir:
                 return path_dict
 
-    def download_and_copy(
-        filename: str,
-        target_path: pathlib.Path,
-        subfolder: str = f"checkpoints/{model_name}",
-    ) -> None:
-        file_path = huggingface_hub.hf_hub_download(
-            repo_id=hf_repo_path,
-            cache_dir=pathlib.Path(hf_cache_dir),
-            resume_download=True,
-            subfolder=subfolder,
-            filename=filename,
-            repo_type="model",
+    if not HF_OFFLINE_MODE:
+
+        def download_and_copy(
+            filename: str,
+            target_path: pathlib.Path,
+            subfolder: str = f"checkpoints/{model_name}",
+        ) -> None:
+            file_path = huggingface_hub.hf_hub_download(
+                repo_id=hf_repo_path,
+                cache_dir=pathlib.Path(hf_cache_dir),
+                resume_download=True,
+                subfolder=subfolder,
+                filename=filename,
+                repo_type="model",
+            )
+            shutil.copy(pathlib.Path(file_path), target_path)
+
+        checkpoint_dir = (
+            pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
         )
-        shutil.copy(pathlib.Path(file_path), target_path)
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    checkpoint_dir = pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        file_mapping = {
+            "trainer_state.pt": "trainer_state_filepath",
+            "optimizer.bin": "optimizer_filepath",
+            "pytorch_model.bin": "model_filepath",
+            "random_states_0.pkl": "random_states_filepath",
+            "scaler.pt": "scaler_filepath",
+        }
 
-    file_mapping = {
-        "trainer_state.pt": "trainer_state_filepath",
-        "optimizer.bin": "optimizer_filepath",
-        "pytorch_model.bin": "model_filepath",
-        "random_states_0.pkl": "random_states_filepath",
-        "scaler.pt": "scaler_filepath",
-    }
+        downloaded_files = {}
+        invalid_download = False
+        for filename, key in file_mapping.items():
+            try:
+                target_path = checkpoint_dir / filename
+                download_and_copy(filename, target_path)
+                downloaded_files[key] = target_path
+            except Exception as e:
+                if filename != "scaler.pt":
+                    invalid_download = True
+                logger.info(f"Error downloading {filename}: {e}")
+        # Handle config.yaml separately
+        config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
+        download_and_copy("config.yaml", config_target_path, subfolder="")
+        downloaded_files["config_filepath"] = config_target_path
 
-    downloaded_files = {}
-    invalid_download = False
-    for filename, key in file_mapping.items():
-        try:
-            target_path = checkpoint_dir / filename
-            download_and_copy(filename, target_path)
-            downloaded_files[key] = target_path
-        except Exception as e:
-            if filename != "scaler.pt":
-                invalid_download = True
-            logger.info(f"Error downloading {filename}: {e}")
-    # Handle config.yaml separately
-    config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
-    download_and_copy("config.yaml", config_target_path, subfolder="")
-    downloaded_files["config_filepath"] = config_target_path
+        if download_only_if_finished:
+            state_dict = torch.load(
+                downloaded_files["trainer_state_filepath"]
+            )["state_dict"]["eval"][0]["auc-macro"]
+            if len(state_dict.keys()) < 40:
+                return {}
 
-    if download_only_if_finished:
-        state_dict = torch.load(downloaded_files["trainer_state_filepath"])[
-            "state_dict"
-        ]["eval"][0]["auc-macro"]
-        if len(state_dict.keys()) < 40:
-            return {}
+        downloaded_files["root_filepath"] = checkpoint_dir
+        downloaded_files["validation_passed"] = not invalid_download
 
-    downloaded_files["root_filepath"] = checkpoint_dir
-    downloaded_files["validation_passed"] = not invalid_download
+        return downloaded_files
 
-    return downloaded_files
+    return None
 
 
 def create_hf_model_repo(hf_repo_path: str) -> str:
@@ -350,26 +358,30 @@ def create_directories(hf_cache_dir: str) -> None:
     (pathlib.Path(hf_cache_dir) / "checkpoints").mkdir(
         parents=True, exist_ok=True
     )
+    return hf_cache_dir
 
 
-def upload_config_files(
-    cfg: Any, hf_cache_dir: str, hf_repo_path: str
-) -> None:
+def store_config_yaml(
+    cfg: Any,
+    hf_cache_dir: str,
+):
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
-    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
 
     with open(config_yaml_path, "w") as file:
         yaml.dump(config_dict, file)
 
-    for filepath, path_in_repo in [
-        (config_yaml_path, "config.yaml"),
-    ]:
-        hf_api.upload_file(
-            repo_id=hf_repo_path,
-            path_or_fileobj=filepath.as_posix(),
-            path_in_repo=path_in_repo,
-        )
+    return config_yaml_path
+
+
+def upload_config_files(hf_repo_path: str, config_yaml_path) -> None:
+    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
+
+    hf_api.upload_file(
+        repo_id=hf_repo_path,
+        path_or_fileobj=config_yaml_path.as_posix(),
+        path_in_repo="config.yaml",
+    )
 
 
 def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
@@ -409,31 +421,36 @@ def create_hf_model_repo_and_download_maybe(
     resume_from_checkpoint: str,
     resume: bool,
 ) -> Tuple[Optional[pathlib.Path], str]:
-    create_hf_model_repo(hf_repo_path)
-    create_directories(hf_cache_dir)
-    upload_config_files(
-        cfg=cfg, hf_repo_path=hf_repo_path, hf_cache_dir=hf_cache_dir
-    )
+    if not HF_OFFLINE_MODE:
+        create_hf_model_repo(hf_repo_path)
+
+    hf_cache_dir = create_directories(hf_cache_dir)
+    config_yaml_path = store_config_yaml(cfg, hf_cache_dir)
+
+    if not HF_OFFLINE_MODE:
+        upload_config_files(
+            hf_repo_path=hf_repo_path, config_yaml_path=config_yaml_path
+        )
+
     checkpoint_store_dir = (
         pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
     )
 
-    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
+    if not HF_OFFLINE_MODE:
+        hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
+        remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
+        remote_ckpt_dict = get_checkpoint_dict(remote_files)
+        remote_ckpt_names = sorted(list(remote_ckpt_dict.keys()), reverse=True)
+    else:
+        remote_ckpt_names = []
 
     local_files = [str(file) for file in checkpoint_store_dir.glob("*")]
     local_ckpt_dict = {
         int(file.split("checkpoints/ckpt_")[1]): file for file in local_files
     }
-    remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
-    remote_ckpt_dict = get_checkpoint_dict(remote_files)
+    local_ckpt_names = sorted(list(local_ckpt_dict.keys()), reverse=True)
 
-    latest_remote_ckpt_names = sorted(
-        list(remote_ckpt_dict.keys()), reverse=True
-    )
-    latest_local_ckpt_names = sorted(
-        list(local_ckpt_dict.keys()), reverse=True
-    )
-    mixed_ckpt_list = latest_remote_ckpt_names + latest_local_ckpt_names
+    mixed_ckpt_list = remote_ckpt_names + local_ckpt_names
     mixed_ckpt_list = sorted(list(set(mixed_ckpt_list)), reverse=True)
 
     if len(mixed_ckpt_list) == 0:
@@ -444,6 +461,7 @@ def create_hf_model_repo_and_download_maybe(
             hf_cache_dir=hf_cache_dir,
             hf_repo_path=hf_repo_path,
             ckpt_identifier=resume_from_checkpoint,
+            local_checkpoint_store_dir=checkpoint_store_dir,
         )
     elif resume:
         valid_model_downloaded = False
@@ -476,6 +494,7 @@ def download_model_checkpoint_from_hub(
     hf_cache_dir: str,
     checkpoint_identifier: Optional[str] = None,
     get_latest: bool = False,
+    local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[Optional[pathlib.Path], str]:
     if get_latest and checkpoint_identifier is not None:
         raise ValueError(
@@ -495,6 +514,7 @@ def download_model_checkpoint_from_hub(
             hf_cache_dir=hf_cache_dir,
             hf_repo_path=hf_repo_path,
             ckpt_identifier=latest_ckpt,
+            local_checkpoint_store_dir=local_checkpoint_store_dir,
         )
 
     if checkpoint_identifier is not None:
@@ -502,6 +522,7 @@ def download_model_checkpoint_from_hub(
             hf_cache_dir=hf_cache_dir,
             hf_repo_path=hf_repo_path,
             ckpt_identifier=checkpoint_identifier,
+            local_checkpoint_store_dir=local_checkpoint_store_dir,
         )
 
     return None
