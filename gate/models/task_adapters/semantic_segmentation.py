@@ -476,8 +476,8 @@ class SegmentationViT(nn.Module):
             alpha=0.25, gamma=2, ignore_index=self.background_class
         )
         self.dice_loss = DiceLoss(ignore_index=self.background_class)
-        self.background_focal_loss = FocalLoss()
-        self.background_dice_loss = DiceLoss(alpha=0.25, gamma=2)
+        self.background_focal_loss = FocalLoss(alpha=0.25, gamma=2)
+        self.background_dice_loss = DiceLoss()
 
         self.debug_mode = False
 
