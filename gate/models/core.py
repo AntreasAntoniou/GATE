@@ -48,6 +48,7 @@ class GATEModel(nn.Module):
         config: Any,
         model: nn.Module,
         key_remapper_dict: Optional[Dict] = None,
+        meta_data: Optional[Dict] = None,
     ):
         """
         🏗️ Initialize the GATEModel with a configuration and a base model.
@@ -60,6 +61,7 @@ class GATEModel(nn.Module):
         self.model = model
         self.config = config
         self.key_remapper_dict = key_remapper_dict
+        self._meta_data = meta_data
 
         self.supported_input_modalities = {}
         for (
@@ -86,6 +88,18 @@ class GATEModel(nn.Module):
                     self.supported_input_modalities[
                         (supported_modalities, target_modality_name)
                     ] = True
+
+    @property
+    def meta_data(self) -> Optional[dict]:
+        return self._meta_data
+
+    @meta_data.setter
+    def meta_data(self, meta_data: dict) -> None:
+        self._meta_data = meta_data
+
+        for key, value in meta_data.items():
+            if hasattr(self.model, key):
+                setattr(self.model, key, value)
 
     def process_modalities(
         self,

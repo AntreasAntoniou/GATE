@@ -318,6 +318,7 @@ class SimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
+        class_names: Optional[List[str]] = None,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
@@ -332,6 +333,7 @@ class SimpleSegmentationDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_classes = num_classes
         self.target_size = target_image_size
+        self.class_names = class_names
 
         self.pixel_wise_mlps = nn.ModuleList()
 
@@ -440,6 +442,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
+        class_names: Optional[List[str]] = None,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
@@ -454,6 +457,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_classes = num_classes
         self.target_image_size = target_image_size
+        self.class_names = class_names
 
         self.pixel_wise_mlps = nn.ModuleList()
         self.upsample = nn.Upsample(

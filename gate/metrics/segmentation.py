@@ -1,6 +1,7 @@
 import time
 
 import evaluate
+from mmseg.evaluation.metrics import IoUMetric
 import monai
 import torch
 import torch.nn.functional as F
@@ -176,7 +177,7 @@ def diff_sigmoid_focal_loss(
     return loss.mean()
 
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import torch
 
@@ -308,7 +309,10 @@ def mean_iou(
 
 
 def fast_miou(
-    logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 0
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    ignore_index: int = 0,
+    class_names: Optional[List[str]] = None,
 ):
     """
     Compute mean Intersection over Union (IoU) for a batch of predicted segmentation masks and ground truth labels.
@@ -347,13 +351,32 @@ def fast_miou(
     # The default value is False.
 
     # mean_iou = evaluate.load("mean_iou")
-    return mean_iou(
+    metric = mean_iou(
         logits=logits,
         labels=labels,
         num_labels=num_classes,
         ignore_index=ignore_index,
         nan_to_num=1e-8,
     )
+
+    iou = IoUMetric(ignore_index=ignore_index)
+    iou.dataset_meta = class_names
+
+    data_samples = [
+        {
+            "pred_sem_seg": {"data": logits},
+            "gt_sem_seg": {"data": labels},
+            "img_path": "dummy_path",
+        }
+    ]
+    iou.process(data_samples=data_samples)
+
+    print(iou.results)
+
+    # Call the compute_metrics method
+    metrics = iou.compute_metrics(iou.results)
+
+    return metrics | metric
 
 
 def fast_miou_numpy(

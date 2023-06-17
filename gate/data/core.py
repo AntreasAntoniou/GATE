@@ -199,11 +199,13 @@ class GATEDataset(Dataset):
         dataset: Any,
         infinite_sampling: bool = False,
         transforms: Optional[Any] = None,
+        meta_data: Optional[Any] = None,
     ):
         super().__init__()
         self.dataset = dataset
         self.infinite_sampling = infinite_sampling
         self.transforms = transforms
+        self.meta_data = meta_data
 
     def __len__(self) -> int:
         if self.infinite_sampling:
