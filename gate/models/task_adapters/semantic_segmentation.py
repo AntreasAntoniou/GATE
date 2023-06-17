@@ -585,16 +585,6 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
             sequence_length = input_feature_maps.shape[2]
-            if not has_exact_square_root(sequence_length):
-                closest_square_root = int(math.sqrt(sequence_length))
-                input_feature_maps = F.adaptive_avg_pool1d(
-                    input_feature_maps, closest_square_root**2
-                ).reshape(
-                    input_feature_maps.shape[0],
-                    -1,
-                    closest_square_root,
-                    closest_square_root,
-                )
 
         logger.debug(f"Upsampling took {time.time() - start_time} seconds")
         logger.info(f"Shape of input feature maps: {input_feature_maps.shape}")
