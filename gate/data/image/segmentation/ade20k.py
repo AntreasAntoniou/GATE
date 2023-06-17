@@ -4,9 +4,9 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
+import torchvision.transforms as T
 from datasets import load_dataset
 from PIL import Image
-import torchvision.transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR

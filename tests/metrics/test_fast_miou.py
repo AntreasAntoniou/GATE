@@ -1,6 +1,7 @@
 import pytest
 import torch
 from rich import print
+
 from gate.metrics.segmentation import fast_miou, fast_miou_numpy
 
 

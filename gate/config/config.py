@@ -33,6 +33,7 @@ from gate.config.variables import (
     GPU_MEMORY,
     HF_CACHE_DIR,
     HF_USERNAME,
+    HYDRATED_NUM_WORKERS,
     HYDRATED_TRAIN_ITERS,
     LOGGER_LEVEL,
     NUM_WORKERS,
@@ -43,7 +44,6 @@ from gate.config.variables import (
     SEED,
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
-    HYDRATED_NUM_WORKERS,
 )
 from gate.data.core import collate_fn_with_token_pad
 
