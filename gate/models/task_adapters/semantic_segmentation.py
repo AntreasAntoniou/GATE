@@ -456,12 +456,14 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
 
         self.pixel_wise_mlps = nn.ModuleList()
         self.upsample = nn.Upsample(
-            size=self.target_size, mode="bilinear", align_corners=True
+            size=self.target_image_size, mode="bilinear", align_corners=True
         )
+        self.spatial_mixer = None
+        self.closest_square_root = None
 
         if len(input_feature_maps[0].shape) == 4:
             input_feature_maps = [
-                self.upsample(x) if x.shape[-1] != target_image_size else x
+                self.upsample(x) if x.shape[-1] != target_image_size[0] else x
                 for x in input_feature_maps
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
@@ -469,45 +471,72 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         elif len(input_feature_maps[0].shape) == 3:
             input_feature_maps = [
                 x.permute([0, 2, 1]) for x in input_feature_maps
-            ]
+            ]  # (b, sequence, features) -> (b, features, sequence)
             input_feature_maps = [
-                self.upsample(x) if x.shape[1] != target_image_size[0] else x
+                F.adaptive_avg_pool1d(x, output_size=target_image_size)
+                if x.shape[2] != target_image_size
+                else x
                 for x in input_feature_maps
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        if len(input_feature_maps.shape) == 4:
+            in_channels = input_feature_maps.shape[1]
+            self.mlp = nn.Sequential(
+                nn.Conv2d(in_channels, hidden_size, kernel_size=1),
+                SamLayerNorm(
+                    normalized_shape=hidden_size, data_format="channels_first"
+                ),
+                nn.LeakyReLU(inplace=True),
+                nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+                SamLayerNorm(
+                    normalized_shape=hidden_size, data_format="channels_first"
+                ),
+                nn.LeakyReLU(inplace=True),
+            )
+
+            self.fuse_features = nn.Conv2d(
+                hidden_size, hidden_size, kernel_size=1
+            )
+            self.fuse_features_norm = nn.LazyInstanceNorm2d()
+
+            self.fuse_features_act = AccurateGELUActivation()
+            self.final_conv = nn.Conv2d(
+                hidden_size, num_classes, kernel_size=1
+            )
+        elif len(input_feature_maps.shape) == 3:
+            in_channels = input_feature_maps.shape[1]
+            self.mlp = nn.Sequential(
+                nn.Conv1d(in_channels, hidden_size, kernel_size=1),
+                nn.InstanceNorm1d(num_features=hidden_size),
+                nn.LeakyReLU(inplace=True),
+                nn.Conv1d(hidden_size, hidden_size, kernel_size=1),
+                nn.InstanceNorm1d(num_features=hidden_size),
+                nn.LeakyReLU(inplace=True),
+            )
+
+            self.fuse_features = nn.Conv1d(
+                hidden_size, hidden_size, kernel_size=1
+            )
+            self.fuse_features_norm = nn.LazyInstanceNorm1d()
+
+            self.fuse_features_act = AccurateGELUActivation()
+            self.final_conv = nn.Conv1d(
+                hidden_size, num_classes, kernel_size=1
+            )
+
             sequence_length = input_feature_maps.shape[2]
             if not has_exact_square_root(sequence_length):
-                closest_square_root = int(math.sqrt(sequence_length))
-                input_feature_maps = F.adaptive_avg_pool1d(
-                    input_feature_maps, closest_square_root**2
-                ).reshape(
-                    input_feature_maps.shape[0],
-                    -1,
-                    closest_square_root,
-                    closest_square_root,
+                self.closest_square_root = int(
+                    np.floor(np.sqrt(sequence_length))
                 )
-
-        in_channels = input_feature_maps.shape[1]
-        self.mlp = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_size, kernel_size=1),
-            SamLayerNorm(
-                normalized_shape=hidden_size, data_format="channels_first"
-            ),
-            nn.LeakyReLU(inplace=True),
-            nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
-            SamLayerNorm(
-                normalized_shape=hidden_size, data_format="channels_first"
-            ),
-            nn.LeakyReLU(inplace=True),
-        )
-
-        self.fuse_features = nn.Conv2d(
-            hidden_size * self.num_feature_maps, hidden_size, kernel_size=1
-        )
-        self.fuse_features_norm = nn.LazyInstanceNorm2d()
-
-        self.fuse_features_act = AccurateGELUActivation()
-        self.final_conv = nn.Conv2d(hidden_size, num_classes, kernel_size=1)
+                self.spatial_mixer = nn.Conv1d(
+                    in_features=sequence_length,
+                    out_features=self.closest_square_root**2,
+                    kernel_size=1,
+                )
+            else:
+                self.closest_square_root = int(np.sqrt(sequence_length))
 
     def forward(self, input_list: list):
         """
@@ -534,8 +563,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                 x.permute([0, 2, 1]) for x in input_feature_maps
             ]
             input_feature_maps = [
-                self.upsample(x)
-                if x.shape[1] != self.target_image_size[0]
+                F.adaptive_avg_pool1d(x, output_size=self.target_image_size)
+                if x.shape[1] != self.target_image_size
                 else x
                 for x in input_feature_maps
             ]
@@ -551,17 +580,21 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                     closest_square_root,
                     closest_square_root,
                 )
+
         logger.info(f"Upsampling took {time.time() - start_time} seconds")
+        print(f"Shape of input feature maps: {input_feature_maps.shape}")
         start_time = time.time()
+        print(f"MLP summary: {self.mlp}")
         processed_features = self.mlp(input_feature_maps)
         logger.info(f"MLP took {time.time() - start_time} seconds")
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
-        fused_features = torch.cat(processed_features, dim=1)
+        fused_features = processed_features
         logger.info(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
+        logger.info(f"Shape of fused features: {fused_features.shape}")
         fused_features = self.fuse_features(fused_features)
         fused_norm_features = self.fuse_features_norm(fused_features)
         fused_act_features = self.fuse_features_act(fused_norm_features)
@@ -571,6 +604,19 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         logger.info(
             f"Final convolution took {time.time() - start_time} seconds"
         )
+
+        if self.spatial_mixer is not None:
+            class_features = class_features.permute([0, 2, 1])
+            class_features = self.spatial_mixer(class_features)
+            class_features = class_features.permute([0, 2, 1])
+
+        if self.closest_square_root is not None:
+            class_features = class_features.reshape(
+                class_features.shape[0],
+                self.num_classes,
+                self.closest_square_root,
+                self.closest_square_root,
+            )
 
         return class_features
 

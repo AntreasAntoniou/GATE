@@ -1,3 +1,4 @@
+from math import sqrt
 import pytest
 import torch
 from torch.autograd import Variable
@@ -43,7 +44,7 @@ def test_simple_segmentation_decoder_normal_input():
 def test_simple_segmentation_decoder_sequence_input():
     bs = 2
     num_classes = 10
-    target_size = (64, 64)
+    target_size = 25
     hidden_size = 16
     sequence_input_feature_maps = [9, 16, 25]
     sequence_features = 64
@@ -63,4 +64,9 @@ def test_simple_segmentation_decoder_sequence_input():
     sequence_output = sequence_model.forward(sequence_input_list)
 
     # Check the sequence output size
-    assert sequence_output.shape == (bs, num_classes, *target_size)
+    assert sequence_output.shape == (
+        bs,
+        num_classes,
+        sqrt(target_size),
+        sqrt(target_size),
+    )
