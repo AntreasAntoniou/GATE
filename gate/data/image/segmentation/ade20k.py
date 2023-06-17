@@ -84,7 +84,7 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=150,
-    image_size=512,
+    image_size=1024,
     target_image_size=256,
 ) -> dict:
     dataset_transforms = DatasetTransforms(image_size, target_image_size)
