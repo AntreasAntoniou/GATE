@@ -138,6 +138,43 @@ class ImageSemanticSegmentationTrainer(ClassificationTrainer):
             target_modality="image",
         )
 
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        start_time = time.time()
+        output_dict = model.forward(batch)[self.target_modality][
+            self.source_modality
+        ]
+        logger.debug(f"Forward time {time.time() - start_time}")
+
+        loss = output_dict["loss"]
+
+        start_time = time.time()
+        accelerator.backward(loss)
+        logger.debug(f"Backward time {time.time() - start_time}")
+
+        if "logits" in output_dict:
+            if global_step % 100 == 0:
+                output_dict["seg_episode"] = {
+                    "image": batch["image"],
+                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
+                    "label": batch["labels"].squeeze(1),
+                    "label_idx_to_description": {
+                        i: str(i)
+                        for i in range(output_dict["logits"].shape[1])
+                    },
+                }
+
+            del output_dict["logits"]
+
+        for key, value in output_dict.items():
+            if "loss" in key or "iou" in key or "accuracy" in key:
+                if isinstance(value, torch.Tensor):
+                    self.current_epoch_dict[key].append(value.detach().cpu())
+
+        return StepOutput(
+            output_metrics_dict=output_dict,
+            loss=loss,
+        )
+
 
 @configurable(group="trainer", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationTrainer):

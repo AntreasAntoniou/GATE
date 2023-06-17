@@ -153,14 +153,16 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         loss = output_dict["loss"]
 
         if "logits" in output_dict:
-            output_dict["seg_episode"] = {
-                "image": batch["image"],
-                "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
-                "label": batch["labels"].squeeze(1),
-                "label_idx_to_description": {
-                    i: str(i) for i in range(output_dict["logits"].shape[1])
-                },
-            }
+            if global_step % 100 == 0:
+                output_dict["seg_episode"] = {
+                    "image": batch["image"],
+                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
+                    "label": batch["labels"].squeeze(1),
+                    "label_idx_to_description": {
+                        i: str(i)
+                        for i in range(output_dict["logits"].shape[1])
+                    },
+                }
 
             # output_dict["ae_episode"] = {
             #     "image": F.interpolate(
@@ -175,7 +177,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             # }
 
             del output_dict["logits"]
-            # del output_dict["ae_output"]
+        # del output_dict["ae_output"]
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
