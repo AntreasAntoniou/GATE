@@ -306,7 +306,7 @@ def download_model_with_name(
         "optimizer.bin": "optimizer_filepath",
         "pytorch_model.bin": "model_filepath",
         "random_states_0.pkl": "random_states_filepath",
-        # "scaler.pt": "scaler_filepath",
+        "scaler.pt": "scaler_filepath",
     }
 
     downloaded_files = {}
@@ -317,7 +317,8 @@ def download_model_with_name(
             download_and_copy(filename, target_path)
             downloaded_files[key] = target_path
         except Exception as e:
-            invalid_download = True
+            if filename != "scaler.pt":
+                invalid_download = True
             logger.info(f"Error downloading {filename}: {e}")
     # Handle config.yaml separately
     config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
