@@ -549,6 +549,8 @@ class SegmentationViT(nn.Module):
             logger.info(f"Encoder took {time.time() - start_time} seconds")
 
         if self.decoder is None:
+            feature_shapes = [x.shape for x in features]
+            logger.info(f"Feature shapes: {feature_shapes}")
             if len(features[0].shape) == 3:
                 sequence_lengths = [
                     int(math.sqrt(x.shape[1])) for x in features
