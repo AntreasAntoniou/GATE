@@ -399,7 +399,7 @@ class SimpleSegmentationDecoder(nn.Module):
                     x = x.reshape(-1, num_features, square_root, square_root)
             logger.debug(f"Reshaping took {time.time() - start_time} seconds")
             # Apply pixel-wise MLP
-            # logger.info(f"Input shape: {x.shape}, MLP: {mlp}")
+            # logger.debug(f"Input shape: {x.shape}, MLP: {mlp}")
             start_time = time.time()
             processed_x = mlp(x)
             logger.debug(f"MLP took {time.time() - start_time} seconds")
@@ -596,27 +596,31 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                     closest_square_root,
                 )
 
-        logger.info(f"Upsampling took {time.time() - start_time} seconds")
-        print(f"Shape of input feature maps: {input_feature_maps.shape}")
+        logger.debug(f"Upsampling took {time.time() - start_time} seconds")
+        logger.debug(
+            f"Shape of input feature maps: {input_feature_maps.shape}"
+        )
         start_time = time.time()
-        print(f"MLP summary: {self.mlp}")
+        logger.debug(f"MLP summary: {self.mlp}")
         processed_features = self.mlp(input_feature_maps)
-        logger.info(f"MLP took {time.time() - start_time} seconds")
+        logger.debug(f"MLP took {time.time() - start_time} seconds")
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
         fused_features = processed_features
-        logger.info(f"Concatenation took {time.time() - start_time} seconds")
+        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
-        logger.info(f"Shape of fused features: {fused_features.shape}")
+        logger.debug(f"Shape of fused features: {fused_features.shape}")
         fused_features = self.fuse_features(fused_features)
         fused_norm_features = self.fuse_features_norm(fused_features)
         fused_act_features = self.fuse_features_act(fused_norm_features)
-        logger.info(f"Fusing features took {time.time() - start_time} seconds")
+        logger.debug(
+            f"Fusing features took {time.time() - start_time} seconds"
+        )
         start_time = time.time()
         class_features = self.final_conv(fused_act_features)
-        logger.info(
+        logger.debug(
             f"Final convolution took {time.time() - start_time} seconds"
         )
 
@@ -718,7 +722,7 @@ class SegmentationViT(nn.Module):
                 try:
                     metrics = fast_miou(logits, labels)
                 except Exception as e:
-                    logger.info(f"Exception: {e}")
+                    logger.debug(f"Exception: {e}")
                     metrics = {}
                 output_dict = output_dict | metrics
 
@@ -741,8 +745,8 @@ class SegmentationViT(nn.Module):
         """
 
         if self.debug_mode:
-            logger.info(f"Image shape: {image.shape}")
-            logger.info(
+            logger.debug(f"Image shape: {image.shape}")
+            logger.debug(
                 f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
             )
 
@@ -750,11 +754,11 @@ class SegmentationViT(nn.Module):
         start_time = time.time()
         features = self.encoder(image)["image"]["per_layer_raw_features"]
         if self.debug_mode:
-            logger.info(f"Encoder took {time.time() - start_time} seconds")
+            logger.debug(f"Encoder took {time.time() - start_time} seconds")
 
         if self.decoder is None:
             feature_shapes = [x.shape for x in features]
-            logger.info(f"Feature shapes: {feature_shapes}")
+            logger.debug(f"Feature shapes: {feature_shapes}")
             if len(features[0].shape) == 3:
                 sequence_lengths = [
                     int(math.sqrt(x.shape[1])) for x in features
@@ -786,8 +790,8 @@ class SegmentationViT(nn.Module):
             mask_predictions = self.decoder(features)
 
         if self.debug_mode:
-            logger.info(f"Decoder took {time.time() - start_time} seconds")
-            logger.info(f"Mask predictions shape: {mask_predictions.shape}")
+            logger.debug(f"Decoder took {time.time() - start_time} seconds")
+            logger.debug(f"Mask predictions shape: {mask_predictions.shape}")
 
         output = {
             "logits": F.interpolate(
@@ -805,6 +809,6 @@ class SegmentationViT(nn.Module):
                 )
 
             except Exception as e:
-                logger.info(f"Exception: {e}")
+                logger.debug(f"Exception: {e}")
 
         return output
