@@ -586,7 +586,7 @@ class SegmentationViT(nn.Module):
         output = {
             "logits": F.interpolate(
                 mask_predictions,
-                size=(64, 64),
+                size=(256, 256),
                 mode="bicubic",
                 align_corners=True,
             )
@@ -595,13 +595,7 @@ class SegmentationViT(nn.Module):
         if return_loss_and_metrics:
             try:
                 output |= self.compute_loss_and_metrics(
-                    logits=output["logits"],
-                    labels=F.interpolate(
-                        labels.float(),
-                        size=(64, 64),
-                        mode="bicubic",
-                        align_corners=True,
-                    ).long(),
+                    logits=output["logits"], labels=labels
                 )
 
             except Exception as e:
