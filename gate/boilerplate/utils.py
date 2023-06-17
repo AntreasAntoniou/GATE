@@ -441,6 +441,9 @@ def create_hf_model_repo_and_download_maybe(
         remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
         remote_ckpt_dict = get_checkpoint_dict(remote_files)
         remote_ckpt_names = sorted(list(remote_ckpt_dict.keys()), reverse=True)
+        logger.info(
+            f"remote ckpt dict: {remote_ckpt_dict}, remote ckpt names: {remote_ckpt_names}"
+        )
     else:
         remote_ckpt_names = []
 
@@ -449,6 +452,10 @@ def create_hf_model_repo_and_download_maybe(
         int(file.split("checkpoints/ckpt_")[1]): file for file in local_files
     }
     local_ckpt_names = sorted(list(local_ckpt_dict.keys()), reverse=True)
+
+    logger.info(
+        f"local ckpt dict: {local_ckpt_dict}, local ckpt names: {local_ckpt_names}"
+    )
 
     mixed_ckpt_list = remote_ckpt_names + local_ckpt_names
     mixed_ckpt_list = sorted(list(set(mixed_ckpt_list)), reverse=True)
@@ -467,9 +474,6 @@ def create_hf_model_repo_and_download_maybe(
         valid_model_downloaded = False
         idx = 0
 
-        print(
-            f"local ckpt dict: {local_ckpt_dict}, remote ckpt dict: {remote_ckpt_dict}"
-        )
         while not valid_model_downloaded:
             if len(remote_ckpt_dict) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
