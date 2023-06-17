@@ -150,7 +150,7 @@ def run(cfg: Any) -> None:
         dataset, global_step
     )
 
-    model.meta_data = train_dataset.meta_data
+    model.meta_data = val_dataset.meta_data
 
     train_dataloader = instantiate_dataloader(
         cfg, train_dataset, cfg.train_batch_size, shuffle=True
