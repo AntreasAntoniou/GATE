@@ -366,7 +366,6 @@ def fast_miou(
         {
             "pred_sem_seg": {"data": logits},
             "gt_sem_seg": {"data": labels},
-            "img_path": "dummy_path",
         }
     ]
 
