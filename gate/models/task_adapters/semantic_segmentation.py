@@ -747,6 +747,15 @@ class SegmentationViT(nn.Module):
             feature_shapes = [x.shape for x in features]
             logger.debug(f"Feature shapes: {feature_shapes}")
             if len(features[0].shape) == 3:
+                total_feature_blocks = len(features)
+                one_quarter_block = total_feature_blocks // 4
+                three_quarter_block = total_feature_blocks - one_quarter_block
+                features = [
+                    features[0],
+                    features[one_quarter_block],
+                    features[three_quarter_block],
+                    features[-1],
+                ]
                 sequence_lengths = [x.shape[1] for x in features]
                 largest_feature_map = max(sequence_lengths)
                 max_height = largest_feature_map
