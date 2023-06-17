@@ -586,7 +586,7 @@ class SegmentationViT(nn.Module):
         output = {
             "logits": F.interpolate(
                 mask_predictions,
-                size=(256, 256),
+                size=(64, 64),
                 mode="bicubic",
                 align_corners=True,
             )
