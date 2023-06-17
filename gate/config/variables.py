@@ -36,7 +36,7 @@ RESUME = get_env_var("RESUME", True)
 LOGGER_LEVEL = get_env_var("LOGGER_LEVEL", "INFO")
 DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
 GPU_MEMORY = 24  # in GB
-HF_OFFLINE_MODE = get_env_var("OFFLINE_MODE", False)
+HF_OFFLINE_MODE = get_env_var("HF_OFFLINE_MODE", False)
 WANDB_OFFLINE_MODE = get_env_var("WANDB_OFFLINE_MODE", False)
 
 ## Define yaml variable access codes here
