@@ -2,9 +2,9 @@ import functools
 import importlib
 import inspect
 import pkgutil
-from collections import defaultdict
 import threading
 import time
+from collections import defaultdict
 from typing import Any, Callable, Dict, Optional
 
 import torch

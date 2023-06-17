@@ -1,6 +1,6 @@
 # imdb.py
-from dataclasses import dataclass
 import multiprocessing as mp
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import numpy as np

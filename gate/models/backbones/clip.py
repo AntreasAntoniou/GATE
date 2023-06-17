@@ -5,14 +5,14 @@ from urllib.request import urlopen
 import torch
 import torch.nn as nn
 from PIL import Image
+from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import (
     CLIPOutput,
     CLIPVisionEmbeddings,
 )
-from torchvision import transforms as T
-from gate.boilerplate.utils import get_logger
 
+from gate.boilerplate.utils import get_logger
 from gate.models.backbones import (
     Modality,
     apply_preprocessing_transforms,

@@ -1,14 +1,14 @@
-from collections import OrderedDict
 import math
-from functools import partial
 import time
+from collections import OrderedDict
+from functools import partial
 from typing import Dict, List, Optional
-from datasets.table import pa
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from datasets.table import pa
 from rich import print
 from timm.models.vision_transformer import Block
 from transformers import (
@@ -23,6 +23,7 @@ from transformers.models.sam.modeling_sam import (
     SamLayerNorm,
     SamMaskDecoder,
 )
+
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
