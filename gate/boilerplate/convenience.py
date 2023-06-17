@@ -64,7 +64,7 @@ def log_wandb_parameters(config_dict: dict, global_step: int) -> None:
     wandb.config.update({"init_global_step": global_step})
 
 
-def get_datasets(dataset: GATEDataset, global_step: int):
+def get_datasets(dataset: Dict[str, GATEDataset], global_step: int):
     """
     Get training, validation, and test datasets.
 
