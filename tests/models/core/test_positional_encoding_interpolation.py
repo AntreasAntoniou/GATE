@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 from gate.models.backbones import interpolate_position_encoding
 

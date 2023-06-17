@@ -51,9 +51,10 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     return x
 
 
-import torch
-from torch import nn, Tensor
 import math
+
+import torch
+from torch import Tensor, nn
 
 
 def interpolate_position_encoding(

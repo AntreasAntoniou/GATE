@@ -13,13 +13,13 @@ import sys
 import time
 
 import hydra
+import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
 from torch.utils.data import Subset
 
-import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -53,16 +53,13 @@ logger = get_logger(name=__name__)
 
 accelerator = Accelerator()
 
-from rich import print
-from rich.table import Table
 import torch
-from torch import nn
-
-
+from rich import print
 from rich.console import Console
-from rich.table import Table
 from rich.style import Style
+from rich.table import Table
 from rich.text import Text
+from torch import nn
 
 
 def pretty_print_parameters(model: nn.Module):

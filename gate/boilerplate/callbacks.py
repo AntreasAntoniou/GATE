@@ -5,12 +5,12 @@ import threading
 from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, List, Union
-from numpy import False_
 
 import torch
 import torch.nn as nn
 from huggingface_hub import HfApi
 from hydra_zen import instantiate
+from numpy import False_
 from torch.utils.data import DataLoader
 
 from .utils import get_logger

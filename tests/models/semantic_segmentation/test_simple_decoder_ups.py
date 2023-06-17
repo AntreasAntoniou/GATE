@@ -1,4 +1,5 @@
 from math import sqrt
+
 import pytest
 import torch
 from torch.autograd import Variable

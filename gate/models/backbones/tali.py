@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Optional, Union
 import accelerate
 import torch
 import torch.nn as nn
-from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
+import torchvision.transforms as T
 import yaml
 from omegaconf import DictConfig
 from rich import print
 from tali.models import MultiModalityConfig, TALIModel
 from tali.utils import download_model_with_name
 from transformers import CLIPProcessor, WhisperProcessor
-import torchvision.transforms as T
+from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
 from gate.models.backbones import (

@@ -1,12 +1,12 @@
+import requests
+from PIL import Image
 from rich.table import Table
 from rich.traceback import pretty
 from torch import nn
 from transformers import (
-    SegformerImageProcessor,
     SegformerForSemanticSegmentation,
+    SegformerImageProcessor,
 )
-from PIL import Image
-import requests
 
 
 def pretty_print_parameters(model: nn.Module):

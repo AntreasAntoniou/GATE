@@ -8,10 +8,7 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import (
-    collect_metrics,
-    configurable,
-)
+from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k

@@ -1,6 +1,6 @@
+import numpy as np
 import pytest
 import torch
-import numpy as np
 import wandb
 
 from gate.boilerplate.utils import log_wandb_masks

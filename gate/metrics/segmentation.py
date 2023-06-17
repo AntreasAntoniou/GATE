@@ -1,8 +1,9 @@
 import time
+
+import evaluate
 import monai
 import torch
 import torch.nn.functional as F
-import evaluate
 
 from gate.boilerplate.utils import get_logger
 
@@ -175,8 +176,9 @@ def diff_sigmoid_focal_loss(
     return loss.mean()
 
 
+from typing import Dict, Optional
+
 import torch
-from typing import Optional, Dict
 
 
 def intersect_and_union(
@@ -419,11 +421,6 @@ def one_hot(labels: torch.Tensor, num_classes: int):
     )
     one_hot_vectors.scatter_(1, labels.unsqueeze(1), 1.0)
     return one_hot_vectors
-
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 
 import torch
