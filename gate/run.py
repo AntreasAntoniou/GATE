@@ -59,24 +59,31 @@ import torch
 from torch import nn
 
 
-def pretty_print_parameters(model: nn.Module):
-    table = Table(title="Model Parameters")
+from rich.console import Console
+from rich.table import Table
+from rich.style import Style
+from rich.text import Text
 
-    table.add_column("Name", justify="left")
-    table.add_column("Shape", justify="center")
-    table.add_column("Data Type", justify="center")
-    table.add_column("Device", justify="center")
+
+def pretty_print_parameters(model: nn.Module):
+    console = Console()
+
+    table = Table(title=Text("Model Parameters", style=Style(color="green")))
+
+    table.add_column("Name", justify="left", style="cyan")
+    table.add_column("Shape", justify="center", style="magenta")
+    table.add_column("Data Type", justify="center", style="yellow")
+    table.add_column("Device", justify="center", style="green")
 
     for name, param in model.named_parameters():
         table.add_row(
-            str(name),
-            str(tuple(param.shape)),
-            str(param.dtype),
-            str(param.device),
-            style="one-dark",
+            Text(str(name), style=Style(color="blue")),
+            Text(str(tuple(param.shape)), style=Style(color="red")),
+            Text(str(param.dtype), style=Style(color="yellow")),
+            Text(str(param.device), style=Style(color="green")),
         )
 
-    print(table)
+    console.print(table)
     return table
 
 
