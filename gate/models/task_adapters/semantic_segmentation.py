@@ -597,13 +597,11 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                 )
 
         logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-        logger.debug(
-            f"Shape of input feature maps: {input_feature_maps.shape}"
-        )
+        logger.info(f"Shape of input feature maps: {input_feature_maps.shape}")
         start_time = time.time()
-        logger.debug(f"MLP summary: {self.mlp}")
+        logger.info(f"MLP summary: {self.mlp}")
         processed_features = self.mlp(input_feature_maps)
-        logger.debug(f"MLP took {time.time() - start_time} seconds")
+        logger.info(f"MLP took {time.time() - start_time} seconds")
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
         fused_features = processed_features
