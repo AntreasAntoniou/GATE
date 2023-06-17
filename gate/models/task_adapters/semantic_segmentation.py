@@ -586,11 +586,13 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
         logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-        logger.info(f"Shape of input feature maps: {input_feature_maps.shape}")
+        logger.debug(
+            f"Shape of input feature maps: {input_feature_maps.shape}"
+        )
         start_time = time.time()
-        logger.info(f"MLP summary: {self.mlp}")
+        logger.debug(f"MLP summary: {self.mlp}")
         processed_features = self.mlp(input_feature_maps)
-        logger.info(f"MLP took {time.time() - start_time} seconds")
+        logger.debug(f"MLP took {time.time() - start_time} seconds")
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
         fused_features = processed_features
@@ -753,7 +755,7 @@ class SegmentationViT(nn.Module):
             ]
 
         # for f in features:
-        #     logger.info(f"Feature shape: {f.shape}")
+        #     logger.debug(f"Feature shape: {f.shape}")
 
         if self.debug_mode:
             logger.debug(f"Encoder took {time.time() - start_time} seconds")
