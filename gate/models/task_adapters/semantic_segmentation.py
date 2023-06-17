@@ -740,6 +740,10 @@ class SegmentationViT(nn.Module):
         batch, _, height, width = image.shape
         start_time = time.time()
         features = self.encoder(image)["image"]["per_layer_raw_features"]
+
+        for f in features:
+            logger.info(f"Feature shape: {f.shape}")
+
         if self.debug_mode:
             logger.debug(f"Encoder took {time.time() - start_time} seconds")
 
