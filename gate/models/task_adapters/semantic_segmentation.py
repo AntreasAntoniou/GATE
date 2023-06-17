@@ -487,9 +487,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                 nn.Conv2d(
                     in_channels, self.num_blocks * hidden_size, kernel_size=1
                 ),
-                SamLayerNorm(
-                    normalized_shape=self.num_blocks * hidden_size,
-                    data_format="channels_first",
+                nn.InstanceNorm2d(
+                    num_features=self.num_blocks * hidden_size,
                 ),
                 nn.LeakyReLU(inplace=True),
                 nn.Conv2d(
@@ -497,9 +496,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                     self.num_blocks * hidden_size,
                     kernel_size=1,
                 ),
-                SamLayerNorm(
-                    normalized_shape=self.num_blocks * hidden_size,
-                    data_format="channels_first",
+                nn.InstanceNorm2d(
+                    num_features=self.num_blocks * hidden_size,
                 ),
                 nn.LeakyReLU(inplace=True),
             )

@@ -271,12 +271,12 @@ def download_model_with_name(
                 "optimizer_filepath": ckpt_dir / "optimizer.bin",
                 "model_filepath": ckpt_dir / "pytorch_model.bin",
                 "random_states_filepath": ckpt_dir / "random_states_0.pkl",
-                "config_filepath": ckpt_dir / "config.yaml",
                 "root_filepath": ckpt_dir,
                 "validation_passed": True,
             }
             for key, value in path_dict.items():
                 if isinstance(value, pathlib.Path):
+                    print(f"Checking {key} exists: {value.exists()}")
                     if not value.exists():
                         validated_ckpt_dir = False
                         break
@@ -389,7 +389,8 @@ def download_checkpoint(
     logger.info(
         f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging Face hub 👨🏻‍💻"
     )
-    ckpt_identifier = f"ckpt_{ckpt_identifier}"
+    if isinstance(ckpt_identifier, int):
+        ckpt_identifier = f"ckpt_{ckpt_identifier}"
 
     path_dict = download_model_with_name(
         hf_repo_path,
