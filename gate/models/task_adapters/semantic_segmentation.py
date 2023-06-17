@@ -597,13 +597,11 @@ class SegmentationViT(nn.Module):
                 output |= self.compute_loss_and_metrics(
                     logits=output["logits"],
                     labels=F.interpolate(
-                        labels.unsqueeze(1).float(),
+                        labels.float(),
                         size=(64, 64),
                         mode="bicubic",
                         align_corners=True,
-                    )
-                    .squeeze(1)
-                    .long(),
+                    ).long(),
                 )
 
             except Exception as e:
