@@ -1,39 +1,30 @@
 # Based on: https://github.com/pytorch/examples/blob/master/mnist/main.py
-import os
 import argparse
 import functools
+import os
+
 import torch
+import torch.distributed as dist
+import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
-
-
-from torch.optim.lr_scheduler import StepLR
-
-import torch.distributed as dist
-import torch.multiprocessing as mp
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data.distributed import DistributedSampler
+from torch.distributed.fsdp import BackwardPrefetch, FullStateDictConfig
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp.fully_sharded_data_parallel import (
-    CPUOffload,
-    BackwardPrefetch,
-)
-
 from torch.distributed.fsdp import (
-    FullyShardedDataParallel as FSDP,
     MixedPrecision,
-    BackwardPrefetch,
     ShardingStrategy,
-    FullStateDictConfig,
     StateDictType,
 )
-from torch.distributed.fsdp.wrap import (
-    always_wrap_policy,
-    enable_wrap,
-    wrap,
+from torch.distributed.fsdp.fully_sharded_data_parallel import (
+    BackwardPrefetch,
+    CPUOffload,
 )
+from torch.distributed.fsdp.wrap import always_wrap_policy, enable_wrap, wrap
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data.distributed import DistributedSampler
+from torchvision import datasets, transforms
 
 from gate.data.image_text.zero_shot.flickr30k import (
     build_dataset,
