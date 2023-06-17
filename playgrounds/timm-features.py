@@ -1,8 +1,8 @@
-import torch
-import timm
-from rich import print
-
 import inspect
+
+import timm
+import torch
+from rich import print
 
 
 def get_class_definition_path(obj):

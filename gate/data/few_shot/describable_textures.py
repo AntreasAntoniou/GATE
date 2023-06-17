@@ -3,11 +3,11 @@ import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
+import datasets
 import PIL
 import torch
 from rich import print
 from torchvision import transforms as T
-import datasets
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger

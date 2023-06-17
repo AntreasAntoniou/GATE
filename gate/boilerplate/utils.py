@@ -517,12 +517,10 @@ def count_files_recursive(directory: str) -> int:
     return file_count
 
 
-import wandb
 import numpy as np
 import torch
 import torchvision.transforms as T
-
-import torch
+import wandb
 
 
 def normalize_image(image: torch.Tensor) -> torch.Tensor:
