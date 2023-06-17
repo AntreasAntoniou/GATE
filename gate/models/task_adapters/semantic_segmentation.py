@@ -576,15 +576,14 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         elif len(input_feature_maps[0].shape) == 3:
             input_feature_maps = [
                 x.permute([0, 2, 1]) for x in input_feature_maps
-            ]
+            ]  # (b, sequence, features) -> (b, features, sequence)
             input_feature_maps = [
                 F.adaptive_avg_pool1d(x, output_size=self.target_image_size)
-                if x.shape[1] != self.target_image_size
+                if x.shape[2] != self.target_image_size
                 else x
                 for x in input_feature_maps
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
-            sequence_length = input_feature_maps.shape[2]
 
         logger.debug(f"Upsampling took {time.time() - start_time} seconds")
         logger.info(f"Shape of input feature maps: {input_feature_maps.shape}")
@@ -748,9 +747,7 @@ class SegmentationViT(nn.Module):
             feature_shapes = [x.shape for x in features]
             logger.debug(f"Feature shapes: {feature_shapes}")
             if len(features[0].shape) == 3:
-                sequence_lengths = [
-                    int(math.sqrt(x.shape[1])) for x in features
-                ]
+                sequence_lengths = [x.shape[1] for x in features]
                 largest_feature_map = max(sequence_lengths)
                 max_height = largest_feature_map
                 max_width = largest_feature_map
