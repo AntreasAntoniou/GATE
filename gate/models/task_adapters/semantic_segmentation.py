@@ -546,8 +546,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
                     np.floor(np.sqrt(sequence_length))
                 )
                 self.spatial_mixer = nn.Conv1d(
-                    in_features=sequence_length,
-                    out_features=self.closest_square_root**2,
+                    in_channels=sequence_length,
+                    out_channels=self.closest_square_root**2,
                     kernel_size=1,
                 )
             else:
