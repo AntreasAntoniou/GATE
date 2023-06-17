@@ -356,7 +356,7 @@ def miou_metrics(
         labels=labels,
         num_labels=num_classes,
         ignore_index=ignore_index,
-        nan_to_num=1e-8,
+        nan_to_num=None,
     )
 
     iou = IoUMetric(ignore_index=ignore_index)

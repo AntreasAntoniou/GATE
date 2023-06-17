@@ -375,9 +375,11 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         self.should_stop = False  # Flag to indicate the thread should stop
         self.timeout = timeout  # Timeout in seconds
         self.start_time = None
+        self.started = False
 
     def run(self):
         self.start_time = time.time()
+        self.started = True
         hf_logger = get_logger("huggingface_hub")
         hf_logger.setLevel(logging.ERROR)
         for handler in hf_logger.handlers:
