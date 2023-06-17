@@ -369,7 +369,8 @@ def fast_miou(
             "img_path": "dummy_path",
         }
     ]
-    iou.process(data_samples=data_samples)
+
+    iou.process(data_batch=None, data_samples=data_samples)
 
     print(iou.results)
 
