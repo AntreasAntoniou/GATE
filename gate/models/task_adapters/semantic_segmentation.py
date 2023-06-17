@@ -318,7 +318,6 @@ class SimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
-        class_names: Optional[List[str]] = None,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
@@ -333,7 +332,6 @@ class SimpleSegmentationDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_classes = num_classes
         self.target_size = target_image_size
-        self.class_names = class_names
 
         self.pixel_wise_mlps = nn.ModuleList()
 
@@ -442,7 +440,6 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
-        class_names: Optional[List[str]] = None,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
@@ -457,7 +454,6 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_classes = num_classes
         self.target_image_size = target_image_size
-        self.class_names = class_names
 
         self.pixel_wise_mlps = nn.ModuleList()
         self.upsample = nn.Upsample(
@@ -645,6 +641,8 @@ class SegmentationViT(nn.Module):
         num_patches: int = 14,
         background_weight: float = 0.01,
         background_class: int = 0,
+        class_names: Optional[List[str]] = None,
+        ignore_index: int = 0,
         **kwargs,
     ):
         """
@@ -667,6 +665,8 @@ class SegmentationViT(nn.Module):
         self.num_classes = num_classes
         self.background_weight = background_weight
         self.background_class = background_class
+        self.class_names = class_names
+        self.ignore_index = ignore_index
 
         self.decoder_embedding_dimension = decoder_embed_dim
 
@@ -712,7 +712,9 @@ class SegmentationViT(nn.Module):
                 logger.exception(f"Exception: {e}")
             if not self.training:
                 try:
-                    metrics = fast_miou(logits, labels)
+                    metrics = fast_miou(
+                        logits, labels, self.ignore_index, self.class_names
+                    )
                 except Exception as e:
                     logger.debug(f"Exception: {e}")
                     metrics = {}
