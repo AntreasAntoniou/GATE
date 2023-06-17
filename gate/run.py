@@ -87,17 +87,17 @@ def pretty_print_parameters(model: nn.Module):
     return table
 
 
-# function to handle the alarm signal
-def handle_alarm(signum, frame):
-    print("Error: The application took longer than expected.")
-    sys.exit(1)  # exit with error status
+# # function to handle the alarm signal
+# def handle_alarm(signum, frame):
+#     print("Error: The application took longer than expected.")
+#     sys.exit(1)  # exit with error status
 
 
-# set the signal handler
-signal.signal(signal.SIGALRM, handle_alarm)
+# # set the signal handler
+# signal.signal(signal.SIGALRM, handle_alarm)
 
-# set an alarm for 200 minutes
-signal.alarm(60 * 200)
+# # set an alarm for 200 minutes
+# signal.alarm(60 * 200)
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
