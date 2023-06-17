@@ -24,7 +24,7 @@ CURRENT_EXPERIMENT_DIR = get_env_var(
 TRAIN_BATCH_SIZE = get_env_var("TRAIN_BATCH_SIZE", 128)
 EVAL_BATCH_SIZE = get_env_var("EVAL_BATCH_SIZE", 256)
 NUM_WORKERS = get_env_var(
-    "NUM_WORKERS", mp.cpu_count() // 2
+    "NUM_WORKERS", mp.cpu_count() // 4
 )  # min(mp.cpu_count(), 16))
 PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", False)
@@ -43,6 +43,7 @@ HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
 HYDRATED_LABEL_IDX_TO_CLASS_NAME = "${dataset.label_idx_to_class_name}"
 HYDRATED_NUM_CLASSES = "${dataset.num_classes}"
+HYDRATED_IMAGE_SIZE = "${dataset.image_size}"
 HYDRATED_TRAINER_CONFIG = "${trainer}"
 HYDRATED_EVALUATOR_CONFIG = "${evaluator}"
 

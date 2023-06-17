@@ -8,7 +8,10 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.decorators import (
+    collect_metrics,
+    configurable,
+)
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.core import accuracy_top_k
@@ -42,9 +45,8 @@ class StepOutput:
 
 class ClassificationEvaluator(Evaluator):
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        output_dict = model.forward(batch)[self.target_modality][
-            self.source_modality
-        ]
+        output_dict = model.forward(batch)
+        output_dict = output_dict[self.target_modality][self.source_modality]
 
         loss = output_dict["loss"]
 
@@ -60,7 +62,6 @@ class ClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    @collect_metrics
     def validation_step(
         self,
         model,
@@ -87,7 +88,6 @@ class ClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    @collect_metrics
     def testing_step(
         self,
         model,
@@ -128,6 +128,103 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
             model_selection_metric_name="accuracy_top_1-epoch-mean",
             model_selection_metric_higher_is_better=True,
         )
+
+
+@configurable(group="evaluator", name="image_semantic_segmentation")
+class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            experiment_tracker,
+            source_modality="image",
+            target_modality="image",
+            model_selection_metric_name="mean_iou-epoch-mean",
+            model_selection_metric_higher_is_better=True,
+        )
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        # start_time = time.time()
+        output_dict = model.forward(batch)
+        # logger.info(f"forward time: {time.time() - start_time}")
+        output_dict = output_dict[self.target_modality][self.source_modality]
+
+        loss = output_dict["loss"]
+
+        if "logits" in output_dict:
+            if self.starting_eval:
+                height, width = output_dict["logits"].shape[-2:]
+                output_dict["seg_episode"] = {
+                    "image": F.interpolate(
+                        batch["image"], size=(height, width)
+                    ),
+                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
+                    "label": batch["labels"].squeeze(1),
+                    "label_idx_to_description": {
+                        i: str(i)
+                        for i in range(output_dict["logits"].shape[1])
+                    },
+                }
+                self.starting_eval = False
+
+            # output_dict["ae_episode"] = {
+            #     "image": F.interpolate(
+            #         batch["image"],
+            #         size=(
+            #             output_dict["ae_output"].shape[2],
+            #             output_dict["ae_output"].shape[3],
+            #         ),
+            #         mode="bicubic",
+            #     ),
+            #     "recon": output_dict["ae_output"],
+            # }
+
+            del output_dict["logits"]
+        # del output_dict["ae_output"]
+
+        for key, value in output_dict.items():
+            if "loss" in key or "iou" in key or "accuracy" in key:
+                if isinstance(value, torch.Tensor):
+                    self.current_epoch_dict[key].append(
+                        value.detach().float().mean().cpu()
+                    )
+
+        return StepOutput(
+            metrics=output_dict,
+            loss=loss,
+        )
+
+    @collect_metrics
+    def validation_step(
+        self, model, batch, global_step, accelerator: Accelerator
+    ):
+        output: EvaluatorOutput = super().validation_step(
+            model, batch, global_step, accelerator
+        )
+
+        if "seg_episode" in output.metrics:
+            seg_episode = output.metrics["seg_episode"]
+            # ae_episode = output.metrics["ae_episode"]
+            output.metrics = {"seg_episode": seg_episode}
+        else:
+            output.metrics = {}
+        return output
+
+    @collect_metrics
+    def testing_step(
+        self, model, batch, global_step, accelerator: Accelerator
+    ):
+        output: EvaluatorOutput = super().testing_step(
+            model, batch, global_step, accelerator
+        )
+        if "seg_episode" in output.metrics:
+            seg_episode = output.metrics["seg_episode"]
+            # ae_episode = output.metrics["ae_episode"]
+            output.metrics = {"seg_episode": seg_episode}
+        else:
+            output.metrics = {}
+        return output
 
 
 @configurable(group="evaluator", name="visual_relational_reasoning")

@@ -3,6 +3,8 @@ import importlib
 import inspect
 import pkgutil
 from collections import defaultdict
+import threading
+import time
 from typing import Any, Callable, Dict, Optional
 
 import torch
@@ -12,7 +14,11 @@ from hydra_zen import builds, instantiate
 from rich import print
 from traitlets import default
 
-from gate.boilerplate.utils import get_logger
+from gate.boilerplate.utils import (
+    get_logger,
+    log_wandb_images,
+    log_wandb_masks,
+)
 
 logger = get_logger(__name__)
 
@@ -91,6 +97,57 @@ def register_configurables(
             _process_module(module_name)
 
 
+class BackgroundLogging(threading.Thread):
+    def __init__(
+        self, experiment_tracker, metrics_dict, phase_name, global_step
+    ):
+        super().__init__()
+        self.experiment_tracker = experiment_tracker
+        self.metrics_dict = metrics_dict
+        self.phase_name = phase_name
+        self.global_step = global_step
+
+    def run(self):
+        for metric_key, computed_value in self.metrics_dict.items():
+            if computed_value is not None:
+                value = (
+                    computed_value.detach()
+                    if isinstance(computed_value, torch.Tensor)
+                    else computed_value
+                )
+                # print(f"logging {metric_key}")
+                if "seg_episode" in metric_key:
+                    # print("logging seg episode")
+                    seg_episode = value
+
+                    log_wandb_masks(
+                        experiment_tracker=self.experiment_tracker,
+                        images=seg_episode["image"],
+                        logits=seg_episode["logits"],
+                        labels=seg_episode["label"],
+                        label_idx_to_description=seg_episode[
+                            "label_idx_to_description"
+                        ],
+                        global_step=self.global_step,
+                    )
+                    continue
+                if "ae_episode" in metric_key:
+                    # print("logging ae episode")
+                    ae_episode = value
+                    log_wandb_images(
+                        experiment_tracker=self.experiment_tracker,
+                        images=ae_episode["image"],
+                        reconstructions=ae_episode["recon"],
+                        global_step=self.global_step,
+                    )
+                    continue
+
+                self.experiment_tracker.log(
+                    {f"{self.phase_name}/{metric_key}": value},
+                    step=self.global_step,
+                )
+
+
 def collect_metrics(func: Callable) -> Callable:
     def collect_metrics(
         metrics_dict: dict(),
@@ -98,6 +155,7 @@ def collect_metrics(func: Callable) -> Callable:
         experiment_tracker: Any,
         global_step: int,
     ) -> None:
+        detached_metrics_dict = {}
         for metric_key, computed_value in metrics_dict.items():
             if computed_value is not None:
                 value = (
@@ -105,9 +163,12 @@ def collect_metrics(func: Callable) -> Callable:
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
-                wandb.log(
-                    {f"{phase_name}/{metric_key}": value}, step=global_step
-                )
+                detached_metrics_dict[metric_key] = value
+
+        logging_thread = BackgroundLogging(
+            wandb, detached_metrics_dict, phase_name, global_step
+        )
+        logging_thread.start()
 
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):

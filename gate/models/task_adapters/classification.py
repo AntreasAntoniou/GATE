@@ -4,16 +4,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from timm.data.auto_augment import rand_augment_transform
+from gate.boilerplate.utils import get_logger
 
 from gate.metrics import accuracy_top_k
 from gate.models.task_adapters import BaseModule
+
+logger = get_logger(__name__)
 
 
 class BackboneWithLinear(BaseModule):
     def __init__(
         self,
         model: nn.Module,
-        num_clip_features,
+        num_in_features,
         num_classes: int,
         modality: str,
         allow_on_model_metric_computation: bool = True,
@@ -21,7 +24,8 @@ class BackboneWithLinear(BaseModule):
         super().__init__()
         self.model = model
         self.modality = modality
-        self.linear = nn.Linear(num_clip_features, num_classes)
+        logger.info(f"Building linear layer with {num_in_features} features.")
+        self.linear = nn.Linear(num_in_features, num_classes)
         self.num_classes = num_classes
         self.allow_on_model_metric_computation = (
             allow_on_model_metric_computation

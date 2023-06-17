@@ -8,11 +8,13 @@ import PIL.Image as Image
 import timm
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision.transforms as T
-from timm.data import resolve_data_config
+from timm.data import InterpolationMode, resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
+from gate.boilerplate.utils import get_logger
 
 from gate.models.backbones import Modality, image_dim_reshape
 from gate.models.core import reinit
@@ -55,24 +57,59 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     return x
 
 
+logger = get_logger(__name__)
+
+
 class TimmModel(nn.Module):
     def __init__(
         self,
         model_identifier: str = "hf_hub:timm/vit_large_patch14_clip_224.openai_ft_in12k_in1k",
+        img_size: Optional[List[int]] = None,
         pretrained: bool = True,
     ):
         super().__init__()
 
-        self.model = timm.create_model(
-            model_name=model_identifier,
-            pretrained=pretrained,
-            num_classes=0,  # remove classifier nn.Linear
-        )
+        try:
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                pretrained=pretrained,
+                features_only=True,
+            )
+
+        except Exception as e:
+            logger.info(f"Could not load model {model_identifier} because {e}")
+
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                img_size=img_size,
+                pretrained=pretrained,
+            )
+        logger.info(f"Model {self.model} loaded")
+        if img_size is None:
+            img_size = self.model.default_cfg["input_size"][-2:]
 
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
-            **resolve_data_config(self.model.pretrained_cfg, model=self.model)
+            **resolve_data_config(
+                self.model.pretrained_cfg,
+                model=self.model,
+                verbose=True,
+                use_test_size=True,
+            ),
+            is_training=False,
         )
+
+        self.transforms = T.Compose(
+            [T.Resize(size=img_size, interpolation=InterpolationMode.BICUBIC)]
+            + [
+                transform
+                for transform in self.transforms.transforms
+                if "CenterCrop" not in transform.__class__.__name__
+                and "Resize" not in transform.__class__.__name__
+            ]
+        )
+        # iterate over compose transforms and remove centercrop and resize
+
         print(f"{model_identifier} transforms: {self.transforms}")
         output_shape = self.get_output_shape()["raw_features"]
         print(f"{model_identifier} output shape: {output_shape}")
@@ -82,8 +119,18 @@ class TimmModel(nn.Module):
     def forward(self, x):
         # output is a (1, num_features) shaped tensor
 
-        raw_features = self.model.forward_features(x)
-        raw_features_as_sequence = raw_features
+        if hasattr(self.model, "get_intermediate_layers"):
+            per_layer_raw_features = self.model.get_intermediate_layers(
+                x,
+                n=[i for i in range(len(self.model.blocks))],
+                reshape=False,
+                return_class_token=False,
+                norm=True,
+            )
+        else:
+            per_layer_raw_features = [output for output in self.model(x)]
+
+        raw_features = per_layer_raw_features[-1]
         if len(raw_features.shape) == 4:
             feature_shape = raw_features.shape
             if (
@@ -94,14 +141,16 @@ class TimmModel(nn.Module):
                 ).reshape(
                     feature_shape[0], -1, feature_shape[1]
                 )  # output should have shape (batch_size, num_patches, num_features)
+        else:
+            raw_features_as_sequence = raw_features
 
-        features = self.model.forward_head(raw_features, pre_logits=True)
-        predictions = self.model.forward_head(raw_features)
+        features = raw_features_as_sequence.mean(dim=1)
 
         return {
-            "classifier": predictions,
+            "classifier": features,
             "features": features,
             "raw_features": raw_features_as_sequence,
+            "per_layer_raw_features": per_layer_raw_features,
         }
 
     def get_transforms(self):
@@ -114,7 +163,12 @@ class TimmModel(nn.Module):
             )
         )
         output_dict = self.forward(self.transforms(img).unsqueeze(0))
-        shape_dict = {k: v.shape for k, v in output_dict.items()}
+        shape_dict = {
+            k: v.shape
+            if isinstance(v, torch.Tensor)
+            else [item.shape for item in v]
+            for k, v in output_dict.items()
+        }
         return shape_dict
 
 
@@ -124,6 +178,7 @@ class TimmCLIPAdapter(nn.Module):
         timm_model_name: str,
         clip_model_name: str,
         pretrained: bool = True,
+        img_size: Optional[List[int]] = None,
     ):
         super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
@@ -134,7 +189,9 @@ class TimmCLIPAdapter(nn.Module):
         self.clip = CLIPModel.from_pretrained(clip_model_name)
 
         self.vision_model = TimmModel(
-            model_identifier=timm_model_name, pretrained=pretrained
+            model_identifier=timm_model_name,
+            pretrained=pretrained,
+            img_size=img_size,
         )
         self.text_model = self.clip.text_model
 

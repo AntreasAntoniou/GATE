@@ -43,6 +43,7 @@ from gate.config.variables import (
     SEED,
     TRAIN_BATCH_SIZE,
     TRAIN_ITERS,
+    HYDRATED_NUM_WORKERS,
 )
 from gate.data.core import collate_fn_with_token_pad
 
@@ -81,7 +82,7 @@ class Config:
     eval_batch_size: int = EVAL_BATCH_SIZE
     train_iters: int = TRAIN_ITERS
     resume: bool = RESUME
-    resume_from_checkpoint: Optional[int] = None
+    resume_from_checkpoint: Optional[str] = None
     print_config: bool = True
     num_workers: int = NUM_WORKERS
     prefetch_factor: int = PREFETCH_FACTOR
@@ -93,9 +94,9 @@ class Config:
     logger_level: str = LOGGER_LEVEL
     experiments_root_dir: str = EXPERIMENTS_ROOT_DIR
     dataset_dir: str = DATASET_DIR
-    current_experiment_dir: str = "${experiments_root_dir}/${exp_name}"
+    current_experiment_dir: str = "${experiments_root_dir}/"
     hf_repo_path: str = "${hf_username}/${exp_name}"
-    hf_cache_dir: str = "${current_experiment_dir}/hf_cache"
+    hf_cache_dir: str = "${current_experiment_dir}/huggingface_cache"
     code_dir: str = CODE_DIR
 
 
@@ -131,7 +132,7 @@ def collect_config_store():
         name="default",
         node=dataloader_config(
             batch_size=1,
-            num_workers=NUM_WORKERS,
+            num_workers=HYDRATED_NUM_WORKERS,
             pin_memory=PIN_MEMORY,
             shuffle=True,
             prefetch_factor=PREFETCH_FACTOR,

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
 from gate.models.backbones.clip import CLIPAdapter
 from gate.models.core import (
@@ -31,6 +31,7 @@ def build_model(
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
+    image_size: int = 512,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -40,7 +41,9 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
+    backbone_model = CLIPAdapter(
+        model_name=model_name, pretrained=pretrained, image_size=image_size
+    )
 
     model = SegmentationViT(
         encoder_model=backbone_model,
@@ -52,13 +55,13 @@ def build_model(
         num_classes=num_classes,
         num_patches=backbone_model.vision_model.embeddings.num_patches,
     )
-    x = torch.randn(2, 3, 224, 224)
+    x = torch.randn(2, 3, image_size, image_size)
     dummy_out = model.forward(x)
 
     if not pretrained:
         model.init_weights()
 
-    transform_dict = backbone_model.get_transforms()
+    transform_dict = backbone_model.get_transforms(image_size=image_size)
 
     def transform_wrapper(inputs: Union[Dict, Any]):
         output_dict = {}
@@ -80,7 +83,9 @@ def build_model(
 @configurable(
     group="model",
     name="clip-segmentation-transformer",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+    defaults=dict(
+        num_classes=HYDRATED_NUM_CLASSES, image_size=HYDRATED_IMAGE_SIZE
+    ),
 )
 def build_gate_model(
     model_name: str = "openai/clip-vit-base-patch16",
@@ -89,6 +94,7 @@ def build_gate_model(
     decoder_num_heads: int = 8,
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
+    image_size: int = 512,
 ):
     model_and_transform = build_model(
         model_name=model_name,
@@ -97,6 +103,7 @@ def build_gate_model(
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
+        image_size=image_size,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(

@@ -266,21 +266,23 @@ class Learner(nn.Module):
 
         self.trainer.end_training(global_step=self.global_step)
 
-        while len(self.background_threads) > 0:
-            self.check_manage_background_threads()
-            sleep(1)
+        for background_thread in self.background_threads:
+            if background_thread.is_alive() and not background_thread.done:
+                background_thread.join()
 
         logger.debug("Training finished 🎉")
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
-        TIME_LIMIT = 600  # 10 minutes
+        TIME_LIMIT = 60 * 60  # 60 minutes
+        STOP_THREAD_FLAG = "_stop_thread"
 
         for thread in self.background_threads:
             if not thread.done:
                 if not thread.is_alive():
                     print(f"Starting thread {thread}")
-                    thread.start_with_timeout()
+                    thread.start()
+                    break
                 else:
                     # Check if the thread has been running for too long
                     elapsed_time = time.time() - thread.start_time
@@ -288,12 +290,40 @@ class Learner(nn.Module):
                         print(
                             f"Thread {thread} has been running for too long. Stopping it."
                         )
-                        exit()  # experiment kills itself to prevent upload mechanism from completely halting the program
-                        # Here you can stop the thread. However, keep in mind that stopping a thread is tricky in Python.
-                        # You might need to set a flag that the thread checks regularly and stops itself when the flag is set.
+                        setattr(thread, STOP_THREAD_FLAG, True)
+                        setattr(thread, "done", True)
+                        # The thread should stop itself upon checking the STOP_THREAD_FLAG
             else:
                 self.background_threads.remove(thread)
                 print(f"Removing thread {thread} since it is done")
+
+    def complete_background_threads(self):
+        # iterate threads to find up to where they are done, and start the next one
+        TIME_LIMIT = 600  # 10 minutes
+        STOP_THREAD_FLAG = "_stop_thread"
+
+        while self.background_threads:
+            for thread in self.background_threads:
+                if not thread.done:
+                    if not thread.is_alive():
+                        print(f"Starting thread {thread}")
+                        thread.start()
+                        break
+                    else:
+                        # Check if the thread has been running for too long
+                        elapsed_time = time.time() - thread.start_time
+                        if elapsed_time > TIME_LIMIT:
+                            print(
+                                f"Thread {thread} has been running for too long. Stopping it."
+                            )
+                            setattr(thread, STOP_THREAD_FLAG, True)
+                            setattr(thread, "done", True)
+                            # The thread should stop itself upon checking the STOP_THREAD_FLAG
+                else:
+                    self.background_threads.remove(thread)
+                    print(f"Removing thread {thread} since it is done")
+
+            time.sleep(1)  # Prevent the loop from consuming too much CPU usage
 
     def start_validation(self):
         self.callback_handler.on_validation_start(
@@ -319,13 +349,12 @@ class Learner(nn.Module):
             logger.debug("Saving checkpoint after validation")
             self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
 
-        while len(self.background_threads) > 0:
-            self.check_manage_background_threads()
-            sleep(1)
+        self.check_manage_background_threads()
 
         logger.debug("Validation finished 🎉")
 
     def start_testing(self, prefix):
+        self.complete_background_threads()
         self.callback_handler.on_testing_start(
             experiment=self, model=self.model
         )
@@ -343,9 +372,7 @@ class Learner(nn.Module):
 
         self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
 
-        while len(self.background_threads) > 0:
-            self.check_manage_background_threads()
-            sleep(1)
+        self.check_manage_background_threads()
 
         logger.debug("Testing finished 🎉")
 
@@ -610,7 +637,7 @@ class Learner(nn.Module):
             best_global_step,
             best_metric,
         ) = self.evaluator.get_best_model_global_step_and_metric(
-            metric_name, higher_is_better, kth_best=kth_best
+            metric_name, higher_is_better, kth_best=10
         )
         print(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
@@ -625,7 +652,11 @@ class Learner(nn.Module):
                 hf_cache_dir=self.hf_cache_dir,
                 model_name=f"ckpt_{global_step}",
             )
-            download_dict_list.append(download_dict)
+            if download_dict["validation_passed"] is True:
+                download_dict_list.append(download_dict)
+
+            if len(download_dict_list) == kth_best:
+                break
 
         models = []
 

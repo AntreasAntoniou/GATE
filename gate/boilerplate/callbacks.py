@@ -5,6 +5,7 @@ import threading
 from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, List, Union
+from numpy import False_
 
 import torch
 import torch.nn as nn
@@ -16,6 +17,23 @@ from .utils import get_logger
 
 logger = get_logger(__name__)
 hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
+
+import contextlib
+import os
+
+
+@contextlib.contextmanager
+def SuppressOutput():
+    with open(os.devnull, "w") as devnull:
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        sys.stdout = devnull
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
 
 
 class Callback(ABC):
@@ -348,6 +366,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         timeout: int = 10 * 60,
     ):
         super().__init__()
+        self.daemon = True
         self.repo_name = repo_name
         self.repo_owner = repo_owner
         self.checkpoint_path = checkpoint_path
@@ -358,20 +377,28 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         self.start_time = None
 
     def run(self):
-        try:
-            self.hf_api.upload_folder(
-                repo_id=f"{self.repo_owner}/{self.repo_name}",
-                folder_path=self.checkpoint_path,
-                path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
-            )
+        self.start_time = time.time()
+        hf_logger = get_logger("huggingface_hub")
+        hf_logger.setLevel(logging.ERROR)
+        for handler in hf_logger.handlers:
+            handler.setLevel(logging.ERROR)
 
-            self.done = True
+        retry = 0
 
-        except Exception as e:
-            logger.info(e)
+        while not self.done and retry < 3:
+            try:
+                with SuppressOutput():  # Add this line
+                    self.hf_api.upload_folder(
+                        repo_id=f"{self.repo_owner}/{self.repo_name}",
+                        folder_path=self.checkpoint_path,
+                        path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+                        run_as_future=False,
+                    )
+                self.done = True
 
-    def start_with_timeout(self):
-        self.start()
+            except Exception as e:
+                logger.info(e)
+            retry += 1
 
 
 class UploadCheckpointsToHuggingFace(Callback):

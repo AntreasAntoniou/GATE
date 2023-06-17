@@ -47,11 +47,15 @@ def contrastive_accuracy_top_k(
         targets = targets.reshape(-1)
     else:
         targets = torch.arange(logits.shape[0]).to(logits.device)
-    accuracy = [
-        any(logit.argsort(dim=-1, descending=True)[:k] == target)
-        for logit, target in zip(logits, targets)
-    ]
-    return torch.mean(torch.tensor(accuracy).float())
+
+    num_classes = logits.shape[-1]
+    k = min(k, num_classes)  # Adjust k to be within the valid range
+
+    top_k_indices = torch.topk(logits, k, dim=-1).indices
+    targets_match = top_k_indices == targets.view(-1, 1)
+    accuracy = torch.mean(targets_match.any(dim=-1).float())
+
+    return accuracy
 
 
 def num_parameters(
@@ -157,15 +161,18 @@ def compute_zero_shot_loss_and_metrics(
     if isinstance(is_irregular_shape, List):
         is_irregular_shape = is_irregular_shape[0]
 
+    start_time = time.time()
     contrastive_losses_dict = {
         f"{key.replace('_similarities', '_loss')}": contrastive_loss(
             value, is_irregular_shape=is_irregular_shape
         )
         for key, value in similarities.items()
     }
+    logger.debug(f"Contrastive loss took {time.time() - start_time} seconds")
 
     loss = torch.mean(torch.stack(list(contrastive_losses_dict.values())))
 
+    start_time = time.time()
     contrastive_accuracy_dict = {
         f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
             value, is_irregular_shape=is_irregular_shape
@@ -173,12 +180,18 @@ def compute_zero_shot_loss_and_metrics(
         for key, value in similarities.items()
     }
 
+    logger.debug(
+        f"Contrastive accuracy took {time.time() - start_time} seconds"
+    )
+
+    start_time = time.time()
     contrastive_accuracy_top_5_dict = {
         f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
             value, k=5, is_irregular_shape=is_irregular_shape
         )
         for key, value in similarities.items()
     }
+    logger.debug(f"Top 5 accuracy took {time.time() - start_time} seconds")
 
     return (
         similarities

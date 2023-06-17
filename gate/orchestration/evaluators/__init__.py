@@ -70,18 +70,16 @@ class Evaluator(ABC):
 
         metric_sorting = torch.argsort(torch.tensor(metrics))
 
-        # if higher_is_better:
-        #     best_metric_idx = metric_sorting[-kth_best:]
-        # else:
-        #     best_metric_idx = metric_sorting[:kth_best]
-
         best_global_step = list(
             set([global_steps[idx] for idx in metric_sorting])
         )
         best_metric = list(set([metrics[idx] for idx in metric_sorting]))
 
         if higher_is_better:
-            return best_global_step[-kth_best:], best_metric[-kth_best:]
+            return (
+                sorted(best_global_step[:kth_best], reverse=True),
+                sorted(best_metric[:kth_best], reverse=True),
+            )
         else:
             return best_global_step[:kth_best], best_metric[:kth_best]
 

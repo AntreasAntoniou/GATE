@@ -250,6 +250,7 @@ def download_model_with_name(
     hf_cache_dir: str,
     model_name: str,
     download_only_if_finished: bool = False,
+    local_checkpoint_store_dir: Optional[str] = None,
 ) -> Dict[str, pathlib.Path]:
     """
     Download model checkpoint files given the model name from Hugging Face hub.
@@ -260,6 +261,27 @@ def download_model_with_name(
     :param download_only_if_finished: Download only if the model training is finished (optional)
     :return: A dictionary with the filepaths of the downloaded files
     """
+
+    if local_checkpoint_store_dir is not None:
+        ckpt_dir = pathlib.Path(local_checkpoint_store_dir) / model_name
+        validated_ckpt_dir = True
+        if ckpt_dir.exists():
+            path_dict = {
+                "trainer_state_filepath": ckpt_dir / "trainer_state.pt",
+                "optimizer_filepath": ckpt_dir / "optimizer.bin",
+                "model_filepath": ckpt_dir / "pytorch_model.bin",
+                "random_states_filepath": ckpt_dir / "random_states_0.pkl",
+                "root_filepath": ckpt_dir,
+                "validation_passed": True,
+            }
+            for key, value in path_dict.items():
+                if isinstance(value, pathlib.Path):
+                    print(f"Checking {key} exists: {value.exists()}")
+                    if not value.exists():
+                        validated_ckpt_dir = False
+                        break
+            if validated_ckpt_dir:
+                return path_dict
 
     def download_and_copy(
         filename: str,
@@ -284,7 +306,7 @@ def download_model_with_name(
         "optimizer.bin": "optimizer_filepath",
         "pytorch_model.bin": "model_filepath",
         "random_states_0.pkl": "random_states_filepath",
-        # "scaler.pt": "scaler_filepath",
+        "scaler.pt": "scaler_filepath",
     }
 
     downloaded_files = {}
@@ -295,7 +317,8 @@ def download_model_with_name(
             download_and_copy(filename, target_path)
             downloaded_files[key] = target_path
         except Exception as e:
-            invalid_download = True
+            if filename != "scaler.pt":
+                invalid_download = True
             logger.info(f"Error downloading {filename}: {e}")
     # Handle config.yaml separately
     config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
@@ -359,13 +382,22 @@ def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
 
 
 def download_checkpoint(
-    hf_repo_path: str, ckpt_identifier: str, hf_cache_dir: str
+    hf_repo_path: str,
+    ckpt_identifier: str,
+    hf_cache_dir: str,
+    local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[pathlib.Path, str]:
     logger.info(
         f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging Face hub 👨🏻‍💻"
     )
+    if isinstance(ckpt_identifier, int):
+        ckpt_identifier = f"ckpt_{ckpt_identifier}"
+
     path_dict = download_model_with_name(
-        hf_repo_path, hf_cache_dir, ckpt_identifier
+        hf_repo_path,
+        hf_cache_dir,
+        ckpt_identifier,
+        local_checkpoint_store_dir=local_checkpoint_store_dir,
     )
     logger.info(f"Downloaded checkpoint to {hf_cache_dir}")
     return path_dict
@@ -383,12 +415,29 @@ def create_hf_model_repo_and_download_maybe(
     upload_config_files(
         cfg=cfg, hf_repo_path=hf_repo_path, hf_cache_dir=hf_cache_dir
     )
+    checkpoint_store_dir = (
+        pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
+    )
 
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
-    files = hf_api.list_repo_files(repo_id=hf_repo_path)
-    ckpt_dict = get_checkpoint_dict(files)
 
-    if len(ckpt_dict) == 0:
+    local_files = [str(file) for file in checkpoint_store_dir.glob("*")]
+    local_ckpt_dict = {
+        int(file.split("checkpoints/ckpt_")[1]): file for file in local_files
+    }
+    remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
+    remote_ckpt_dict = get_checkpoint_dict(remote_files)
+
+    latest_remote_ckpt_names = sorted(
+        list(remote_ckpt_dict.keys()), reverse=True
+    )
+    latest_local_ckpt_names = sorted(
+        list(local_ckpt_dict.keys()), reverse=True
+    )
+    mixed_ckpt_list = latest_remote_ckpt_names + latest_local_ckpt_names
+    mixed_ckpt_list = sorted(list(set(mixed_ckpt_list)), reverse=True)
+
+    if len(mixed_ckpt_list) == 0:
         return None
 
     if resume_from_checkpoint:
@@ -400,19 +449,20 @@ def create_hf_model_repo_and_download_maybe(
     elif resume:
         valid_model_downloaded = False
         idx = 0
-        ckpt_list = sorted(list(ckpt_dict.keys()), reverse=True)
-        print(ckpt_list)
+
+        print(
+            f"local ckpt dict: {local_ckpt_dict}, remote ckpt dict: {remote_ckpt_dict}"
+        )
         while not valid_model_downloaded:
-            if len(ckpt_list) < idx + 1:
+            if len(remote_ckpt_dict) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
                 return None
-            latest_ckpt = pathlib.Path(
-                ckpt_dict[ckpt_list[idx]].split("/")[-1]
-            )
+
             download_dict = download_checkpoint(
                 hf_cache_dir=hf_cache_dir,
                 hf_repo_path=hf_repo_path,
-                ckpt_identifier=latest_ckpt,
+                ckpt_identifier=mixed_ckpt_list[idx],
+                local_checkpoint_store_dir=checkpoint_store_dir,
             )
             valid_model_downloaded = download_dict["validation_passed"]
             idx += 1
@@ -465,3 +515,78 @@ def count_files_recursive(directory: str) -> int:
         file_count += len(files)
 
     return file_count
+
+
+import wandb
+import numpy as np
+import torch
+import torchvision.transforms as T
+
+import torch
+
+
+def normalize_image(image: torch.Tensor) -> torch.Tensor:
+    min_val = torch.min(image)
+    max_val = torch.max(image)
+    normalized_image = (image - min_val) / (max_val - min_val)
+    return normalized_image
+
+
+def log_wandb_images(
+    experiment_tracker: Any,
+    images: torch.Tensor,
+    reconstructions: torch.Tensor,
+    global_step: int = 0,
+):
+    episode_list = []
+    for i in range(images.shape[0]):
+        image = images[i]
+        reconstruction = reconstructions[i]
+        normalized_image = normalize_image(image)
+        normalized_reconstruction = normalize_image(reconstruction)
+        ae_episode = torch.cat(
+            [normalized_image, normalized_reconstruction], dim=2
+        )
+        ae_episode = wandb.Image(ae_episode)
+        episode_list.append(ae_episode)
+
+    experiment_tracker.log(
+        {"autoencoder_episode": episode_list},
+        step=global_step,
+    )
+
+
+def log_wandb_masks(
+    experiment_tracker: Any,
+    images: torch.Tensor,
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    label_idx_to_description: Dict[int, str],
+    global_step: int = 0,
+):
+    def wb_mask(bg_img, pred_mask, true_mask):
+        return wandb.Image(
+            bg_img,
+            masks={
+                "prediction": {
+                    "mask_data": pred_mask,
+                    "class_labels": label_idx_to_description,
+                },
+                "ground truth": {
+                    "mask_data": true_mask,
+                    "class_labels": label_idx_to_description,
+                },
+            },
+        )
+
+    mask_list = []
+    for i in range(len(images)):
+        bg_image = T.ToPILImage()(normalize_image(images[i]))
+        prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
+        true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
+
+        mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
+
+    experiment_tracker.log(
+        {"segmentation_episode": mask_list}, step=global_step
+    )

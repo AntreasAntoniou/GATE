@@ -6,7 +6,12 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
+from transformers.models.clip.modeling_clip import (
+    CLIPOutput,
+    CLIPVisionEmbeddings,
+)
+from torchvision import transforms as T
+from gate.boilerplate.utils import get_logger
 
 from gate.models.backbones import (
     Modality,
@@ -15,17 +20,36 @@ from gate.models.backbones import (
 )
 from gate.models.core import reinit
 
+logger = get_logger(__name__)
+
 
 def forward_dict(self, x):
-    output = self.legacy_forward(x)
+    output = self.legacy_forward(
+        x, return_dict=False, output_hidden_states=True
+    )
+    # print(f"len(output): {len(output)}")
+    (last_hidden_state, pooled_output, encoder_outputs) = output
+    encoder_outputs = [f for f in encoder_outputs]
+
     return {
-        "features": output.pooler_output,
-        "raw_features": output.last_hidden_state,
+        "features": pooled_output,
+        "raw_features": last_hidden_state,
+        "per_layer_raw_features": encoder_outputs,
     }
 
 
+class CLIPModelPaths:
+    laion_b_16: str = "laion/CLIP-ViT-B-16-laion2B-s34B-b88K"
+    openai_b_16: str = "openai/clip-vit-base-patch16"
+
+
 class CLIPAdapter(nn.Module):
-    def __init__(self, model_name: str, pretrained: bool = True):
+    def __init__(
+        self,
+        model_name: str,
+        pretrained: bool = True,
+        image_size: Optional[int] = None,
+    ):
         super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
@@ -41,6 +65,8 @@ class CLIPAdapter(nn.Module):
         self.text_model = self.clip.text_model
         self.text_projection = self.clip.text_projection
 
+        # setattr signature: setattr(object, name, value)
+
         setattr(self.vision_model, "legacy_forward", self.vision_model.forward)
         setattr(self.text_model, "legacy_forward", self.text_model.forward)
 
@@ -53,8 +79,20 @@ class CLIPAdapter(nn.Module):
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
+        if image_size is not None:
+            self.modify_expected_image_size(image_size)
+
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
+
+    def modify_expected_image_size(self, image_size: int):
+        config = self.vision_model.config
+        config.image_size = image_size
+        updated_embeddings = CLIPVisionEmbeddings(config)
+        logger.info(
+            f"updating vision transformer embedding config to: {config}"
+        )
+        self.vision_model.embeddings = updated_embeddings
 
     def init_weights(self):
         reinit(self)
@@ -96,10 +134,13 @@ class CLIPAdapter(nn.Module):
 
         return output_dict
 
-    def get_transforms(self):
+    def get_transforms(self, image_size: int = 224):
         def image_transforms(x):
             return self.preprocessor(
-                images=x, return_tensors="pt"
+                images=T.Resize(size=(image_size, image_size))(x),
+                do_resize=False,
+                do_center_crop=False,
+                return_tensors="pt",
             ).pixel_values.squeeze(0)
 
         def text_transforms(x):

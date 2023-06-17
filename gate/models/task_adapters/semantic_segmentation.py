@@ -1,72 +1,96 @@
+from collections import OrderedDict
 import math
 from functools import partial
-from typing import Dict, Optional
+import time
+from typing import Dict, List, Optional
+from datasets.table import pa
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from rich import print
-from timm.models.vision_transformer import Block, PatchEmbed
+from timm.models.vision_transformer import Block
+from transformers import (
+    SamMaskDecoderConfig,
+    SamModel,
+    SegformerConfig,
+    SegformerDecodeHead,
+)
+from transformers.activations import AccurateGELUActivation
+from transformers.models.sam.modeling_sam import (
+    SamFeedForward,
+    SamLayerNorm,
+    SamMaskDecoder,
+)
+from gate.boilerplate.utils import get_logger
 
-from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.utils import get_similarities
+logger = get_logger(__name__)
 
 
-def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
+class ResidualUpscaleConvBlock(nn.Module):
     """
-    embed_dim: output dimension for each position
-    pos: a list of positions to be encoded: size (M,)
-    out: (M, D)
+    📝 Residual Convolutional Block
     """
-    assert embed_dim % 2 == 0
-    omega = np.arange(embed_dim // 2, dtype=np.float32)
-    omega /= embed_dim / 2.0
-    omega = 1.0 / 10000**omega  # (D/2,)
 
-    pos = pos.reshape(-1)  # (M,)
-    out = np.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
-
-    emb_sin = np.sin(out)  # (M, D/2)
-    emb_cos = np.cos(out)  # (M, D/2)
-
-    emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
-    return emb
-
-
-def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
-    assert embed_dim % 2 == 0
-
-    # use half of dimensions to encode grid_h
-    emb_h = get_1d_sincos_pos_embed_from_grid(
-        embed_dim // 2, grid[0]
-    )  # (H*W, D/2)
-    emb_w = get_1d_sincos_pos_embed_from_grid(
-        embed_dim // 2, grid[1]
-    )  # (H*W, D/2)
-
-    emb = np.concatenate([emb_h, emb_w], axis=1)  # (H*W, D)
-    return emb
-
-
-def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False):
-    """
-    grid_size: int of the grid height and width
-    return:
-    pos_embed: [grid_size*grid_size, embed_dim] or [1+grid_size*grid_size, embed_dim] (w/ or w/o cls_token)
-    """
-    grid_h = np.arange(grid_size, dtype=np.float32)
-    grid_w = np.arange(grid_size, dtype=np.float32)
-    grid = np.meshgrid(grid_w, grid_h)  # here w goes first
-    grid = np.stack(grid, axis=0)
-
-    grid = grid.reshape([2, 1, grid_size, grid_size])
-    pos_embed = get_2d_sincos_pos_embed_from_grid(embed_dim, grid)
-    if cls_token:
-        pos_embed = np.concatenate(
-            [np.zeros([1, embed_dim]), pos_embed], axis=0
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(
+            in_channels, out_channels, kernel_size=3, stride=1, padding=1
         )
-    return pos_embed
+        self.activation1 = nn.GELU()
+        self.norm1 = nn.InstanceNorm2d(out_channels)
+
+        self.conv2 = nn.Conv2d(
+            out_channels,
+            out_channels,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+        )
+        self.activation2 = nn.GELU()
+        self.norm2 = nn.InstanceNorm2d(out_channels)
+
+        self.channel_mixing = None
+
+        self.up1 = None
+
+    def forward(self, x):
+        residual = x
+
+        out = self.conv1(x)
+        out = self.activation1(out)
+        out = self.norm1(out)
+
+        out = F.interpolate(out, scale_factor=2, mode="bicubic")
+
+        out = self.conv2(out)
+        out = self.activation2(out)
+        out = self.norm2(out)
+
+        if self.up1 is None:
+            self.up1 = nn.Upsample(
+                size=(out.shape[2], out.shape[3]),
+                mode="bicubic",
+                align_corners=True,
+            )
+        residual = self.up1(residual)
+
+        if out.shape[1] > residual.shape[1]:
+            frame = torch.zeros_like(out)
+            frame[:, : residual.shape[1], :, :] = residual
+            residual = frame
+        else:
+            if self.channel_mixing is None:
+                self.channel_mixing = nn.Conv2d(
+                    residual.shape[1],
+                    out.shape[1],
+                    kernel_size=1,
+                    stride=1,
+                )
+            residual = self.channel_mixing(residual)
+
+        return out + residual
 
 
 class ResidualConvBlock(nn.Module):
@@ -79,63 +103,56 @@ class ResidualConvBlock(nn.Module):
         self.conv1 = nn.Conv2d(
             in_channels, out_channels, kernel_size=3, stride=1, padding=1
         )
-        self.norm1 = nn.InstanceNorm2d(out_channels)
         self.activation1 = nn.GELU()
+        self.norm1 = nn.InstanceNorm2d(out_channels)
 
         self.conv2 = nn.Conv2d(
-            out_channels, out_channels, kernel_size=3, stride=1, padding=1
+            out_channels,
+            out_channels,
+            kernel_size=3,
+            stride=1,
+            padding=1,
         )
-        self.norm2 = nn.InstanceNorm2d(out_channels)
+        self.channel_mixing = None
         self.activation2 = nn.GELU()
-        self.up = nn.Upsample(
-            scale_factor=2, mode="bilinear", align_corners=True
-        )
+        self.norm2 = nn.InstanceNorm2d(out_channels)
 
     def forward(self, x):
         residual = x
+
         out = self.conv1(x)
-        out = self.norm1(out)
         out = self.activation1(out)
+        out = self.norm1(out)
+
         out = self.conv2(out)
-        out = self.norm2(out)
         out = self.activation2(out)
-        out = self.up(out + residual)
-        return out
+        out = self.norm2(out)
+
+        if out.shape[1] > residual.shape[1]:
+            frame = torch.zeros_like(out)
+            frame[:, : residual.shape[1], :, :] = residual
+            residual = frame
+        else:
+            if self.channel_mixing is None:
+                self.channel_mixing = nn.Conv2d(
+                    residual.shape[1],
+                    out.shape[1],
+                    kernel_size=1,
+                    stride=1,
+                )
+            residual = self.channel_mixing(residual)
+
+        return out + residual
 
 
 from gate.metrics.segmentation import (
-    dice_loss,
+    DiceLoss,
+    FocalLoss,
+    WeightedCrossEntropyLoss,
     diff_dice_loss,
     diff_sigmoid_focal_loss,
-    generalized_dice_loss,
-    miou_loss,
-    roc_auc_score,
+    fast_miou,
 )
-
-
-def metrics(logits, labels, label_dim, num_classes):
-    logits: torch.Tensor = logits.detach().float()
-    labels: torch.Tensor = labels.detach()
-    logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-    labels = labels.reshape(-1)
-    return {
-        "roc_auc_score": torch.tensor(
-            roc_auc_score(
-                logits, labels, num_classes=logits.shape[1], label_dim=1
-            )
-        ),
-        "miou_loss": torch.tensor(
-            miou_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
-        ),
-        "dice_loss": torch.tensor(
-            dice_loss(logits, labels, num_classes=logits.shape[1], label_dim=1)
-        ),
-        "generalized_dice_loss": torch.tensor(
-            generalized_dice_loss(
-                logits, labels, num_classes=logits.shape[1], label_dim=1
-            )
-        ),
-    }
 
 
 def optimization_loss(logits, labels):
@@ -148,42 +165,466 @@ def optimization_loss(logits, labels):
     # print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
     logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
     labels = labels.reshape(-1)
-    cross_entropy_loss = F.cross_entropy(logits, labels)
-    dice_loss = diff_dice_loss(logits, labels)
-    focal_loss = diff_sigmoid_focal_loss(logits, labels)
 
-    loss = cross_entropy_loss + dice_loss + focal_loss
+    non_background_indices = labels != 0
+    non_background_logits = logits[non_background_indices]
+    non_background_labels = labels[non_background_indices]
+
+    background_indices = labels == 0
+    background_logits = logits[background_indices]
+    background_labels = labels[background_indices]
+
+    # get number of unique classes
+
+    cross_entropy_loss = F.cross_entropy(
+        non_background_logits, non_background_labels
+    )
+    dice_loss = diff_dice_loss(non_background_logits, non_background_labels)
+    focal_loss = diff_sigmoid_focal_loss(
+        non_background_logits, non_background_labels, alpha=0.25, gamma=2.0
+    )
+
+    background_cross_entropy_loss = F.cross_entropy(
+        background_logits, background_labels
+    )
+    background_dice_loss = diff_dice_loss(background_logits, background_labels)
+    background_focal_loss = diff_sigmoid_focal_loss(
+        background_logits,
+        background_labels,
+        alpha=0.25,
+        gamma=2.0,
+    )
+    background_loss = (
+        background_cross_entropy_loss
+        # background_dice_loss
+        # + background_focal_loss
+    )
+
+    loss = (
+        cross_entropy_loss
+        # dice_loss
+        # + focal_loss
+        + 0.1 * background_loss
+    )
 
     return {
         "loss": loss,
         "cross_entropy_loss": cross_entropy_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
+        "background_loss": background_loss,
+        "background_cross_entropy_loss": background_cross_entropy_loss,
+        "background_dice_loss": background_dice_loss,
+        "background_focal_loss": background_focal_loss,
     }
 
 
-class PositionalEncoding(nn.Module):
+class UpscaleMultiBlock(nn.Module):
     def __init__(
         self,
+        in_features: int,
+        hidden_size: int,
+        out_features: int,
+        num_blocks: int = 2,
+        encoder_features: int = 64,
     ):
         super().__init__()
+        self.in_channel_mixing = None
+        self.channel_mixing = None
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        self.in_features = in_features
+        self.encoder_features = encoder_features
+        self.upscale_net = ResidualUpscaleConvBlock(
+            in_channels=in_features + encoder_features,
+            out_channels=hidden_size,
+        )
+
+        self.detail_conv = nn.Sequential(
+            OrderedDict(
+                {
+                    f"upscale_block_{idx}": ResidualConvBlock(
+                        hidden_size, hidden_size
+                    )
+                    for idx in range(num_blocks)
+                }
+            )
+        )
+
+        self.out_conv = nn.Conv2d(
+            hidden_size, out_features, kernel_size=1, stride=1
+        )
+
+    def forward(
+        self, x: torch.Tensor, encoder_features: torch.Tensor
+    ) -> torch.Tensor:
+        if self.channel_mixing is None:
+            self.channel_mixing = nn.Conv2d(
+                encoder_features.shape[1],
+                self.encoder_features,
+                kernel_size=1,
+                stride=1,
+            )
+
+        if self.in_channel_mixing is None and x.shape[1] != self.in_features:
+            self.in_channel_mixing = nn.Conv2d(
+                x.shape[1], self.in_features, kernel_size=1, stride=1
+            )
+
+        if self.in_channel_mixing is not None:
+            x = self.in_channel_mixing(x)
+
+        encoder_features = self.channel_mixing(encoder_features)
+
+        if (
+            x.shape[-2] != encoder_features.shape[-2]
+            or x.shape[-1] != encoder_features.shape[-1]
+        ):
+            encoder_features = F.interpolate(
+                encoder_features,
+                size=(x.shape[-2], x.shape[-1]),
+                mode="bicubic",
+                align_corners=True,
+            )
+
+        cat_features = torch.cat([x, encoder_features], dim=1)
+
+        out = self.upscale_net(cat_features)
+
+        out = self.detail_conv(out)
+
+        out = self.out_conv(out)
+
+        return out
+
+
+import math
+
+
+def has_exact_square_root(s: int) -> bool:
+    # Get the size of the second dimension (s)
+
+    # Calculate the square root of s
+    root = math.sqrt(s)
+
+    # Check if the square root is an integer
+    return root.is_integer()
+
+
+class SimpleSegmentationDecoder(nn.Module):
+    def __init__(
+        self,
+        input_feature_maps: List[torch.Tensor],
+        num_classes: int,
+        target_image_size: tuple,
+        hidden_size: int = 256,
+    ):
         """
-        Args:
-            x: Tensor, shape [batch_size, seq_len, embedding_dim]
+        SimpleSegmentationDecoder class for segmentation tasks.
+
+        :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
+        :param num_classes: Integer representing the number of classes to predict for segmentation.
+        :param target_size: Tuple containing the height and width for the target output size.
+        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
         """
-        max_len = x.shape[1]
-        d_model = x.shape[2]
-        position = torch.arange(max_len).unsqueeze(1).to(x.device)
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
-        ).to(x.device)
-        pe = torch.zeros(1, max_len, d_model).to(x.device)
-        pe[0, :, 0::2] = torch.sin(position * div_term).to(x.device)
-        pe[0, :, 1::2] = torch.cos(position * div_term).to(x.device)
-        x = x + pe[: x.size(0)]
-        return x
+        super().__init__()
+        self.num_feature_maps = len(input_feature_maps)
+        self.hidden_size = hidden_size
+        self.num_classes = num_classes
+        self.target_size = target_image_size
+
+        self.pixel_wise_mlps = nn.ModuleList()
+
+        for input_features in input_feature_maps:
+            if len(input_features.shape) == 4:
+                in_channels = input_features.shape[1]
+            elif len(input_features.shape) == 3:
+                in_channels = input_features.shape[2]
+
+            mlp = nn.Sequential(
+                nn.Conv2d(in_channels, hidden_size, kernel_size=1),
+                SamLayerNorm(
+                    normalized_shape=hidden_size, data_format="channels_first"
+                ),
+                nn.LeakyReLU(inplace=True),
+                nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+                SamLayerNorm(
+                    normalized_shape=hidden_size, data_format="channels_first"
+                ),
+                nn.LeakyReLU(inplace=True),
+            )
+            self.pixel_wise_mlps.append(mlp)
+
+        self.fuse_features = nn.Conv2d(
+            hidden_size * self.num_feature_maps, hidden_size * 2, kernel_size=1
+        )
+        self.fuse_features_norm = nn.LazyInstanceNorm2d()
+
+        self.fuse_features_act = AccurateGELUActivation()
+        self.final_conv = nn.Conv2d(
+            hidden_size * 2, num_classes, kernel_size=1
+        )
+        self.upsample = nn.Upsample(
+            size=self.target_size, mode="bilinear", align_corners=True
+        )
+
+    def forward(self, input_list: list):
+        """
+        Forward pass of SimpleSegmentationDecoder.
+
+        📮 Passes the input list through pixel-wise MLPs, fuses the features, and upscales the result to the target size.
+
+        :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
+        :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
+        """
+        processed_features = []
+        for mlp, x in zip(self.pixel_wise_mlps, input_list):
+            # Check if input is (b, sequence, features)
+            start_time = time.time()
+            if len(x.shape) == 3:
+                sequence_length = x.shape[1]
+                num_features = x.shape[2]
+                square_root = int(math.sqrt(sequence_length))
+
+                # If the sequence has an exact square root, reshape it to (b, c, h, w) format
+                if sequence_length == square_root * square_root:
+                    c = num_features
+                    h = w = square_root
+                    x = x.permute([0, 2, 1]).reshape(-1, c, h, w)
+                # If not, apply a linear projection
+                else:
+                    target_sequence = square_root**2
+                    x = x.permute([0, 2, 1])  # (b, features, sequence)
+                    x = F.adaptive_avg_pool1d(x, target_sequence)
+
+                    x = x.reshape(-1, num_features, square_root, square_root)
+            logger.debug(f"Reshaping took {time.time() - start_time} seconds")
+            # Apply pixel-wise MLP
+            # logger.debug(f"Input shape: {x.shape}, MLP: {mlp}")
+            start_time = time.time()
+            processed_x = mlp(x)
+            logger.debug(f"MLP took {time.time() - start_time} seconds")
+            # Upscale the result to the target size
+            start_time = time.time()
+            processed_x = self.upsample(processed_x)
+            logger.debug(f"Upsampled shape: {processed_x.shape}")
+            logger.debug(f"Upsampling took {time.time() - start_time} seconds")
+            processed_features.append(processed_x)
+
+        # Concatenate the processed features along the channel dimension
+        start_time = time.time()
+        fused_features = torch.cat(processed_features, dim=1)
+        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
+
+        # Fuse the features, apply the final convolution layers, and upscale to target size
+        start_time = time.time()
+        fused_features = self.fuse_features(fused_features)
+        fused_norm_features = self.fuse_features_norm(fused_features)
+        fused_act_features = self.fuse_features_act(fused_norm_features)
+        logger.debug(
+            f"Fusing features took {time.time() - start_time} seconds"
+        )
+        start_time = time.time()
+        class_features = self.final_conv(fused_act_features)
+        logger.debug(
+            f"Final convolution took {time.time() - start_time} seconds"
+        )
+
+        return class_features
+
+
+class PreResizeSimpleSegmentationDecoder(nn.Module):
+    def __init__(
+        self,
+        input_feature_maps: List[torch.Tensor],
+        num_classes: int,
+        target_image_size: tuple,
+        hidden_size: int = 256,
+    ):
+        """
+        SimpleSegmentationDecoder class for segmentation tasks.
+
+        :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
+        :param num_classes: Integer representing the number of classes to predict for segmentation.
+        :param target_size: Tuple containing the height and width for the target output size.
+        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
+        """
+        super().__init__()
+        self.num_feature_maps = len(input_feature_maps)
+        self.hidden_size = hidden_size
+        self.num_classes = num_classes
+        self.target_image_size = target_image_size
+
+        self.pixel_wise_mlps = nn.ModuleList()
+        self.upsample = nn.Upsample(
+            size=self.target_image_size, mode="bilinear", align_corners=True
+        )
+        self.spatial_mixer = None
+        self.closest_square_root = None
+        self.num_blocks = len(input_feature_maps)
+
+        if len(input_feature_maps[0].shape) == 4:
+            input_feature_maps = [
+                self.upsample(x) if x.shape[-1] != target_image_size[0] else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        elif len(input_feature_maps[0].shape) == 3:
+            input_feature_maps = [
+                x.permute([0, 2, 1]) for x in input_feature_maps
+            ]  # (b, sequence, features) -> (b, features, sequence)
+            input_feature_maps = [
+                F.adaptive_avg_pool1d(x, output_size=target_image_size)
+                if x.shape[2] != target_image_size
+                else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        if len(input_feature_maps.shape) == 4:
+            in_channels = input_feature_maps.shape[1]
+            self.mlp = nn.Sequential(
+                nn.Conv2d(
+                    in_channels, self.num_blocks * hidden_size, kernel_size=1
+                ),
+                nn.InstanceNorm2d(
+                    num_features=self.num_blocks * hidden_size,
+                ),
+                nn.LeakyReLU(inplace=True),
+                nn.Conv2d(
+                    self.num_blocks * hidden_size,
+                    self.num_blocks * hidden_size,
+                    kernel_size=1,
+                ),
+                nn.InstanceNorm2d(
+                    num_features=self.num_blocks * hidden_size,
+                ),
+                nn.LeakyReLU(inplace=True),
+            )
+
+            self.fuse_features = nn.Conv2d(
+                self.num_blocks * hidden_size, hidden_size, kernel_size=1
+            )
+            self.fuse_features_norm = nn.LazyInstanceNorm2d()
+
+            self.fuse_features_act = AccurateGELUActivation()
+            self.final_conv = nn.Conv2d(
+                hidden_size, num_classes, kernel_size=1
+            )
+        elif len(input_feature_maps.shape) == 3:
+            in_channels = input_feature_maps.shape[1]
+            self.mlp = nn.Sequential(
+                nn.Conv1d(
+                    in_channels, self.num_blocks * hidden_size, kernel_size=1
+                ),
+                nn.InstanceNorm1d(num_features=self.num_blocks * hidden_size),
+                nn.LeakyReLU(inplace=True),
+                nn.Conv1d(
+                    self.num_blocks * hidden_size,
+                    self.num_blocks * hidden_size,
+                    kernel_size=1,
+                ),
+                nn.InstanceNorm1d(num_features=self.num_blocks * hidden_size),
+                nn.LeakyReLU(inplace=True),
+            )
+
+            self.fuse_features = nn.Conv1d(
+                self.num_blocks * hidden_size, hidden_size, kernel_size=1
+            )
+            self.fuse_features_norm = nn.LazyInstanceNorm1d()
+
+            self.fuse_features_act = AccurateGELUActivation()
+            self.final_conv = nn.Conv1d(
+                hidden_size, num_classes, kernel_size=1
+            )
+
+            sequence_length = input_feature_maps.shape[2]
+            if not has_exact_square_root(sequence_length):
+                self.closest_square_root = int(
+                    np.floor(np.sqrt(sequence_length))
+                )
+                self.spatial_mixer = nn.Conv1d(
+                    in_channels=sequence_length,
+                    out_channels=self.closest_square_root**2,
+                    kernel_size=1,
+                )
+            else:
+                self.closest_square_root = int(np.sqrt(sequence_length))
+
+    def forward(self, input_list: list):
+        """
+        Forward pass of SimpleSegmentationDecoder.
+
+        📮 Passes the input list through pixel-wise MLPs, fuses the features, and upscales the result to the target size.
+
+        :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
+        :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
+        """
+        start_time = time.time()
+        input_feature_maps = input_list
+        if len(input_feature_maps[0].shape) == 4:
+            input_feature_maps = [
+                self.upsample(x)
+                if x.shape[-1] != self.target_image_size
+                else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        elif len(input_feature_maps[0].shape) == 3:
+            input_feature_maps = [
+                x.permute([0, 2, 1]) for x in input_feature_maps
+            ]  # (b, sequence, features) -> (b, features, sequence)
+            input_feature_maps = [
+                F.adaptive_avg_pool1d(x, output_size=self.target_image_size)
+                if x.shape[2] != self.target_image_size
+                else x
+                for x in input_feature_maps
+            ]
+            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        logger.debug(f"Upsampling took {time.time() - start_time} seconds")
+        logger.debug(
+            f"Shape of input feature maps: {input_feature_maps.shape}"
+        )
+        start_time = time.time()
+        logger.debug(f"MLP summary: {self.mlp}")
+        processed_features = self.mlp(input_feature_maps)
+        logger.debug(f"MLP took {time.time() - start_time} seconds")
+        # Concatenate the processed features along the channel dimension
+        start_time = time.time()
+        fused_features = processed_features
+        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
+
+        # Fuse the features, apply the final convolution layers, and upscale to target size
+        start_time = time.time()
+        logger.debug(f"Shape of fused features: {fused_features.shape}")
+        fused_features = self.fuse_features(fused_features)
+        fused_norm_features = self.fuse_features_norm(fused_features)
+        fused_act_features = self.fuse_features_act(fused_norm_features)
+        logger.debug(
+            f"Fusing features took {time.time() - start_time} seconds"
+        )
+        start_time = time.time()
+        class_features = self.final_conv(fused_act_features)
+        logger.debug(
+            f"Final convolution took {time.time() - start_time} seconds"
+        )
+
+        if self.spatial_mixer is not None:
+            class_features = class_features.permute([0, 2, 1])
+            class_features = self.spatial_mixer(class_features)
+            class_features = class_features.permute([0, 2, 1])
+
+        if self.closest_square_root is not None:
+            class_features = class_features.reshape(
+                class_features.shape[0],
+                self.num_classes,
+                self.closest_square_root,
+                self.closest_square_root,
+            )
+
+        return class_features
 
 
 class SegmentationViT(nn.Module):
@@ -194,15 +635,12 @@ class SegmentationViT(nn.Module):
     def __init__(
         self,
         encoder_model: nn.Module,
-        model_type: str = "vit",
-        embed_dim: int = 768,
         decoder_embed_dim: int = 512,
-        decoder_depth: int = 1,
-        decoder_num_heads: int = 4,
-        mlp_ratio: int = 4.0,
-        norm_layer: int = nn.LayerNorm,
         num_classes: int = 100,
         num_patches: int = 14,
+        background_weight: float = 0.01,
+        background_class: int = 0,
+        **kwargs,
     ):
         """
         Construct a Vision Transformer for Semantic Segmentation.
@@ -222,82 +660,60 @@ class SegmentationViT(nn.Module):
         self.encoder = encoder_model
         self.num_patches = num_patches
         self.num_classes = num_classes
-        self.positional_encoding = PositionalEncoding()
+        self.background_weight = background_weight
+        self.background_class = background_class
 
         self.decoder_embedding_dimension = decoder_embed_dim
-        self.decoder = nn.Linear(
-            embed_dim, self.decoder_embedding_dimension, bias=True
+
+        self.decoder = None
+
+        self.focal_loss = FocalLoss(
+            alpha=0.25, gamma=2, ignore_index=self.background_class
         )
-        self.decoder_blocks = nn.ModuleList(
-            [
-                Block(
-                    dim=self.decoder_embedding_dimension,
-                    num_heads=decoder_num_heads,
-                    mlp_ratio=mlp_ratio,
-                    qkv_bias=True,
-                    norm_layer=norm_layer,
-                )
-                for _ in range(decoder_depth)
-            ]
+        self.dice_loss = DiceLoss(ignore_index=self.background_class)
+        self.background_focal_loss = FocalLoss(alpha=0.25, gamma=2)
+        self.background_dice_loss = DiceLoss()
+
+        self.debug_mode = False
+
+    def optimization_loss(self, logits, labels):
+        focal_loss = self.focal_loss(logits, labels)
+        dice_loss = self.dice_loss(logits, labels)
+        background_focal_loss = self.background_focal_loss(logits, labels)
+        background_dice_loss = self.background_dice_loss(logits, labels)
+
+        loss = (
+            focal_loss
+            + dice_loss
+            + self.background_weight
+            * (background_focal_loss + background_dice_loss)
         )
-
-        self.pre_upsample_projection = nn.Conv1d(
-            self.num_patches + 1,
-            int(math.floor(math.sqrt(self.num_patches))) ** 2,
-            kernel_size=1,
-        )
-
-        self.channel_projection = nn.Conv2d(
-            in_channels=decoder_embed_dim,
-            out_channels=num_classes,
-            kernel_size=1,
-        )
-
-        self.upsample_blocks = nn.ModuleList(
-            [
-                ResidualConvBlock(
-                    in_channels=num_classes,
-                    out_channels=num_classes,
-                )
-                for _ in range(decoder_depth)
-            ]
-        )
-        self.additional_projection = None
-        self.decoder_normalization = norm_layer(decoder_embed_dim)
-        self.class_decoder = nn.Conv2d(num_classes, num_classes, kernel_size=1)
-
-        self.class_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-
-        self.init_weights()
-
-    def init_weights(self):
-        torch.nn.init.normal_(self.class_token, std=0.02)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            torch.nn.init.xavier_uniform_(module.weight)
-            if module.bias is not None:
-                nn.init.constant_(module.bias, 0)
-        elif isinstance(module, nn.LayerNorm):
-            nn.init.constant_(module.bias, 0)
-            nn.init.constant_(module.weight, 1.0)
+        return {
+            "loss": loss,
+            "dice_loss": dice_loss,
+            "focal_loss": focal_loss,
+            "background_focal_loss": background_focal_loss,
+            "background_dice_loss": background_dice_loss,
+        }
 
     def compute_loss_and_metrics(
         self, logits, labels: Optional[torch.Tensor] = None
     ):
-        output = {}
+        output_dict = {}
         if labels is not None:
-            output = optimization_loss(logits, labels)
-            # output |= metrics(
-            #     logits,
-            #     labels,
-            #     label_dim=1,
-            #     num_classes=self.num_classes,
-            # )
-            # print(output)
+            try:
+                output_dict = self.optimization_loss(logits, labels)
+            except Exception as e:
+                logger.exception(f"Exception: {e}")
+            if not self.training:
+                try:
+                    metrics = fast_miou(logits, labels)
+                except Exception as e:
+                    logger.debug(f"Exception: {e}")
+                    metrics = {}
+                output_dict = output_dict | metrics
 
-        return output
+        return output_dict
 
     def forward(
         self,
@@ -314,105 +730,84 @@ class SegmentationViT(nn.Module):
         Returns:
             torch.Tensor: Segmentation map.
         """
-        import time
 
-        start_time = time.time()
+        if self.debug_mode:
+            logger.debug(f"Image shape: {image.shape}")
+            logger.debug(
+                f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
+            )
 
         batch, _, height, width = image.shape
-        print(f"Line 1: {time.time() - start_time} seconds")
-
         start_time = time.time()
-        features = self.encoder(image)["image"]["raw_features"]
-        print(f"Line 2: {time.time() - start_time} seconds")
+        features = self.encoder(image)["image"]["per_layer_raw_features"]
 
-        start_time = time.time()
-        print(f"stem features.shape: {features.shape}")
-        print(f"Line 3: {time.time() - start_time} seconds")
+        if len(features[0].shape) == 3:
+            total_feature_blocks = len(features)
+            one_quarter_block = total_feature_blocks // 4
+            three_quarter_block = total_feature_blocks - one_quarter_block
+            features = [
+                features[0],
+                features[one_quarter_block],
+                features[three_quarter_block],
+                features[-1],
+            ]
 
-        start_time = time.time()
-        decoder_inputs = self.decoder(features)
-        print(f"Line 4: {time.time() - start_time} seconds")
+        # for f in features:
+        #     logger.debug(f"Feature shape: {f.shape}")
 
-        start_time = time.time()
-        class_tokens = self.class_token.expand(decoder_inputs.shape[0], -1, -1)
-        print(f"Line 5: {time.time() - start_time} seconds")
+        if self.debug_mode:
+            logger.debug(f"Encoder took {time.time() - start_time} seconds")
 
-        start_time = time.time()
-        decoder_inputs = self.positional_encoding(decoder_inputs)
-        print(f"Line 6: {time.time() - start_time} seconds")
+        if self.decoder is None:
+            feature_shapes = [x.shape for x in features]
+            logger.debug(f"Feature shapes: {feature_shapes}")
+            if len(features[0].shape) == 3:
+                sequence_lengths = [x.shape[1] for x in features]
+                largest_feature_map = max(sequence_lengths)
+                max_height = largest_feature_map
+                max_width = largest_feature_map
+                target_image_size = largest_feature_map
+            elif len(features[0].shape) == 4:
+                heights = [x.shape[2] for x in features]
+                max_height = max(heights)
+                widths = [x.shape[3] for x in features]
+                max_width = max(widths)
+                target_image_size = (128, 128)
+            else:
+                raise ValueError(
+                    f"Unsupported feature map shape: {features[0].shape}"
+                )
 
-        start_time = time.time()
-        decoder_inputs = torch.cat((class_tokens, decoder_inputs), dim=1)
-        print(f"Line 7: {time.time() - start_time} seconds")
-
-        for block in self.decoder_blocks:
-            start_time = time.time()
-            decoder_inputs = block(decoder_inputs)
-            print(f"decoder_inputs.shape: {decoder_inputs.shape}")
-            print(f"Line 8: {time.time() - start_time} seconds")
-
-        start_time = time.time()
-        decoder_inputs = self.decoder_normalization(decoder_inputs)
-        print(f"stem decoder_inputs.shape: {decoder_inputs.shape}")
-        print(f"Line 9: {time.time() - start_time} seconds")
-
-        if decoder_inputs.shape[1] != self.num_patches + 1:
-            start_time = time.time()
-            if self.additional_projection is None:
-                self.additional_projection = nn.Conv1d(
-                    decoder_inputs.shape[1],
-                    self.num_patches + 1,
-                    kernel_size=1,
-                ).to(decoder_inputs.device)
-            decoder_inputs = self.additional_projection(decoder_inputs)
-            print(
-                f"additional projection decoder_inputs.shape: {decoder_inputs.shape}"
+            self.decoder = PreResizeSimpleSegmentationDecoder(
+                input_feature_maps=features,
+                num_classes=self.num_classes,
+                target_image_size=target_image_size,
+                hidden_size=self.decoder_embedding_dimension,
             )
-            print(f"Line 10: {time.time() - start_time} seconds")
 
         start_time = time.time()
-        decoder_inputs = self.pre_upsample_projection(decoder_inputs)
-        print(
-            f"pre upsample projection decoder_inputs.shape: {decoder_inputs.shape}"
+        if self.decoder is not None:
+            mask_predictions = self.decoder(features)
+
+        if self.debug_mode:
+            logger.debug(f"Decoder took {time.time() - start_time} seconds")
+            logger.debug(f"Mask predictions shape: {mask_predictions.shape}")
+
+        logits = F.interpolate(
+            mask_predictions,
+            size=(256, 256),
+            mode="bicubic",
+            align_corners=True,
         )
-        print(f"Line 11: {time.time() - start_time} seconds")
+        output = {"logits": logits.detach()}
 
-        start_time = time.time()
-        decoder_inputs = decoder_inputs.permute([0, 2, 1])
-        batch, channels, sequence = decoder_inputs.shape
-        feature_map_size = int(sequence**0.5)
-        decoder_inputs = decoder_inputs.view(
-            batch, channels, feature_map_size, feature_map_size
-        )
-        decoder_inputs = self.channel_projection(decoder_inputs)
-        print(f"reshape decoder_inputs.shape: {decoder_inputs.shape}")
-        print(f"Line 12: {time.time() - start_time} seconds")
-
-        for block in self.upsample_blocks:
-            start_time = time.time()
-            decoder_inputs = block(decoder_inputs)
-            print(
-                f"upsample block decoder_inputs.shape: {decoder_inputs.shape}"
-            )
-            print(f"Line 13: {time.time() - start_time} seconds")
-
-        start_time = time.time()
-        decoder_inputs = F.interpolate(
-            decoder_inputs, size=(height, width), mode="bilinear"
-        )
-        print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
-        print(f"Line 14: {time.time() - start_time} seconds")
-
-        print(f"interpolate decoder_inputs.shape: {decoder_inputs.shape}")
-        output = self.class_decoder(decoder_inputs)
-        print(f"class decoder output.shape: {output.shape}")
-        output = {"logits": output}
-
-        start_time = time.time()
         if return_loss_and_metrics:
-            output |= self.compute_loss_and_metrics(
-                logits=output["logits"], labels=labels
-            )
-        print(f"Line 15: {time.time() - start_time} seconds")
+            try:
+                output |= self.compute_loss_and_metrics(
+                    logits=logits, labels=labels
+                )
+
+            except Exception as e:
+                logger.debug(f"Exception: {e}")
 
         return output

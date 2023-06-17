@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
 import datasets
-import learn2learn as l2l
 import PIL
 import torch
 from torchvision import transforms as T

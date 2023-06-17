@@ -5,12 +5,14 @@ from typing import Any, Dict, List, Optional, Union
 import accelerate
 import torch
 import torch.nn as nn
+from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 import yaml
 from omegaconf import DictConfig
 from rich import print
 from tali.models import MultiModalityConfig, TALIModel
 from tali.utils import download_model_with_name
 from transformers import CLIPProcessor, WhisperProcessor
+import torchvision.transforms as T
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
 from gate.models.backbones import (
@@ -33,9 +35,10 @@ class TALINet(nn.Module):
         whisper_model_name: str = "openai/whisper-small",
         model_repo_path: Optional[
             str
-        ] = "Antreas/tali-2-tali_image_text_base_patch16_224-wit_tali_image_text_dataset-2306",
+        ] = "Antreas/talip-godzilla-base16-wiva-sep-1337",
         checkpoint_identifier: Optional[str] = "latest",
         pretrained: bool = True,
+        image_size: Optional[int] = None,
     ):
         super().__init__()
 
@@ -61,12 +64,27 @@ class TALINet(nn.Module):
         self.image_text_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
         )
+        if image_size is not None:
+            self.image_size = (
+                (image_size, image_size)
+                if isinstance(image_size, int)
+                else image_size
+            )
+        else:
+            self.image_size = (224, 224)
 
         self.tokenizer = self.image_text_preprocessor
 
         self.audio_preprocessor = WhisperProcessor.from_pretrained(
             whisper_model_name
         )
+
+        self.video_num_features = None
+        self.image_num_features = None
+        self.text_num_features = None
+        self.audio_num_features = None
+
+        self.image_num_patches = None
 
         if hasattr(self.model, "video_linear_layer"):
             self.video_num_features = self.model.video_linear_layer.in_features
@@ -85,6 +103,13 @@ class TALINet(nn.Module):
 
     def init_weights(self):
         reinit(self)
+
+    def modify_expected_image_size(self, image_size: int):
+        config = self.model.clip_model.config
+        config.image_size = image_size
+        self.model.clip_model.vision_model.embeddings.position_embedding = (
+            CLIPVisionEmbeddings(config)
+        )
 
     def forward(
         self,
@@ -164,8 +189,13 @@ class TALINet(nn.Module):
     def get_transforms(self):
         def image_transforms(x):
             return self.image_text_preprocessor(
-                images=x, return_tensors="pt"
-            ).pixel_values
+                images=T.Resize(size=(self.image_size[0], self.image_size[1]))(
+                    x
+                ),
+                do_resize=False,
+                do_center_crop=False,
+                return_tensors="pt",
+            ).pixel_values.squeeze(0)
 
         def text_transforms(x):
             return self.image_text_preprocessor(
@@ -246,7 +276,7 @@ class TALINet(nn.Module):
             model_config = config["model"]
             del model_config["_target_"]
             model_config = DictConfig(model_config)
-            self.model = self.model = TALIModel(**model_config)
+            self.model = TALIModel(**model_config)
 
             self.accelerator = accelerate.Accelerator()
             self.model = self.accelerator.prepare(self.model)

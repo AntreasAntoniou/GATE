@@ -8,14 +8,18 @@ from accelerate import Accelerator
 os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
+import signal
+import sys
+import time
+
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
 from torch.utils.data import Subset
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -48,6 +52,52 @@ config_store = collect_config_store()
 logger = get_logger(name=__name__)
 
 accelerator = Accelerator()
+
+from rich import print
+from rich.table import Table
+import torch
+from torch import nn
+
+
+from rich.console import Console
+from rich.table import Table
+from rich.style import Style
+from rich.text import Text
+
+
+def pretty_print_parameters(model: nn.Module):
+    console = Console()
+
+    table = Table(title=Text("Model Parameters", style=Style(color="green")))
+
+    table.add_column("Name", justify="left", style="cyan")
+    table.add_column("Shape", justify="center", style="magenta")
+    table.add_column("Data Type", justify="center", style="yellow")
+    table.add_column("Device", justify="center", style="green")
+
+    for name, param in model.named_parameters():
+        table.add_row(
+            Text(str(name), style=Style(color="blue")),
+            Text(str(tuple(param.shape)), style=Style(color="red")),
+            Text(str(param.dtype), style=Style(color="yellow")),
+            Text(str(param.device), style=Style(color="green")),
+        )
+
+    console.print(table)
+    return table
+
+
+# # function to handle the alarm signal
+# def handle_alarm(signum, frame):
+#     print("Error: The application took longer than expected.")
+#     sys.exit(1)  # exit with error status
+
+
+# # set the signal handler
+# signal.signal(signal.SIGALRM, handle_alarm)
+
+# # set an alarm for 200 minutes
+# signal.alarm(60 * 200)
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
@@ -91,6 +141,8 @@ def run(cfg: Any) -> None:
     model: GATEModel = model_and_transform.model
     model = accelerator.prepare(model)
     transform: Optional[Callable] = model_and_transform.transform
+
+    pretty_print_parameters(model)
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
