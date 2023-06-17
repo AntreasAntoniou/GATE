@@ -198,11 +198,13 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         output: EvaluatorOutput = super().validation_step(
             model, batch, global_step, accelerator
         )
-        seg_episode = output.metrics["seg_episode"]
-        # ae_episode = output.metrics["ae_episode"]
-        output.metrics = {
-            "seg_episode": seg_episode
-        }  # , "ae_episode": ae_episode}
+
+        if "seg_episode" in output.metrics:
+            seg_episode = output.metrics["seg_episode"]
+            # ae_episode = output.metrics["ae_episode"]
+            output.metrics = {"seg_episode": seg_episode}
+        else:
+            output.metrics = {}
         return output
 
     @collect_metrics
@@ -212,11 +214,12 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         output: EvaluatorOutput = super().testing_step(
             model, batch, global_step, accelerator
         )
-        seg_episode = output.metrics["seg_episode"]
-        # ae_episode = output.metrics["ae_episode"]
-        output.metrics = {
-            "seg_episode": seg_episode
-        }  # , "ae_episode": ae_episode}
+        if "seg_episode" in output.metrics:
+            seg_episode = output.metrics["seg_episode"]
+            # ae_episode = output.metrics["ae_episode"]
+            output.metrics = {"seg_episode": seg_episode}
+        else:
+            output.metrics = {}
         return output
 
 
