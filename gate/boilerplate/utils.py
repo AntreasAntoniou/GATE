@@ -250,6 +250,7 @@ def download_model_with_name(
     hf_cache_dir: str,
     model_name: str,
     download_only_if_finished: bool = False,
+    local_checkpoint_store_dir: Optional[str] = None,
 ) -> Dict[str, pathlib.Path]:
     """
     Download model checkpoint files given the model name from Hugging Face hub.
@@ -260,6 +261,27 @@ def download_model_with_name(
     :param download_only_if_finished: Download only if the model training is finished (optional)
     :return: A dictionary with the filepaths of the downloaded files
     """
+
+    if local_checkpoint_store_dir is not None:
+        ckpt_dir = pathlib.Path(local_checkpoint_store_dir) / model_name
+        validated_ckpt_dir = True
+        if ckpt_dir.exists():
+            path_dict = {
+                "trainer_state_filepath": ckpt_dir / "trainer_state.pt",
+                "optimizer_filepath": ckpt_dir / "optimizer.bin",
+                "model_filepath": ckpt_dir / "pytorch_model.bin",
+                "random_states_filepath": ckpt_dir / "random_states_0.pkl",
+                "config_filepath": ckpt_dir / "config.yaml",
+                "root_filepath": ckpt_dir,
+                "validation_passed": True,
+            }
+            for key, value in path_dict.items():
+                if isinstance(value, pathlib.Path):
+                    if not value.exists():
+                        validated_ckpt_dir = False
+                        break
+            if validated_ckpt_dir:
+                return path_dict
 
     def download_and_copy(
         filename: str,
@@ -359,13 +381,21 @@ def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
 
 
 def download_checkpoint(
-    hf_repo_path: str, ckpt_identifier: str, hf_cache_dir: str
+    hf_repo_path: str,
+    ckpt_identifier: str,
+    hf_cache_dir: str,
+    local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[pathlib.Path, str]:
     logger.info(
         f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging Face hub 👨🏻‍💻"
     )
+    ckpt_identifier = f"ckpt_{ckpt_identifier}"
+
     path_dict = download_model_with_name(
-        hf_repo_path, hf_cache_dir, ckpt_identifier
+        hf_repo_path,
+        hf_cache_dir,
+        ckpt_identifier,
+        local_checkpoint_store_dir=local_checkpoint_store_dir,
     )
     logger.info(f"Downloaded checkpoint to {hf_cache_dir}")
     return path_dict
@@ -383,12 +413,29 @@ def create_hf_model_repo_and_download_maybe(
     upload_config_files(
         cfg=cfg, hf_repo_path=hf_repo_path, hf_cache_dir=hf_cache_dir
     )
+    checkpoint_store_dir = (
+        pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
+    )
 
     hf_api = HfApi(token=os.environ["HF_TOKEN"])
-    files = hf_api.list_repo_files(repo_id=hf_repo_path)
-    ckpt_dict = get_checkpoint_dict(files)
 
-    if len(ckpt_dict) == 0:
+    local_files = [str(file) for file in checkpoint_store_dir.glob("*")]
+    local_ckpt_dict = {
+        int(file.split("checkpoints/ckpt_")[1]): file for file in local_files
+    }
+    remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
+    remote_ckpt_dict = get_checkpoint_dict(remote_files)
+
+    latest_remote_ckpt_names = sorted(
+        list(remote_ckpt_dict.keys()), reverse=True
+    )
+    latest_local_ckpt_names = sorted(
+        list(local_ckpt_dict.keys()), reverse=True
+    )
+    mixed_ckpt_list = latest_remote_ckpt_names + latest_local_ckpt_names
+    mixed_ckpt_list = sorted(list(set(mixed_ckpt_list)), reverse=True)
+
+    if len(mixed_ckpt_list) == 0:
         return None
 
     if resume_from_checkpoint:
@@ -400,19 +447,20 @@ def create_hf_model_repo_and_download_maybe(
     elif resume:
         valid_model_downloaded = False
         idx = 0
-        ckpt_list = sorted(list(ckpt_dict.keys()), reverse=True)
-        print(ckpt_list)
+
+        print(
+            f"local ckpt dict: {local_ckpt_dict}, remote ckpt dict: {remote_ckpt_dict}"
+        )
         while not valid_model_downloaded:
-            if len(ckpt_list) < idx + 1:
+            if len(remote_ckpt_dict) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
                 return None
-            latest_ckpt = pathlib.Path(
-                ckpt_dict[ckpt_list[idx]].split("/")[-1]
-            )
+
             download_dict = download_checkpoint(
                 hf_cache_dir=hf_cache_dir,
                 hf_repo_path=hf_repo_path,
-                ckpt_identifier=latest_ckpt,
+                ckpt_identifier=mixed_ckpt_list[idx],
+                local_checkpoint_store_dir=checkpoint_store_dir,
             )
             valid_model_downloaded = download_dict["validation_passed"]
             idx += 1
