@@ -360,6 +360,7 @@ def fast_miou(
     )
 
     iou = IoUMetric(ignore_index=ignore_index)
+    print(class_names)
     iou.dataset_meta = class_names
 
     data_samples = [
