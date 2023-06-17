@@ -73,6 +73,7 @@ def pretty_print_parameters(model: nn.Module):
             str(tuple(param.shape)),
             str(param.dtype),
             str(param.device),
+            style="one-dark",
         )
 
     print(table)
