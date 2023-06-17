@@ -709,6 +709,7 @@ class SegmentationViT(nn.Module):
             try:
                 output_dict = self.optimization_loss(logits, labels)
             except Exception as e:
+                logger.info(f"Error in fast_miou: {e}")
                 raise e
             if not self.training:
                 try:
@@ -716,6 +717,7 @@ class SegmentationViT(nn.Module):
                         logits, labels, self.ignore_index, self.class_names
                     )
                 except Exception as e:
+                    logger.info(f"Error in fast_miou: {e}")
                     raise e
                 output_dict = output_dict | metrics
 
