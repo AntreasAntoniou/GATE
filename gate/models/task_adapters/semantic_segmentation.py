@@ -460,6 +460,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         )
         self.spatial_mixer = None
         self.closest_square_root = None
+        self.num_blocks = len(input_feature_maps)
 
         if len(input_feature_maps[0].shape) == 4:
             input_feature_maps = [
@@ -483,20 +484,28 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         if len(input_feature_maps.shape) == 4:
             in_channels = input_feature_maps.shape[1]
             self.mlp = nn.Sequential(
-                nn.Conv2d(in_channels, hidden_size, kernel_size=1),
+                nn.Conv2d(
+                    in_channels, self.num_blocks * hidden_size, kernel_size=1
+                ),
                 SamLayerNorm(
-                    normalized_shape=hidden_size, data_format="channels_first"
+                    normalized_shape=self.num_blocks * hidden_size,
+                    data_format="channels_first",
                 ),
                 nn.LeakyReLU(inplace=True),
-                nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
+                nn.Conv2d(
+                    self.num_blocks * hidden_size,
+                    self.num_blocks * hidden_size,
+                    kernel_size=1,
+                ),
                 SamLayerNorm(
-                    normalized_shape=hidden_size, data_format="channels_first"
+                    normalized_shape=self.num_blocks * hidden_size,
+                    data_format="channels_first",
                 ),
                 nn.LeakyReLU(inplace=True),
             )
 
             self.fuse_features = nn.Conv2d(
-                hidden_size, hidden_size, kernel_size=1
+                self.num_blocks * hidden_size, hidden_size, kernel_size=1
             )
             self.fuse_features_norm = nn.LazyInstanceNorm2d()
 
@@ -507,16 +516,22 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         elif len(input_feature_maps.shape) == 3:
             in_channels = input_feature_maps.shape[1]
             self.mlp = nn.Sequential(
-                nn.Conv1d(in_channels, hidden_size, kernel_size=1),
-                nn.InstanceNorm1d(num_features=hidden_size),
+                nn.Conv1d(
+                    in_channels, self.num_blocks * hidden_size, kernel_size=1
+                ),
+                nn.InstanceNorm1d(num_features=self.num_blocks * hidden_size),
                 nn.LeakyReLU(inplace=True),
-                nn.Conv1d(hidden_size, hidden_size, kernel_size=1),
-                nn.InstanceNorm1d(num_features=hidden_size),
+                nn.Conv1d(
+                    self.num_blocks * hidden_size,
+                    self.num_blocks * hidden_size,
+                    kernel_size=1,
+                ),
+                nn.InstanceNorm1d(num_features=self.num_blocks * hidden_size),
                 nn.LeakyReLU(inplace=True),
             )
 
             self.fuse_features = nn.Conv1d(
-                hidden_size, hidden_size, kernel_size=1
+                self.num_blocks * hidden_size, hidden_size, kernel_size=1
             )
             self.fuse_features_norm = nn.LazyInstanceNorm1d()
 
