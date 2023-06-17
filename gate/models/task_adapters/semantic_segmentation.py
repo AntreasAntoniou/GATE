@@ -772,7 +772,7 @@ class SegmentationViT(nn.Module):
                 max_height = max(heights)
                 widths = [x.shape[3] for x in features]
                 max_width = max(widths)
-                target_image_size = (max_height, max_width)
+                target_image_size = (128, 128)
             else:
                 raise ValueError(
                     f"Unsupported feature map shape: {features[0].shape}"
