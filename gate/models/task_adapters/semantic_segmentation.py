@@ -793,19 +793,18 @@ class SegmentationViT(nn.Module):
             logger.debug(f"Decoder took {time.time() - start_time} seconds")
             logger.debug(f"Mask predictions shape: {mask_predictions.shape}")
 
-        output = {
-            "logits": F.interpolate(
-                mask_predictions,
-                size=(256, 256),
-                mode="bicubic",
-                align_corners=True,
-            )
-        }
+        logits = F.interpolate(
+            mask_predictions,
+            size=(256, 256),
+            mode="bicubic",
+            align_corners=True,
+        )
+        output = {"logits": logits.detach()}
 
         if return_loss_and_metrics:
             try:
                 output |= self.compute_loss_and_metrics(
-                    logits=output["logits"], labels=labels
+                    logits=logits, labels=labels
                 )
 
             except Exception as e:
