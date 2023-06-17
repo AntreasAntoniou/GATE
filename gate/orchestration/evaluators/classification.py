@@ -153,7 +153,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         loss = output_dict["loss"]
 
         if "logits" in output_dict:
-            if global_step % 100 == 0:
+            if self.starting_eval:
                 output_dict["seg_episode"] = {
                     "image": batch["image"],
                     "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
@@ -163,6 +163,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
                         for i in range(output_dict["logits"].shape[1])
                     },
                 }
+                self.starting_eval = False
 
             # output_dict["ae_episode"] = {
             #     "image": F.interpolate(
