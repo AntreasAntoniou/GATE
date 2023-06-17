@@ -595,7 +595,13 @@ class SegmentationViT(nn.Module):
         if return_loss_and_metrics:
             try:
                 output |= self.compute_loss_and_metrics(
-                    logits=output["logits"], labels=labels
+                    logits=output["logits"],
+                    labels=F.interpolate(
+                        labels,
+                        size=(64, 64),
+                        mode="bicubic",
+                        align_corners=True,
+                    ),
                 )
 
             except Exception as e:
