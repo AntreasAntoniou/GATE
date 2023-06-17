@@ -7,17 +7,16 @@ import signal
 from functools import wraps
 from typing import Any, Dict, Optional, Tuple, Union
 
+import numpy as np
+
+import torchvision.transforms as T
+import wandb
+
 import accelerate
 import orjson as json
 import torch
 import yaml
-from huggingface_hub import (
-    HfApi,
-    create_repo,
-    hf_hub_download,
-    login,
-    snapshot_download,
-)
+import huggingface_hub
 from omegaconf import DictConfig, OmegaConf
 from rich.logging import RichHandler
 from rich.syntax import Syntax
@@ -189,8 +188,6 @@ def pretty_config(
     return tree
 
 
-from typing import Any, Dict
-
 from rich import print as rprint
 from rich.pretty import Pretty
 
@@ -288,7 +285,7 @@ def download_model_with_name(
         target_path: pathlib.Path,
         subfolder: str = f"checkpoints/{model_name}",
     ) -> None:
-        file_path = hf_hub_download(
+        file_path = huggingface_hub.hf_hub_download(
             repo_id=hf_repo_path,
             cache_dir=pathlib.Path(hf_cache_dir),
             resume_download=True,
@@ -339,9 +336,11 @@ def download_model_with_name(
 
 
 def create_hf_model_repo(hf_repo_path: str) -> str:
-    login(token=os.environ["HF_TOKEN"], add_to_git_credential=True)
+    huggingface_hub.login(
+        token=os.environ["HF_TOKEN"], add_to_git_credential=True
+    )
     print(f"Creating repo {hf_repo_path}")
-    return create_repo(
+    return huggingface_hub.create_repo(
         hf_repo_path, repo_type="model", exist_ok=True, private=True
     )
 
@@ -358,7 +357,7 @@ def upload_config_files(
 ) -> None:
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
-    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
 
     with open(config_yaml_path, "w") as file:
         yaml.dump(config_dict, file)
@@ -419,7 +418,7 @@ def create_hf_model_repo_and_download_maybe(
         pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
     )
 
-    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
 
     local_files = [str(file) for file in checkpoint_store_dir.glob("*")]
     local_ckpt_dict = {
@@ -483,7 +482,7 @@ def download_model_checkpoint_from_hub(
             "Only one of `get_latest` and `checkpoint_identifier` can be set to True"
         )
 
-    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
     files = hf_api.list_repo_files(repo_id=hf_repo_path)
     ckpt_dict = get_checkpoint_dict(files)
 
@@ -515,12 +514,6 @@ def count_files_recursive(directory: str) -> int:
         file_count += len(files)
 
     return file_count
-
-
-import numpy as np
-import torch
-import torchvision.transforms as T
-import wandb
 
 
 def normalize_image(image: torch.Tensor) -> torch.Tensor:
