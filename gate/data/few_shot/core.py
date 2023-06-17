@@ -1,17 +1,18 @@
-from collections import defaultdict
-import yaml
+import multiprocessing as mp
 import pathlib
+from collections import defaultdict
 from re import split
 from typing import Any, Counter, Dict, List, Optional
 
 import datasets
 import numpy as np
+import pandas as pd
 import PIL.Image as Image
 import torch
 import torchvision.transforms as T
+import yaml
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
-import multiprocessing as mp
 from tqdm.auto import tqdm
 
 from gate.boilerplate.utils import get_logger
@@ -20,20 +21,19 @@ from gate.data.few_shot.utils import (
     get_class_to_idx_dict,
     get_class_to_image_idx_and_bbox,
 )
-import pandas as pd
 
 logger = get_logger(
     __name__,
 )
 
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
+
+import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import pandas as pd
 from datasets import load_dataset
 from torch.utils.data import Dataset
-
-from concurrent.futures import ThreadPoolExecutor
-import concurrent.futures
 
 
 def save_dict_to_yaml(filepath, dict_to_store):
