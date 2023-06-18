@@ -198,7 +198,7 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
                 if n in decoder_decay_parameters
             ],
             "weight_decay": cfg.optimizer.weight_decay,
-            "lr": 0.0006 * 10.0,
+            "lr": 0.00006 * 10.0,
         },
         {
             "params": [
@@ -207,7 +207,7 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
                 if n not in decay_parameters and "decoder_head" in n
             ],
             "weight_decay": 0.0,
-            "lr": 0.0006 * 10.0,
+            "lr": 0.00006 * 10.0,
         },
     ]
 
@@ -215,7 +215,7 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
 
     return transformers.AdamW(
         params=optimizer_grouped_parameters,
-        lr=0.0006,
+        lr=0.00006,
         weight_decay=0.01,
         betas=(0.9, 0.98),
         eps=1e-06,
