@@ -230,7 +230,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
 
     def end_validation(self, global_step):
         evaluator_output = super().end_validation(global_step)
-        iou_metrics = self.model.compute_across_set_iou()
+        iou_metrics = self.model.model.compute_across_set_iou()
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -241,7 +241,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
 
     def end_testing(self, global_step):
         evaluator_output = super().end_testing(global_step)
-        iou_metrics = self.model.compute_across_set_iou()
+        iou_metrics = self.model.model.compute_across_set_iou()
 
         return EvaluatorOutput(
             global_step=global_step,
