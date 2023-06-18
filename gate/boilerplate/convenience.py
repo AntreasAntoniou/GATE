@@ -149,24 +149,37 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
     Returns:
         Optimizer: The instantiated optimizer.
     """
-    decay_parameters = get_parameter_names(model, [torch.nn.LayerNorm])
-    decay_parameters = [
-        name for name in decay_parameters if "bias" not in name
-    ]
+    decay_parameters = get_parameter_names(
+        model=model,
+        forbidden_layer_types=[
+            torch.nn.LayerNorm,
+            torch.nn.BatchNorm2d,
+            torch.nn.BatchNorm1d,
+            nn.InstanceNorm1d,
+            nn.InstanceNorm2d,
+        ],
+    )
+
     decoder_decay_parameters = [
-        p
-        for n, p in model.named_parameters()
-        if "decoder_head" in n and n in decay_parameters
+        name
+        for name in decay_parameters
+        if "decoder_head" in name and "bias" not in name
     ]
-    decoder_non_decay_parameters = [
-        p
-        for n, p in model.named_parameters()
-        if "decoder_head" in n and n not in decay_parameters
+
+    encoder_decay_parameters = [
+        name
+        for name in decay_parameters
+        if "bias" not in name and name not in decoder_decay_parameters
     ]
+
+    decay_parameters = encoder_decay_parameters + decoder_decay_parameters
+
     optimizer_grouped_parameters = [
         {
             "params": [
-                p for n, p in model.named_parameters() if n in decay_parameters
+                p
+                for n, p in model.named_parameters()
+                if n in encoder_decay_parameters
             ],
             "weight_decay": cfg.optimizer.weight_decay,
         },
@@ -174,19 +187,27 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
             "params": [
                 p
                 for n, p in model.named_parameters()
-                if n not in decay_parameters
+                if n not in decay_parameters and "decoder_head" not in n
             ],
             "weight_decay": 0.0,
         },
         {
-            "params": decoder_decay_parameters,
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n in decoder_decay_parameters
+            ],
             "weight_decay": cfg.optimizer.weight_decay,
             "lr": cfg.optimizer.lr * 10.0,
         },
         {
-            "params": decoder_non_decay_parameters,
-            "weight_decay": cfg.optimizer.weight_decay,
-            "lr": 0.0,
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n not in decay_parameters and "decoder_head" in n
+            ],
+            "weight_decay": 0.0,
+            "lr": cfg.optimizer.lr * 10.0,
         },
     ]
 
