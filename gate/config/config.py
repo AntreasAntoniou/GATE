@@ -143,9 +143,9 @@ def collect_config_store():
     ##########################################################################
     # Optimizer configs
 
-    adamw_optimizer_config = builds(
-        transformers.AdamW, populate_full_signature=True, zen_partial=True
-    )
+    # adamw_optimizer_config = builds(
+    #     transformers.AdamW, populate_full_signature=True, zen_partial=True
+    # )
 
     config_store.store(
         group="optimizer",
