@@ -6,6 +6,7 @@ import torch.nn as nn
 from hydra_zen import instantiate
 from torch.utils.data import Subset
 from transformers import AdamW
+import transformers
 
 import wandb
 from gate.boilerplate.utils import get_logger
@@ -191,8 +192,12 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
 
     logger.info(f"Optimizer hyperparameters: {cfg.optimizer}")
 
-    return instantiate(
-        cfg.optimizer, params=optimizer_grouped_parameters, _partial_=False
+    return transformers.AdamW(
+        params=optimizer_grouped_parameters,
+        lr=cfg.optimizer.lr,
+        weight_decay=cfg.optimizer.weight_decay,
+        betas=cfg.optimizer.betas,
+        eps=cfg.optimizer.eps,
     )
 
 
