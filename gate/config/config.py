@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import hydra
 import torch
+import transformers
 import yaml
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config
@@ -143,15 +144,18 @@ def collect_config_store():
     # Optimizer configs
 
     adamw_optimizer_config = builds(
-        torch.optim.AdamW,
-        populate_full_signature=True,
-        zen_partial=True,
+        transformers.AdamW, populate_full_signature=True, zen_partial=True
     )
 
     config_store.store(
         group="optimizer",
         name="adamw",
-        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
+        node=adamw_optimizer_config(
+            lr=1e-5,
+            weight_decay=0.0,
+            betas=(0.9, 0.98),
+            eps=1e-6,
+        ),
     )
 
     ##########################################################################
