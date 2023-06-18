@@ -377,6 +377,8 @@ def miou_metrics(
     # Call the compute_metrics method
     metrics = iou.compute_metrics(iou.results)
 
+    print(f"metrics: {metrics}")
+
     return metrics | metric
 
 
