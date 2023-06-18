@@ -694,7 +694,7 @@ class SegmentationViT(nn.Module):
                     logits, labels, self.ignore_index, self.class_names
                 )
                 output_dict = output_dict | metrics
-
+        print(output_dict)
         return output_dict
 
     def forward(
