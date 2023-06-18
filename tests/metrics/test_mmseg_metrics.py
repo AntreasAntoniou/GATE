@@ -2,9 +2,9 @@ import pytest
 import torch
 import torch.nn.functional as F
 from mmseg.models.losses import (
+    CrossEntropyLoss,
     DiceLoss,
     FocalLoss,
-    CrossEntropyLoss,
     LovaszLoss,
 )
 
