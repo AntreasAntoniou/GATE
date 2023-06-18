@@ -116,7 +116,7 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
         logits=logits, labels=labels, ignore_index=ignore_index
     )
 
-    loss = 10 * dice_loss + 10 * bce_loss + 10 * focal_loss
+    loss = 1000 * dice_loss + 1000 * bce_loss + 100 * focal_loss
 
     return {
         "loss": loss,
