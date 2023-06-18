@@ -544,7 +544,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             )
             self.fuse_features_norm = nn.LazyInstanceNorm1d()
 
-            self.fuse_features_act = AccurateGELUActivation()
+            self.fuse_features_act = nn.LeakyReLU()
             self.final_conv = nn.Conv1d(
                 hidden_size, num_classes, kernel_size=1
             )
