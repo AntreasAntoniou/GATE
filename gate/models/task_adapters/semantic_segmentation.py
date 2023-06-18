@@ -35,6 +35,93 @@ from gate.boilerplate.utils import get_logger
 logger = get_logger(__name__)
 
 
+def has_exact_square_root(s: int) -> bool:
+    # Get the size of the second dimension (s)
+
+    # Calculate the square root of s
+    root = math.sqrt(s)
+
+    # Check if the square root is an integer
+    return root.is_integer()
+
+
+def mmseg_dice_loss(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    smooth: float = 1.0,
+    ignore_index: int = 255,
+):
+    dice_loss = DiceLoss(smooth=smooth, ignore_index=ignore_index)
+
+    # Prepare sample logits and labels
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
+
+    labels = labels.view(-1)
+
+    loss = dice_loss.forward(logits, labels)
+
+    return loss
+
+
+def mmseg_focal_loss(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    alpha: float = 0.25,
+    gamma: float = 2.0,
+    ignore_index: int = 255,
+):
+    focal_loss = FocalLoss(alpha=alpha, gamma=gamma)
+
+    # Prepare sample logits and labels
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
+
+    labels = labels.view(-1)
+
+    loss = focal_loss.forward(logits, labels)
+
+    return loss
+
+
+def mmseg_mask_cross_entropy(logits, labels):
+    mask_bce_loss = CrossEntropyLoss(use_mask=True)
+
+    # Prepare sample logits and labels
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, 150)
+
+    labels = labels.view(-1)
+    labels = one_hot_encoding(labels, num_classes=150, dim=1)
+
+    loss = mask_bce_loss.forward(logits, labels, ignore_index=None)
+
+    return loss
+
+
+def optimization_loss(logits, labels, ignore_index: int = 255):
+    """
+    📝 Optimization Loss
+    Args:
+        logits: (B, C, H, W)
+        labels: (B, 1, H, W)
+    """
+    dice_loss = mmseg_dice_loss(
+        logits=logits, labels=labels, ignore_index=ignore_index
+    )
+    focal_loss = mmseg_focal_loss(
+        logits=logits, labels=labels, ignore_index=ignore_index
+    )
+
+    bce_loss = mmseg_mask_cross_entropy(logits=logits, labels=labels)
+
+    loss = focal_loss + dice_loss + bce_loss
+
+    return {
+        "loss": loss,
+        "bce_mask_loss": bce_loss,
+        "dice_loss": dice_loss,
+        "focal_loss": focal_loss,
+    }
+
+
 class ResidualUpscaleConvBlock(nn.Module):
     """
     📝 Residual Convolutional Block
@@ -152,83 +239,6 @@ class ResidualConvBlock(nn.Module):
         return out + residual
 
 
-def mmseg_dice_loss(
-    logits: torch.Tensor,
-    labels: torch.Tensor,
-    smooth: float = 1.0,
-    ignore_index: int = 255,
-):
-    dice_loss = DiceLoss(smooth=smooth, ignore_index=ignore_index)
-
-    # Prepare sample logits and labels
-    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
-
-    labels = labels.view(-1)
-
-    loss = dice_loss.forward(logits, labels)
-
-    return loss
-
-
-def mmseg_focal_loss(
-    logits: torch.Tensor,
-    labels: torch.Tensor,
-    alpha: float = 0.25,
-    gamma: float = 2.0,
-    ignore_index: int = 255,
-):
-    focal_loss = FocalLoss(alpha=alpha, gamma=gamma)
-
-    # Prepare sample logits and labels
-    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
-
-    labels = labels.view(-1)
-
-    loss = focal_loss.forward(logits, labels)
-
-    return loss
-
-
-def mmseg_mask_cross_entropy(logits, labels):
-    mask_bce_loss = CrossEntropyLoss(use_mask=True)
-
-    # Prepare sample logits and labels
-    logits = logits.permute([0, 2, 3, 1]).reshape(-1, 150)
-
-    labels = labels.view(-1)
-    labels = one_hot_encoding(labels, num_classes=150, dim=1)
-
-    loss = mask_bce_loss.forward(logits, labels, ignore_index=None)
-
-    return loss
-
-
-def optimization_loss(logits, labels, ignore_index: int = 255):
-    """
-    📝 Optimization Loss
-    Args:
-        logits: (B, C, H, W)
-        labels: (B, 1, H, W)
-    """
-    dice_loss = mmseg_dice_loss(
-        logits=logits, labels=labels, ignore_index=ignore_index
-    )
-    focal_loss = mmseg_focal_loss(
-        logits=logits, labels=labels, ignore_index=ignore_index
-    )
-
-    bce_loss = mmseg_mask_cross_entropy(logits=logits, labels=labels)
-
-    loss = focal_loss + dice_loss + bce_loss
-
-    return {
-        "loss": loss,
-        "bce_mask_loss": bce_loss,
-        "dice_loss": dice_loss,
-        "focal_loss": focal_loss,
-    }
-
-
 class UpscaleMultiBlock(nn.Module):
     def __init__(
         self,
@@ -305,19 +315,6 @@ class UpscaleMultiBlock(nn.Module):
         out = self.out_conv(out)
 
         return out
-
-
-import math
-
-
-def has_exact_square_root(s: int) -> bool:
-    # Get the size of the second dimension (s)
-
-    # Calculate the square root of s
-    root = math.sqrt(s)
-
-    # Check if the square root is an integer
-    return root.is_integer()
 
 
 class SimpleSegmentationDecoder(nn.Module):
@@ -680,13 +677,6 @@ class SegmentationViT(nn.Module):
         self.decoder_embedding_dimension = decoder_embed_dim
 
         self.decoder = None
-
-        self.focal_loss = FocalLoss(
-            alpha=0.25, gamma=2, ignore_index=self.background_class
-        )
-        self.dice_loss = DiceLoss(ignore_index=self.background_class)
-        self.background_focal_loss = FocalLoss(alpha=0.25, gamma=2)
-        self.background_dice_loss = DiceLoss()
 
         self.debug_mode = False
 
