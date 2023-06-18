@@ -48,7 +48,7 @@ def mmseg_dice_loss(
     ignore_index: int = 255,
 ):
     dice_loss = DiceLoss(
-        smooth=smooth, ignore_index=ignore_index, reduction="sum"
+        smooth=smooth, ignore_index=ignore_index, reduction="mean"
     )
 
     # Prepare sample logits and labels
@@ -68,7 +68,7 @@ def mmseg_focal_loss(
     gamma: float = 2.0,
     ignore_index: int = 255,
 ):
-    focal_loss = FocalLoss(alpha=alpha, gamma=gamma, reduction="sum")
+    focal_loss = FocalLoss(alpha=alpha, gamma=gamma, reduction="mean")
 
     # Prepare sample logits and labels
     num_classes = logits.shape[1]
@@ -82,14 +82,16 @@ def mmseg_focal_loss(
 
 
 def mmseg_mask_cross_entropy(logits, labels, ignore_index):
-    mask_bce_loss = CrossEntropyLoss(use_sigmoid=True, reduction="sum")
+    mask_bce_loss = CrossEntropyLoss(
+        use_sigmoid=False, use_mask=False, reduction="mean"
+    )
 
     # Prepare sample logits and labels
     num_classes = logits.shape[1]
     logits = logits.permute([0, 2, 3, 1]).reshape(-1, num_classes)
 
     labels = labels.view(-1)
-    labels = one_hot_encoding(labels, num_classes=num_classes, dim=1)
+    # labels = one_hot_encoding(labels, num_classes=num_classes, dim=1)
 
     loss = mask_bce_loss.forward(logits, labels, ignore_index=ignore_index)
 
