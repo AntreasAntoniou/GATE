@@ -129,6 +129,7 @@ class BackgroundLogging(threading.Thread):
                             "label_idx_to_description"
                         ],
                         global_step=self.global_step,
+                        prefix=self.phase_name,
                     )
                     continue
                 if "ae_episode" in metric_key:
@@ -139,6 +140,7 @@ class BackgroundLogging(threading.Thread):
                         images=ae_episode["image"],
                         reconstructions=ae_episode["recon"],
                         global_step=self.global_step,
+                        prefix=self.phase_name,
                     )
                     continue
 
