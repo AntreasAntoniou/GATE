@@ -686,6 +686,7 @@ class SegmentationViT(nn.Module):
         self.debug_mode = False
 
         self.iou_metric = IoUMetric(ignore_index=self.ignore_index)
+        print(f"classes: {self.class_names}")
         self.iou_metric.dataset_meta = {"classes": self.class_names}
 
     def compute_across_set_iou(self):
