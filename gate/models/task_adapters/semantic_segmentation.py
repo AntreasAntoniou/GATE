@@ -112,15 +112,15 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
         logits=logits, labels=labels, ignore_index=ignore_index
     )
 
-    bce_loss = mmseg_mask_cross_entropy(
+    ce_loss = mmseg_mask_cross_entropy(
         logits=logits, labels=labels, ignore_index=ignore_index
     )
 
-    loss = 1 * dice_loss + 1 * bce_loss + 1 * focal_loss
+    loss = ce_loss
 
     return {
         "loss": loss,
-        "bce_mask_loss": bce_loss,
+        "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
     }
