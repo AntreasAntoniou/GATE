@@ -375,9 +375,9 @@ def miou_metrics(
     more_metrics = iou.compute_metrics(iou.results)
 
     # metrics: {'aAcc': 65.36, 'mIoU': 6.65, 'mAcc': 9.72}
-    more_metrics["overall_accuracy_mmseg"] = more_metrics["aAcc"]
-    more_metrics["mean_iou_mmseg"] = more_metrics["mIoU"]
-    more_metrics["mean_accuracy_mmseg"] = more_metrics["mAcc"]
+    more_metrics["overall_accuracy_mmseg"] = torch.tensor(more_metrics["aAcc"])
+    more_metrics["mean_iou_mmseg"] = torch.tensor(more_metrics["mIoU"])
+    more_metrics["mean_accuracy_mmseg"] = torch.tensor(more_metrics["mAcc"])
 
     return more_metrics | metrics
 
