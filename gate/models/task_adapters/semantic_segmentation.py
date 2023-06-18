@@ -71,10 +71,10 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
 
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = ce_loss + dice_loss + focal_loss
+    loss = 0.1 * ce_loss + dice_loss + focal_loss
 
     background_loss = (
-        background_ce_loss + background_dice_loss + background_focal_loss
+        0.1 * background_ce_loss + background_dice_loss + background_focal_loss
     )
 
     return {
