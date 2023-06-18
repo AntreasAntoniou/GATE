@@ -553,6 +553,7 @@ def log_wandb_images(
     images: torch.Tensor,
     reconstructions: torch.Tensor,
     global_step: int = 0,
+    prefix: str = "general",
 ):
     episode_list = []
     for i in range(images.shape[0]):
@@ -567,7 +568,7 @@ def log_wandb_images(
         episode_list.append(ae_episode)
 
     experiment_tracker.log(
-        {"autoencoder_episode": episode_list},
+        {f"{prefix}/autoencoder_episode": episode_list},
         step=global_step,
     )
 
@@ -579,6 +580,7 @@ def log_wandb_masks(
     labels: torch.Tensor,
     label_idx_to_description: Dict[int, str],
     global_step: int = 0,
+    prefix: str = "general",
 ):
     def wb_mask(bg_img, pred_mask, true_mask):
         return wandb.Image(
@@ -604,5 +606,5 @@ def log_wandb_masks(
         mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
 
     experiment_tracker.log(
-        {"segmentation_episode": mask_list}, step=global_step
+        {f"{prefix}/segmentation_episode": mask_list}, step=global_step
     )
