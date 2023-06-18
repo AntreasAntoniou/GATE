@@ -51,7 +51,9 @@ def mmseg_dice_loss(
     smooth: float = 1.0,
     ignore_index: int = 255,
 ):
-    dice_loss = DiceLoss(smooth=smooth, ignore_index=ignore_index)
+    dice_loss = DiceLoss(
+        smooth=smooth, ignore_index=ignore_index, reduction="sum"
+    )
 
     # Prepare sample logits and labels
     logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
@@ -70,7 +72,7 @@ def mmseg_focal_loss(
     gamma: float = 2.0,
     ignore_index: int = 255,
 ):
-    focal_loss = FocalLoss(alpha=alpha, gamma=gamma)
+    focal_loss = FocalLoss(alpha=alpha, gamma=gamma, reduction="sum")
 
     # Prepare sample logits and labels
     num_classes = logits.shape[1]
@@ -84,7 +86,7 @@ def mmseg_focal_loss(
 
 
 def mmseg_mask_cross_entropy(logits, labels, ignore_index):
-    mask_bce_loss = CrossEntropyLoss(use_sigmoid=True)
+    mask_bce_loss = CrossEntropyLoss(use_sigmoid=True, reduction="sum")
 
     # Prepare sample logits and labels
     num_classes = logits.shape[1]
