@@ -3,13 +3,13 @@ import time
 from collections import OrderedDict
 from functools import partial
 from typing import Dict, List, Optional
-from mmseg.models.losses import CrossEntropyLoss, DiceLoss, FocalLoss
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets.table import pa
+from mmseg.models.losses import CrossEntropyLoss, DiceLoss, FocalLoss
 from rich import print
 from timm.models.vision_transformer import Block
 from transformers import (
@@ -24,13 +24,9 @@ from transformers.models.sam.modeling_sam import (
     SamLayerNorm,
     SamMaskDecoder,
 )
-from gate.metrics.segmentation import (
-    miou_metrics,
-    one_hot_encoding,
-)
-
 
 from gate.boilerplate.utils import get_logger
+from gate.metrics.segmentation import miou_metrics, one_hot_encoding
 
 logger = get_logger(__name__)
 

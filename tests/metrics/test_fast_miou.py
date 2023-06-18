@@ -2,7 +2,7 @@ import pytest
 import torch
 from rich import print
 
-from gate.metrics.segmentation import miou_metrics, fast_miou_numpy
+from gate.metrics.segmentation import fast_miou_numpy, miou_metrics
 
 
 def test_fast_miou():

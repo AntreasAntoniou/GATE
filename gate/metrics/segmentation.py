@@ -1,10 +1,10 @@
 import time
 
 import evaluate
-from mmseg.evaluation.metrics import IoUMetric
 import monai
 import torch
 import torch.nn.functional as F
+from mmseg.evaluation.metrics import IoUMetric
 
 from gate.boilerplate.utils import get_logger
 
