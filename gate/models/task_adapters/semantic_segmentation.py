@@ -3,6 +3,7 @@ import time
 from collections import OrderedDict
 from functools import partial
 from typing import Dict, List, Optional
+from mmcv.ops import focal_loss
 from mmseg.evaluation.metrics import IoUMetric
 
 import numpy as np
@@ -27,7 +28,13 @@ from transformers.models.sam.modeling_sam import (
 )
 
 from gate.boilerplate.utils import get_logger
-from gate.metrics.segmentation import miou_metrics, one_hot_encoding
+from gate.metrics.segmentation import (
+    miou_metrics,
+    one_hot_encoding,
+    FocalLoss,
+    DiceLoss,
+    WeightedCrossEntropyLoss,
+)
 
 logger = get_logger(__name__)
 
@@ -106,21 +113,45 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-    dice_loss = mmseg_dice_loss(
-        logits=logits, labels=labels, ignore_index=ignore_index
-    )
-    focal_loss = mmseg_focal_loss(
-        logits=logits, labels=labels, ignore_index=ignore_index
-    )
+    # dice_loss = mmseg_dice_loss(
+    #     logits=logits, labels=labels, ignore_index=ignore_index
+    # )
+    # focal_loss = mmseg_focal_loss(
+    #     logits=logits, labels=labels, ignore_index=ignore_index
+    # )
 
-    ce_loss = mmseg_mask_cross_entropy(
-        logits=logits, labels=labels, ignore_index=ignore_index
-    )
+    dice_loss_fn = DiceLoss(ignore_index=ignore_index)
 
-    loss = ce_loss
+    dice_loss = dice_loss_fn.forward(logits, labels)
+
+    focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+
+    focal_loss = focal_loss_fn.forward(logits, labels)
+
+    ce_loss_fn = WeightedCrossEntropyLoss(ignore_index=ignore_index)
+
+    ce_loss = ce_loss_fn.forward(logits, labels)
+
+    background_dice_loss_fn = DiceLoss(ignore_index=-1)
+
+    background_dice_loss = background_dice_loss_fn.forward(logits, labels)
+
+    background_focal_loss_fn = FocalLoss(ignore_index=-1)
+
+    background_focal_loss = background_focal_loss_fn.forward(logits, labels)
+
+    background_ce_loss_fn = WeightedCrossEntropyLoss(ignore_index=-1)
+
+    background_ce_loss = background_ce_loss_fn.forward(logits, labels)
+
+    loss = ce_loss + dice_loss + focal_loss
+
+    background_loss = (
+        background_ce_loss + background_dice_loss + background_focal_loss
+    )
 
     return {
-        "loss": loss,
+        "loss": loss + 0.01 * background_loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,

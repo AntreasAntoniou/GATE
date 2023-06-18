@@ -149,6 +149,8 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
     Returns:
         Optimizer: The instantiated optimizer.
     """
+    lr = cfg.optimizer.lr
+    weight_decay = cfg.optimizer.weight_decay
     decay_parameters = get_parameter_names(
         model=model,
         forbidden_layer_types=[
@@ -181,7 +183,7 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
                 for n, p in model.named_parameters()
                 if n in encoder_decay_parameters
             ],
-            "weight_decay": cfg.optimizer.weight_decay,
+            "weight_decay": weight_decay,
         },
         {
             "params": [
@@ -197,8 +199,8 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
                 for n, p in model.named_parameters()
                 if n in decoder_decay_parameters
             ],
-            "weight_decay": cfg.optimizer.weight_decay,
-            "lr": 0.00006 * 10.0,
+            "weight_decay": weight_decay,
+            "lr": lr * 10.0,
         },
         {
             "params": [
@@ -207,7 +209,7 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
                 if n not in decay_parameters and "decoder_head" in n
             ],
             "weight_decay": 0.0,
-            "lr": 0.00006 * 10.0,
+            "lr": lr * 10.0,
         },
     ]
 
@@ -215,8 +217,8 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
 
     return transformers.AdamW(
         params=optimizer_grouped_parameters,
-        lr=0.00006,
-        weight_decay=0.01,
+        lr=lr,
+        weight_decay=weight_decay,
         betas=(0.9, 0.98),
         eps=1e-06,
     )
