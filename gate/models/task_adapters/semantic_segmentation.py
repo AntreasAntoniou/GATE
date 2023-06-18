@@ -73,7 +73,8 @@ def mmseg_focal_loss(
     focal_loss = FocalLoss(alpha=alpha, gamma=gamma)
 
     # Prepare sample logits and labels
-    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
+    num_classes = logits.shape[1]
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, num_classes)
 
     labels = labels.view(-1)
 
@@ -82,21 +83,22 @@ def mmseg_focal_loss(
     return loss
 
 
-def mmseg_mask_cross_entropy(logits, labels):
-    mask_bce_loss = CrossEntropyLoss(use_mask=True)
+def mmseg_mask_cross_entropy(logits, labels, ignore_index):
+    mask_bce_loss = CrossEntropyLoss(use_sigmoid=True)
 
     # Prepare sample logits and labels
-    logits = logits.permute([0, 2, 3, 1]).reshape(-1, 150)
+    num_classes = logits.shape[1]
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, num_classes)
 
     labels = labels.view(-1)
-    labels = one_hot_encoding(labels, num_classes=150, dim=1)
+    labels = one_hot_encoding(labels, num_classes=num_classes, dim=1)
 
-    loss = mask_bce_loss.forward(logits, labels, ignore_index=None)
+    loss = mask_bce_loss.forward(logits, labels, ignore_index=ignore_index)
 
     return loss
 
 
-def optimization_loss(logits, labels, ignore_index: int = 255):
+def optimization_loss(logits, labels, ignore_index: int = 0):
     """
     📝 Optimization Loss
     Args:
@@ -106,11 +108,15 @@ def optimization_loss(logits, labels, ignore_index: int = 255):
     dice_loss = mmseg_dice_loss(
         logits=logits, labels=labels, ignore_index=ignore_index
     )
-    focal_loss = mmseg_focal_loss(logits=logits, labels=labels)
+    focal_loss = mmseg_focal_loss(
+        logits=logits, labels=labels, ignore_index=ignore_index
+    )
 
-    bce_loss = mmseg_mask_cross_entropy(logits=logits, labels=labels)
+    bce_loss = mmseg_mask_cross_entropy(
+        logits=logits, labels=labels, ignore_index=ignore_index
+    )
 
-    loss = dice_loss + bce_loss
+    loss = dice_loss + bce_loss + focal_loss
 
     return {
         "loss": loss,
