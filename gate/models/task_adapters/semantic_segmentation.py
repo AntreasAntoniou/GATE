@@ -3,6 +3,7 @@ import time
 from collections import OrderedDict
 from functools import partial
 from typing import Dict, List, Optional
+from mmseg.evaluation.metrics import IoUMetric
 
 import numpy as np
 import torch
@@ -684,6 +685,25 @@ class SegmentationViT(nn.Module):
 
         self.debug_mode = False
 
+        self.iou_metric = IoUMetric(ignore_index=self.ignore_index)
+        self.iou_metric.dataset_meta = {"classes": self.class_names}
+
+    def compute_across_set_iou(self):
+        # Call the compute_metrics method
+        more_metrics = self.iou_metric.compute_metrics(self.iou_metric.results)
+
+        # metrics: {'aAcc': 65.36, 'mIoU': 6.65, 'mAcc': 9.72}
+        more_metrics["overall_accuracy_mmseg"] = torch.tensor(
+            more_metrics["aAcc"]
+        )
+        more_metrics["mean_iou_mmseg"] = torch.tensor(more_metrics["mIoU"])
+        more_metrics["mean_accuracy_mmseg"] = torch.tensor(
+            more_metrics["mAcc"]
+        )
+        self.iou_metric.results = []
+
+        return more_metrics
+
     def optimization_loss(self, logits, labels):
         return optimization_loss(
             logits, labels, ignore_index=self.ignore_index
@@ -697,7 +717,11 @@ class SegmentationViT(nn.Module):
             output_dict = self.optimization_loss(logits, labels)
             if not self.training:
                 metrics = miou_metrics(
-                    logits, labels, self.ignore_index, self.class_names
+                    logits,
+                    labels,
+                    self.iou_metric,
+                    self.ignore_index,
+                    self.class_names,
                 )
                 output_dict = output_dict | metrics
         return output_dict

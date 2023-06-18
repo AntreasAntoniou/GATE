@@ -140,9 +140,14 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             model_selection_metric_name="mean_iou-epoch-mean",
             model_selection_metric_higher_is_better=True,
         )
+        self.model = None
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         # start_time = time.time()
+
+        if self.model is None:
+            self.model = model
+
         output_dict = model.forward(batch)
         # logger.info(f"forward time: {time.time() - start_time}")
         output_dict = output_dict[self.target_modality][self.source_modality]
@@ -222,6 +227,28 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         else:
             output.metrics = {}
         return output
+
+    def end_validation(self, global_step):
+        evaluator_output = super().end_validation(global_step)
+        iou_metrics = self.model.compute_across_set_iou()
+
+        return EvaluatorOutput(
+            global_step=global_step,
+            phase_name="validation",
+            metrics=evaluator_output.phase_metrics | iou_metrics,
+            experiment_tracker=self.experiment_tracker,
+        )
+
+    def end_testing(self, global_step):
+        evaluator_output = super().end_testing(global_step)
+        iou_metrics = self.model.compute_across_set_iou()
+
+        return EvaluatorOutput(
+            global_step=global_step,
+            phase_name="testing",
+            metrics=evaluator_output.phase_metrics | iou_metrics,
+            experiment_tracker=self.experiment_tracker,
+        )
 
 
 @configurable(group="evaluator", name="visual_relational_reasoning")
