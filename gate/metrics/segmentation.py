@@ -351,12 +351,11 @@ def miou_metrics(
     # The default value is False.
 
     # mean_iou = evaluate.load("mean_iou")
-    metric = mean_iou(
+    metrics = mean_iou(
         logits=logits,
         labels=labels,
         num_labels=num_classes,
         ignore_index=ignore_index,
-        nan_to_num=None,
     )
 
     iou = IoUMetric(ignore_index=ignore_index)
@@ -372,14 +371,15 @@ def miou_metrics(
 
     iou.process(data_batch=None, data_samples=data_samples)
 
-    print(iou.results)
-
     # Call the compute_metrics method
-    metrics = iou.compute_metrics(iou.results)
+    more_metrics = iou.compute_metrics(iou.results)
 
-    print(f"metrics: {metrics}")
+    # metrics: {'aAcc': 65.36, 'mIoU': 6.65, 'mAcc': 9.72}
+    more_metrics["overall_accuracy_mmseg"] = more_metrics["aAcc"]
+    more_metrics["mean_iou_mmseg"] = more_metrics["mIoU"]
+    more_metrics["mean_accuracy_mmseg"] = more_metrics["mAcc"]
 
-    return metrics | metric
+    return more_metrics | metrics
 
 
 def fast_miou_numpy(

@@ -3,6 +3,7 @@ import time
 from collections import OrderedDict
 from functools import partial
 from typing import Dict, List, Optional
+from mmseg.models.losses import CrossEntropyLoss, DiceLoss, FocalLoss
 
 import numpy as np
 import torch
@@ -23,6 +24,11 @@ from transformers.models.sam.modeling_sam import (
     SamLayerNorm,
     SamMaskDecoder,
 )
+from gate.metrics.segmentation import (
+    miou_metrics,
+    one_hot_encoding,
+)
+
 
 from gate.boilerplate.utils import get_logger
 
@@ -146,77 +152,80 @@ class ResidualConvBlock(nn.Module):
         return out + residual
 
 
-from gate.metrics.segmentation import (
-    DiceLoss,
-    FocalLoss,
-    WeightedCrossEntropyLoss,
-    diff_dice_loss,
-    diff_sigmoid_focal_loss,
-    miou_metrics,
-)
+def mmseg_dice_loss(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    smooth: float = 1.0,
+    ignore_index: int = 255,
+):
+    dice_loss = DiceLoss(smooth=smooth, ignore_index=ignore_index)
+
+    # Prepare sample logits and labels
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
+
+    labels = labels.view(-1)
+
+    loss = dice_loss.forward(logits, labels)
+
+    return loss
 
 
-def optimization_loss(logits, labels):
+def mmseg_focal_loss(
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    alpha: float = 0.25,
+    gamma: float = 2.0,
+    ignore_index: int = 255,
+):
+    focal_loss = FocalLoss(alpha=alpha, gamma=gamma)
+
+    # Prepare sample logits and labels
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, logits.shape[1])
+
+    labels = labels.view(-1)
+
+    loss = focal_loss.forward(logits, labels)
+
+    return loss
+
+
+def mmseg_mask_cross_entropy(logits, labels):
+    mask_bce_loss = CrossEntropyLoss(use_mask=True)
+
+    # Prepare sample logits and labels
+    logits = logits.permute([0, 2, 3, 1]).reshape(-1, 150)
+
+    labels = labels.view(-1)
+    labels = one_hot_encoding(labels, num_classes=150, dim=1)
+
+    loss = mask_bce_loss.forward(logits, labels, ignore_index=None)
+
+    return loss
+
+
+def optimization_loss(logits, labels, ignore_index: int = 255):
     """
     📝 Optimization Loss
     Args:
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-    # print(f"logits.shape: {logits.shape}, labels.shape: {labels.shape}")
-    logits = logits.permute(0, 2, 3, 1).reshape(-1, logits.shape[1])
-    labels = labels.reshape(-1)
-
-    non_background_indices = labels != 0
-    non_background_logits = logits[non_background_indices]
-    non_background_labels = labels[non_background_indices]
-
-    background_indices = labels == 0
-    background_logits = logits[background_indices]
-    background_labels = labels[background_indices]
-
-    # get number of unique classes
-
-    cross_entropy_loss = F.cross_entropy(
-        non_background_logits, non_background_labels
+    dice_loss = mmseg_dice_loss(
+        logits=logits, labels=labels, ignore_index=ignore_index
     )
-    dice_loss = diff_dice_loss(non_background_logits, non_background_labels)
-    focal_loss = diff_sigmoid_focal_loss(
-        non_background_logits, non_background_labels, alpha=0.25, gamma=2.0
+    focal_loss = mmseg_focal_loss(
+        logits=logits, labels=labels, ignore_index=ignore_index
     )
 
-    background_cross_entropy_loss = F.cross_entropy(
-        background_logits, background_labels
-    )
-    background_dice_loss = diff_dice_loss(background_logits, background_labels)
-    background_focal_loss = diff_sigmoid_focal_loss(
-        background_logits,
-        background_labels,
-        alpha=0.25,
-        gamma=2.0,
-    )
-    background_loss = (
-        background_cross_entropy_loss
-        # background_dice_loss
-        # + background_focal_loss
-    )
+    bce_loss = mmseg_mask_cross_entropy(logits=logits, labels=labels)
 
-    loss = (
-        cross_entropy_loss
-        # dice_loss
-        # + focal_loss
-        + 0.1 * background_loss
-    )
+    loss = focal_loss + dice_loss + bce_loss
 
     return {
         "loss": loss,
-        "cross_entropy_loss": cross_entropy_loss,
+        "bce_mask_loss": bce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
-        "background_loss": background_loss,
-        "background_cross_entropy_loss": background_cross_entropy_loss,
-        "background_dice_loss": background_dice_loss,
-        "background_focal_loss": background_focal_loss,
     }
 
 
@@ -682,24 +691,9 @@ class SegmentationViT(nn.Module):
         self.debug_mode = False
 
     def optimization_loss(self, logits, labels):
-        focal_loss = self.focal_loss(logits, labels)
-        dice_loss = self.dice_loss(logits, labels)
-        background_focal_loss = self.background_focal_loss(logits, labels)
-        background_dice_loss = self.background_dice_loss(logits, labels)
-
-        loss = (
-            focal_loss
-            + dice_loss
-            + self.background_weight
-            * (background_focal_loss + background_dice_loss)
+        return optimization_loss(
+            logits, labels, ignore_index=self.ignore_index
         )
-        return {
-            "loss": loss,
-            "dice_loss": dice_loss,
-            "focal_loss": focal_loss,
-            "background_focal_loss": background_focal_loss,
-            "background_dice_loss": background_dice_loss,
-        }
 
     def compute_loss_and_metrics(
         self, logits, labels: Optional[torch.Tensor] = None
