@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from hydra_zen import instantiate
 from torch.utils.data import Subset
+from transformers import AdamW
 
 import wandb
 from gate.boilerplate.utils import get_logger
@@ -120,6 +121,22 @@ def count_model_parameters(model: GATEModel):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+def get_parameter_names(model, forbidden_layer_types):
+    """
+    Returns the names of the model parameters that are not inside a forbidden layer.
+    """
+    result = []
+    for name, child in model.named_children():
+        result += [
+            f"{name}.{n}"
+            for n in get_parameter_names(child, forbidden_layer_types)
+            if not isinstance(child, tuple(forbidden_layer_types))
+        ]
+    # Add model specific parameters (defined with nn.Parameter) since they are not in any child.
+    result += list(model._parameters.keys())
+    return result
+
+
 def instantiate_optimizer(cfg: Any, model: GATEModel):
     """
     Instantiate an optimizer.
@@ -131,8 +148,51 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
     Returns:
         Optimizer: The instantiated optimizer.
     """
+    decay_parameters = get_parameter_names(model, [torch.nn.LayerNorm])
+    decay_parameters = [
+        name for name in decay_parameters if "bias" not in name
+    ]
+    decoder_decay_parameters = [
+        p
+        for n, p in model.named_parameters()
+        if "decoder_head" in n and n in decay_parameters
+    ]
+    decoder_non_decay_parameters = [
+        p
+        for n, p in model.named_parameters()
+        if "decoder_head" in n and n not in decay_parameters
+    ]
+    optimizer_grouped_parameters = [
+        {
+            "params": [
+                p for n, p in model.named_parameters() if n in decay_parameters
+            ],
+            "weight_decay": cfg.optimizer.weight_decay,
+        },
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n not in decay_parameters
+            ],
+            "weight_decay": 0.0,
+        },
+        {
+            "params": decoder_decay_parameters,
+            "weight_decay": cfg.optimizer.weight_decay,
+            "lr": cfg.optimizer.lr * 10.0,
+        },
+        {
+            "params": decoder_non_decay_parameters,
+            "weight_decay": cfg.optimizer.weight_decay,
+            "lr": 0.0,
+        },
+    ]
+
+    logger.info(f"Optimizer hyperparameters: {cfg.optimizer}")
+
     return instantiate(
-        cfg.optimizer, params=model.parameters(), _partial_=False
+        cfg.optimizer, params=optimizer_grouped_parameters, _partial_=False
     )
 
 

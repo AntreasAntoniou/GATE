@@ -680,7 +680,7 @@ class SegmentationViT(nn.Module):
 
         self.decoder_embedding_dimension = decoder_embed_dim
 
-        self.decoder = None
+        self.decoder_head = None
 
         self.debug_mode = False
 
@@ -745,7 +745,7 @@ class SegmentationViT(nn.Module):
         if self.debug_mode:
             logger.debug(f"Encoder took {time.time() - start_time} seconds")
 
-        if self.decoder is None:
+        if self.decoder_head is None:
             feature_shapes = [x.shape for x in features]
             logger.debug(f"Feature shapes: {feature_shapes}")
             if len(features[0].shape) == 3:
@@ -765,7 +765,7 @@ class SegmentationViT(nn.Module):
                     f"Unsupported feature map shape: {features[0].shape}"
                 )
 
-            self.decoder = PreResizeSimpleSegmentationDecoder(
+            self.decoder_head = PreResizeSimpleSegmentationDecoder(
                 input_feature_maps=features,
                 num_classes=self.num_classes,
                 target_image_size=target_image_size,
@@ -773,8 +773,8 @@ class SegmentationViT(nn.Module):
             )
 
         start_time = time.time()
-        if self.decoder is not None:
-            mask_predictions = self.decoder(features)
+        if self.decoder_head is not None:
+            mask_predictions = self.decoder_head(features)
 
         if self.debug_mode:
             logger.debug(f"Decoder took {time.time() - start_time} seconds")
