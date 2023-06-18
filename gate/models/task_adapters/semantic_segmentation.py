@@ -77,7 +77,7 @@ def mmseg_focal_loss(
 
     labels = labels.view(-1)
 
-    loss = focal_loss.forward(logits, labels)
+    loss = focal_loss.forward(logits, labels, ignore_index=ignore_index)
 
     return loss
 
@@ -110,7 +110,7 @@ def optimization_loss(logits, labels, ignore_index: int = 255):
 
     bce_loss = mmseg_mask_cross_entropy(logits=logits, labels=labels)
 
-    loss = focal_loss + dice_loss + bce_loss
+    loss = dice_loss + bce_loss
 
     return {
         "loss": loss,
@@ -694,7 +694,6 @@ class SegmentationViT(nn.Module):
                     logits, labels, self.ignore_index, self.class_names
                 )
                 output_dict = output_dict | metrics
-        print(output_dict)
         return output_dict
 
     def forward(
