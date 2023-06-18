@@ -686,8 +686,6 @@ class SegmentationViT(nn.Module):
         self.debug_mode = False
 
         self.iou_metric = IoUMetric(ignore_index=self.ignore_index)
-        print(f"classes: {self.class_names}")
-        self.iou_metric.dataset_meta = {"classes": self.class_names}
 
     def compute_across_set_iou(self):
         # Call the compute_metrics method
@@ -717,6 +715,8 @@ class SegmentationViT(nn.Module):
         if labels is not None:
             output_dict = self.optimization_loss(logits, labels)
             if not self.training:
+                self.iou_metric.dataset_meta = {"classes": self.class_names}
+
                 metrics = miou_metrics(
                     logits,
                     labels,
