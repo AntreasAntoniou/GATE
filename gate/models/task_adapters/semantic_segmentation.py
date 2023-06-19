@@ -92,7 +92,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
-        dropout_rate: float = 0.2,
+        dropout_rate: float = 0.5,
+        pre_output_dropout_rate: float = 0.2,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
@@ -165,7 +166,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
 
             self.fuse_features_act = nn.LeakyReLU()
             self.fuse_features_dropout = nn.Dropout2d(
-                p=dropout_rate / 2.0, inplace=False
+                p=pre_output_dropout_rate, inplace=False
             )
             self.final_conv = nn.Conv2d(
                 hidden_size, num_classes, kernel_size=1
@@ -196,7 +197,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
 
             self.fuse_features_act = nn.LeakyReLU()
             self.fuse_features_dropout = nn.Dropout1d(
-                p=dropout_rate / 2.0, inplace=False
+                p=pre_output_dropout_rate, inplace=False
             )
             self.final_conv = nn.Conv1d(
                 hidden_size, num_classes, kernel_size=1
