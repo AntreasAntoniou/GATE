@@ -78,7 +78,7 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
     )
 
     return {
-        "loss": loss + 0.01 * background_loss,
+        "loss": loss + 0.05 * background_loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
@@ -92,8 +92,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
-        dropout_rate: float = 0.6,
-        pre_output_dropout_rate: float = 0.5,
+        dropout_rate: float = 0.5,
+        pre_output_dropout_rate: float = 0.3,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
