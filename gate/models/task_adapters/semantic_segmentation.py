@@ -92,8 +92,8 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
-        dropout_rate: float = 0.5,
-        pre_output_dropout_rate: float = 0.2,
+        dropout_rate: float = 0.6,
+        pre_output_dropout_rate: float = 0.5,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
