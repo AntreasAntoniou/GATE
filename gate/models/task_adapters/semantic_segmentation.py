@@ -92,7 +92,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
         num_classes: int,
         target_image_size: tuple,
         hidden_size: int = 256,
-        dropout_rate: float = 0.1,
+        dropout_rate: float = 0.2,
     ):
         """
         SimpleSegmentationDecoder class for segmentation tasks.
@@ -164,6 +164,9 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             self.fuse_features_norm = nn.LazyInstanceNorm2d()
 
             self.fuse_features_act = nn.LeakyReLU()
+            self.fuse_features_dropout = nn.Dropout2d(
+                p=dropout_rate / 2.0, inplace=False
+            )
             self.final_conv = nn.Conv2d(
                 hidden_size, num_classes, kernel_size=1
             )
@@ -192,6 +195,9 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             self.fuse_features_norm = nn.LazyInstanceNorm1d()
 
             self.fuse_features_act = nn.LeakyReLU()
+            self.fuse_features_dropout = nn.Dropout1d(
+                p=dropout_rate / 2.0, inplace=False
+            )
             self.final_conv = nn.Conv1d(
                 hidden_size, num_classes, kernel_size=1
             )
@@ -264,6 +270,7 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             f"Fusing features took {time.time() - start_time} seconds"
         )
         start_time = time.time()
+        fused_act_features = self.fuse_features_dropout(fused_act_features)
         class_features = self.final_conv(fused_act_features)
         logger.debug(
             f"Final convolution took {time.time() - start_time} seconds"
