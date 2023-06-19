@@ -59,26 +59,26 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
 
     ce_loss = ce_loss_fn.forward(logits, labels)
 
-    background_dice_loss_fn = DiceLoss(ignore_index=-1)
+    # background_dice_loss_fn = DiceLoss(ignore_index=-1)
 
-    background_dice_loss = background_dice_loss_fn.forward(logits, labels)
+    # background_dice_loss = background_dice_loss_fn.forward(logits, labels)
 
-    background_focal_loss_fn = FocalLoss(ignore_index=-1)
+    # background_focal_loss_fn = FocalLoss(ignore_index=-1)
 
-    background_focal_loss = background_focal_loss_fn.forward(logits, labels)
+    # background_focal_loss = background_focal_loss_fn.forward(logits, labels)
 
-    background_ce_loss_fn = WeightedCrossEntropyLoss(ignore_index=-1)
+    # background_ce_loss_fn = WeightedCrossEntropyLoss(ignore_index=-1)
 
-    background_ce_loss = background_ce_loss_fn.forward(logits, labels)
+    # background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = 0.1 * ce_loss + dice_loss + focal_loss
-
-    background_loss = (
-        0.1 * background_ce_loss + background_dice_loss + background_focal_loss
-    )
+    loss = dice_loss + focal_loss
+    # 0.1 * ce_loss +
+    # background_loss = (
+    #     0.1 * background_ce_loss + background_dice_loss + background_focal_loss
+    # )
 
     return {
-        "loss": loss + 0.05 * background_loss,
+        "loss": loss,  # + 0.05 * background_loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
