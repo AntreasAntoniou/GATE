@@ -23,6 +23,12 @@ class SameRandomCrop:
         h, w = img1.shape[-2:]
         new_h, new_w = self.output_size
 
+        # Check if the images are large enough to be cropped
+        if h < new_h or w < new_w:
+            raise ValueError(
+                "Input images are too small to be cropped to the desired size!"
+            )
+
         # Generate random coordinates for the top left corner of the crop
         top = random.randint(0, h - new_h)
         left = random.randint(0, w - new_w)
