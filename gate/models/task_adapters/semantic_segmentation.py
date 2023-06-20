@@ -40,13 +40,6 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-    # dice_loss = mmseg_dice_loss(
-    #     logits=logits, labels=labels, ignore_index=ignore_index
-    # )
-    # focal_loss = mmseg_focal_loss(
-    #     logits=logits, labels=labels, ignore_index=ignore_index
-    # )
-
     dice_loss_fn = DiceLoss(ignore_index=ignore_index)
 
     dice_loss = dice_loss_fn.forward(logits, labels)
