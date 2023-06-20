@@ -11,7 +11,7 @@ from PIL import Image
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.transforms.segmentation_transforms import SameRandomCrop
+from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -73,7 +73,7 @@ class DatasetTransforms:
                 if isinstance(crop_size, list) or isinstance(crop_size, tuple)
                 else [crop_size, crop_size]
             )
-            self.crop_transform = SameRandomCrop(self.crop_size)
+            self.crop_transform = DualImageRandomCrop(self.crop_size)
         else:
             self.crop_size = None
 
