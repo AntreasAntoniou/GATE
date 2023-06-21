@@ -7,7 +7,12 @@ from typing import Optional, Union
 import cv2
 import numpy as np
 from PIL import Image
+import torch
 from torch.utils import data
+
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def download_file(url: str, destination: Path) -> None:
@@ -49,7 +54,7 @@ def download_and_extract_coco_stuff10k(data_dir: str) -> None:
 
     if not zip_path.exists():
         download_file(dataset_url, zip_path)
-    print(f"Extracting {zip_path} to {data_path}")
+    logger.info(f"Extracting {zip_path} to {data_path}")
     extract_zip(zip_path, data_path)
 
 
@@ -70,12 +75,11 @@ def download_and_extract_coco_stuff164k(data_dir: str) -> None:
     for url in urls:
         filename = url.split("/")[-1]
         file_path = data_path / filename
-        extracted_dir = data_path / (
-            "images" if "images" in filename else "annotations"
-        )
+        extracted_dir = data_path
         extracted_dir.mkdir(parents=True, exist_ok=True)
-
+        logger.info(f"Downloading {url} to {file_path}")
         download_file(url, file_path)
+        logger.info(f"Extracting {file_path} to {extracted_dir}")
         extract_zip(file_path, extracted_dir)
 
 
@@ -85,12 +89,6 @@ class BaseDataset(data.Dataset):
         root: Union[Path, str],
         split: str = "train",
         ignore_label: int = 255,
-        mean_bgr: tuple = (104.008, 116.669, 122.675),
-        augment: bool = True,
-        base_size: Optional[int] = None,
-        crop_size: int = 321,
-        scales: list = [0.5, 0.75, 1.0, 1.25, 1.5],
-        flip: bool = True,
     ):
         """
         Initialize the base dataset class.
@@ -109,16 +107,10 @@ class BaseDataset(data.Dataset):
         self.root = root
         self.split = split
         self.ignore_label = ignore_label
-        self.mean_bgr = mean_bgr
-        self.augment = augment
-        self.base_size = base_size
-        self.crop_size = crop_size
-        self.scales = scales
-        self.flip = flip
         self.files = []
         self._setup_dataset_files()
 
-        cv2.setNumThreads(0)
+        # cv2.setNumThreads(0)
 
     def _setup_dataset_files(self):
         """
@@ -132,71 +124,6 @@ class BaseDataset(data.Dataset):
         """
         raise NotImplementedError()
 
-    def _augmentation(self, image, label):
-        """
-        Apply data augmentation to the image and label.
-
-        Args:
-            image: The input image in numpy.ndarray format.
-            label: The input label in numpy.ndarray format.
-
-        Returns:
-            The augmented image and label.
-        """
-        # 🌟 Data augmentation steps
-        # 1️⃣ Scaling
-        # 2️⃣ Padding
-        # 3️⃣ Cropping
-        # 4️⃣ Flipping
-
-        # Scaling
-        h, w = label.shape
-        if self.base_size:
-            if h > w:
-                h, w = (self.base_size, int(self.base_size * w / h))
-            else:
-                h, w = (int(self.base_size * h / w), self.base_size)
-        scale_factor = random.choice(self.scales)
-        h, w = (int(h * scale_factor), int(w * scale_factor))
-        image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
-        label = Image.fromarray(label).resize((w, h), resample=Image.NEAREST)
-        label = np.asarray(label, dtype=np.int64)
-
-        # Padding to fit for crop_size
-        h, w = label.shape
-        pad_h = max(self.crop_size - h, 0)
-        pad_w = max(self.crop_size - w, 0)
-        pad_kwargs = {
-            "top": 0,
-            "bottom": pad_h,
-            "left": 0,
-            "right": pad_w,
-            "borderType": cv2.BORDER_CONSTANT,
-        }
-        if pad_h > 0 or pad_w > 0:
-            image = cv2.copyMakeBorder(
-                image, value=self.mean_bgr, **pad_kwargs
-            )
-            label = cv2.copyMakeBorder(
-                label, value=self.ignore_label, **pad_kwargs
-            )
-
-        # Cropping
-        h, w = label.shape
-        start_h = random.randint(0, h - self.crop_size)
-        start_w = random.randint(0, w - self.crop_size)
-        end_h = start_h + self.crop_size
-        end_w = start_w + self.crop_size
-        image = image[start_h:end_h, start_w:end_w]
-        label = label[start_h:end_h, start_w:end_w]
-
-        if self.flip:
-            # Random flipping
-            if random.random() < 0.5:
-                image = np.fliplr(image).copy()  # HWC
-                label = np.fliplr(label).copy()  # HW
-        return image, label
-
     def __getitem__(self, index):
         """
         Get an item from the dataset.
@@ -208,16 +135,10 @@ class BaseDataset(data.Dataset):
             A tuple containing the image ID, image, and label.
         """
         image_id, image, label = self._load_data(index)
-        if self.augment:
-            image, label = self._augmentation(image, label)
-        # Mean subtraction
-        image -= self.mean_bgr
-        # HWC -> CHW
-        image = image.transpose(2, 0, 1)
         return dict(
             id=image_id,
-            image=image.astype(np.float32),
-            labels=label.astype(np.int64),
+            image=image,
+            labels=label,
         )
 
     def __len__(self):

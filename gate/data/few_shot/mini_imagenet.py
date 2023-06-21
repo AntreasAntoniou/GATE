@@ -49,7 +49,7 @@ class MiniImageNetFewShotClassificationDataset(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
             dataset_dict=datasets.load_dataset(
-                path="Antreas/mini_imagenet",
+                path="GATE-engine/mini_imagenet",
                 cache_dir=dataset_root,
                 num_proc=mp.cpu_count(),
             ),
