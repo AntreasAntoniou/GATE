@@ -10,7 +10,7 @@ def build_nyu_depth_v2_dataset(
     set_name: str, data_dir: Optional[str] = None
 ) -> dict:
     """
-    Build a Food-101 dataset using the Hugging Face datasets library.
+    Build a NYU Depth V2 dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -21,7 +21,6 @@ def build_nyu_depth_v2_dataset(
         A dictionary containing the dataset split.
     """
     # Create a generator with the specified seed
-    rng = torch.Generator().manual_seed(42)
 
     train_val_data = load_dataset(
         path="sayakpaul/nyu_depth_v2",
@@ -46,46 +45,112 @@ def build_nyu_depth_v2_dataset(
     return dataset_dict[set_name]
 
 
-# from datasets import load_dataset
-# import numpy as np
-# import matplotlib.pyplot as plt
+class DatasetTransforms:
+    def __init__(
+        self,
+        input_size: Union[int, List[int]],
+        target_size: Union[int, List[int]],
+        initial_size: Union[int, List[int]] = 1024,
+        crop_size: Optional[Union[int, List[int]]] = None,
+    ):
+        self.initial_size = (
+            initial_size
+            if isinstance(initial_size, tuple)
+            or isinstance(initial_size, list)
+            else (initial_size, initial_size)
+        )
+        self.input_size = (
+            input_size
+            if isinstance(input_size, tuple) or isinstance(input_size, list)
+            else (input_size, input_size)
+        )
+        self.target_size = (
+            target_size
+            if isinstance(target_size, tuple) or isinstance(target_size, list)
+            else (target_size, target_size)
+        )
+        if crop_size is not None:
+            self.crop_size = (
+                crop_size
+                if isinstance(crop_size, list) or isinstance(crop_size, tuple)
+                else [crop_size, crop_size]
+            )
+            self.crop_transform = DualImageRandomCrop(self.crop_size)
+        else:
+            self.crop_size = None
+
+    def __call__(self, inputs: Dict):
+        image = inputs["image"]
+        image = T.Resize(
+            (self.initial_size[0], self.initial_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+        )(image)
+
+        annotation = inputs["annotation"]
+        annotation = T.Resize(
+            (self.initial_size[0], self.initial_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+        )(annotation)
+
+        if self.crop_size is not None:
+            image, annotation = self.crop_transform(image, annotation)
+
+        image = T.Resize(
+            (self.input_size[0], self.input_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+        )(image)
+
+        annotation = T.Resize(
+            (self.target_size[0], self.target_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+        )(annotation)
+
+        annotation = np.array(annotation)
+        annotation = torch.from_numpy(annotation)
+        annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+
+        return {
+            "image": image,
+            "labels": annotation.long(),
+        }
 
 
-# cmap = plt.cm.viridis
+@configurable(
+    group="dataset", name="ade20k", defaults=dict(data_dir=DATASET_DIR)
+)
+def build_gate_dataset(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=150,
+    image_size=512,
+    target_image_size=256,
+) -> dict:
+    train_transforms = DatasetTransforms(
+        image_size, target_image_size, initial_size=1024, crop_size=512
+    )
+    eval_transforms = DatasetTransforms(
+        image_size, target_image_size, initial_size=1024, crop_size=None
+    )
+    train_set = GATEDataset(
+        dataset=build_dataset("train", data_dir=data_dir),
+        infinite_sampling=True,
+        transforms=[train_transforms, transforms],
+        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+    )
 
-# ds = load_dataset("sayakpaul/nyu_depth_v2")
+    val_set = GATEDataset(
+        dataset=build_dataset("val", data_dir=data_dir),
+        infinite_sampling=False,
+        transforms=[eval_transforms, transforms],
+        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+    )
 
+    test_set = GATEDataset(
+        dataset=build_dataset("test", data_dir=data_dir),
+        infinite_sampling=False,
+        transforms=[eval_transforms, transforms],
+        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+    )
 
-# def colored_depthmap(depth, d_min=None, d_max=None):
-#     if d_min is None:
-#         d_min = np.min(depth)
-#     if d_max is None:
-#         d_max = np.max(depth)
-#     depth_relative = (depth - d_min) / (d_max - d_min)
-#     return 255 * cmap(depth_relative)[:,:,:3] # H, W, C
-
-
-# def merge_into_row(input, depth_target):
-#     input = np.array(input)
-#     depth_target = np.squeeze(np.array(depth_target))
-
-#     d_min = np.min(depth_target)
-#     d_max = np.max(depth_target)
-#     depth_target_col = colored_depthmap(depth_target, d_min, d_max)
-#     img_merge = np.hstack([input, depth_target_col])
-
-#     return img_merge
-
-
-# random_indices = np.random.choice(len(ds["train"]), 9).tolist()
-# train_set = ds["train"]
-
-# plt.figure(figsize=(15, 6))
-
-# for i, idx in enumerate(random_indices):
-#     ax = plt.subplot(3, 3, i + 1)
-#     image_viz = merge_into_row(
-#         train_set[idx]["image"], train_set[idx]["depth_map"]
-#     )
-#     plt.imshow(image_viz.astype("uint8"))
-#     plt.axis("off")
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict

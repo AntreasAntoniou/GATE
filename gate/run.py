@@ -17,7 +17,6 @@ from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
-from torch.utils.data import Subset
 
 import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
