@@ -37,24 +37,24 @@ def build_dataset(
         data_dir = "data/pascal_context"
 
     if set_name not in ["train", "val", "test"]:
-        raise ValueError("❌ Invalid set_name, choose 'train', 'val' or 'test'")
+        raise KeyError("❌ Invalid set_name, choose 'train', 'val' or 'test'")
 
     # 🛠️ Create the Pascal Context dataset using the torchvision
     # VOCSegmentation class
-
+    data_dir = data_dir / "pascal_context"
     try:
         train_dataset = VOCSegmentation(
             root=data_dir,
             year="2012",
             image_set="train",
-            download=True,
+            download=False,
         )
 
         test_dataset = VOCSegmentation(
             root=data_dir,
             year="2012",
             image_set="val",
-            download=True,
+            download=False,
         )
     except RuntimeError:
         train_dataset = VOCSegmentation(
@@ -153,7 +153,7 @@ class DatasetTransforms:
 
         annotation = np.array(annotation)
         annotation = torch.from_numpy(annotation)
-        annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+        annotation = annotation.unsqueeze(0)
 
         return {
             "image": image,
@@ -180,21 +180,33 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[train_transforms, transforms],
+        transforms=[
+            lambda x: {"image": x[0], "annotation": x[1]},
+            train_transforms,
+            transforms,
+        ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[eval_transforms, transforms],
+        transforms=[
+            lambda x: {"image": x[0], "annotation": x[1]},
+            eval_transforms,
+            transforms,
+        ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[eval_transforms, transforms],
+        transforms=[
+            lambda x: {"image": x[0], "annotation": x[1]},
+            eval_transforms,
+            transforms,
+        ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
