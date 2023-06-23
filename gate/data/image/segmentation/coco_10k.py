@@ -40,7 +40,6 @@ class COCOStuff10K(BaseDataset):
         self,
         root: str,
         split: str = DEFAULT_SPLIT,
-        ignore_label: int = DEFAULT_IGNORE_LABEL,
         download: bool = False,
     ):
         """
@@ -65,7 +64,6 @@ class COCOStuff10K(BaseDataset):
         super(COCOStuff10K, self).__init__(
             root=dataset_root,
             split=split,
-            ignore_label=ignore_label,
         )
 
     def _setup_dataset_files(self):

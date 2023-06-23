@@ -65,21 +65,6 @@ def build_dataset(
         runtime_cache=False,
     )
 
-    val_set = DecathlonDataset(
-        data_dir,
-        task=task_name,
-        section="validation",
-        transform=None,
-        download=True,
-        seed=42,
-        val_frac=0.0,
-        num_workers=mp.cpu_count(),
-        progress=True,
-        copy_cache=True,
-        as_contiguous=True,
-        runtime_cache=False,
-    )
-
     test_set = DecathlonDataset(
         data_dir,
         task=task_name,
