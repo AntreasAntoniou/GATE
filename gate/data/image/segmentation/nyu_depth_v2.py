@@ -1,14 +1,21 @@
 # cityscapes.py
 import multiprocessing as mp
-from typing import Optional
+from typing import Any, Dict, List, Optional, Union
 
 import torch
+import torchvision.transforms as T
+import numpy as np
 from datasets import load_dataset
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
+from gate.data.core import GATEDataset
+from gate.data.image.segmentation.classes import (
+    nyu_depth_v2_classes as CLASSES,
+)
+from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 
 
-def build_nyu_depth_v2_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a NYU Depth V2 dataset using the Hugging Face datasets library.
 
@@ -20,8 +27,6 @@ def build_nyu_depth_v2_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    # Create a generator with the specified seed
-
     train_val_data = load_dataset(
         path="sayakpaul/nyu_depth_v2",
         split="train",
@@ -116,7 +121,7 @@ class DatasetTransforms:
 
 
 @configurable(
-    group="dataset", name="ade20k", defaults=dict(data_dir=DATASET_DIR)
+    group="dataset", name="nyu_depth_v2", defaults=dict(data_dir=DATASET_DIR)
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
