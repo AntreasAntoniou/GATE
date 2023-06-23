@@ -88,7 +88,6 @@ class BaseDataset(data.Dataset):
         self,
         root: Union[Path, str],
         split: str = "train",
-        ignore_label: int = 255,
     ):
         """
         Initialize the base dataset class.
@@ -106,7 +105,6 @@ class BaseDataset(data.Dataset):
         """
         self.root = root
         self.split = split
-        self.ignore_label = ignore_label
         self.files = []
         self._setup_dataset_files()
 
