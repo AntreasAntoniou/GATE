@@ -89,6 +89,16 @@ if __name__ == "__main__":
                                     for idx, item in enumerate(dataset):
                                         pbar_data.update(1)
                                         print(list(item.keys()))
+                                        print(
+                                            list(
+                                                item["label_meta_dict"].keys()
+                                            )
+                                        )
+                                        print(
+                                            list(
+                                                item["image_meta_dict"].keys()
+                                            )
+                                        )
                                         if (
                                             item["original_channel_dim"]
                                             == "no_channel"
