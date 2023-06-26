@@ -88,6 +88,7 @@ if __name__ == "__main__":
                                 with tqdm(total=len(dataset)) as pbar_data:
                                     for idx, item in enumerate(dataset):
                                         pbar_data.update(1)
+                                        print(item)
                                         yield item | {"task_name": task_name}
 
                                 pbar_task.update(1)
