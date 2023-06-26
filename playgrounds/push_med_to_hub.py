@@ -88,22 +88,26 @@ if __name__ == "__main__":
                                 with tqdm(total=len(dataset)) as pbar_data:
                                     for idx, item in enumerate(dataset):
                                         pbar_data.update(1)
-                                        print(list(item.keys()))
-                                        print(
-                                            list(
-                                                item["label_meta_dict"].keys()
-                                            )
-                                        )
-                                        print(
-                                            list(
-                                                item["image_meta_dict"].keys()
-                                            )
-                                        )
+
                                         if (
-                                            item["original_channel_dim"]
+                                            item["image_meta_dict"][
+                                                "original_channel_dim"
+                                            ]
                                             == "no_channel"
                                         ):
-                                            item["original_channel_dim"] = -1
+                                            item["image_meta_dict"][
+                                                "original_channel_dim"
+                                            ] = -1
+
+                                        if (
+                                            item["label_meta_dict"][
+                                                "original_channel_dim"
+                                            ]
+                                            == "no_channel"
+                                        ):
+                                            item["label_meta_dict"][
+                                                "original_channel_dim"
+                                            ] = -1
                                         yield item | {"task_name": task_name}
 
                                 pbar_task.update(1)
