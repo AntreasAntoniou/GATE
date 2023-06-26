@@ -88,7 +88,7 @@ if __name__ == "__main__":
                                 with tqdm(total=len(dataset)) as pbar_data:
                                     for idx, item in enumerate(dataset):
                                         pbar_data.update(1)
-
+                                        print(list(item.keys()))
                                         if (
                                             item["original_channel_dim"]
                                             == "no_channel"
