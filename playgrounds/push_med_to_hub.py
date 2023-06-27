@@ -122,9 +122,10 @@ if __name__ == "__main__":
                         task_name = task_name.replace("_", "").replace(
                             ".tar", ""
                         )
-                        
+                        name = f"{set_name}/{task_name}".lower()
+                        print(f"/n {name}")
 
-                        hf_dataset_dict[f"{set_name}/{task_name}".lower()] = hf_dataset
+                        hf_dataset_dict[name] = hf_dataset
                     pbar_set_name.update(1)
                     pbar_set_name.set_description(f"Processing {set_name}")
             hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
