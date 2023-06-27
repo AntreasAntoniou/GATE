@@ -113,7 +113,7 @@ if __name__ == "__main__":
                                 pbar_task.update(1)
 
                     hf_dataset = datasets.Dataset.from_generator(
-                        gen=dataset_generator,
+                        generator=dataset_generator,
                         gen_kwargs={"shards": task_list},
                         cache_dir=dataset_root,
                         keep_in_memory=False,
