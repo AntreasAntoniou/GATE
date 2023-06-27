@@ -117,7 +117,7 @@ if __name__ == "__main__":
                         cache_dir=dataset_root,
                         keep_in_memory=False,
                         num_proc=mp.cpu_count(),
-                        writer_batch_size=50,
+                        writer_batch_size=25,
                     )
                     hf_dataset_dict[set_name] = hf_dataset
                     pbar_set_name.update(1)
