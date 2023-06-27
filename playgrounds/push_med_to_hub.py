@@ -43,12 +43,12 @@ task_list = vars(TaskOptions()).values()
 
 transform = T.Compose(
     [
-        mT.LoadImaged(keys=["image", "label"], allow_missing_keys=True),
-        mT.EnsureChannelFirstd(
-            keys=["image", "label"], allow_missing_keys=True
+        mT.LoadImaged(
+            keys=["image", "label"],
         ),
+        mT.EnsureChannelFirstd(keys=["image", "label"]),
         mT.ScaleIntensityd(keys="image"),
-        mT.ToTensord(keys=["image", "label"], allow_missing_keys=True),
+        mT.ToTensord(keys=["image", "label"]),
     ]
 )
 
