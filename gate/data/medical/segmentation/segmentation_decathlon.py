@@ -2,18 +2,16 @@ import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Optional
 
-import numpy as np
 import torch
 from torch.utils.data import random_split
 import torchvision.transforms as T
-from monai.apps import DecathlonDataset
+from monai.apps.datasets import DecathlonDataset
 import monai.transforms as mT
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import CustomConcatDataset, GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 
 logger = get_logger(name=__name__)
 
@@ -94,14 +92,16 @@ def build_dataset(
 
     dataset_length = len(train_set)
     val_split = 0.1  # Fraction for the validation set (e.g., 10%)
+    test_split = 0.1  # Fraction for the test set (e.g., 10%)
 
-    # Calculate the number of samples for train and validation sets
-    val_length = int(dataset_length * val_split)
-    train_length = dataset_length - val_length
+    # Calculate the number of samples for train, validation and test sets
+    train_length = dataset_length - dataset_length * (val_split + test_split)
+    val_length = dataset_length * val_split
+    test_length = dataset_length * test_split
 
-    train_set, val_set = random_split(train_set, [train_length, val_length])
-
-    test_set = build_combined_dataset("test", data_dir)
+    train_set, val_set, test_set = random_split(
+        train_set, [train_length, val_length, test_length]
+    )
 
     dataset_dict = {
         "train": train_set,
@@ -126,21 +126,18 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 

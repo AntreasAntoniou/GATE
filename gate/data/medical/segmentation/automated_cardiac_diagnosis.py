@@ -153,50 +153,23 @@ def build_gate_dataset(
     transforms: Optional[Any] = None,
     num_classes=4,
 ) -> dict:
-    dataset_dict = build_dataset(data_dir=data_dir)
     train_set = GATEDataset(
-        dataset=dataset_dict["train"],
+        dataset=build_dataset(set_name="train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     val_set = GATEDataset(
-        dataset=dataset_dict["val"],
+        dataset=build_dataset(set_name="val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     test_set = GATEDataset(
-        dataset=dataset_dict["test"],
+        dataset=build_dataset(set_name="test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
         transforms=transforms,
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def main():
-    dataset_path = os.environ.get("PYTEST_DIR")
-    dataset_path = pathlib.Path(dataset_path)
-    dataset = ACDCDataset(root_dir=dataset_path)
-
-    for i, sample in enumerate(dataset):
-        four_d_img = sample["four_d_img"]
-        frame_data = sample["frame_data"]
-
-        print(f"Patient {i + 1}: 4D Image shape: {four_d_img.shape}")
-
-        for j, frame in enumerate(frame_data):
-            img = frame["img"]
-            label = frame["label"]
-            print(
-                f"  Frame {j + 1}: Image shape: {img.shape}, Label shape: {label.shape}"
-            )
-
-
-if __name__ == "__main__":
-    main()
