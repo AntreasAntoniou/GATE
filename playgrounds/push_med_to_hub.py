@@ -135,7 +135,6 @@ if __name__ == "__main__":
                 private=False,
                 exist_ok=True,
                 repo_type="dataset",
-                token=os.environ.get("HF_TOKEN"),
             )
 
             completed = False
