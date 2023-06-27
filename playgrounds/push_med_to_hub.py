@@ -128,6 +128,16 @@ if __name__ == "__main__":
                     pbar_set_name.update(1)
                     pbar_set_name.set_description(f"Processing {set_name}")
             hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
+            import huggingface_hub
+
+            huggingface_hub.create_repo(
+                repo_id=f"GATE-engine/{key}",
+                private=False,
+                exist_ok=True,
+                repo_type="dataset",
+                token=os.environ.get("HF_TOKEN"),
+            )
+
             completed = False
             while not completed:
                 try:
