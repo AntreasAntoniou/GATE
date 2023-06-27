@@ -78,43 +78,37 @@ if __name__ == "__main__":
                 for set_name in set_name_list:
                     pbar_set_name.set_description(f"Processing {set_name}")
 
-                    def dataset_generator(shards):
-                        with tqdm(total=len(shards)) as pbar_task:
-                            for task_name in shards:
-                                print("Processing", task_name)
-                                dataset = value(
-                                    set_name=set_name, task_name=task_name
-                                )
-                                with tqdm(total=len(dataset)) as pbar_data:
-                                    for idx, item in enumerate(dataset):
-                                        pbar_data.update(1)
+                    def dataset_generator(task_name):
+                        print("Processing", task_name)
+                        dataset = value(set_name=set_name, task_name=task_name)
+                        with tqdm(total=len(dataset)) as pbar_data:
+                            for idx, item in enumerate(dataset):
+                                pbar_data.update(1)
 
-                                        if (
-                                            item["image_meta_dict"][
-                                                "original_channel_dim"
-                                            ]
-                                            == "no_channel"
-                                        ):
-                                            item["image_meta_dict"][
-                                                "original_channel_dim"
-                                            ] = -1
+                                if (
+                                    item["image_meta_dict"][
+                                        "original_channel_dim"
+                                    ]
+                                    == "no_channel"
+                                ):
+                                    item["image_meta_dict"][
+                                        "original_channel_dim"
+                                    ] = -1
 
-                                        if (
-                                            item["label_meta_dict"][
-                                                "original_channel_dim"
-                                            ]
-                                            == "no_channel"
-                                        ):
-                                            item["label_meta_dict"][
-                                                "original_channel_dim"
-                                            ] = -1
-                                        yield item | {"task_name": task_name}
-
-                                pbar_task.update(1)
+                                if (
+                                    item["label_meta_dict"][
+                                        "original_channel_dim"
+                                    ]
+                                    == "no_channel"
+                                ):
+                                    item["label_meta_dict"][
+                                        "original_channel_dim"
+                                    ] = -1
+                                yield item | {"task_name": task_name}
 
                     hf_dataset = datasets.Dataset.from_generator(
                         generator=dataset_generator,
-                        gen_kwargs={"shards": task_list},
+                        gen_kwargs={"task_name": task_list},
                         cache_dir=dataset_root,
                         keep_in_memory=False,
                         num_proc=mp.cpu_count(),
