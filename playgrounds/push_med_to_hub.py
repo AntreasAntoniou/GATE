@@ -78,9 +78,9 @@ if __name__ == "__main__":
                 for set_name in set_name_list:
                     pbar_set_name.set_description(f"Processing {set_name}")
 
-                    def dataset_generator():
-                        with tqdm(total=len(task_list)) as pbar_task:
-                            for task_name in task_list:
+                    def dataset_generator(shards):
+                        with tqdm(total=len(shards)) as pbar_task:
+                            for task_name in shards:
                                 print("Processing", task_name)
                                 dataset = value(
                                     set_name=set_name, task_name=task_name
@@ -113,7 +113,8 @@ if __name__ == "__main__":
                                 pbar_task.update(1)
 
                     hf_dataset = datasets.Dataset.from_generator(
-                        dataset_generator,
+                        gen=dataset_generator,
+                        gen_kwargs={"shards": task_list},
                         cache_dir=dataset_root,
                         keep_in_memory=False,
                         num_proc=mp.cpu_count(),
