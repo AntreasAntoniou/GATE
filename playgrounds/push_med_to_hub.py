@@ -2,8 +2,10 @@ from dataclasses import dataclass
 import os
 import multiprocessing as mp
 import datasets
+import numpy as np
 import torch
 import torchvision.transforms as T
+from PIL.Image import LANCZOS
 from rich import print as rprint
 from tqdm.auto import tqdm
 from monai.apps import DecathlonDataset
@@ -86,7 +88,7 @@ if __name__ == "__main__":
                                     set_name=set_name, task_name=task_name
                                 )
                                 with tqdm(total=len(dataset)) as pbar_data:
-                                    for _idx, item in enumerate(dataset):
+                                    for idx, item in enumerate(dataset):
                                         pbar_data.update(1)
 
                                         if (
@@ -120,7 +122,7 @@ if __name__ == "__main__":
                         task_name = task_name.replace("_", "").replace(
                             ".tar", ""
                         )
-                        print(f"{task_name}")
+                        print(task_name)
 
                         hf_dataset_dict[f"{set_name}/{task_name}"] = hf_dataset
                     pbar_set_name.update(1)
