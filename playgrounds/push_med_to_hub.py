@@ -122,7 +122,7 @@ if __name__ == "__main__":
                         task_name = task_name.replace("_", "").replace(
                             ".tar", ""
                         )
-                        print(task_name)
+                        
 
                         hf_dataset_dict[f"{set_name}/{task_name}".lower()] = hf_dataset
                     pbar_set_name.update(1)
