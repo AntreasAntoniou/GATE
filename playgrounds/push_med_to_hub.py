@@ -69,7 +69,7 @@ dataset_dict = {
     ),
 }
 
-set_name_list = ["training", "test"]
+set_name_list = ["training"]
 if __name__ == "__main__":
     with tqdm(total=len(dataset_dict)) as pbar_dataset:
         for key, value in dataset_dict.items():
