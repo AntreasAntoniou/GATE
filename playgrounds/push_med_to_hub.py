@@ -141,7 +141,9 @@ if __name__ == "__main__":
             while not completed:
                 try:
                     hf_dataset_dict_full.push_to_hub(
-                        repo_id=f"GATE-engine/{key}", private=False
+                        repo_id=f"GATE-engine/{key}",
+                        private=False,
+                        max_shard_size="2GB",
                     )
                     completed = True
                 except Exception as e:
