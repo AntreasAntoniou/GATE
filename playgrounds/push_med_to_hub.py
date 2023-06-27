@@ -119,6 +119,7 @@ if __name__ == "__main__":
                                 num_proc=mp.cpu_count(),
                                 writer_batch_size=15,
                             )
+                        task_name = task_name.replace("_", "")
                         hf_dataset_dict[f"{set_name}/{task_name}"] = hf_dataset
                     pbar_set_name.update(1)
                     pbar_set_name.set_description(f"Processing {set_name}")
