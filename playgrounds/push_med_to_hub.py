@@ -77,44 +77,47 @@ if __name__ == "__main__":
                 print("Processing", key)
                 for set_name in set_name_list:
                     pbar_set_name.set_description(f"Processing {set_name}")
+                    with tqdm(total=len(task_list)) as pbar_task_name:
+                        for task_name in task_list:
 
-                    def dataset_generator(task_name):
-                        print("Processing", task_name)
-                        dataset = value(set_name=set_name, task_name=task_name)
-                        with tqdm(total=len(dataset)) as pbar_data:
-                            for idx, item in enumerate(dataset):
-                                pbar_data.update(1)
+                            def dataset_generator():
+                                print("Processing", task_name)
+                                dataset = value(
+                                    set_name=set_name, task_name=task_name
+                                )
+                                with tqdm(total=len(dataset)) as pbar_data:
+                                    for idx, item in enumerate(dataset):
+                                        pbar_data.update(1)
 
-                                if (
-                                    item["image_meta_dict"][
-                                        "original_channel_dim"
-                                    ]
-                                    == "no_channel"
-                                ):
-                                    item["image_meta_dict"][
-                                        "original_channel_dim"
-                                    ] = -1
+                                        if (
+                                            item["image_meta_dict"][
+                                                "original_channel_dim"
+                                            ]
+                                            == "no_channel"
+                                        ):
+                                            item["image_meta_dict"][
+                                                "original_channel_dim"
+                                            ] = -1
 
-                                if (
-                                    item["label_meta_dict"][
-                                        "original_channel_dim"
-                                    ]
-                                    == "no_channel"
-                                ):
-                                    item["label_meta_dict"][
-                                        "original_channel_dim"
-                                    ] = -1
-                                yield item | {"task_name": task_name}
+                                        if (
+                                            item["label_meta_dict"][
+                                                "original_channel_dim"
+                                            ]
+                                            == "no_channel"
+                                        ):
+                                            item["label_meta_dict"][
+                                                "original_channel_dim"
+                                            ] = -1
+                                        yield item | {"task_name": task_name}
 
-                    hf_dataset = datasets.Dataset.from_generator(
-                        generator=dataset_generator,
-                        gen_kwargs={"task_name": task_list},
-                        cache_dir=dataset_root,
-                        keep_in_memory=False,
-                        num_proc=mp.cpu_count(),
-                        writer_batch_size=25,
-                    )
-                    hf_dataset_dict[set_name] = hf_dataset
+                            hf_dataset = datasets.Dataset.from_generator(
+                                generator=dataset_generator,
+                                cache_dir=dataset_root,
+                                keep_in_memory=False,
+                                num_proc=mp.cpu_count(),
+                                writer_batch_size=25,
+                            )
+                        hf_dataset_dict[f"{set_name}/{task_name}"] = hf_dataset
                     pbar_set_name.update(1)
                     pbar_set_name.set_description(f"Processing {set_name}")
             hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
