@@ -184,27 +184,3 @@ def collect_metrics(func: Callable) -> Callable:
         return outputs
 
     return wrapper_collect_metrics
-
-
-if __name__ == "__main__":
-
-    @configurable
-    def build_something(batch_size: int, num_layers: int):
-        return batch_size, num_layers
-
-    build_something_config = build_something.build_config(
-        populate_full_signature=True
-    )
-    dummy_config = build_something_config(batch_size=32, num_layers=2)
-    print(dummy_config)
-
-    from hydra_zen import builds, instantiate
-
-    def build_something(batch_size: int, num_layers: int):
-        return batch_size, num_layers
-
-    dummy_config = builds(build_something, populate_full_signature=True)
-
-    dummy_function_instantiation = instantiate(dummy_config)
-
-    print(dummy_function_instantiation)

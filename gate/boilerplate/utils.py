@@ -606,3 +606,67 @@ def log_wandb_masks(
     experiment_tracker.log(
         {f"{prefix}/segmentation_episode": mask_list}, step=global_step
     )
+
+
+import numpy as np
+import torch
+import wandb
+
+
+def visualize_mri(
+    input_volumes: torch.Tensor,
+    predicted_volumes: torch.Tensor,
+    label_volumes: torch.Tensor,
+) -> None:
+    """
+    📝 Function to visualize MRI volumes using Weights & Biases (wandb).
+
+    Args:
+        input_volumes (torch.Tensor): Input volumes with shape (b, s, c, h, w).
+        predicted_volumes (torch.Tensor): Predicted volumes with shape (b, s, c, h, w).
+        label_volumes (torch.Tensor): Label volumes with shape (b, s, c, h, w).
+        run_name (str): Name of the wandb run.
+
+    Returns:
+        None
+    """
+    # 🔄 Convert PyTorch tensors to NumPy arrays
+    input_volumes_np = input_volumes.numpy()
+    predicted_volumes_np = predicted_volumes.numpy()
+    label_volumes_np = label_volumes.numpy()
+
+    # ✅ Check the shape of the data
+    for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
+        assert (
+            len(data.shape) == 5
+        ), "Data should be 5D in the shape of (b, s, c, h, w)"
+
+    # ✅ Check the data type of the volumes
+    assert (
+        input_volumes_np.dtype == np.float
+    ), "input_volumes should be of float type"
+    assert (
+        predicted_volumes_np.dtype == np.int64
+    ), "predicted_volumes should be of long (int64) type"
+    assert (
+        label_volumes_np.dtype == np.int64
+    ), "label_volumes should be of long (int64) type"
+
+    # 📊 Log volumes to wandb
+    for i in range(input_volumes_np.shape[0]):
+        wandb.log(
+            {
+                "input_volume": [
+                    wandb.Image(volume, caption=f"Input Volume {i}")
+                    for volume in input_volumes_np[i]
+                ],
+                "predicted_volume": [
+                    wandb.Image(volume, caption=f"Predicted Volume {i}")
+                    for volume in predicted_volumes_np[i]
+                ],
+                "label_volume": [
+                    wandb.Image(volume, caption=f"Label Volume {i}")
+                    for volume in label_volumes_np[i]
+                ],
+            }
+        )
