@@ -22,7 +22,7 @@ for item in data["training.task01braintumour"]:
         else item["image"]
     )
     label = (
-        torch.stack(item["label"])
+        torch.stack([torch.tensor(i) for i in item["label"]])
         if isinstance(item["label"], list)
         else item["label"]
     )
