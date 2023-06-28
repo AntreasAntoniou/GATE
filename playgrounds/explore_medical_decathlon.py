@@ -2,6 +2,7 @@ import torch
 import os
 import datasets
 import numpy as np
+from rich import print
 
 data = datasets.load_dataset(
     "GATE-engine/medical_decathlon",
