@@ -13,5 +13,5 @@ keys = list(data.keys())
 print(keys)
 
 for item in data["training.task01braintumour"]:
-    print(item)
+    print(list(item.keys()))
     break
