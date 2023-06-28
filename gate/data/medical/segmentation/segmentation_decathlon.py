@@ -35,15 +35,13 @@ task_list = vars(TaskOptions()).values()
 def build_combined_dataset(dataset_root):
     dataset_list = []
 
+    dataset_dict = datasets.load_dataset(
+        "GATE-engine/medical_decathlon",
+        cache_dir=dataset_root,
+        num_proc=mp.cpu_count(),
+    )
     for task_name in task_list:
-        cur_dataset = datasets.load_dataset(
-            path="GATE-engine/medical_decathlon",
-            split=task_name,
-            cache_dir=dataset_root,
-            data_dir=dataset_root,
-            num_proc=mp.cpu_count(),
-        )
-        dataset_list.append(cur_dataset)
+        dataset_list.append(dataset_dict[task_name])
 
     dataset = concatenate_datasets(dataset_list)
     return dataset
