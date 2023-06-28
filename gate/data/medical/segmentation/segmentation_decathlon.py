@@ -69,7 +69,7 @@ def build_dataset(
         f"Loading Diabetic retinopathy dataset, will download to {data_dir} if necessary."
     )
 
-    train_set = build_combined_dataset("training", data_dir)
+    train_set = build_combined_dataset(data_dir)
 
     # create a random 90-10 train-val split
 
