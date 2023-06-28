@@ -17,7 +17,7 @@ print(keys)
 
 for item in data["training.task01braintumour"]:
     image = (
-        torch.stack(item["image"])
+        torch.stack([torch.tensor(i) for i in item["image"]])
         if isinstance(item["image"], list)
         else item["image"]
     )
