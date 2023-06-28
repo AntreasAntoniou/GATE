@@ -1,3 +1,4 @@
+from math import floor
 import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -77,8 +78,9 @@ def build_dataset(
 
     # Calculate the number of samples for train, validation and test sets
     train_length = dataset_length - dataset_length * (val_split + test_split)
-    val_length = dataset_length * val_split
-    test_length = dataset_length * test_split
+    train_length = int(floor(train_length))
+    val_length = int(floor(dataset_length * val_split))
+    test_length = dataset_length - train_length - val_length
 
     train_set, val_set, test_set = random_split(
         train_set, [train_length, val_length, test_length]
