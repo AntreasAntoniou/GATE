@@ -2,19 +2,18 @@ from dataclasses import dataclass
 import os
 import multiprocessing as mp
 import datasets
-import numpy as np
 import torch
 import torchvision.transforms as T
-from PIL.Image import LANCZOS
 from rich import print as rprint
 from tqdm.auto import tqdm
-from monai.apps import DecathlonDataset
-import monai.transforms as mT
+
+from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
+    ACDCDataset,
+)
 
 dataset_root = os.environ["PYTEST_DIR"]
 
 
-# split_names_list = ["train", "validation", "test"]
 def report_summary_statistics(x):
     tensor = torch.tensor(x)
     mean = tensor.mean()
@@ -25,49 +24,14 @@ def report_summary_statistics(x):
     return x
 
 
-@dataclass
-class TaskOptions:
-    BrainTumour: str = "Task01_BrainTumour"
-    Heart: str = "Task02_Heart"
-    Liver: str = "Task03_Liver"
-    Hippocampus: str = "Task04_Hippocampus"
-    Prostate: str = "Task05_Prostate"
-    Lung: str = "Task06_Lung"
-    Pancreas: str = "Task07_Pancreas"
-    HepaticVessel: str = "Task08_HepaticVessel"
-    Spleen: str = "Task09_Spleen"
-    Colon: str = "Task10_Colon"
-
-
-task_list = vars(TaskOptions()).values()
-
-transform = T.Compose(
-    [
-        mT.LoadImaged(keys=["image", "label"]),
-        mT.EnsureChannelFirstd(keys=["image", "label"]),
-        mT.ScaleIntensityd(keys="image"),
-        mT.ToTensord(keys=["image", "label"]),
-    ]
-)
-
 dataset_dict = {
-    "medical_decathlon": lambda set_name, task_name: DecathlonDataset(
-        dataset_root,
-        task=task_name,
-        section=set_name,
-        transform=transform,
-        download=True,
-        seed=42,
-        val_frac=0.0,
-        num_workers=mp.cpu_count(),
-        progress=True,
-        copy_cache=True,
-        as_contiguous=True,
-        runtime_cache=False,
+    "medical_decathlon": lambda set_name: ACDCDataset(
+        root_dir=dataset_root,
+        mode=set_name,
     ),
 }
 
-set_name_list = ["training", "test"]
+set_name_list = ["train", "test"]
 if __name__ == "__main__":
     with tqdm(total=len(dataset_dict)) as pbar_dataset:
         for key, value in dataset_dict.items():
@@ -79,38 +43,43 @@ if __name__ == "__main__":
                     pbar_set_name.set_description(f"Processing {set_name}")
 
                     def dataset_generator():
-                        with tqdm(total=len(task_list)) as pbar_task:
-                            for task_name in task_list:
-                                print("Processing", task_name)
-                                dataset = value(
-                                    set_name=set_name, task_name=task_name
-                                )
-                                with tqdm(total=len(dataset)) as pbar_data:
-                                    for idx, item in enumerate(dataset):
-                                        print(item)
-                                        pbar_data.update(1)
-                                        yield {
-                                            "image": item["image"],
-                                            "mask": item["label"],
-                                            "task": task_name,
-                                        }
-                                pbar_task.update(1)
+                        dataset = value(set_name=set_name)
+                        with tqdm(total=len(dataset)) as pbar_data:
+                            for idx, item in enumerate(dataset):
+                                pbar_data.update(1)
+
+                                yield item
 
                     hf_dataset = datasets.Dataset.from_generator(
-                        dataset_generator,
+                        generator=dataset_generator,
                         cache_dir=dataset_root,
-                        keep_in_memory=True,
+                        keep_in_memory=False,
                         num_proc=mp.cpu_count(),
+                        writer_batch_size=50,
                     )
-                    hf_dataset_dict[set_name] = hf_dataset
+                    name = f"{set_name}".lower()
+
+                    hf_dataset_dict[name] = hf_dataset
+
                     pbar_set_name.update(1)
                     pbar_set_name.set_description(f"Processing {set_name}")
             hf_dataset_dict_full = datasets.DatasetDict(hf_dataset_dict)
+            import huggingface_hub
+
+            huggingface_hub.create_repo(
+                repo_id=f"GATE-engine/{key}",
+                private=False,
+                exist_ok=True,
+                repo_type="dataset",
+            )
+
             completed = False
             while not completed:
                 try:
                     hf_dataset_dict_full.push_to_hub(
-                        repo_id=f"GATE-engine/{key}", private=False
+                        repo_id=f"GATE-engine/{key}",
+                        private=False,
+                        max_shard_size="2GB",
                     )
                     completed = True
                 except Exception as e:
