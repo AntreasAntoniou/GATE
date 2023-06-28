@@ -11,4 +11,5 @@ data = datasets.load_dataset(
 keys = list(data.keys())
 print(keys)
 
-# for item in data["training."]
+for item in data["training.task02heart"]:
+    print(item)
