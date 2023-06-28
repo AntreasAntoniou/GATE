@@ -643,7 +643,7 @@ def visualize_mri(
 
     # ✅ Check the data type of the volumes
     assert (
-        input_volumes_np.dtype == np.float64
+        input_volumes_np.dtype == np.float32
     ), "input_volumes should be of float type"
     assert (
         predicted_volumes_np.dtype == np.int64
