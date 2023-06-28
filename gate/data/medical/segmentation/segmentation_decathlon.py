@@ -40,8 +40,8 @@ def build_combined_dataset(dataset_root):
         cache_dir=dataset_root,
         num_proc=mp.cpu_count(),
     )
-    for task_name in task_list:
-        dataset_list.append(dataset_dict[task_name])
+    for task_name, task_dataset in dataset_dict.items():
+        dataset_list.append(task_dataset)
 
     dataset = concatenate_datasets(dataset_list)
     return dataset
