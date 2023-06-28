@@ -4,14 +4,11 @@ from typing import Any, Optional
 
 import torch
 from torch.utils.data import random_split
-import torchvision.transforms as T
-from monai.apps.datasets import DecathlonDataset
-import monai.transforms as mT
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
-from gate.data.core import CustomConcatDataset, GATEDataset
+from gate.data.core import GATEDataset
 import datasets
 from datasets import concatenate_datasets
 
@@ -43,6 +40,8 @@ def build_combined_dataset(dataset_root):
             path="GATE-engine/medical_decathlon",
             split=task_name,
             cache_dir=dataset_root,
+            data_dir=dataset_root,
+            num_proc=mp.cpu_count(),
         )
         dataset_list.append(cur_dataset)
 
