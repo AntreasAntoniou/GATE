@@ -1,7 +1,6 @@
-import os
 import pathlib
 import zipfile
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import nibabel as nib
 import requests
@@ -12,7 +11,6 @@ from tqdm import tqdm
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 
 
 def download_and_extract_file(extract_to: str) -> pathlib.Path:
