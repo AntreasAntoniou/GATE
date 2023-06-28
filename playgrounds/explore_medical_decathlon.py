@@ -12,5 +12,6 @@ data = datasets.load_dataset(
 keys = list(data.keys())
 print(keys)
 
-for item in data["training.task02heart"]:
+for item in data["training.task01braintumour"]:
     print(item)
+    break
