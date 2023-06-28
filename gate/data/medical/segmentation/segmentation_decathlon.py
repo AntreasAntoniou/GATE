@@ -12,6 +12,8 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import CustomConcatDataset, GATEDataset
+import datasets
+from datasets import concatenate_datasets
 
 logger = get_logger(name=__name__)
 
@@ -32,37 +34,19 @@ class TaskOptions:
 
 task_list = vars(TaskOptions()).values()
 
-transform = T.Compose(
-    [
-        mT.LoadImaged(keys=["image", "label"]),
-        mT.EnsureChannelFirstd(keys=["image", "label"]),
-        mT.ScaleIntensityd(keys="image"),
-        mT.ToTensord(keys=["image", "label"]),
-    ]
-)
 
-
-def build_combined_dataset(set_name, dataset_root):
+def build_combined_dataset(dataset_root):
     dataset_list = []
 
     for task_name in task_list:
-        cur_dataset = DecathlonDataset(
-            dataset_root,
-            task=task_name,
-            section=set_name,
-            transform=transform,
-            download=True,
-            seed=42,
-            val_frac=0.0,
-            num_workers=mp.cpu_count(),
-            progress=True,
-            copy_cache=True,
-            as_contiguous=True,
-            runtime_cache=False,
+        cur_dataset = datasets.load_dataset(
+            path="GATE-engine/medical_decathlon",
+            split=task_name,
+            cache_dir=dataset_root,
         )
         dataset_list.append(cur_dataset)
 
-    dataset = CustomConcatDataset(dataset_list)
+    dataset = concatenate_datasets(dataset_list)
     return dataset
 
 
