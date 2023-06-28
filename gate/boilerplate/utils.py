@@ -631,9 +631,9 @@ def visualize_mri(
         None
     """
     # 🔄 Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = input_volumes.numpy()
-    predicted_volumes_np = predicted_volumes.numpy()
-    label_volumes_np = label_volumes.numpy()
+    input_volumes_np = input_volumes.permute([0, 1, 3, 4, 2]).numpy()
+    predicted_volumes_np = predicted_volumes.permute([0, 1, 3, 4, 2]).numpy()
+    label_volumes_np = label_volumes.permute([0, 1, 3, 4, 2]).numpy()
 
     # ✅ Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
