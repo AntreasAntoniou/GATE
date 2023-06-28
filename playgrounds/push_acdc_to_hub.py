@@ -25,7 +25,7 @@ def report_summary_statistics(x):
 
 
 dataset_dict = {
-    "medical_decathlon": lambda set_name: ACDCDataset(
+    "automated_cardiac_diagnosis_competition.ACDC": lambda set_name: ACDCDataset(
         root_dir=dataset_root,
         mode=set_name,
     ),
