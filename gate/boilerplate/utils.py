@@ -734,7 +734,9 @@ def log_wandb_3d_volumes_and_masks(
     image_mask_list = []
     # Log volumes to wandb
     for i in range(input_volumes_np.shape[0]):
-        bg_image = create_montage(input_volumes_np[i]).float()
+        bg_image = (
+            create_montage(input_volumes_np[i]).permute([2, 0, 1]).float()
+        )
         prediction_mask = create_montage(predicted_volumes_np[i]).long()
         true_mask = create_montage(label_volumes_np[i]).long()
 
