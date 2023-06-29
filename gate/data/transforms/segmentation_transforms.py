@@ -1,7 +1,8 @@
-import torch
-from torchvision import transforms
-from PIL import Image
 import random
+
+import torch
+from PIL import Image
+from torchvision import transforms
 
 
 class DualImageRandomCrop:

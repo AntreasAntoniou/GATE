@@ -1,12 +1,12 @@
 # pascal_context.py
 from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
 import torch
 import torchvision.transforms as T
-from torchvision.datasets import VOCSegmentation
 from torch.utils.data import random_split
+from torchvision.datasets import VOCSegmentation
 
-import numpy as np
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset

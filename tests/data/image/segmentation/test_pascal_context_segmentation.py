@@ -1,12 +1,12 @@
 import os
 import pathlib
+
 import pytest
 
 from gate.data.image.segmentation.pascal_context import (
     build_dataset,
     build_gate_dataset,
 )
-
 
 DATA_DIR = pathlib.Path(os.environ.get("PYTEST_DIR"))
 

@@ -1,7 +1,7 @@
+import numpy as np
 import pytest
 import torch
 from PIL import Image
-import numpy as np
 
 from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 

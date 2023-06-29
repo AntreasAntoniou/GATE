@@ -8,12 +8,12 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, Optional
 
 import torch
+import wandb
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds, instantiate
 from rich import print
 from traitlets import default
 
-import wandb
 from gate.boilerplate.utils import (
     get_logger,
     log_wandb_images,

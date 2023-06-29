@@ -4,23 +4,23 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
-from PIL import Image
 import torch
-from torch.utils.data import random_split
 import torchvision.transforms as T
-from gate.boilerplate.decorators import configurable
+from PIL import Image
+from torch.utils.data import random_split
 
+from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import count_files_recursive, get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.image.segmentation.classes import (
+    cocostuff_164k_classes as CLASSES,
+)
 from gate.data.image.segmentation.coco import (
     BaseDataset,
     download_and_extract_coco_stuff164k,
 )
 from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
-from gate.data.image.segmentation.classes import (
-    cocostuff_164k_classes as CLASSES,
-)
 
 logger = get_logger(__name__, set_rich=True)
 

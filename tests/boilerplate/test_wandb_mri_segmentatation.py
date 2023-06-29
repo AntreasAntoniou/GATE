@@ -1,7 +1,7 @@
-import torch
 import numpy as np
-import wandb
 import pytest
+import torch
+import wandb
 
 from gate.boilerplate.utils import visualize_mri
 

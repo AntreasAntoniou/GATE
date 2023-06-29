@@ -6,8 +6,8 @@ from typing import Optional, Union
 
 import cv2
 import numpy as np
-from PIL import Image
 import torch
+from PIL import Image
 from torch.utils import data
 
 from gate.boilerplate.utils import get_logger

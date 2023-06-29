@@ -2,10 +2,11 @@
 import multiprocessing as mp
 from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
 import torch
 import torchvision.transforms as T
-import numpy as np
 from datasets import load_dataset
+
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset

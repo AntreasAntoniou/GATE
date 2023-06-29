@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from gate.data.medical.segmentation.segmentation_decathlon import (

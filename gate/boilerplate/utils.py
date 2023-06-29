@@ -13,6 +13,7 @@ import numpy as np
 import orjson as json
 import torch
 import torchvision.transforms as T
+import wandb
 import yaml
 from omegaconf import DictConfig, OmegaConf
 from rich.logging import RichHandler
@@ -20,7 +21,6 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
-import wandb
 from gate.config.variables import HF_OFFLINE_MODE
 
 
@@ -606,16 +606,6 @@ def log_wandb_masks(
     experiment_tracker.log(
         {f"{prefix}/segmentation_episode": mask_list}, step=global_step
     )
-
-
-import numpy as np
-import torch
-import wandb
-
-
-import numpy as np
-import torch
-import wandb
 
 
 def visualize_mri(
