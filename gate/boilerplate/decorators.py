@@ -16,6 +16,7 @@ from traitlets import default
 
 from gate.boilerplate.utils import (
     get_logger,
+    log_wandb_3d_volumes_and_masks,
     log_wandb_images,
     log_wandb_masks,
 )
@@ -132,6 +133,18 @@ class BackgroundLogging(threading.Thread):
                         prefix=self.phase_name,
                     )
                     continue
+
+                if "med_seg_episode" in metric_key:
+                    med_seg_episode = value
+                    log_wandb_3d_volumes_and_masks(
+                        input_volumes=med_seg_episode["image"],
+                        predicted_volumes=med_seg_episode["logits"],
+                        target_volumes=med_seg_episode["label"],
+                        global_step=self.global_step,
+                        experiment_tracker=self.experiment_tracker,
+                        prefix=self.phase_name,
+                    )
+
                 if "ae_episode" in metric_key:
                     # print("logging ae episode")
                     ae_episode = value
