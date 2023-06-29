@@ -671,9 +671,9 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
 
 
 def log_wandb_3d_volumes_and_masks(
-    input_volumes: torch.Tensor,
-    predicted_volumes: torch.Tensor,
-    label_volumes: torch.Tensor,
+    volumes: torch.Tensor,
+    logits: torch.Tensor,
+    labels: torch.Tensor,
     label_idx_to_description: Optional[dict] = None,
     global_step: int = 0,
     prefix: str = "general",
@@ -693,9 +693,9 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = normalize_image(input_volumes.float())
-    predicted_volumes_np = predicted_volumes.long()
-    label_volumes_np = label_volumes.long()
+    input_volumes_np = normalize_image(volumes.float())
+    predicted_volumes_np = logits.long()
+    label_volumes_np = labels.long()
 
     # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
