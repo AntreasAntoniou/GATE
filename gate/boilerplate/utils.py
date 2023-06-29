@@ -666,8 +666,8 @@ def log_wandb_3d_volumes_and_masks(
     for i in range(input_volumes_np.shape[0]):
         for j in range(input_volumes_np.shape[1]):
             bg_image = T.ToPILImage()(input_volumes_np[i, j])
-            prediction_mask = predicted_volumes_np[i, j]
-            true_mask = label_volumes_np[i, j]
+            prediction_mask = predicted_volumes_np[i, j].numpy()
+            true_mask = label_volumes_np[i, j].numpy()
 
             wandb.log(
                 {
