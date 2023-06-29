@@ -1,17 +1,17 @@
-from math import floor
 import multiprocessing as mp
 from dataclasses import dataclass
+from math import floor
 from typing import Any, Optional
 
+import datasets
 import torch
+from datasets import concatenate_datasets
 from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-import datasets
-from datasets import concatenate_datasets
 
 logger = get_logger(name=__name__)
 

@@ -4,21 +4,21 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import cv2
 import numpy as np
 import scipy.io as sio
-from PIL import Image
 import torch
-from torch.utils.data import random_split
 import torchvision.transforms as T
-from gate.boilerplate.decorators import configurable
+from PIL import Image
+from torch.utils.data import random_split
 
+from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import count_files_recursive
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.image.segmentation.classes import (
+    cocostuff_10K_classes as CLASSES,
+)
 from gate.data.image.segmentation.coco import (
     BaseDataset,
     download_and_extract_coco_stuff10k,
-)
-from gate.data.image.segmentation.classes import (
-    cocostuff_10K_classes as CLASSES,
 )
 from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 

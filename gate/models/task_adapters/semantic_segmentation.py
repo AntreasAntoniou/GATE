@@ -3,21 +3,21 @@ import time
 from collections import OrderedDict
 from functools import partial
 from typing import Dict, List, Optional
-from mmseg.evaluation.metrics import IoUMetric
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets.table import pa
+from mmseg.evaluation.metrics import IoUMetric
 from rich import print
 
 from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (
-    miou_metrics,
-    FocalLoss,
     DiceLoss,
+    FocalLoss,
     WeightedCrossEntropyLoss,
+    miou_metrics,
 )
 
 logger = get_logger(__name__)
