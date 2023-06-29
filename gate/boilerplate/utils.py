@@ -636,6 +636,9 @@ def visualize_mri(
         None
     """
     # Convert PyTorch tensors to NumPy arrays
+    input_volumes = (input_volumes - input_volumes.min()) / (
+        input_volumes.max() - input_volumes.min()
+    )
     input_volumes_np = input_volumes.permute(0, 1, 3, 4, 2).numpy()
     predicted_volumes_np = predicted_volumes.permute(0, 1, 3, 4, 2).numpy()
     label_volumes_np = label_volumes.permute(0, 1, 3, 4, 2).numpy()
