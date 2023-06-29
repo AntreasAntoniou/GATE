@@ -20,6 +20,8 @@ from rich.logging import RichHandler
 from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
+from rich import print as rprint
+from rich.pretty import Pretty
 
 from gate.config.variables import HF_OFFLINE_MODE
 
@@ -186,10 +188,6 @@ def pretty_config(
         branch.add(Syntax(branch_content, "yaml", theme="one-dark"))
 
     return tree
-
-
-from rich import print as rprint
-from rich.pretty import Pretty
 
 
 def pretty_print_dictionary(dictionary: Dict[str, Any]) -> None:
