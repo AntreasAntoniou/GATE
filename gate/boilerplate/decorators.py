@@ -137,11 +137,10 @@ class BackgroundLogging(threading.Thread):
                 if "med_seg_episode" in metric_key:
                     med_seg_episode = value
                     log_wandb_3d_volumes_and_masks(
-                        input_volumes=med_seg_episode["image"],
-                        predicted_volumes=med_seg_episode["logits"],
-                        target_volumes=med_seg_episode["label"],
+                        volumes=med_seg_episode["image"],
+                        logits=med_seg_episode["logits"],
+                        labels=med_seg_episode["label"],
                         global_step=self.global_step,
-                        experiment_tracker=self.experiment_tracker,
                         prefix=self.phase_name,
                     )
 
