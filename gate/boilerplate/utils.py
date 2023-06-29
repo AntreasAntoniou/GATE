@@ -624,28 +624,15 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = input_volumes.permute([0, 1, 3, 4, 2]).float().numpy()
-    predicted_volumes_np = (
-        predicted_volumes.permute([0, 1, 3, 4, 2]).long().numpy()
-    )
-    label_volumes_np = label_volumes.permute([0, 1, 3, 4, 2]).long().numpy()
+    input_volumes_np = input_volumes.permute([0, 1, 3, 4, 2]).float()
+    predicted_volumes_np = predicted_volumes.permute([0, 1, 3, 4, 2]).long()
+    label_volumes_np = label_volumes.permute([0, 1, 3, 4, 2]).long()
 
     # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
         assert (
             len(data.shape) == 5
         ), "Data should be 5D in the shape of (b, s, c, h, w)"
-
-    # Check the data type of the volumes
-    assert (
-        input_volumes_np.dtype == np.float32
-    ), "input_volumes should be of float type"
-    assert (
-        predicted_volumes_np.dtype == np.int64
-    ), "predicted_volumes should be of long (int64) type"
-    assert (
-        label_volumes_np.dtype == np.int64
-    ), "label_volumes should be of long (int64) type"
 
     # If no label description is provided, use a default mapping of indices to themselves
     if label_idx_to_description is None:
