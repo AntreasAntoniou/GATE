@@ -614,8 +614,8 @@ def log_wandb_3d_volumes_and_masks(
 
     Args:
         input_volumes (torch.Tensor): Input volumes with shape (b, s, c, h, w).
-        predicted_volumes (torch.Tensor): Predicted volumes with shape (b, s, c, h, w).
-        label_volumes (torch.Tensor): Label volumes with shape (b, s, c, h, w).
+        predicted_volumes (torch.Tensor): Predicted volumes with shape (b, s, h, w).
+        label_volumes (torch.Tensor): Label volumes with shape (b, s, h, w).
         label_idx_to_description (dict): Dictionary mapping label indices to descriptions.
         run_name (str): Name of the wandb run.
 
@@ -630,9 +630,14 @@ def log_wandb_3d_volumes_and_masks(
 
     # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
-        assert (
-            len(data.shape) == 5
-        ), "Data should be 5D in the shape of (b, s, c, h, w)"
+        if data is input_volumes_np:
+            assert (
+                len(data.shape) == 5
+            ), "Input volumes should be 5D in the shape of (b, s, c, h, w)"
+        else:
+            assert (
+                len(data.shape) == 4
+            ), "Predicted and label volumes should be 4D in the shape of (b, s, h, w)"
 
     # If no label description is provided, use a default mapping of indices to themselves
     if label_idx_to_description is None:

@@ -16,8 +16,8 @@ def test_wandb_mri_segmentation():
         64,
     )  # batch size, slices, channels, height, width
     input_volumes = torch.rand((b, s, c, h, w)).float()
-    predicted_volumes = torch.randint(0, 2, (b, s, c, h, w)).long()
-    label_volumes = torch.randint(0, 2, (b, s, c, h, w)).long()
+    predicted_volumes = torch.randint(0, 2, (b, s, h, w)).long()
+    label_volumes = torch.randint(0, 2, (b, s, h, w)).long()
 
     # Start a Weights & Biases run
     run = wandb.init(
