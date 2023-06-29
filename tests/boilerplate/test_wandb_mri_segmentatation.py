@@ -6,14 +6,41 @@ import wandb
 from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 
 
-def test_wandb_mri_segmentation():
+def test_wandb_mri_segmentation_channel_1():
     # Create some random data
     b, s, c, h, w = (
         2,
-        10,
+        300,
+        1,
+        256,
+        256,
+    )  # batch size, slices, channels, height, width
+    input_volumes = torch.rand((b, s, c, h, w)).float()
+    predicted_volumes = torch.randint(0, 2, (b, s, h, w)).long()
+    label_volumes = torch.randint(0, 2, (b, s, h, w)).long()
+
+    # Start a Weights & Biases run
+    run = wandb.init(
+        project="mri-visualization", name="mri-visualization-test"
+    )
+
+    # Visualize the data
+    log_wandb_3d_volumes_and_masks(
+        input_volumes, predicted_volumes, label_volumes
+    )
+
+    # Finish the run
+    run.finish()
+
+
+def test_wandb_mri_segmentation_channel_3():
+    # Create some random data
+    b, s, c, h, w = (
+        2,
+        300,
         3,
-        64,
-        64,
+        256,
+        256,
     )  # batch size, slices, channels, height, width
     input_volumes = torch.rand((b, s, c, h, w)).float()
     predicted_volumes = torch.randint(0, 2, (b, s, h, w)).long()
