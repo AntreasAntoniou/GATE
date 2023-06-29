@@ -624,7 +624,7 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = input_volumes.float()
+    input_volumes_np = normalize_image(input_volumes.float())
     predicted_volumes_np = predicted_volumes.long()
     label_volumes_np = label_volumes.long()
 
