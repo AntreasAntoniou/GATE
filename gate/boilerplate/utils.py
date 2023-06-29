@@ -603,11 +603,69 @@ def log_wandb_masks(
     )
 
 
+def create_montage(arr: np.ndarray) -> np.ndarray:
+    """
+    Create a 2D montage from a 3D or 4D numpy array.
+
+    Args:
+        arr (np.ndarray): Input array with shape (s, h, w) or (s, c, h, w).
+
+    Returns:
+        np.ndarray: 2D montage.
+    """
+
+    # Check the shape of the input array
+    assert len(arr.shape) in [
+        3,
+        4,
+    ], "Input array should be 3D in the shape of (s, h, w) or 4D in the shape of (s, c, h, w)"
+
+    # Get the shape of the input array
+    if len(arr.shape) == 3:
+        s, h, w = arr.shape
+        c = None
+    else:
+        s, c, h, w = arr.shape
+
+    # Compute the new height and width
+    h_new = w_new = math.ceil(math.sqrt(s))
+
+    # Create an empty array to hold the montage
+    montage = (
+        np.empty((h_new * h, w_new * w, c))
+        if c is not None
+        else np.empty((h_new * h, w_new * w))
+    )
+
+    # Fill the montage with slices from the input array
+    for i in range(h_new):
+        for j in range(w_new):
+            idx = i * w_new + j
+            if idx < s:
+                if c is not None:
+                    montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
+                        idx
+                    ].transpose(1, 2, 0)
+                else:
+                    montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
+                        idx
+                    ]
+            else:
+                # Fill any extra entries with empty arrays
+                montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                    np.zeros((h, w, c)) if c is not None else np.zeros((h, w))
+                )
+
+    return montage
+
+
 def log_wandb_3d_volumes_and_masks(
     input_volumes: torch.Tensor,
     predicted_volumes: torch.Tensor,
     label_volumes: torch.Tensor,
     label_idx_to_description: Optional[dict] = None,
+    global_step: int = 0,
+    prefix: str = "general",
 ) -> None:
     """
     Function to visualize MRI volumes using Weights & Biases (wandb).
@@ -662,17 +720,19 @@ def log_wandb_3d_volumes_and_masks(
             },
         )
 
+    image_mask_list = []
     # Log volumes to wandb
     for i in range(input_volumes_np.shape[0]):
-        for j in range(input_volumes_np.shape[1]):
-            bg_image = T.ToPILImage()(input_volumes_np[i, j])
-            prediction_mask = predicted_volumes_np[i, j].numpy()
-            true_mask = label_volumes_np[i, j].numpy()
+        bg_image = create_montage(input_volumes_np[i])
+        prediction_mask = create_montage(predicted_volumes_np[i])
+        true_mask = create_montage(label_volumes_np[i])
 
-            wandb.log(
-                {
-                    f"Volume {i}, Slice {j}": wb_mask(
-                        bg_image, prediction_mask, true_mask
-                    )
-                }
-            )
+        bg_image = T.ToPILImage()(bg_image)
+        prediction_mask = prediction_mask.numpy()
+        true_mask = true_mask.numpy()
+        image_mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
+
+    wandb.log(
+        {f"{prefix}/medical_segmentation_episode": image_mask_list},
+        step=global_step,
+    )
