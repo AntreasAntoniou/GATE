@@ -607,7 +607,7 @@ def log_wandb_3d_volumes_and_masks(
     input_volumes: torch.Tensor,
     predicted_volumes: torch.Tensor,
     label_volumes: torch.Tensor,
-    label_idx_to_description: dict,
+    label_idx_to_description: Optional[dict] = None,
 ) -> None:
     """
     Function to visualize MRI volumes using Weights & Biases (wandb).
