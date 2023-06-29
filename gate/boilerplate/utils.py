@@ -603,10 +603,11 @@ def log_wandb_masks(
     )
 
 
-def visualize_mri(
+def log_wandb_3d_volumes_and_masks(
     input_volumes: torch.Tensor,
     predicted_volumes: torch.Tensor,
     label_volumes: torch.Tensor,
+    label_idx_to_description: dict,
 ) -> None:
     """
     Function to visualize MRI volumes using Weights & Biases (wandb).
@@ -615,18 +616,17 @@ def visualize_mri(
         input_volumes (torch.Tensor): Input volumes with shape (b, s, c, h, w).
         predicted_volumes (torch.Tensor): Predicted volumes with shape (b, s, c, h, w).
         label_volumes (torch.Tensor): Label volumes with shape (b, s, c, h, w).
+        label_idx_to_description (dict): Dictionary mapping label indices to descriptions.
         run_name (str): Name of the wandb run.
 
     Returns:
         None
     """
+
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes = (input_volumes - input_volumes.min()) / (
-        input_volumes.max() - input_volumes.min()
-    )
-    input_volumes_np = input_volumes.permute(0, 1, 3, 4, 2).numpy()
-    predicted_volumes_np = predicted_volumes.permute(0, 1, 3, 4, 2).numpy()
-    label_volumes_np = label_volumes.permute(0, 1, 3, 4, 2).numpy()
+    input_volumes_np = input_volumes.numpy()
+    predicted_volumes_np = predicted_volumes.numpy()
+    label_volumes_np = label_volumes.numpy()
 
     # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
@@ -645,17 +645,40 @@ def visualize_mri(
         label_volumes_np.dtype == np.int64
     ), "label_volumes should be of long (int64) type"
 
+    # If no label description is provided, use a default mapping of indices to themselves
+    if label_idx_to_description is None:
+        unique_labels = np.unique(label_volumes_np)
+        label_idx_to_description = {
+            label: str(label) for label in unique_labels
+        }
+
+    # Define a helper function to create a wandb.Image with masks
+    def wb_mask(bg_img, pred_mask, true_mask):
+        return wandb.Image(
+            bg_img,
+            masks={
+                "prediction": {
+                    "mask_data": pred_mask,
+                    "class_labels": label_idx_to_description,
+                },
+                "ground truth": {
+                    "mask_data": true_mask,
+                    "class_labels": label_idx_to_description,
+                },
+            },
+        )
+
     # Log volumes to wandb
     for i in range(input_volumes_np.shape[0]):
         for j in range(input_volumes_np.shape[1]):
+            bg_image = T.ToPILImage()(input_volumes_np[i, j])
+            prediction_mask = predicted_volumes_np[i, j]
+            true_mask = label_volumes_np[i, j]
+
             wandb.log(
                 {
-                    f"Volume {i}, Slice {j}": [
-                        wandb.Image(input_volumes_np[i, j], caption="Input"),
-                        wandb.Image(
-                            predicted_volumes_np[i, j], caption="Prediction"
-                        ),
-                        wandb.Image(label_volumes_np[i, j], caption="Label"),
-                    ]
+                    f"Volume {i}, Slice {j}": wb_mask(
+                        bg_image, prediction_mask, true_mask
+                    )
                 }
             )

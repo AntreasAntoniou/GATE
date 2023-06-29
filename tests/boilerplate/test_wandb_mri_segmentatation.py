@@ -3,7 +3,7 @@ import pytest
 import torch
 import wandb
 
-from gate.boilerplate.utils import visualize_mri
+from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 
 
 def test_wandb_mri_segmentation():
@@ -25,7 +25,9 @@ def test_wandb_mri_segmentation():
     )
 
     # Visualize the data
-    visualize_mri(input_volumes, predicted_volumes, label_volumes)
+    log_wandb_3d_volumes_and_masks(
+        input_volumes, predicted_volumes, label_volumes
+    )
 
     # Finish the run
     run.finish()
