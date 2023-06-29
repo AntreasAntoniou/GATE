@@ -624,9 +624,9 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = input_volumes.permute([0, 1, 3, 4, 2]).float()
-    predicted_volumes_np = predicted_volumes.permute([0, 1, 3, 4, 2]).long()
-    label_volumes_np = label_volumes.permute([0, 1, 3, 4, 2]).long()
+    input_volumes_np = input_volumes.float()
+    predicted_volumes_np = predicted_volumes.long()
+    label_volumes_np = label_volumes.long()
 
     # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
