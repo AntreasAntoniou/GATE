@@ -604,6 +604,11 @@ def log_wandb_masks(
     )
 
 
+import numpy as np
+import math
+import torch
+
+
 def create_montage(arr: np.ndarray) -> np.ndarray:
     """
     Create a 2D montage from a 3D or 4D numpy array.
@@ -644,9 +649,14 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             idx = i * w_new + j
             if idx < s:
                 if c is not None:
-                    montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
-                        idx
-                    ].transpose(1, 2, 0)
+                    if isinstance(arr, torch.Tensor):
+                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                            arr[idx].permute(1, 2, 0).numpy()
+                        )
+                    else:
+                        montage[
+                            i * h : (i + 1) * h, j * w : (j + 1) * w
+                        ] = arr[idx].transpose(1, 2, 0)
                 else:
                     montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
                         idx
