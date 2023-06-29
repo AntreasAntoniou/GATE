@@ -10,16 +10,15 @@ import torch
 import torch.nn as nn
 from huggingface_hub import HfApi
 from hydra_zen import instantiate
-from numpy import False_
 from torch.utils.data import DataLoader
 
-from .utils import get_logger
+from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
 hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
 
 import contextlib
-import os
+import time
 
 
 @contextlib.contextmanager
@@ -352,9 +351,6 @@ class CallbackHandler(Callback):
             callback.on_load_checkpoint(
                 model, optimizer, experiment, checkpoint_path
             )
-
-
-import time
 
 
 class UploadCheckpointToHuggingFaceBackground(threading.Thread):
