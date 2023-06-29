@@ -613,13 +613,18 @@ import torch
 import wandb
 
 
+import numpy as np
+import torch
+import wandb
+
+
 def visualize_mri(
     input_volumes: torch.Tensor,
     predicted_volumes: torch.Tensor,
     label_volumes: torch.Tensor,
 ) -> None:
     """
-    📝 Function to visualize MRI volumes using Weights & Biases (wandb).
+    Function to visualize MRI volumes using Weights & Biases (wandb).
 
     Args:
         input_volumes (torch.Tensor): Input volumes with shape (b, s, c, h, w).
@@ -630,20 +635,20 @@ def visualize_mri(
     Returns:
         None
     """
-    # 🔄 Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = input_volumes.permute([0, 1, 3, 4, 2]).numpy()
-    predicted_volumes_np = predicted_volumes.permute([0, 1, 3, 4, 2]).numpy()
-    label_volumes_np = label_volumes.permute([0, 1, 3, 4, 2]).numpy()
+    # Convert PyTorch tensors to NumPy arrays
+    input_volumes_np = input_volumes.numpy()
+    predicted_volumes_np = predicted_volumes.numpy()
+    label_volumes_np = label_volumes.numpy()
 
-    # ✅ Check the shape of the data
+    # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
         assert (
             len(data.shape) == 5
         ), "Data should be 5D in the shape of (b, s, c, h, w)"
 
-    # ✅ Check the data type of the volumes
+    # Check the data type of the volumes
     assert (
-        input_volumes_np.dtype == np.float32
+        input_volumes_np.dtype == np.float64
     ), "input_volumes should be of float type"
     assert (
         predicted_volumes_np.dtype == np.int64
@@ -652,21 +657,17 @@ def visualize_mri(
         label_volumes_np.dtype == np.int64
     ), "label_volumes should be of long (int64) type"
 
-    # 📊 Log volumes to wandb
+    # Log volumes to wandb
     for i in range(input_volumes_np.shape[0]):
-        wandb.log(
-            {
-                "input_volume": [
-                    wandb.Image(volume, caption=f"Input Volume {i}")
-                    for volume in input_volumes_np[i]
-                ],
-                "predicted_volume": [
-                    wandb.Image(volume, caption=f"Predicted Volume {i}")
-                    for volume in predicted_volumes_np[i]
-                ],
-                "label_volume": [
-                    wandb.Image(volume, caption=f"Label Volume {i}")
-                    for volume in label_volumes_np[i]
-                ],
-            }
-        )
+        for j in range(input_volumes_np.shape[1]):
+            wandb.log(
+                {
+                    f"Volume {i}, Slice {j}": [
+                        wandb.Image(input_volumes_np[i, j], caption="Input"),
+                        wandb.Image(
+                            predicted_volumes_np[i, j], caption="Prediction"
+                        ),
+                        wandb.Image(label_volumes_np[i, j], caption="Label"),
+                    ]
+                }
+            )
