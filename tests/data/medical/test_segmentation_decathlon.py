@@ -11,13 +11,19 @@ from gate.data.medical.segmentation.medical_decathlon import (
 def test_build_dataset():
     # Test if the function returns the correct dataset split
 
-    train_set = build_dataset(data_dir=os.environ.get("PYTEST_DIR"))
+    train_set = build_dataset(
+        set_name="train", data_dir=os.environ.get("PYTEST_DIR")
+    )
     assert train_set is not None, "Train set should not be None"
 
-    val_set = build_dataset(data_dir=os.environ.get("PYTEST_DIR"))
+    val_set = build_dataset(
+        set_name="val", data_dir=os.environ.get("PYTEST_DIR")
+    )
     assert val_set is not None, "Validation set should not be None"
 
-    test_set = build_dataset(data_dir=os.environ.get("PYTEST_DIR"))
+    test_set = build_dataset(
+        set_name="test", data_dir=os.environ.get("PYTEST_DIR")
+    )
     assert test_set is not None, "Test set should not be None"
 
 
