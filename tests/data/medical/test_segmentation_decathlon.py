@@ -68,6 +68,7 @@ def test_build_gate_visualize_dataset():
         assert item["labels"] is not None, "Label should not be None"
 
         input_volumes = item["image"].unsqueeze(0)
+        input_volumes = patient_normalization(input_volumes)
         predicted_volumes = item["labels"].float()
         label_volumes = item["labels"].float()
 
