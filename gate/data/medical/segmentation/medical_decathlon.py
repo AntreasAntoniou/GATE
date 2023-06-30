@@ -150,6 +150,9 @@ class DatasetTransforms:
             if isinstance(item["label"], list)
             else item["label"]
         )
+        image = image.permute(0, 3, 1, 2)
+        annotation = annotation.permute(0, 3, 1, 2)
+
         print(
             f"image shape: {image.shape}, annotation shape: {annotation.shape}"
         )
@@ -176,9 +179,7 @@ class DatasetTransforms:
             interpolation=T.InterpolationMode.BICUBIC,
         )(annotation)
 
-        annotation = np.array(annotation)
-        annotation = torch.from_numpy(annotation)
-        annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+        annotation = annotation.unsqueeze(0)
 
         return {
             "image": image,
