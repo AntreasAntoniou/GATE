@@ -2,6 +2,7 @@ import os
 
 import pytest
 import wandb
+import torch.nn.functional as F
 from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 
 from gate.data.medical.segmentation.medical_decathlon import (
@@ -79,7 +80,9 @@ def test_build_gate_visualize_dataset():
 
         # Visualize the data
         log_wandb_3d_volumes_and_masks(
-            input_volumes, predicted_volumes.long(), label_volumes.long()
+            F.interpolate(input_volumes, size=(256, 256), mode="bicubic"),
+            predicted_volumes.long(),
+            label_volumes.long(),
         )
 
         # Finish the run
