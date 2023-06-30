@@ -45,8 +45,8 @@ def test_build_gate_dataset():
 def visualize_volume(item):
     input_volumes = item["image"]
     input_volumes = input_volumes.float().unsqueeze(0).unsqueeze(0)
-    predicted_volumes = item["labels"].float().unsqueeze(0).unsqueeze(0)
-    label_volumes = item["labels"].float().unsqueeze(0).unsqueeze(0)
+    predicted_volumes = item["labels"].float().unsqueeze(0)
+    label_volumes = item["labels"].float().unsqueeze(0)
 
     predicted_volumes[predicted_volumes == -1] = 10
     label_volumes[label_volumes == -1] = 10
