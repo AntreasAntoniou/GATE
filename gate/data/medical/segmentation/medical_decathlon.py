@@ -139,7 +139,7 @@ class DatasetTransforms:
         else:
             self.crop_size = None
 
-    def __call__(self, inputs: Dict):
+    def __call__(self, item: Dict):
         image = (
             torch.stack([torch.tensor(i) for i in item["image"]])
             if isinstance(item["image"], list)
