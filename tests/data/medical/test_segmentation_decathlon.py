@@ -47,8 +47,7 @@ def test_build_gate_dataset():
 
 def patient_normalization(input_volume):
     input_volume = (
-        input_volume
-        - input_volume.min()
+        (input_volume - input_volume.min())
         / (input_volume.max() - input_volume.min())
         * 255.0
     )
