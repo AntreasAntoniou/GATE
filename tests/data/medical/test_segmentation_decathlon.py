@@ -85,9 +85,7 @@ def test_build_gate_visualize_dataset():
         )
 
         # Start a Weights & Biases run
-        run = wandb.init(
-            project="mri-visualization", name="mri-visualization-test"
-        )
+        run = wandb.init(project="mri-visualization")
 
         # Visualize the data
         log_wandb_3d_volumes_and_masks(
