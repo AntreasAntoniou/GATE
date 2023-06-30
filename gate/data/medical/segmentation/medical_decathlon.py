@@ -81,7 +81,7 @@ def build_dataset(
         split=f"training.{task_name}",
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
-        keep_in_memory=True,
+        keep_in_memory=False,
     )
     # create a random 90-10 train-val split
 
@@ -140,13 +140,24 @@ class DatasetTransforms:
             self.crop_size = None
 
     def __call__(self, inputs: Dict):
-        image = inputs["image"]
+        image = (
+            torch.stack([torch.tensor(i) for i in item["image"]])
+            if isinstance(item["image"], list)
+            else item["image"]
+        )
+        annotation = (
+            torch.stack([torch.tensor(i) for i in item["label"]])
+            if isinstance(item["label"], list)
+            else item["label"]
+        )
+        print(
+            f"image shape: {image.shape}, annotation shape: {annotation.shape}"
+        )
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
         )(image)
 
-        annotation = inputs["annotation"]
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
