@@ -1,14 +1,16 @@
 import os
 
 import pytest
-from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 
+import wandb
+import torch.nn.functional as F
+
+from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
     build_dataset,
     build_gate_dataset,
 )
-import wandb
-import torch.nn.functional as F
+
 
 # You can set this to the path where you have the dataset stored on your machine
 DATASET_PATH = os.environ.get("PYTEST_DIR")
