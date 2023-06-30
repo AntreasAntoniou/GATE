@@ -24,19 +24,19 @@ logger = get_logger(name=__name__)
 
 @dataclass
 class TaskOptions:
-    BrainTumour: str = "Task01_BrainTumour"
-    Heart: str = "Task02_Heart"
-    Liver: str = "Task03_Liver"
-    Hippocampus: str = "Task04_Hippocampus"
-    Prostate: str = "Task05_Prostate"
-    Lung: str = "Task06_Lung"
-    Pancreas: str = "Task07_Pancreas"
-    HepaticVessel: str = "Task08_HepaticVessel"
-    Spleen: str = "Task09_Spleen"
-    Colon: str = "Task10_Colon"
+    BrainTumour: str = "Task01BrainTumour".lower()
+    Heart: str = "Task02Heart".lower()
+    Liver: str = "Task03Liver".lower()
+    Hippocampus: str = "Task04Hippocampus".lower()
+    Prostate: str = "Task05Prostate".lower()
+    Lung: str = "Task06Lung".lower()
+    Pancreas: str = "Task07Pancreas".lower()
+    HepaticVessel: str = "Task08HepaticVessel".lower()
+    Spleen: str = "Task09Spleen".lower()
+    Colon: str = "Task10Colon".lower()
 
 
-task_list = vars(TaskOptions()).values()
+TASK_LIST = vars(TaskOptions()).values()
 
 
 def build_combined_dataset(dataset_root):
