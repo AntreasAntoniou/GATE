@@ -78,7 +78,7 @@ def visualize_volume(item):
             input_volumes.view(-1, input_volumes.shape[-3], 512, 512),
             size=(256, 256),
             mode="bicubic",
-        ).view(*input_volumes.shape[:-2] + (256, 256)),
+        ).reshape(*input_volumes.shape[:-2] + (256, 256)),
         predicted_volumes.long(),
         label_volumes.long(),
     )
