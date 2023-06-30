@@ -84,7 +84,7 @@ def visualize_volume(item):
     # Visualize the data
     log_wandb_3d_volumes_and_masks(
         F.interpolate(
-            input_volumes.view(-1, 4, 512, 512),
+            input_volumes.view(-1, input_volumes.shape[-3], 512, 512),
             size=(256, 256),
             mode="bicubic",
         ).view(*input_volumes.shape[:-2] + (256, 256)),
