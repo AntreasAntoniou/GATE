@@ -97,8 +97,6 @@ class DatasetTransforms:
             self.crop_size = None
 
     def __call__(self, item: Dict):
-        print(list(item.keys()))
-        print(item)
         item["image"] = item["four_d_img"]
         item["label"] = item["frame_data"][0]["img"]
         image = (
