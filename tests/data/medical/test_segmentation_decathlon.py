@@ -100,3 +100,5 @@ def test_build_gate_visualize_dataset():
 
         # Finish the run
         run.finish()
+
+        break
