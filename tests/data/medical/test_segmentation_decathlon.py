@@ -77,7 +77,9 @@ def visualize_volume(item):
     )
 
     # Start a Weights & Biases run
-    run = wandb.init(project="mri-visualization")
+    run = wandb.init(
+        project="gate-visualization", job_type="visualize_dataset"
+    )
 
     # Visualize the data
     log_wandb_3d_volumes_and_masks(
