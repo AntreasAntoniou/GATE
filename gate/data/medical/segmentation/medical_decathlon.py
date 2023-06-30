@@ -150,7 +150,7 @@ class DatasetTransforms:
             if isinstance(item["label"], list)
             else item["label"]
         )
-        image = image.permute(0, 3, 1, 2)
+        image = image.permute(3, 0, 1, 2)
         annotation = annotation.permute(0, 3, 1, 2)
 
         image = T.Resize(
