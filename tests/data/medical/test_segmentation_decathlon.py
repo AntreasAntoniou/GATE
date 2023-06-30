@@ -56,8 +56,8 @@ def test_build_gate_visualize_dataset():
         assert item["labels"] is not None, "Label should not be None"
 
         input_volumes = item["image"].unsqueeze(2)
-        predicted_volumes = item["labels"]
-        label_volumes = item["labels"]
+        predicted_volumes = item["labels"].float()
+        label_volumes = item["labels"].float()
 
         print(
             f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
@@ -76,7 +76,7 @@ def test_build_gate_visualize_dataset():
 
         # Visualize the data
         log_wandb_3d_volumes_and_masks(
-            input_volumes, predicted_volumes, label_volumes
+            input_volumes, predicted_volumes.long(), label_volumes.long()
         )
 
         # Finish the run
