@@ -55,9 +55,9 @@ def test_build_gate_visualize_dataset():
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
 
-        input_volumes = item["image"].unsqueeze(2)
-        predicted_volumes = item["labels"].float()
-        label_volumes = item["labels"].float()
+        input_volumes = item["image"].unsqueeze(2).unsqueeze(0)
+        predicted_volumes = item["labels"].float().unsqueeze(0)
+        label_volumes = item["labels"].float().unsqueeze(0)
 
         predicted_volumes[predicted_volumes == -1] = 0
         label_volumes[label_volumes == -1] = 0
