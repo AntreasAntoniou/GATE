@@ -153,9 +153,6 @@ class DatasetTransforms:
         image = image.permute(0, 3, 1, 2)
         annotation = annotation.permute(0, 3, 1, 2)
 
-        print(
-            f"image shape: {image.shape}, annotation shape: {annotation.shape}"
-        )
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
