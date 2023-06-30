@@ -464,3 +464,28 @@ pascal_context_classes = (
         "wood",
     ),
 )
+
+medical_decathlon_labels = {
+    "task01braintumour": [
+        "Background",
+        "Necrotic and Non-Enhancing Tumor",
+        "Edema",
+        "Enhancing Tumor",
+    ],
+    "task02heart": ["Background", "Left Atrium"],
+    "task03liver": ["Background", "Liver", "Tumour"],
+    "task04hippocampus": ["Background", "Anterior", "Posterior"],
+    "task05prostate": [
+        "Background",
+        "Peripheral Zone",
+        "Transitional Zone",
+        "Central Gland",
+    ],
+    "task06lung": ["Background", "Lung", "Tumour"],
+    "task07pancreas": ["Background", "Pancreas", "Tumour"],
+    "task08hepaticvessel": ["Background", "Vessels", "Tumour"],
+    "task09spleen": ["Background", "Spleen"],
+    "task10colon": ["Background", "Tumour"],
+}
+
+acdc_labels = ["Background", "Left Ventricle", "Right Ventricle", "Myocardium"]

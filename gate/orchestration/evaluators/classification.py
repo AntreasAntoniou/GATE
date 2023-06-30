@@ -504,7 +504,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         batch,
         global_step,
         accelerator: Accelerator,
-    ) -> StepOutput:
+    ) -> EvaluatorOutput:
         model.eval()
 
         step_output: StepOutput = self.step(
@@ -532,7 +532,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         global_step,
         accelerator: Accelerator,
         prefix: Optional[str] = None,
-    ) -> StepOutput:
+    ) -> EvaluatorOutput:
         model.eval()
 
         step_output: StepOutput = self.step(

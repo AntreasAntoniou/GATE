@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from gate.data.medical.segmentation.segmentation_decathlon import (
+from gate.data.medical.segmentation.medical_decathlon import (
     build_dataset,
     build_gate_dataset,
 )
