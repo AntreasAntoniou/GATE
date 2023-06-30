@@ -178,6 +178,10 @@ class DatasetTransforms:
 
         annotation = annotation.unsqueeze(0)
 
+        print(
+            f"image shape: {image.shape}, annotation shape: {annotation.shape}"
+        )
+
         return {
             "image": image,
             "labels": annotation.long(),
