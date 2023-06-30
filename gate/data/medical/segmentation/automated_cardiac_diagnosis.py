@@ -97,6 +97,7 @@ class DatasetTransforms:
             self.crop_size = None
 
     def __call__(self, item: Dict):
+        print(list(item.keys()))
         image = (
             torch.stack([torch.tensor(i) for i in item["image"]])
             if isinstance(item["image"], list)
