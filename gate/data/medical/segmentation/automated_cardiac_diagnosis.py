@@ -98,6 +98,9 @@ class DatasetTransforms:
 
     def __call__(self, item: Dict):
         print(list(item.keys()))
+        print(item)
+        item["image"] = item["four_d_img"]
+        item["label"] = item["frame_data"]["img"]
         image = (
             torch.stack([torch.tensor(i) for i in item["image"]])
             if isinstance(item["image"], list)
