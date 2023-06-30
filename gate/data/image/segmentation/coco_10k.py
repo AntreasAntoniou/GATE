@@ -1,104 +1,19 @@
-import pathlib
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
+import multiprocessing as mp
 
-import cv2
 import numpy as np
-import scipy.io as sio
 import torch
 import torchvision.transforms as T
-from PIL import Image
 from torch.utils.data import random_split
+from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import count_files_recursive
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
     cocostuff_10K_classes as CLASSES,
 )
-from gate.data.image.segmentation.coco import (
-    BaseDataset,
-    download_and_extract_coco_stuff10k,
-)
 from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
-
-DEFAULT_SPLIT = "train"
-DEFAULT_IGNORE_LABEL = 255
-DEFAULT_MEAN_BGR = (104.008, 116.669, 122.675)
-DEFAULT_AUGMENT = True
-DEFAULT_BASE_SIZE = None
-DEFAULT_CROP_SIZE = 321
-DEFAULT_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5]
-DEFAULT_FLIP = True
-DEFAULT_WARP_IMAGE = True
-
-
-class COCOStuff10K(BaseDataset):
-    """COCO-Stuff 10k dataset"""
-
-    def __init__(
-        self,
-        root: str,
-        split: str = DEFAULT_SPLIT,
-        download: bool = False,
-    ):
-        """
-        Initialize the CocoStuff10k dataset class.
-
-        Args:
-            root: The root path of the dataset (default: DEFAULT_ROOT).
-            split: The dataset split, either "train" or "val"
-            (default: DEFAULT_SPLIT["TRAIN"]).
-            ignore_label: The label to ignore during training
-            (default: DEFAULT_IGNORE_LABEL).
-        """
-        root = pathlib.Path(root)
-        dataset_root = root / "coco_10k"
-
-        if download:
-            if count_files_recursive(dataset_root) == 20004:
-                print("Dataset already downloaded. Skipping download.")
-            else:
-                download_and_extract_coco_stuff10k(root)
-
-        super(COCOStuff10K, self).__init__(
-            root=dataset_root,
-            split=split,
-        )
-
-    def _setup_dataset_files(self):
-        """
-        Create a file path/image id list based on the dataset split.
-        """
-        # Create data list via {train, test, all}.txt
-        if self.split in ["train", "test", "all"]:
-            file_list = self.root / "imageLists" / f"{self.split}.txt"
-            file_list = tuple(open(file_list, "r"))
-            file_list = [id_.rstrip() for id_ in file_list]
-            self.files = file_list
-        else:
-            raise KeyError(f"Invalid split name: {self.split}")
-
-    def _load_data(self, index):
-        """
-        Load the image and label at the given index.
-
-        Args:
-            index: The index of the image and label to load.
-
-        Returns:
-            A tuple containing the image ID, image, and label.
-        """
-        # Set paths
-        image_id = self.files[index]
-        image_path = self.root / "images" / f"{image_id}.jpg"
-        label_path = self.root / "annotations" / f"{image_id}.mat"
-
-        # Load an image and label
-        image = Image.open(image_path).convert("RGB")
-        label = T.ToPILImage()(torch.tensor(sio.loadmat(str(label_path))["S"]))
-
-        return image_id, image, label
 
 
 def build_dataset(
@@ -106,7 +21,7 @@ def build_dataset(
     data_dir: str,
     ignore_label: int = 255,
     download: bool = False,
-) -> Tuple[COCOStuff10K, COCOStuff10K, COCOStuff10K]:
+):
     """
     Build a CocoStuff10k dataset using the custom CocoStuff10k class.
 
@@ -123,24 +38,23 @@ def build_dataset(
     if split not in ["train", "val", "test"]:
         raise KeyError(f"Invalid split name: {split}")
 
-    train_data = COCOStuff10K(
-        root=data_dir,
+    train_data = load_dataset(
+        "GATE-engine/COCOStuff10K",
         split="train",
-        ignore_label=ignore_label,
-        download=download,
+        cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     # 💥 Split the train set into training and validation sets
-    train_len = int(0.9 * len(train_data))
-    val_len = len(train_data) - train_len
+    train_val_data = train_data.train_test_split(test_size=0.1)
+    train_data = train_val_data["train"]
+    val_data = train_val_data["test"]
 
-    train_data, val_data = random_split(train_data, [train_len, val_len])
-
-    test_data = COCOStuff10K(
-        root=data_dir,
+    test_data = load_dataset(
+        "GATE-engine/COCOStuff10K",
         split="test",
-        ignore_label=ignore_label,
-        download=download,
+        cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
     )
 
     data_dict = {"train": train_data, "val": val_data, "test": test_data}
