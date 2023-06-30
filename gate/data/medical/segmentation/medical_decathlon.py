@@ -105,6 +105,16 @@ def build_dataset(
     return dataset_dict[set_name]
 
 
+def patient_normalization(input_volume):
+    input_volume = (
+        (input_volume - input_volume.min())
+        / (input_volume.max() - input_volume.min())
+        * 255.0
+    )
+
+    return input_volume
+
+
 class DatasetTransforms:
     def __init__(
         self,
@@ -177,7 +187,7 @@ class DatasetTransforms:
         )(annotation)
 
         return {
-            "image": image,
+            "image": patient_normalization(image),
             "labels": annotation.long(),
         }
 

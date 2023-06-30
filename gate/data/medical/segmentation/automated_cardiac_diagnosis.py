@@ -15,6 +15,9 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import acdc_labels as CLASSES
+from gate.data.medical.segmentation.medical_decathlon import (
+    patient_normalization,
+)
 from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 
 
@@ -138,7 +141,7 @@ class DatasetTransforms:
         )(annotation)
 
         return {
-            "image": image,
+            "image": patient_normalization(image),
             "labels": annotation.long(),
         }
 

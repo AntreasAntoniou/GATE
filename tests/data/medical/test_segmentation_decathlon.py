@@ -47,19 +47,9 @@ def test_build_gate_dataset():
         break
 
 
-def patient_normalization(input_volume):
-    input_volume = (
-        (input_volume - input_volume.min())
-        / (input_volume.max() - input_volume.min())
-        * 255.0
-    )
-
-    return input_volume
-
-
 def visualize_volume(item):
     input_volumes = item["image"].unsqueeze(0)
-    input_volumes = patient_normalization(input_volumes)
+    input_volumes = input_volumes.float()
     predicted_volumes = item["labels"].float()
     label_volumes = item["labels"].float()
 
