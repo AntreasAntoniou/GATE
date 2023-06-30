@@ -63,8 +63,8 @@ def visualize_volume(item):
     predicted_volumes = item["labels"].float()
     label_volumes = item["labels"].float()
 
-    predicted_volumes[predicted_volumes == -1] = 4
-    label_volumes[label_volumes == -1] = 4
+    # predicted_volumes[predicted_volumes == -1] = 4
+    # label_volumes[label_volumes == -1] = 4
 
     print(
         f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
