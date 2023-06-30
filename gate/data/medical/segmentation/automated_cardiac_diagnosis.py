@@ -141,7 +141,7 @@ class DatasetTransforms:
         )(annotation)
 
         return {
-            "image": patient_normalization(image),
+            "image": patient_normalization(image).unsqueeze(2),
             "labels": annotation.long(),
         }
 
