@@ -45,6 +45,17 @@ def test_build_gate_dataset():
         break
 
 
+def patient_normalization(input_volume):
+    input_volume = (
+        input_volume
+        - input_volume.min()
+        / (input_volume.max() - input_volume.min())
+        * 255.0
+    )
+
+    return input_volume
+
+
 def test_build_gate_visualize_dataset():
     gate_dataset = build_gate_dataset(data_dir=os.environ.get("PYTEST_DIR"))
     assert gate_dataset["train"] is not None, "Train set should not be None"
