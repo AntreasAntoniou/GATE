@@ -6,9 +6,11 @@ import torch.nn.functional as F
 from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 
 from gate.data.medical.segmentation.medical_decathlon import (
+    TASK_LIST,
     build_dataset,
     build_gate_dataset,
 )
+from monai.apps import DecathlonDataset
 
 
 def test_build_dataset():
@@ -93,28 +95,35 @@ def visualize_volume(item):
 
 
 def test_build_gate_visualize_dataset():
-    gate_dataset = build_gate_dataset(data_dir=os.environ.get("PYTEST_DIR"))
-    assert gate_dataset["train"] is not None, "Train set should not be None"
-    assert gate_dataset["val"] is not None, "Validation set should not be None"
-    assert gate_dataset["test"] is not None, "Test set should not be None"
+    for task_name in TASK_LIST:
+        gate_dataset = build_gate_dataset(
+            data_dir=os.environ.get("PYTEST_DIR"), task_name=task_name
+        )
+        assert (
+            gate_dataset["train"] is not None
+        ), "Train set should not be None"
+        assert (
+            gate_dataset["val"] is not None
+        ), "Validation set should not be None"
+        assert gate_dataset["test"] is not None, "Test set should not be None"
 
-    for item in gate_dataset["train"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item)
-        break
+        for item in gate_dataset["train"]:
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            visualize_volume(item)
+            break
 
-    for item in gate_dataset["val"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item)
-        break
+        for item in gate_dataset["val"]:
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            visualize_volume(item)
+            break
 
-    for item in gate_dataset["test"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item)
-        break
+        for item in gate_dataset["test"]:
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            visualize_volume(item)
+            break
