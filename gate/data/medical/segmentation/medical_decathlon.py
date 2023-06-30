@@ -55,8 +55,10 @@ def build_combined_dataset(dataset_root):
 
 
 def build_dataset(
-    data_dir: Optional[str] = None, task_name: str = "task01braintumour"
-) -> dict:
+    set_name: str,
+    data_dir: Optional[str] = None,
+    task_name: str = "task01braintumour",
+):
     """
     Build a DR dataset using the Hugging Face datasets library.
 
@@ -104,7 +106,7 @@ def build_dataset(
         "test": test_set,
     }
 
-    return dataset_dict
+    return dataset_dict[set_name]
 
 
 class DatasetTransforms:
