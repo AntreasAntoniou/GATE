@@ -83,27 +83,23 @@ def build_dataset(
         num_proc=mp.cpu_count(),
         keep_in_memory=True,
     )
-
     # create a random 90-10 train-val split
 
-    dataset_length = len(dataset)
     val_split = 0.1  # Fraction for the validation set (e.g., 10%)
     test_split = 0.1  # Fraction for the test set (e.g., 10%)
 
-    # Calculate the number of samples for train, validation and test sets
-    train_length = dataset_length - dataset_length * (val_split + test_split)
-    train_length = int(floor(train_length))
-    val_length = int(floor(dataset_length * val_split))
-    test_length = dataset_length - train_length - val_length
-
-    train_set, val_set, test_set = random_split(
-        dataset, [train_length, val_length, test_length]
+    train_val_test_data = dataset.train_test_split(
+        test_size=val_split + test_split
     )
+    train_data = train_val_test_data["train"]
+    val_test_data = train_val_test_data["test"].train_test_split(0.5)
+    val_data = val_test_data["train"]
+    test_data = val_test_data["test"]
 
     dataset_dict = {
-        "train": train_set,
-        "val": val_set,
-        "test": test_set,
+        "train": train_data,
+        "val": val_data,
+        "test": test_data,
     }
 
     return dataset_dict[set_name]
