@@ -191,7 +191,7 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     task_name: str = "task01braintumour",
-    num_classes=150,
+    num_classes=CLASSES,  # for build_model we must check if num_class is a Dict or an int. If it is a dict, we must use num_classes[task_name]
     image_size=512,
     target_image_size=256,
 ) -> dict:

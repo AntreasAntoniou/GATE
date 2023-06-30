@@ -96,14 +96,25 @@ class DatasetTransforms:
         else:
             self.crop_size = None
 
-    def __call__(self, inputs: Dict):
-        image = inputs["image"]
+    def __call__(self, item: Dict):
+        image = (
+            torch.stack([torch.tensor(i) for i in item["image"]])
+            if isinstance(item["image"], list)
+            else item["image"]
+        )
+        annotation = (
+            torch.stack([torch.tensor(i) for i in item["label"]])
+            if isinstance(item["label"], list)
+            else item["label"]
+        )
+        image = image.permute(0, 3, 1, 2)
+        annotation = annotation.permute(0, 3, 1, 2)
+
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
         )(image)
 
-        annotation = inputs["annotation"]
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
@@ -121,10 +132,6 @@ class DatasetTransforms:
             (self.target_size[0], self.target_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
         )(annotation)
-
-        annotation = np.array(annotation)
-        annotation = torch.from_numpy(annotation)
-        annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
 
         return {
             "image": image,
