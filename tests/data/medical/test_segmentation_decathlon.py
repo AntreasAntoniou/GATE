@@ -82,7 +82,7 @@ def test_build_gate_visualize_dataset():
         log_wandb_3d_volumes_and_masks(
             F.interpolate(
                 input_volumes.view(-1, 4, 512, 512),
-                size=(4, 256, 256),
+                size=(256, 256),
                 mode="bicubic",
             ).view(*input_volumes.shape[:-2] + (256, 256)),
             predicted_volumes.long(),
