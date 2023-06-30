@@ -55,6 +55,43 @@ def patient_normalization(input_volume):
     return input_volume
 
 
+def visualize_volume(item):
+    input_volumes = item["image"].unsqueeze(0)
+    input_volumes = patient_normalization(input_volumes)
+    predicted_volumes = item["labels"].float()
+    label_volumes = item["labels"].float()
+
+    predicted_volumes[predicted_volumes == -1] = 0
+    label_volumes[label_volumes == -1] = 0
+
+    print(
+        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
+    )
+    print(
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+    )
+    print(
+        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+    )
+
+    # Start a Weights & Biases run
+    run = wandb.init(project="mri-visualization")
+
+    # Visualize the data
+    log_wandb_3d_volumes_and_masks(
+        F.interpolate(
+            input_volumes.view(-1, 4, 512, 512),
+            size=(256, 256),
+            mode="bicubic",
+        ).view(*input_volumes.shape[:-2] + (256, 256)),
+        predicted_volumes.long(),
+        label_volumes.long(),
+    )
+
+    # Finish the run
+    run.finish()
+
+
 def test_build_gate_visualize_dataset():
     gate_dataset = build_gate_dataset(data_dir=os.environ.get("PYTEST_DIR"))
     assert gate_dataset["train"] is not None, "Train set should not be None"
@@ -65,40 +102,19 @@ def test_build_gate_visualize_dataset():
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
+        visualize_volume(item)
+        break
 
-        input_volumes = item["image"].unsqueeze(0)
-        input_volumes = patient_normalization(input_volumes)
-        predicted_volumes = item["labels"].float()
-        label_volumes = item["labels"].float()
+    for item in gate_dataset["val"]:
+        print(list(item.keys()))
+        assert item["image"] is not None, "Image should not be None"
+        assert item["labels"] is not None, "Label should not be None"
+        visualize_volume(item)
+        break
 
-        predicted_volumes[predicted_volumes == -1] = 0
-        label_volumes[label_volumes == -1] = 0
-
-        print(
-            f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
-        )
-        print(
-            f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
-        )
-        print(
-            f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
-        )
-
-        # Start a Weights & Biases run
-        run = wandb.init(project="mri-visualization")
-
-        # Visualize the data
-        log_wandb_3d_volumes_and_masks(
-            F.interpolate(
-                input_volumes.view(-1, 4, 512, 512),
-                size=(256, 256),
-                mode="bicubic",
-            ).view(*input_volumes.shape[:-2] + (256, 256)),
-            predicted_volumes.long(),
-            label_volumes.long(),
-        )
-
-        # Finish the run
-        run.finish()
-
+    for item in gate_dataset["test"]:
+        print(list(item.keys()))
+        assert item["image"] is not None, "Image should not be None"
+        assert item["labels"] is not None, "Label should not be None"
+        visualize_volume(item)
         break
