@@ -78,7 +78,7 @@ def build_dataset(
 
     dataset = datasets.load_dataset(
         "GATE-engine/medical_decathlon",
-        split=task_name,
+        split=f"training.{task_name}",
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
         keep_in_memory=True,
