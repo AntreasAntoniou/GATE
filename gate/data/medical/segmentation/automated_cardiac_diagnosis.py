@@ -110,9 +110,7 @@ class DatasetTransforms:
             if isinstance(item["label"], list)
             else item["label"]
         )
-        print(
-            f"image shape: {image.shape}, annotation shape: {annotation.shape}"
-        )
+
         image = image.permute(0, 3, 1, 2)
         annotation = annotation.permute(0, 3, 1, 2)
 
