@@ -100,7 +100,7 @@ class DatasetTransforms:
         print(list(item.keys()))
         print(item)
         item["image"] = item["four_d_img"]
-        item["label"] = item["frame_data"]["img"]
+        item["label"] = item["frame_data"][0]["img"]
         image = (
             torch.stack([torch.tensor(i) for i in item["image"]])
             if isinstance(item["image"], list)
