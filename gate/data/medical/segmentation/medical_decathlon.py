@@ -15,6 +15,9 @@ from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
+from gate.data.image.segmentation.classes import (
+    medical_decathlon_labels as CLASSES,
+)
 
 logger = get_logger(name=__name__)
 
@@ -196,21 +199,30 @@ def build_gate_dataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[train_transforms, transforms],
-        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+        meta_data={
+            "class_names": CLASSES[task_name],
+            "num_classes": num_classes,
+        },
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[eval_transforms, transforms],
-        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+        meta_data={
+            "class_names": CLASSES[task_name],
+            "num_classes": num_classes,
+        },
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[eval_transforms, transforms],
-        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+        meta_data={
+            "class_names": CLASSES[task_name],
+            "num_classes": num_classes,
+        },
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
