@@ -106,6 +106,8 @@ class DatasetTransforms:
         annotation = torch.from_numpy(annotation)
         annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
 
+        image = T.ToTensor()(image)
+
         return {
             "image": image,
             "labels": annotation.long(),
