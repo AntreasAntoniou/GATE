@@ -199,7 +199,7 @@ def build_gate_dataset(
         image_size, target_image_size, initial_size=512, crop_size=None
     )
     train_set = GATEDataset(
-        dataset=build_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir, task_name=task_name),
         infinite_sampling=True,
         transforms=[train_transforms, transforms],
         meta_data={
@@ -209,7 +209,7 @@ def build_gate_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir, task_name=task_name),
         infinite_sampling=False,
         transforms=[eval_transforms, transforms],
         meta_data={
@@ -219,7 +219,7 @@ def build_gate_dataset(
     )
 
     test_set = GATEDataset(
-        dataset=build_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir, task_name=task_name),
         infinite_sampling=False,
         transforms=[eval_transforms, transforms],
         meta_data={
