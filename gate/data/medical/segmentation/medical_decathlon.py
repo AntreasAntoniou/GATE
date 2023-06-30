@@ -79,6 +79,7 @@ def build_dataset(
         split=task_name,
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
+        keep_in_memory=True,
     )
 
     # create a random 90-10 train-val split
