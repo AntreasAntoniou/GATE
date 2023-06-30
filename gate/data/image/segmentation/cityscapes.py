@@ -112,6 +112,9 @@ class DatasetTransforms:
         }
 
 
+# NSD and DSC for metrics, and also ensure that the model can compute per class metrics
+
+
 @configurable(
     group="dataset", name="cityscapes", defaults=dict(data_dir=DATASET_DIR)
 )
