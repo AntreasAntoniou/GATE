@@ -32,11 +32,14 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
     )
+    train_val_set = data["train"].train_test_split(test_size=0.1, seed=42)
+    train_set = train_val_set["train"]
+    val_set = train_val_set["test"]
 
     dataset_dict = {
-        "train": data["train"],
-        "val": data["validation"],
-        "test": data["test"],
+        "train": train_set,
+        "val": val_set,
+        "test": data["validation"],
     }
 
     return dataset_dict[set_name]
