@@ -10,6 +10,9 @@ from gate.data.image.segmentation.cityscapes import (
     build_dataset,
     build_gate_dataset,
 )
+from tests.data.image.segmentation.test_ade20k_segmentation import (
+    visualize_volume,
+)
 
 
 def test_build_dataset():
@@ -40,45 +43,6 @@ def test_build_gate_dataset():
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
     print(gate_dataset["train"][0])
-
-
-def visualize_volume(item):
-    input_volumes = item["image"]
-    input_volumes = input_volumes.float()
-    predicted_volumes = item["labels"].float()
-    label_volumes = item["labels"].float()
-
-    predicted_volumes[predicted_volumes == -1] = 10
-    label_volumes[label_volumes == -1] = 10
-
-    print(
-        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
-    )
-    print(
-        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
-    )
-    print(
-        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
-    )
-
-    # Start a Weights & Biases run
-    run = wandb.init(
-        project="gate-visualization", job_type="visualize_dataset"
-    )
-
-    # Visualize the data
-    log_wandb_3d_volumes_and_masks(
-        F.interpolate(
-            input_volumes.reshape(-1, input_volumes.shape[-3], 512, 512),
-            size=(256, 256),
-            mode="bicubic",
-        ).reshape(*input_volumes.shape[:-2] + (256, 256)),
-        predicted_volumes.long(),
-        label_volumes.long(),
-    )
-
-    # Finish the run
-    run.finish()
 
 
 def test_build_gate_visualize_dataset():
