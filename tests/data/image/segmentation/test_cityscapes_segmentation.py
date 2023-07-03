@@ -55,19 +55,19 @@ def test_build_gate_visualize_dataset():
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item)
+        visualize_volume(item, name="training-visualization/cityscapes")
         break
 
     for item in gate_dataset["val"]:
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item)
+        visualize_volume(item, name="validation-visualization/cityscapes")
         break
 
     for item in gate_dataset["test"]:
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item)
+        visualize_volume(item, name="test-visualization/cityscapes")
         break
