@@ -5,13 +5,13 @@ import pytest
 import wandb
 import torch.nn.functional as F
 
-from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
+from gate.boilerplate.utils import (
+    log_wandb_3d_volumes_and_masks,
+    visualize_volume,
+)
 from gate.data.image.segmentation.cityscapes import (
     build_dataset,
     build_gate_dataset,
-)
-from tests.data.image.segmentation.test_ade20k_segmentation import (
-    visualize_volume,
 )
 
 

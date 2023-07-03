@@ -13,9 +13,11 @@ import huggingface_hub
 import numpy as np
 import orjson as json
 import torch
+import torch.nn.functional as F
 import torchvision.transforms as T
 import wandb
 import yaml
+
 from omegaconf import DictConfig, OmegaConf
 from rich.logging import RichHandler
 from rich.syntax import Syntax
@@ -604,11 +606,6 @@ def log_wandb_masks(
     )
 
 
-import numpy as np
-import math
-import torch
-
-
 def create_montage(arr: np.ndarray) -> np.ndarray:
     """
     Create a 2D montage from a 3D or 4D numpy array.
@@ -749,3 +746,43 @@ def log_wandb_3d_volumes_and_masks(
         {f"{prefix}/medical_segmentation_episode": image_mask_list},
         step=global_step,
     )
+
+
+def visualize_volume(item, name):
+    input_volumes = item["image"]
+    input_volumes = input_volumes.float().unsqueeze(0).unsqueeze(0)
+    predicted_volumes = item["labels"].float().unsqueeze(0)
+    label_volumes = item["labels"].float().unsqueeze(0)
+
+    # predicted_volumes[predicted_volumes == -1] = 10
+    # label_volumes[label_volumes == -1] = 10
+
+    print(
+        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
+    )
+    print(
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+    )
+    print(
+        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+    )
+
+    # Start a Weights & Biases run
+    run = wandb.init(
+        project="gate-visualization", job_type="visualize_dataset"
+    )
+
+    # Visualize the data
+    log_wandb_3d_volumes_and_masks(
+        F.interpolate(
+            input_volumes.reshape(-1, input_volumes.shape[-3], 512, 512),
+            size=(256, 256),
+            mode="bicubic",
+        ).reshape(*input_volumes.shape[:-2] + (256, 256)),
+        predicted_volumes.long(),
+        label_volumes.long(),
+        prefix=name,
+    )
+
+    # Finish the run
+    run.finish()
