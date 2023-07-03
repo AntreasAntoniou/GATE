@@ -1,4 +1,5 @@
 # pascal_context.py
+import pathlib
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
@@ -41,7 +42,7 @@ def build_dataset(
 
     # 🛠️ Create the Pascal Context dataset using the torchvision
     # VOCSegmentation class
-    data_dir = data_dir / "pascal_context"
+    data_dir = pathlib.Path(data_dir) / "pascal_context"
     try:
         train_dataset = VOCSegmentation(
             root=data_dir,
