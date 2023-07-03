@@ -155,6 +155,8 @@ class DatasetTransforms:
         annotation = torch.from_numpy(annotation)
         annotation = annotation.unsqueeze(0)
 
+        image = T.ToTensor()(image)
+
         return {
             "image": image,
             "labels": annotation.long(),
