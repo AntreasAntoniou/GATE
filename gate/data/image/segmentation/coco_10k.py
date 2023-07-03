@@ -128,6 +128,10 @@ class DatasetTransforms:
 
         image = T.ToTensor()(image)
 
+        print(
+            f"image shape: {image.shape}, annotation shape: {annotation.shape}"
+        )
+
         return {
             "image": image,
             "labels": annotation.long(),
