@@ -62,14 +62,14 @@ def build_dataset(
             root=data_dir,
             year="2012",
             image_set="train",
-            download=False,
+            download=True,
         )
 
         test_dataset = VOCSegmentation(
             root=data_dir,
             year="2012",
             image_set="val",
-            download=False,
+            download=True,
         )
 
     if set_name == "test":
