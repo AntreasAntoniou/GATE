@@ -91,7 +91,7 @@ class DatasetTransforms:
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
         )(image)
-        print(list(inputs.keys()))
+
         annotation = inputs["depth_map"]
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
@@ -114,6 +114,8 @@ class DatasetTransforms:
         annotation = np.array(annotation)
         annotation = torch.from_numpy(annotation)
         annotation = annotation.unsqueeze(0)
+
+        image = T.ToTensor()(image)
 
         return {
             "image": image,
