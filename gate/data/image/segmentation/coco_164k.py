@@ -113,7 +113,7 @@ class DatasetTransforms:
             interpolation=T.InterpolationMode.BICUBIC,
         )(image)
 
-        annotation = inputs["labels"]
+        annotation = inputs["mask"]
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
