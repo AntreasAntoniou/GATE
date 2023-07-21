@@ -35,6 +35,7 @@ RUN apt-get install git -y
 
 RUN git lfs install
 RUN git config --global credential.helper store
+RUN cd ; git clone https://github.com/AntreasAntoniou/.tmux.git; ln -s -f .tmux/.tmux.conf; cp .tmux/.tmux.conf.local .
 
 RUN mkdir /app/
 ADD requirements.txt /app/
