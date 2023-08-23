@@ -1,15 +1,11 @@
-from typing import Any, Dict, List, Optional, Union
 import multiprocessing as mp
+from typing import Any, Dict, List, Optional, Union
 
-import torch
-from torch.utils.data import Dataset, random_split
+import datasets
 import numpy as np
-import datasets
 import torch
-from torch.utils.data import random_split
 import torchvision.transforms as T
-
-import datasets
+from torch.utils.data import Dataset, random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
@@ -71,6 +67,7 @@ class DatasetTransforms:
         input_size: Union[int, List[int]],
         target_size: Union[int, List[int]],
         initial_size: Union[int, List[int]] = 1024,
+        label_size: Union[int, List[int]] = 256,
         crop_size: Optional[Union[int, List[int]]] = None,
     ):
         self.initial_size = (
@@ -89,6 +86,13 @@ class DatasetTransforms:
             if isinstance(target_size, tuple) or isinstance(target_size, list)
             else (target_size, target_size)
         )
+
+        self.label_size = (
+            label_size
+            if isinstance(label_size, tuple) or isinstance(label_size, list)
+            else (label_size, label_size)
+        )
+
         if crop_size is not None:
             self.crop_size = (
                 crop_size
@@ -120,11 +124,13 @@ class DatasetTransforms:
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(image)
 
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(annotation)
 
         if self.crop_size is not None:
@@ -133,16 +139,31 @@ class DatasetTransforms:
         image = T.Resize(
             (self.input_size[0], self.input_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(image)
 
         annotation = T.Resize(
-            (self.target_size[0], self.target_size[1]),
+            (self.label_size[0], self.label_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(annotation)
+        image = patient_normalization(image).unsqueeze(2)
+        annotation = annotation.long()
+        # by this point the shapes are num_scan, slices, channels, height, width, and each patient has about two scans
+        # we choose to consider the two scans as one image, so we concatenate them along the slices dimension
+        image = image.reshape(
+            -1, image.shape[2], image.shape[3], image.shape[4]
+        )
+        annotation = annotation.reshape(
+            -1, annotation.shape[2], annotation.shape[3]
+        )
+
+        # convert 1 channel to 3 channels
+        image = torch.cat((image, image, image), dim=1)
 
         return {
-            "image": patient_normalization(image).unsqueeze(2),
-            "labels": annotation.long(),
+            "image": image,
+            "labels": annotation,
         }
 
 

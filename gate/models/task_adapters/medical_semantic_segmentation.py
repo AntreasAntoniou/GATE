@@ -244,34 +244,28 @@ class PreResizeSimpleSegmentationDecoder(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
-        logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-        logger.debug(
-            f"Shape of input feature maps: {input_feature_maps.shape}"
-        )
+        print(f"Upsampling took {time.time() - start_time} seconds")
+        print(f"Shape of input feature maps: {input_feature_maps.shape}")
         start_time = time.time()
-        logger.debug(f"MLP summary: {self.mlp}")
+        print(f"MLP summary: {self.mlp}")
         processed_features = self.mlp(input_feature_maps)
-        logger.debug(f"MLP took {time.time() - start_time} seconds")
+        print(f"MLP took {time.time() - start_time} seconds")
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
         fused_features = processed_features
-        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
+        print(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
-        logger.debug(f"Shape of fused features: {fused_features.shape}")
+        print(f"Shape of fused features: {fused_features.shape}")
         fused_features = self.fuse_features(fused_features)
         fused_norm_features = self.fuse_features_norm(fused_features)
         fused_act_features = self.fuse_features_act(fused_norm_features)
-        logger.debug(
-            f"Fusing features took {time.time() - start_time} seconds"
-        )
+        print(f"Fusing features took {time.time() - start_time} seconds")
         start_time = time.time()
         fused_act_features = self.fuse_features_dropout(fused_act_features)
         class_features = self.final_conv(fused_act_features)
-        logger.debug(
-            f"Final convolution took {time.time() - start_time} seconds"
-        )
+        print(f"Final convolution took {time.time() - start_time} seconds")
 
         if self.spatial_mixer is not None:
             class_features = class_features.permute([0, 2, 1])
@@ -294,14 +288,14 @@ def upsample_tensor(input_tensor):
     new_size = math.ceil(math.sqrt(s)) ** 2
     sq_root = int(math.sqrt(new_size))
     new_shape = (b, c, new_size)
-    output_tensor = F.upsample(
+    output_tensor = F.interpolate(
         input_tensor,
         size=(sq_root * sq_root),
     )
     return output_tensor.view(b, c, sq_root, sq_root)
 
 
-class TransformerSegmentationDecoderHead(nn.Module):
+class TemporalTransformerSegmentationDecoderHead(nn.Module):
     def __init__(
         self,
         input_feature_maps: List[torch.Tensor],
@@ -311,6 +305,8 @@ class TransformerSegmentationDecoderHead(nn.Module):
         dropout_rate: float = 0.5,
         pre_output_dropout_rate: float = 0.3,
         num_transformer_blocks: int = 4,
+        batch_size: int = 2,
+        num_slices: int = 2,
     ):
         """
         TransformerSegmentationDecoderHead class for segmentation tasks.
@@ -325,6 +321,8 @@ class TransformerSegmentationDecoderHead(nn.Module):
         self.hidden_size = hidden_size
         self.num_classes = num_classes
         self.target_image_size = target_image_size
+        self.batch_size = batch_size
+        self.num_slices = num_slices
 
         self.pixel_wise_mlps = nn.ModuleList()
         self.upsample = nn.Upsample(
@@ -341,18 +339,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
-        elif len(input_feature_maps[0].shape) == 3:
-            input_feature_maps = [
-                x.permute([0, 2, 1]) for x in input_feature_maps
-            ]  # (b, sequence, features) -> (b, features, sequence)
-            input_feature_maps = [
-                F.adaptive_avg_pool1d(x, output_size=target_image_size)
-                if x.shape[2] != target_image_size
-                else x
-                for x in input_feature_maps
-            ]
-            input_feature_maps = torch.cat(input_feature_maps, dim=1)
-
         if len(input_feature_maps.shape) == 4:
             in_channels = input_feature_maps.shape[1]
             # input shape (b, c, h, w)
@@ -362,7 +348,7 @@ class TransformerSegmentationDecoderHead(nn.Module):
                 kernel_size=1,
             )
 
-            transformer_encoder_layer = nn.TransformerEncoderLayer(
+            spatial_transformer_encoder_layer = nn.TransformerEncoderLayer(
                 d_model=self.num_blocks * hidden_size,
                 nhead=8,
                 dim_feedforward=self.num_blocks * hidden_size * 4,
@@ -371,45 +357,8 @@ class TransformerSegmentationDecoderHead(nn.Module):
                 batch_first=True,
             )
 
-            self.segmentation_processing_head = nn.TransformerEncoder(
-                encoder_layer=transformer_encoder_layer,
-                num_layers=num_transformer_blocks,
-                norm=nn.LayerNorm(self.num_blocks * hidden_size),
-            )
-
-            self.fuse_features = nn.Conv1d(
-                self.num_blocks * hidden_size, hidden_size, kernel_size=1
-            )
-            self.fuse_features_norm = nn.LazyInstanceNorm1d()
-
-            self.fuse_features_act = nn.LeakyReLU()
-            self.fuse_features_dropout = nn.Dropout1d(
-                p=pre_output_dropout_rate, inplace=False
-            )
-            self.final_conv = nn.Conv1d(
-                hidden_size, num_classes, kernel_size=1
-            )
-
-        elif len(input_feature_maps.shape) == 3:
-            in_channels = input_feature_maps.shape[1]
-
-            self.projection_layer = nn.Conv1d(
-                in_channels=in_channels,
-                out_channels=self.num_blocks * hidden_size,
-                kernel_size=1,
-            )
-
-            transformer_encoder_layer = nn.TransformerEncoderLayer(
-                d_model=self.num_blocks * hidden_size,
-                nhead=8,
-                dim_feedforward=self.num_blocks * hidden_size * 4,
-                dropout=dropout_rate,
-                activation="gelu",
-                batch_first=True,
-            )
-
-            self.segmentation_processing_head = nn.TransformerEncoder(
-                encoder_layer=transformer_encoder_layer,
+            self.spatial_segmentation_processing_head = nn.TransformerEncoder(
+                encoder_layer=spatial_transformer_encoder_layer,
                 num_layers=num_transformer_blocks,
                 norm=nn.LayerNorm(self.num_blocks * hidden_size),
             )
@@ -447,82 +396,70 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
-        elif len(input_feature_maps[0].shape) == 3:
-            input_feature_maps = [
-                x.permute([0, 2, 1]) for x in input_feature_maps
-            ]  # (b, sequence, features) -> (b, features, sequence)
-            input_feature_maps = [
-                F.adaptive_avg_pool1d(x, output_size=self.target_image_size)
-                if x.shape[2] != self.target_image_size
-                else x
-                for x in input_feature_maps
-            ]
-            input_feature_maps = torch.cat(input_feature_maps, dim=1)
-
-        logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-        logger.debug(
-            f"Shape of input feature maps: {input_feature_maps.shape}"
-        )
+        print(f"Upsampling took {time.time() - start_time} seconds")
+        print(f"Shape of input feature maps: {input_feature_maps.shape}")
         start_time = time.time()
-        logger.debug(f"MLP summary: {self.segmentation_processing_head}")
+        print(f"MLP summary: {self.spatial_segmentation_processing_head}")
         projected_features = self.projection_layer(input_feature_maps)
 
         if len(projected_features.shape) == 4:
+            # shape is batch * slice, features, height, width
+            print(f"Projected features shape: {projected_features.shape}")
             projected_features = projected_features.permute(
                 [0, 2, 3, 1]
             ).reshape(
                 projected_features.shape[0],
                 projected_features.shape[2] * projected_features.shape[3],
                 projected_features.shape[1],
-            )
-        elif len(projected_features.shape) == 3:
-            projected_features = projected_features.permute([0, 2, 1]).reshape(
-                projected_features.shape[0],
+            )  # shape is batch * slice, height * width, features
+            print(f"Projected features shape: {projected_features.shape}")
+            projected_features = projected_features.reshape(
+                self.batch_size,
+                self.num_slices * projected_features.shape[1],
                 projected_features.shape[2],
-                projected_features.shape[1],
             )
+            print(f"Projected features shape: {projected_features.shape}")
 
-        processed_features = self.segmentation_processing_head(
+        processed_features = self.spatial_segmentation_processing_head(
             projected_features
         )
-        logger.debug(f"MLP took {time.time() - start_time} seconds")
+        processed_features = processed_features.reshape(
+            self.batch_size * self.num_slices,
+            -1,
+            processed_features.shape[2],
+        )
+        print(f"MLP took {time.time() - start_time} seconds")
         # Concatenate the processed features along the channel dimension
         start_time = time.time()
         fused_features = processed_features
-        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
+        print(f"Concatenation took {time.time() - start_time} seconds")
 
         # Fuse the features, apply the final convolution layers, and upscale to target size
         start_time = time.time()
-        logger.debug(f"Shape of fused features: {fused_features.shape}")
+        print(f"Shape of fused features: {fused_features.shape}")
         fused_features = fused_features.permute([0, 2, 1])
         fused_features = self.fuse_features(fused_features)
         fused_norm_features = self.fuse_features_norm(fused_features)
         fused_act_features = self.fuse_features_act(fused_norm_features)
-        logger.debug(
-            f"Fusing features took {time.time() - start_time} seconds"
-        )
+        print(f"Fusing features took {time.time() - start_time} seconds")
         start_time = time.time()
         fused_act_features = self.fuse_features_dropout(fused_act_features)
         class_features = self.final_conv(fused_act_features)
-        logger.debug(
-            f"Final convolution took {time.time() - start_time} seconds"
-        )
+        print(f"Final convolution took {time.time() - start_time} seconds")
 
         if self.spatial_mixer is not None:
             class_features = class_features.permute([0, 2, 1])
             class_features = self.spatial_mixer(class_features)
             class_features = class_features.permute([0, 2, 1])
 
-        logger.info(f"Class features shape: {class_features.shape}")
+        print(f"Class features shape: {class_features.shape}")
         class_features = upsample_tensor(class_features)
-        logger.info(
-            f"Class features shape after upscale: {class_features.shape}"
-        )
+        print(f"Class features shape after upscale: {class_features.shape}")
 
         return class_features
 
 
-class SimpleSegmentationDecoder(nn.Module):
+class VolumeSegmentationDecoder(nn.Module):
     """
     Vision Transformer for Semantic Segmentation.
     """
@@ -538,10 +475,9 @@ class SimpleSegmentationDecoder(nn.Module):
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
         decoder_layer_type: Union[
-            PreResizeSimpleSegmentationDecoder,
-            TransformerSegmentationDecoderHead,
+            TemporalTransformerSegmentationDecoderHead,
             str,
-        ] = PreResizeSimpleSegmentationDecoder,
+        ] = TemporalTransformerSegmentationDecoderHead,
         **kwargs,
     ):
         """
@@ -570,15 +506,15 @@ class SimpleSegmentationDecoder(nn.Module):
         self.decoder_embedding_dimension = decoder_embed_dim
 
         if decoder_layer_type == "transformer":
-            self.decoder_layer_type = TransformerSegmentationDecoderHead
-        elif decoder_layer_type == "simple":
-            self.decoder_layer_type = PreResizeSimpleSegmentationDecoder
+            self.decoder_layer_type = (
+                TemporalTransformerSegmentationDecoderHead
+            )
         else:
             self.decoder_layer_type = decoder_layer_type
 
         self.decoder_head = None
 
-        self.debug_mode = True
+        self.debug_mode = False
 
         self.iou_metric = IoUMetric(ignore_index=self.ignore_index)
 
@@ -608,19 +544,6 @@ class SimpleSegmentationDecoder(nn.Module):
     ):
         output_dict = {}
         if labels is not None:
-            logger.debug(
-                f"Labels shape: {labels.shape}, Logits shape: {logits.shape}"
-            )
-
-            if len(labels.shape) == 4:
-                labels = labels.reshape(-1, 256, 256)
-            elif len(labels.shape) == 3:
-                labels = labels.reshape(-1, 256, 256)
-
-            logger.debug(
-                f"Labels shape: {labels.shape}, Logits shape: {logits.shape}"
-            )
-
             output_dict = self.optimization_loss(logits, labels)
             if not self.training:
                 self.iou_metric.dataset_meta = {"classes": self.class_names}
@@ -652,43 +575,34 @@ class SimpleSegmentationDecoder(nn.Module):
         """
 
         if self.debug_mode:
-            logger.debug(f"Image shape: {image.shape}")
-            logger.debug(
+            print(f"Image shape: {image.shape}")
+            print(
                 f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
             )
 
-        if len(image.shape) == 4:
-            batch, channels, height, width = image.shape
-        elif len(image.shape) == 5:
-            batch, slices, channels, height, width = image.shape
-            image = image.reshape(-1, channels, height, width)
-        elif len(image.shape) == 6:
-            batch, scan, slices, channels, height, width = image.shape
-            image = image.reshape(-1, channels, height, width)
-
+        batch, slices, channels, height, width = image.shape
         start_time = time.time()
+        print(f"Image shape: {image.shape}")
+        image = image.reshape(-1, 3, height, width)
         features = self.encoder(image)["image"]["per_layer_raw_features"]
 
         if len(features[0].shape) == 3:
-            total_feature_blocks = len(features)
-            one_quarter_block = total_feature_blocks // 4
-            three_quarter_block = total_feature_blocks - one_quarter_block
+            total_blocks = len(features)
+            one_quarter_block_depth = total_blocks // 4
+            three_quarter_block_depth = total_blocks - one_quarter_block_depth
             features = [
                 features[0],
-                features[one_quarter_block],
-                features[three_quarter_block],
+                features[one_quarter_block_depth],
+                features[three_quarter_block_depth],
                 features[-1],
             ]
 
-        # for f in features:
-        #     logger.debug(f"Feature shape: {f.shape}")
-
         if self.debug_mode:
-            logger.debug(f"Encoder took {time.time() - start_time} seconds")
+            print(f"Encoder took {time.time() - start_time} seconds")
 
         if self.decoder_head is None:
             feature_shapes = [x.shape for x in features]
-            logger.debug(f"Feature shapes: {feature_shapes}")
+            print(f"Feature shapes: {feature_shapes}")
             if len(features[0].shape) == 3:
                 sequence_lengths = [x.shape[1] for x in features]
                 largest_feature_map = max(sequence_lengths)
@@ -711,6 +625,8 @@ class SimpleSegmentationDecoder(nn.Module):
                 num_classes=self.num_classes,
                 target_image_size=target_image_size,
                 hidden_size=self.decoder_embedding_dimension,
+                batch_size=batch,
+                num_slices=slices,
             )
 
         start_time = time.time()
@@ -718,8 +634,8 @@ class SimpleSegmentationDecoder(nn.Module):
             mask_predictions = self.decoder_head(features)
 
         if self.debug_mode:
-            logger.debug(f"Decoder took {time.time() - start_time} seconds")
-            logger.debug(f"Mask predictions shape: {mask_predictions.shape}")
+            print(f"Decoder took {time.time() - start_time} seconds")
+            print(f"Mask predictions shape: {mask_predictions.shape}")
 
         logits = F.interpolate(
             mask_predictions,

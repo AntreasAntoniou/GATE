@@ -13,7 +13,9 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import SegmentationViT
+from gate.models.task_adapters.semantic_segmentation import (
+    SimpleSegmentationDecoder,
+)
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -45,7 +47,7 @@ def build_model(
         model_name=model_name, pretrained=pretrained, image_size=image_size
     )
 
-    model = SegmentationViT(
+    model = SimpleSegmentationDecoder(
         encoder_model=backbone_model,
         embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=backbone_model.image_num_features,

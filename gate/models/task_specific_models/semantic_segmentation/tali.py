@@ -16,7 +16,9 @@ from gate.models.core import (
 from gate.models.task_adapters.duo_modal_zero_shot_classification import (
     DuoModalZeroShotModel,
 )
-from gate.models.task_adapters.semantic_segmentation import SegmentationViT
+from gate.models.task_adapters.semantic_segmentation import (
+    SimpleSegmentationDecoder,
+)
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -53,7 +55,7 @@ def build_model(
         checkpoint_identifier=checkpoint_identifier,
         pretrained=pretrained,
     )
-    model = SegmentationViT(
+    model = SimpleSegmentationDecoder(
         encoder_model=backbone_model,
         embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=backbone_model.image_num_features,

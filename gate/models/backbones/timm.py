@@ -42,10 +42,19 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
 
     if transforms is not None:
         if isinstance(x, torch.Tensor):
-            x = T.ToPILImage()(x)
+            if len(x.shape) == 5:
+                x = x.view(-1, *x.shape[2:])  # flatten batch and sequence dims
+                x = [T.ToPILImage()(item) for item in x]
+            elif len(x.shape) == 4:
+                x = [T.ToPILImage()(item) for item in x]
+            else:
+                x = T.ToPILImage()(x)
 
-        x = transforms(x)
-        # print(x.shape)
+        if isinstance(x, List):
+            x = [transforms(item) for item in x]
+            x = torch.stack(x)
+        else:
+            x = transforms(x)
 
     if (
         input_shape is not None

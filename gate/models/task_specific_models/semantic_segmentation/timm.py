@@ -2,19 +2,22 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
-import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import SegmentationViT
+from gate.models.task_adapters.medical_semantic_segmentation import (
+    VolumeSegmentationDecoder,
+)
+from gate.models.task_adapters.semantic_segmentation import (
+    SimpleSegmentationDecoder,
+)
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -34,6 +37,8 @@ def build_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    num_channels: int = 3,
+    use_temporal_model: bool = False,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -49,7 +54,8 @@ def build_model(
         pretrained=pretrained,
         img_size=image_size,
     )
-    model = SegmentationViT(
+
+    model = SimpleSegmentationDecoder(
         encoder_model=backbone_model,
         embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=256,
@@ -58,13 +64,14 @@ def build_model(
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         num_patches=backbone_model.vision_model.num_patches,
+        decoder_layer_type="transformer",
     )
-
-    # forward features for conv nets, and get the patches for the transformer manually
-    # do the same for all others? sounds like the most general way to do this
 
     x = torch.randn(2, 3, image_size, image_size)
     dummy_out = model.forward(x)
+
+    # forward features for conv nets, and get the patches for the transformer manually
+    # do the same for all others? sounds like the most general way to do this
 
     if not pretrained:
         model.init_weights()
@@ -104,6 +111,8 @@ def build_gate_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    num_channels: int = 3,
+    use_temporal_model: bool = False,
 ):
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
@@ -114,6 +123,8 @@ def build_gate_model(
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
+        use_temporal_model=use_temporal_model,
+        num_channels=num_channels,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(

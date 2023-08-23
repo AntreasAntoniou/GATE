@@ -3,21 +3,21 @@ from dataclasses import dataclass
 from math import floor
 from typing import Any, Dict, List, Optional, Union
 
-import numpy as np
 import datasets
+import numpy as np
 import torch
+import torchvision.transforms as T
 from datasets import concatenate_datasets
 from torch.utils.data import random_split
-import torchvision.transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 from gate.data.image.segmentation.classes import (
     medical_decathlon_labels as CLASSES,
 )
+from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
 
 logger = get_logger(name=__name__)
 
@@ -122,6 +122,7 @@ class DatasetTransforms:
         target_size: Union[int, List[int]],
         initial_size: Union[int, List[int]] = 1024,
         crop_size: Optional[Union[int, List[int]]] = None,
+        label_size: Union[int, List[int]] = 256,
     ):
         self.initial_size = (
             initial_size
@@ -139,6 +140,13 @@ class DatasetTransforms:
             if isinstance(target_size, tuple) or isinstance(target_size, list)
             else (target_size, target_size)
         )
+
+        self.label_size = (
+            label_size
+            if isinstance(label_size, tuple) or isinstance(label_size, list)
+            else (label_size, label_size)
+        )
+
         if crop_size is not None:
             self.crop_size = (
                 crop_size
@@ -160,17 +168,23 @@ class DatasetTransforms:
             if isinstance(item["label"], list)
             else item["label"]
         )
-        image = image.permute(3, 0, 1, 2)
-        annotation = annotation.permute(0, 3, 1, 2)
+        image = image.permute(3, 0, 1, 2)[:, :3]
+        annotation = annotation.permute(0, 3, 1, 2)[0]
+
+        # print(
+        #     f"image.shape: {image.shape}, annotation.shape: {annotation.shape}"
+        # )
 
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(image)
 
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(annotation)
 
         if self.crop_size is not None:
@@ -179,11 +193,13 @@ class DatasetTransforms:
         image = T.Resize(
             (self.input_size[0], self.input_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(image)
 
         annotation = T.Resize(
-            (self.target_size[0], self.target_size[1]),
+            (self.label_size[0], self.label_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
         )(annotation)
 
         return {
