@@ -3,8 +3,8 @@ import os
 import pathlib
 
 import pytest
-import wandb
 import torch.nn.functional as F
+import wandb
 
 from gate.boilerplate.utils import (
     log_wandb_3d_volumes_and_masks,

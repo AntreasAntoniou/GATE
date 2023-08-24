@@ -1,16 +1,16 @@
 import os
 
 import pytest
-import wandb
 import torch.nn.functional as F
-from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
+import wandb
+from monai.apps import DecathlonDataset
 
+from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 from gate.data.medical.segmentation.medical_decathlon import (
     TASK_LIST,
     build_dataset,
     build_gate_dataset,
 )
-from monai.apps import DecathlonDataset
 
 
 def test_build_dataset():
