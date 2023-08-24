@@ -1,12 +1,11 @@
-from typing import Any, Dict, List, Optional, Union
 import multiprocessing as mp
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
 import torchvision.transforms as T
-from torch.utils.data import random_split
 from datasets import load_dataset
-
+from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger

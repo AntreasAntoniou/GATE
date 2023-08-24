@@ -17,14 +17,13 @@ import torch.nn.functional as F
 import torchvision.transforms as T
 import wandb
 import yaml
-
 from omegaconf import DictConfig, OmegaConf
+from rich import print as rprint
 from rich.logging import RichHandler
+from rich.pretty import Pretty
 from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
-from rich import print as rprint
-from rich.pretty import Pretty
 
 from gate.config.variables import HF_OFFLINE_MODE
 
