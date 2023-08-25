@@ -362,21 +362,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
                 kernel_size=1,
             )
 
-            transformer_encoder_layer = nn.TransformerEncoderLayer(
-                d_model=self.num_blocks * hidden_size,
-                nhead=8,
-                dim_feedforward=self.num_blocks * hidden_size * 4,
-                dropout=dropout_rate,
-                activation="gelu",
-                batch_first=True,
-            )
-
-            self.segmentation_processing_head = nn.TransformerEncoder(
-                encoder_layer=transformer_encoder_layer,
-                num_layers=num_transformer_blocks,
-                norm=nn.LayerNorm(self.num_blocks * hidden_size),
-            )
-
             self.fuse_features = nn.Conv1d(
                 self.num_blocks * hidden_size, hidden_size, kernel_size=1
             )
@@ -386,6 +371,22 @@ class TransformerSegmentationDecoderHead(nn.Module):
             self.fuse_features_dropout = nn.Dropout1d(
                 p=pre_output_dropout_rate, inplace=False
             )
+
+            transformer_encoder_layer = nn.TransformerEncoderLayer(
+                d_model=hidden_size,
+                nhead=8,
+                dim_feedforward=hidden_size * 4,
+                dropout=dropout_rate,
+                activation="gelu",
+                batch_first=True,
+            )
+
+            self.segmentation_processing_head = nn.TransformerEncoder(
+                encoder_layer=transformer_encoder_layer,
+                num_layers=num_transformer_blocks,
+                norm=nn.LayerNorm(hidden_size),
+            )
+
             self.final_conv = nn.Conv1d(
                 hidden_size, num_classes, kernel_size=1
             )
@@ -399,21 +400,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
                 kernel_size=1,
             )
 
-            transformer_encoder_layer = nn.TransformerEncoderLayer(
-                d_model=self.num_blocks * hidden_size,
-                nhead=8,
-                dim_feedforward=self.num_blocks * hidden_size * 4,
-                dropout=dropout_rate,
-                activation="gelu",
-                batch_first=True,
-            )
-
-            self.segmentation_processing_head = nn.TransformerEncoder(
-                encoder_layer=transformer_encoder_layer,
-                num_layers=num_transformer_blocks,
-                norm=nn.LayerNorm(self.num_blocks * hidden_size),
-            )
-
             self.fuse_features = nn.Conv1d(
                 self.num_blocks * hidden_size, hidden_size, kernel_size=1
             )
@@ -423,6 +409,22 @@ class TransformerSegmentationDecoderHead(nn.Module):
             self.fuse_features_dropout = nn.Dropout1d(
                 p=pre_output_dropout_rate, inplace=False
             )
+
+            transformer_encoder_layer = nn.TransformerEncoderLayer(
+                d_model=hidden_size,
+                nhead=8,
+                dim_feedforward=hidden_size * 4,
+                dropout=dropout_rate,
+                activation="gelu",
+                batch_first=True,
+            )
+
+            self.segmentation_processing_head = nn.TransformerEncoder(
+                encoder_layer=transformer_encoder_layer,
+                num_layers=num_transformer_blocks,
+                norm=nn.LayerNorm(hidden_size),
+            )
+
             self.final_conv = nn.Conv1d(
                 hidden_size, num_classes, kernel_size=1
             )
@@ -436,7 +438,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
         :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
         :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
         """
-        start_time = time.time()
         input_feature_maps = input_list
         if len(input_feature_maps[0].shape) == 4:
             input_feature_maps = [
@@ -459,12 +460,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
-        logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-        logger.debug(
-            f"Shape of input feature maps: {input_feature_maps.shape}"
-        )
-        start_time = time.time()
-        logger.debug(f"MLP summary: {self.segmentation_processing_head}")
         projected_features = self.projection_layer(input_feature_maps)
 
         if len(projected_features.shape) == 4:
@@ -482,42 +477,24 @@ class TransformerSegmentationDecoderHead(nn.Module):
                 projected_features.shape[1],
             )
 
-        processed_features = self.segmentation_processing_head(
-            projected_features
-        )
-        logger.debug(f"MLP took {time.time() - start_time} seconds")
-        # Concatenate the processed features along the channel dimension
-        start_time = time.time()
-        fused_features = processed_features
-        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
-
+        fused_features = projected_features
         # Fuse the features, apply the final convolution layers, and upscale to target size
-        start_time = time.time()
-        logger.debug(f"Shape of fused features: {fused_features.shape}")
         fused_features = fused_features.permute([0, 2, 1])
         fused_features = self.fuse_features(fused_features)
         fused_norm_features = self.fuse_features_norm(fused_features)
         fused_act_features = self.fuse_features_act(fused_norm_features)
-        logger.debug(
-            f"Fusing features took {time.time() - start_time} seconds"
-        )
-        start_time = time.time()
         fused_act_features = self.fuse_features_dropout(fused_act_features)
+
+        fused_features = self.segmentation_processing_head(fused_features)
+
         class_features = self.final_conv(fused_act_features)
-        logger.debug(
-            f"Final convolution took {time.time() - start_time} seconds"
-        )
 
         if self.spatial_mixer is not None:
             class_features = class_features.permute([0, 2, 1])
             class_features = self.spatial_mixer(class_features)
             class_features = class_features.permute([0, 2, 1])
 
-        logger.info(f"Class features shape: {class_features.shape}")
         class_features = upsample_tensor(class_features)
-        logger.info(
-            f"Class features shape after upscale: {class_features.shape}"
-        )
 
         return class_features
 
