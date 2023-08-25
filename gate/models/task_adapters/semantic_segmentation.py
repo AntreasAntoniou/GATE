@@ -412,7 +412,7 @@ class TransformerSegmentationDecoderHead(nn.Module):
 
             transformer_encoder_layer = nn.TransformerEncoderLayer(
                 d_model=hidden_size,
-                nhead=8,
+                nhead=4,
                 dim_feedforward=hidden_size,
                 dropout=dropout_rate,
                 activation="gelu",
