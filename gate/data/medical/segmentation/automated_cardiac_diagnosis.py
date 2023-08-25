@@ -180,10 +180,10 @@ def build_gate_dataset(
     target_image_size=256,
 ) -> dict:
     train_transforms = DatasetTransforms(
-        image_size, target_image_size, initial_size=1024, crop_size=512
+        512, target_image_size, initial_size=1024, crop_size=image_size
     )
     eval_transforms = DatasetTransforms(
-        image_size, target_image_size, initial_size=512, crop_size=None
+        512, target_image_size, initial_size=512, crop_size=image_size
     )
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
