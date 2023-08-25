@@ -19,7 +19,7 @@ from gate.models.task_specific_models.semantic_segmentation.timm import (
 
 logger.setLevel("DEBUG")
 
-data_dir = "/data-fast0/"
+data_dir = "/data/"
 
 model_and_transform = build_gate_model(
     timm_model_name="vit_base_patch16_clip_224.laion2b",
