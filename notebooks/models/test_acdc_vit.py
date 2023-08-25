@@ -59,15 +59,15 @@ optimizer = accelerator.prepare(optimizer)
 
 input_dict = next(iter(dataloader))
 
-for key, value in input_dict.items():
-    print(f"{key}: {value.shape}")
-    # value_mean = value.mean()
-    # value_std = value.std()
-    # print(f"mean: {value_mean}, std: {value_std}")
-    # value_max = value.max()
-    # value_min = value.min()
-    # print(f"max: {value_max}, min: {value_min}")
-    input_dict[key] = value[:, :30]
+# for key, value in input_dict.items():
+#     print(f"{key}: {value.shape}")
+#     # value_mean = value.mean()
+#     # value_std = value.std()
+#     # print(f"mean: {value_mean}, std: {value_std}")
+#     # value_max = value.max()
+#     # value_min = value.min()
+#     # print(f"max: {value_max}, min: {value_min}")
+#     input_dict[key] = value[:, :30]
 
 with tqdm(total=100) as pbar:
     for i in range(100):
