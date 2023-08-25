@@ -34,10 +34,16 @@ model = model_and_transform.model
 transforms = model_and_transform.transform
 data = md.build_gate_dataset(
     data_dir=data_dir,
-    image_size=512,
-    target_image_size=512,
+    image_size=256,
+    target_image_size=256,
     transforms=transforms,
 )
+# data = acd.build_gate_dataset(
+#     data_dir=data_dir,
+#     transforms=transforms,
+#     target_image_size=512,
+#     image_size=512,
+# )
 
 
 dataloader = DataLoader(
@@ -48,7 +54,7 @@ dataloader = DataLoader(
 accelerator = accelerate.Accelerator(mixed_precision="fp16")
 model = accelerator.prepare(model)
 dataloader = accelerator.prepare(dataloader)
-optimizer = transformers.AdamW(model.parameters(), lr=1e-8, weight_decay=0.0)
+optimizer = transformers.AdamW(model.parameters(), lr=1e-5, weight_decay=0.0)
 optimizer = accelerator.prepare(optimizer)
 
 input_dict = next(iter(dataloader))
@@ -61,7 +67,7 @@ for key, value in input_dict.items():
     # value_max = value.max()
     # value_min = value.min()
     # print(f"max: {value_max}, min: {value_min}")
-    input_dict[key] = value[:, :20]
+    input_dict[key] = value[:, :30]
 
 with tqdm(total=100) as pbar:
     for i in range(100):
