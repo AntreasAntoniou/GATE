@@ -171,9 +171,9 @@ class DatasetTransforms:
         image = image.permute(3, 0, 1, 2)[:, :3]
         annotation = annotation.permute(0, 3, 1, 2)[0]
 
-        # print(
-        #     f"image.shape: {image.shape}, annotation.shape: {annotation.shape}"
-        # )
+        print(
+            f"pre mean: {image.mean()}, std: {image.std()}, max: {image.max()}, min: {image.min()}"
+        )
 
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
@@ -202,10 +202,14 @@ class DatasetTransforms:
             antialias=True,
         )(annotation)
 
-        return {
-            "image": patient_normalization(image),
-            "labels": annotation.long(),
-        }
+        image = patient_normalization(image)
+        labels = annotation.long()
+
+        print(
+            f"post mean: {image.mean()}, std: {image.std()}, max: {image.max()}, min: {image.min()}"
+        )
+
+        return {"image": image, "labels": labels}
 
 
 @configurable(
