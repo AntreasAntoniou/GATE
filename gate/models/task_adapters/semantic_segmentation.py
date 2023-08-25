@@ -485,7 +485,7 @@ class TransformerSegmentationDecoderHead(nn.Module):
         fused_act_features = self.fuse_features_act(fused_norm_features)
         fused_act_features = self.fuse_features_dropout(fused_act_features)
 
-        fused_features = self.segmentation_processing_head(fused_features)
+        fused_act_features = self.segmentation_processing_head(fused_act_features)
 
         class_features = self.final_conv(fused_act_features)
 
