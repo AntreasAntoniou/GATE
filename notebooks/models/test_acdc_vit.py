@@ -59,7 +59,7 @@ def main(
     dataset_name="md",
     num_samples=100,
     data_dir="/data/",
-    image_size=256,
+    image_size=512,
     target_image_size=256,
     batch_size=1,
     num_workers=12,
