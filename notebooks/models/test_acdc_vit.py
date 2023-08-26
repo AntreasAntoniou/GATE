@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import transformers
+from rich import print
 from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
@@ -95,11 +96,12 @@ def main(
 
     input_dict = next(iter(dataloader))
 
-    for key, value in input_dict.items():
-        input_dict[key] = value[:, 50 : 50 + num_samples]
+    # for key, value in input_dict.items():
+    #     input_dict[key] = value[:, 50 : 50 + num_samples]
 
     with profile(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+        profile_memory=True,
         record_shapes=True,
     ) as prof:
         with record_function("model_inference"):
@@ -110,7 +112,15 @@ def main(
                 accelerator.backward(loss)
                 optimizer.step()
 
-    print(prof.key_averages().table(sort_by="cuda_time_total"))
+    # Show the results sorted by CUDA memory usage in descending order
+    print(
+        prof.key_averages(group_by_stack_n=5).table(
+            sort_by="self_cuda_memory_usage",
+            row_limit=10,
+            top_level_events_only=False,
+        )
+    )
+
     prof.export_chrome_trace("trace.json")
 
 
