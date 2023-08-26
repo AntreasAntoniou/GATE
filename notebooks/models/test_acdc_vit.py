@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import transformers
+from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -95,19 +96,22 @@ def main(
     input_dict = next(iter(dataloader))
 
     for key, value in input_dict.items():
-        input_dict[key] = value[:, :num_samples]
+        input_dict[key] = value[:, 50 : 50 + num_samples]
 
-    with torch.cuda.profiler.profile():
-        with torch.autograd.profiler.emit_nvtx():
-            with tqdm(total=100) as pbar:
-                for i in range(100):
-                    optimizer.zero_grad()
-                    output = model.forward(input_dict)
-                    loss = output["image"]["image"]["loss"]
-                    accelerator.backward(loss)
-                    optimizer.step()
-                    pbar.update(1)
-                    pbar.set_description(f"loss: {loss.item():.4f}")
+    with profile(
+        activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+        record_shapes=True,
+    ) as prof:
+        with record_function("model_inference"):
+            for i in range(100):
+                optimizer.zero_grad()
+                output = model.forward(input_dict)
+                loss = output["image"]["image"]["loss"]
+                accelerator.backward(loss)
+                optimizer.step()
+
+    print(prof.key_averages().table(sort_by="cuda_time_total"))
+    prof.export_chrome_trace("trace.json")
 
 
 if __name__ == "__main__":
