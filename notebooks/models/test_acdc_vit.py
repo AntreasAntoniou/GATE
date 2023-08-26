@@ -97,15 +97,17 @@ def main(
     for key, value in input_dict.items():
         input_dict[key] = value[:, :num_samples]
 
-    with tqdm(total=100) as pbar:
-        for i in range(100):
-            optimizer.zero_grad()
-            output = model.forward(input_dict)
-            loss = output["image"]["image"]["loss"]
-            accelerator.backward(loss)
-            optimizer.step()
-            pbar.update(1)
-            pbar.set_description(f"loss: {loss.item():.4f}")
+    with torch.cuda.profiler.profile():
+        with torch.autograd.profiler.emit_nvtx():
+            with tqdm(total=100) as pbar:
+                for i in range(100):
+                    optimizer.zero_grad()
+                    output = model.forward(input_dict)
+                    loss = output["image"]["image"]["loss"]
+                    accelerator.backward(loss)
+                    optimizer.step()
+                    pbar.update(1)
+                    pbar.set_description(f"loss: {loss.item():.4f}")
 
 
 if __name__ == "__main__":
