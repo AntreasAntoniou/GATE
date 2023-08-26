@@ -503,6 +503,27 @@ class TransformerSegmentationDecoderHead(nn.Module):
         return class_features
 
 
+def forward_with_chunking(layer, features_list, chunk_size):
+    concatenated_outputs = []
+
+    for features in features_list:
+        n = len(features)
+        chunks = [
+            features[i : i + chunk_size] for i in range(0, n, chunk_size)
+        ]
+
+        output_for_this_feature = []
+
+        for chunk in chunks:
+            output_chunk = layer(chunk)
+            output_for_this_feature.append(output_chunk)
+
+        concatenated_output = torch.cat(output_for_this_feature, dim=0)
+        concatenated_outputs.append(concatenated_output)
+
+    return concatenated_outputs
+
+
 class SimpleSegmentationDecoder(nn.Module):
     """
     Vision Transformer for Semantic Segmentation.
@@ -696,25 +717,9 @@ class SimpleSegmentationDecoder(nn.Module):
 
         start_time = time.time()
         if self.decoder_head is not None:
-            # Check the batch size
-            batch_size = features.shape[0]
-
-            # Initialize list to collect output chunks
-            output_chunks = []
-
-            # Process in chunks
-            for start_idx in range(0, batch_size, 20):
-                end_idx = min(start_idx + 20, batch_size)
-                chunk = features[start_idx:end_idx]
-
-                # Forward pass for this chunk
-                output_chunk = self.decoder_head(chunk)
-
-                # Collect the output
-                output_chunks.append(output_chunk)
-
-            # Concatenate all chunks back to a single tensor
-            mask_predictions = torch.cat(output_chunks, dim=0)
+            mask_predictions = forward_with_chunking(
+                self.decoder_head, features, 20
+            )
 
         if self.debug_mode:
             logger.debug(f"Decoder took {time.time() - start_time} seconds")
