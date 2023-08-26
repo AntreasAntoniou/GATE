@@ -353,6 +353,8 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
+        print(f"Input feature maps shape: {input_feature_maps.shape}")
+
         if len(input_feature_maps.shape) == 4:
             in_channels = input_feature_maps.shape[1]
             # input shape (b, c, h, w)
@@ -460,6 +462,7 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
+        print(f"Input feature maps shape: {input_feature_maps.shape}")
         projected_features = self.projection_layer(input_feature_maps)
 
         if len(projected_features.shape) == 4:
@@ -718,7 +721,7 @@ class SimpleSegmentationDecoder(nn.Module):
         start_time = time.time()
         if self.decoder_head is not None:
             mask_predictions = forward_with_chunking(
-                self.decoder_head, features, 20
+                layer=self.decoder_head, features_list=features, chunk_size=20
             )
 
         if self.debug_mode:
