@@ -57,53 +57,12 @@ def build_dataloader(
     )
 
 
-def sub_batch_generator(batch_dict, sub_batch_size):
-    """
-    Generator function to yield sub-batches from a given batch dictionary.
-
-    Parameters:
-    - batch_dict (dict): Dictionary containing original batch data. Each key maps to a tensor or list.
-    - sub_batch_size (int): Size of each sub-batch to be returned.
-
-    Yields:
-    - dict: Dictionary containing sub-batch data.
-    """
-    batch_size = None
-
-    # Validate input and get original batch size
-    for key, value in batch_dict.items():
-        if batch_size is None:
-            batch_size = value.shape[0] * value.shape[1]
-        elif batch_size != value.shape[0] * value.shape[1]:
-            raise ValueError(
-                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}"
-            )
-
-    if sub_batch_size > batch_size:
-        raise ValueError(
-            "Sub-batch size cannot be greater than the original batch size."
-        )
-
-    # Generate and yield sub-batches
-    for start_idx in range(0, batch_size, sub_batch_size):
-        end_idx = min(start_idx + sub_batch_size, batch_size)
-        sub_batch = {}
-
-        for key, value in batch_dict.items():
-            sub_batch[key] = value.reshape(-1, *value.shape[2:])[
-                start_idx:end_idx
-            ]
-
-        yield sub_batch
-
-
 def main(
     dataset_name: str = "md",
     data_dir: str = "/data/",
     image_size: int = 512,
     target_image_size: int = 256,
     batch_size: int = 1,
-    sub_batch_size: int = 1,
     num_workers: int = 12,
     eval_mode: bool = False,
 ):
@@ -140,20 +99,34 @@ def main(
     for key, value in input_dict.items():
         print(key, value.shape)
 
-    with tqdm(total=100) as pbar:
-        for i in range(100):
-            for batch in sub_batch_generator(input_dict, sub_batch_size):
+    with profile(
+        activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+        profile_memory=True,
+        record_shapes=True,
+    ) as prof:
+        with record_function("model_inference"):
+            for i in range(100):
                 if eval_mode:
                     with torch.no_grad():
-                        output = model.forward(batch)
+                        output = model.forward(input_dict)
                         loss = output["image"]["image"]["loss"]
                 else:
                     optimizer.zero_grad()
-                    output = model.forward(batch)
+                    output = model.forward(input_dict)
                     loss = output["image"]["image"]["loss"]
                     accelerator.backward(loss)
                     optimizer.step()
-            pbar.update(1)
+
+    # Show the results sorted by CUDA memory usage in descending order
+    print(
+        prof.key_averages(group_by_stack_n=5).table(
+            sort_by="self_cuda_memory_usage",
+            row_limit=10,
+            top_level_events_only=False,
+        )
+    )
+
+    prof.export_chrome_trace("trace.json")
 
 
 if __name__ == "__main__":

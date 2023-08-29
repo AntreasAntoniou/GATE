@@ -121,6 +121,7 @@ class DatasetTransforms:
         input_size: Union[int, List[int]],
         target_size: Union[int, List[int]],
         initial_size: Union[int, List[int]] = 1024,
+        num_slices: Optional[int] = None,
         crop_size: Optional[Union[int, List[int]]] = None,
         label_size: Union[int, List[int]] = 256,
     ):
@@ -130,11 +131,13 @@ class DatasetTransforms:
             or isinstance(initial_size, list)
             else (initial_size, initial_size)
         )
+
         self.input_size = (
             input_size
             if isinstance(input_size, tuple) or isinstance(input_size, list)
             else (input_size, input_size)
         )
+
         self.target_size = (
             target_size
             if isinstance(target_size, tuple) or isinstance(target_size, list)
@@ -157,6 +160,8 @@ class DatasetTransforms:
         else:
             self.crop_size = None
 
+        self.num_slices = num_slices
+
     def __call__(self, item: Dict):
         image = (
             torch.stack([torch.tensor(i) for i in item["image"]])
@@ -171,9 +176,12 @@ class DatasetTransforms:
         image = image.permute(3, 0, 1, 2)[:, :3]
         annotation = annotation.permute(0, 3, 1, 2)[0]
 
-        # print(
-        #     f"pre mean: {image.mean()}, std: {image.std()}, max: {image.max()}, min: {image.min()}"
-        # )
+        if self.num_slices is not None:
+            selected_slices = np.random.choice(
+                np.arange(image.shape[0]), self.num_slices, replace=False
+            )
+            image = image[selected_slices]
+            annotation = annotation[selected_slices]
 
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
@@ -204,10 +212,6 @@ class DatasetTransforms:
 
         image = patient_normalization(image)
         labels = annotation.long()
-
-        # print(
-        #     f"post mean: {image.mean()}, std: {image.std()}, max: {image.max()}, min: {image.min()}"
-        # )
 
         return {"image": image, "labels": labels}
 

@@ -353,8 +353,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
-        print(f"Input feature maps shape: {input_feature_maps.shape}")
-
         if len(input_feature_maps.shape) == 4:
             in_channels = input_feature_maps.shape[1]
             # input shape (b, c, h, w)
@@ -441,6 +439,7 @@ class TransformerSegmentationDecoderHead(nn.Module):
         :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
         """
         input_feature_maps = input_list
+
         if len(input_feature_maps[0].shape) == 4:
             input_feature_maps = [
                 self.upsample(x)
@@ -462,7 +461,6 @@ class TransformerSegmentationDecoderHead(nn.Module):
             ]
             input_feature_maps = torch.cat(input_feature_maps, dim=1)
 
-        print(f"Input feature maps shape: {input_feature_maps.shape}")
         projected_features = self.projection_layer(input_feature_maps)
 
         if len(projected_features.shape) == 4:
@@ -507,24 +505,20 @@ class TransformerSegmentationDecoderHead(nn.Module):
 
 
 def forward_with_chunking(layer, features_list, chunk_size):
-    concatenated_outputs = []
+    chunks = [
+        [features[i : i + chunk_size] for features in features_list]
+        for i in range(0, features_list[0].shape[0], chunk_size)
+    ]
 
-    for features in features_list:
-        n = len(features)
-        chunks = [
-            features[i : i + chunk_size] for i in range(0, n, chunk_size)
-        ]
+    output_for_this_feature = []
 
-        output_for_this_feature = []
+    for chunk in chunks:
+        output_chunk = layer(chunk)
+        output_for_this_feature.append(output_chunk)
 
-        for chunk in chunks:
-            output_chunk = layer(chunk)
-            output_for_this_feature.append(output_chunk)
+    concatenated_output = torch.cat(output_for_this_feature, dim=0)
 
-        concatenated_output = torch.cat(output_for_this_feature, dim=0)
-        concatenated_outputs.append(concatenated_output)
-
-    return concatenated_outputs
+    return concatenated_output
 
 
 class SimpleSegmentationDecoder(nn.Module):
@@ -542,6 +536,7 @@ class SimpleSegmentationDecoder(nn.Module):
         background_class: int = 0,
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
+        target_image_size: tuple = (64, 64),
         decoder_layer_type: Union[
             PreResizeSimpleSegmentationDecoder,
             TransformerSegmentationDecoderHead,
@@ -571,6 +566,7 @@ class SimpleSegmentationDecoder(nn.Module):
         self.background_class = background_class
         self.class_names = class_names
         self.ignore_index = ignore_index
+        self.target_image_size = target_image_size
 
         self.decoder_embedding_dimension = decoder_embed_dim
 
@@ -656,12 +652,6 @@ class SimpleSegmentationDecoder(nn.Module):
             torch.Tensor: Segmentation map.
         """
 
-        if self.debug_mode:
-            logger.debug(f"Image shape: {image.shape}")
-            logger.debug(
-                f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
-            )
-
         if len(image.shape) == 4:
             batch, channels, height, width = image.shape
         elif len(image.shape) == 5:
@@ -671,7 +661,6 @@ class SimpleSegmentationDecoder(nn.Module):
             batch, scan, slices, channels, height, width = image.shape
             image = image.reshape(-1, channels, height, width)
 
-        start_time = time.time()
         features = self.encoder(image)["image"]["per_layer_raw_features"]
 
         if len(features[0].shape) == 3:
@@ -685,51 +674,21 @@ class SimpleSegmentationDecoder(nn.Module):
                 features[-1],
             ]
 
-        # for f in features:
-        #     logger.debug(f"Feature shape: {f.shape}")
-
-        if self.debug_mode:
-            logger.debug(f"Encoder took {time.time() - start_time} seconds")
-
         if self.decoder_head is None:
-            feature_shapes = [x.shape for x in features]
-            logger.debug(f"Feature shapes: {feature_shapes}")
-            if len(features[0].shape) == 3:
-                sequence_lengths = [x.shape[1] for x in features]
-                largest_feature_map = max(sequence_lengths)
-                max_height = largest_feature_map
-                max_width = largest_feature_map
-                target_image_size = largest_feature_map
-            elif len(features[0].shape) == 4:
-                heights = [x.shape[2] for x in features]
-                max_height = max(heights)
-                widths = [x.shape[3] for x in features]
-                max_width = max(widths)
-                target_image_size = (64, 64)
-            else:
-                raise ValueError(
-                    f"Unsupported feature map shape: {features[0].shape}"
-                )
-
             self.decoder_head = self.decoder_layer_type(
                 input_feature_maps=features,
                 num_classes=self.num_classes,
-                target_image_size=target_image_size,
+                target_image_size=self.target_image_size[0],
                 hidden_size=self.decoder_embedding_dimension,
             )
 
-        start_time = time.time()
         if self.decoder_head is not None:
             mask_predictions = forward_with_chunking(
-                layer=self.decoder_head, features_list=features, chunk_size=20
+                layer=self.decoder_head, features_list=features, chunk_size=10
             )
 
-        if self.debug_mode:
-            logger.debug(f"Decoder took {time.time() - start_time} seconds")
-            logger.debug(f"Mask predictions shape: {mask_predictions.shape}")
-
         logits = F.interpolate(
-            mask_predictions,
+            input=mask_predictions,
             size=(256, 256),
             mode="bicubic",
             align_corners=True,

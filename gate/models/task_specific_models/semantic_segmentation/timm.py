@@ -59,6 +59,7 @@ def build_model(
         encoder_model=backbone_model,
         embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=256,
+        target_image_size=(64, 64),
         decoder_depth=decoder_depth,
         decoder_num_heads=decoder_num_heads,
         mlp_ratio=mlp_ratio,
