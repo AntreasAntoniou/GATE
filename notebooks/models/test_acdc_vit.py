@@ -121,6 +121,22 @@ def integrate_output_list(output_list):
     return output_accumulator
 
 
+import torch
+
+
+def detach_and_move_to_cpu(obj):
+    if isinstance(obj, torch.Tensor):
+        return obj.detach().cpu()
+    elif isinstance(obj, dict):
+        return {
+            key: detach_and_move_to_cpu(value) for key, value in obj.items()
+        }
+    elif isinstance(obj, list):
+        return [detach_and_move_to_cpu(element) for element in obj]
+    else:
+        return obj
+
+
 def main(
     dataset_name: str = "md",
     data_dir: str = "/data/",
@@ -165,20 +181,19 @@ def main(
     with tqdm(total=len(dataloader)) as pbar:
         output_list = []
         for input_dict in dataloader:
+            optimizer.zero_grad()
             for batch in sub_batch_generator(input_dict, sub_batch_size):
                 if eval_mode:
                     with torch.no_grad():
                         output = model.forward(batch)
                         loss = output["image"]["image"]["loss"]
                 else:
-                    optimizer.zero_grad()
                     output = model.forward(batch)
                     loss = output["image"]["image"]["loss"]
                     accelerator.backward(loss)
-                    optimizer.step()
 
-                for key, item in output.items():
-                    output[key] = item
+                output = detach_and_move_to_cpu(output)
+
                 output_list.append(output)
 
             if not eval_mode:
