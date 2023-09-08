@@ -1,23 +1,14 @@
 from collections import defaultdict
 from typing import List, Optional
-from urllib.request import urlopen
 
 import torch
 import torch.nn as nn
-from PIL import Image
 from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import (
-    CLIPOutput,
-    CLIPVisionEmbeddings,
-)
+from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.utils import get_logger
-from gate.models.backbones import (
-    Modality,
-    apply_preprocessing_transforms,
-    image_dim_reshape,
-)
+from gate.models.backbones import Modality, apply_preprocessing_transforms
 from gate.models.core import reinit
 
 logger = get_logger(__name__)

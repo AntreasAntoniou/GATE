@@ -1,5 +1,4 @@
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import List, Optional
 from urllib.request import urlopen
 
@@ -8,7 +7,6 @@ import PIL.Image as Image
 import timm
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.transforms as T
 from timm.data import InterpolationMode, resolve_data_config
 from timm.data.transforms_factory import create_transform

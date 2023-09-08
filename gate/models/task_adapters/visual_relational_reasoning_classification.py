@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from omegaconf import DictConfig
-from rich import print
 
 from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule

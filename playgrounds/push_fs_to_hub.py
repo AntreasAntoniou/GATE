@@ -3,7 +3,6 @@ import learn2learn as l2l
 import numpy as np
 import torch
 import torchvision.transforms as T
-from PIL.Image import LANCZOS
 from rich import print as rprint
 from tqdm.auto import tqdm
 

@@ -6,7 +6,6 @@ import numpy as np
 import torch
 import torchvision.transforms as T
 from datasets import load_dataset
-from PIL import Image
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR

@@ -4,7 +4,6 @@ from gate.metrics.segmentation import (
     dice_loss,
     generalized_dice,
     miou_loss,
-    normalized_surface_dice_loss,
     roc_auc_score,
 )
 

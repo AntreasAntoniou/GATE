@@ -1,12 +1,5 @@
-import pytest
 import torch
-import torch.nn.functional as F
-from mmseg.models.losses import (
-    CrossEntropyLoss,
-    DiceLoss,
-    FocalLoss,
-    LovaszLoss,
-)
+from mmseg.models.losses import CrossEntropyLoss, DiceLoss, FocalLoss
 
 from gate.metrics.segmentation import one_hot_encoding
 

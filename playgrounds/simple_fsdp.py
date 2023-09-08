@@ -1,35 +1,19 @@
 # Based on: https://github.com/pytorch/examples/blob/master/mnist/main.py
-import argparse
-import functools
 import os
 
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.distributed.fsdp import BackwardPrefetch, FullStateDictConfig
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp import (
-    MixedPrecision,
-    ShardingStrategy,
-    StateDictType,
-)
-from torch.distributed.fsdp.fully_sharded_data_parallel import (
-    BackwardPrefetch,
-    CPUOffload,
-)
-from torch.distributed.fsdp.wrap import always_wrap_policy, enable_wrap, wrap
-from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.distributed.fsdp import MixedPrecision, ShardingStrategy
+from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload
+from torch.distributed.fsdp.wrap import always_wrap_policy
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data.distributed import DistributedSampler
-from torchvision import datasets, transforms
 
-from gate.data.image_text.zero_shot.flickr30k import (
-    build_dataset,
-    build_gate_dataset,
-)
+from gate.data.image_text.zero_shot.flickr30k import build_gate_dataset
 from gate.models.task_specific_models.zero_shot_classification.clip import (
     build_gate_model,
 )

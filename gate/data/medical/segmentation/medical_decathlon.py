@@ -1,6 +1,5 @@
 import multiprocessing as mp
 from dataclasses import dataclass
-from math import floor
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
@@ -8,7 +7,6 @@ import numpy as np
 import torch
 import torchvision.transforms as T
 from datasets import concatenate_datasets
-from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger

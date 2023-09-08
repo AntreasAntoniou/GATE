@@ -1,11 +1,5 @@
-import random
-from collections import defaultdict
-from copy import copy
-from typing import Any, Dict, Union
-
 from gate.boilerplate.decorators import configurable
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.tali import TALINet
 from gate.models.core import (
     GATEModel,

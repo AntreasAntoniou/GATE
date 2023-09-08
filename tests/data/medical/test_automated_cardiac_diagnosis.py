@@ -1,6 +1,5 @@
 import os
 
-import pytest
 import torch.nn.functional as F
 import wandb
 

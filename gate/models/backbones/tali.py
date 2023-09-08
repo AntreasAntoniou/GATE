@@ -1,6 +1,6 @@
 import pathlib
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import accelerate
 import torch
@@ -10,16 +10,11 @@ import yaml
 from omegaconf import DictConfig
 from rich import print
 from tali.models import MultiModalityConfig, TALIModel
-from tali.utils import download_model_with_name
 from transformers import CLIPProcessor, WhisperProcessor
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.utils import download_model_checkpoint_from_hub
-from gate.models.backbones import (
-    Modality,
-    apply_preprocessing_transforms,
-    image_dim_reshape,
-)
+from gate.models.backbones import Modality, apply_preprocessing_transforms
 from gate.models.core import reinit
 
 

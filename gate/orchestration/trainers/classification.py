@@ -10,7 +10,6 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
-from gate.metrics.core import accuracy_top_k
 from gate.metrics.multi_class_classification import (
     average_precision_score,
     brier_score_loss,
@@ -120,145 +119,8 @@ class ImageClassificationTrainer(ClassificationTrainer):
         )
 
 
-@configurable(group="trainer", name="image_semantic_segmentation")
-class ImageSemanticSegmentationTrainer(ClassificationTrainer):
-    def __init__(
-        self,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        scheduler_interval: str = "step",
-        experiment_tracker: Optional[Any] = None,
-    ):
-        super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
-            experiment_tracker,
-            source_modality="image",
-            target_modality="image",
-        )
-
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
-        output_dict = model.forward(batch)[self.target_modality][
-            self.source_modality
-        ]
-        logger.debug(f"Forward time {time.time() - start_time}")
-
-        loss = output_dict["loss"]
-
-        start_time = time.time()
-        accelerator.backward(loss)
-        logger.debug(f"Backward time {time.time() - start_time}")
-
-        if "logits" in output_dict:
-            if global_step % 100 == 0:
-                height, width = output_dict["logits"].shape[-2:]
-                output_dict["seg_episode"] = {
-                    "image": F.interpolate(
-                        batch["image"], size=(height, width)
-                    ),
-                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
-                    "label": batch["labels"].squeeze(1),
-                    "label_idx_to_description": {
-                        i: str(i)
-                        for i in range(output_dict["logits"].shape[1])
-                    },
-                }
-
-            del output_dict["logits"]
-
-        for key, value in output_dict.items():
-            if "loss" in key or "iou" in key or "accuracy" in key:
-                if isinstance(value, torch.Tensor):
-                    self.current_epoch_dict[key].append(value.detach().cpu())
-
-        return StepOutput(
-            output_metrics_dict=output_dict,
-            loss=loss,
-        )
-
-
-@configurable(group="trainer", name="medical_semantic_segmentation")
-class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
-    def __init__(
-        self,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        scheduler_interval: str = "step",
-        experiment_tracker: Optional[Any] = None,
-    ):
-        super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
-            experiment_tracker,
-            source_modality="image",
-            target_modality="image",
-        )
-
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
-        output_dict = model.forward(batch)[self.target_modality][
-            self.source_modality
-        ]
-        logger.debug(f"Forward time {time.time() - start_time}")
-
-        loss = output_dict["loss"]
-
-        start_time = time.time()
-        accelerator.backward(loss)
-        logger.debug(f"Backward time {time.time() - start_time}")
-
-        if "logits" in output_dict:
-            if global_step % 100 == 0:
-                height, width = output_dict["logits"].shape[-2:]
-                output_dict["med_seg_episode"] = {
-                    "image": F.interpolate(
-                        batch["image"], size=(height, width)
-                    ),
-                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
-                    "label": batch["labels"].squeeze(1),
-                    "label_idx_to_description": {
-                        i: str(i)
-                        for i in range(output_dict["logits"].shape[1])
-                    },
-                }
-
-            del output_dict["logits"]
-
-        for key, value in output_dict.items():
-            if "loss" in key or "iou" in key or "accuracy" in key:
-                if isinstance(value, torch.Tensor):
-                    self.current_epoch_dict[key].append(value.detach().cpu())
-
-        return StepOutput(
-            output_metrics_dict=output_dict,
-            loss=loss,
-        )
-
-
 @configurable(group="trainer", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationTrainer):
-    def __init__(
-        self,
-        optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        scheduler_interval: str = "step",
-        experiment_tracker: Optional[Any] = None,
-    ):
-        super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
-            experiment_tracker,
-            source_modality="image_text",
-            target_modality="image_text",
-        )
-
-
-@configurable(group="trainer", name="image_to_text_zero_shot_classification")
-class ImageToTextZeroShotClassificationTrainer(ClassificationTrainer):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,

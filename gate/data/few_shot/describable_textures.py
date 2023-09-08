@@ -6,14 +6,12 @@ from typing import Any, Optional, Tuple, Union
 import datasets
 import PIL
 import torch
-from rich import print
 from torchvision import transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.few_shot import bytes_to_string
 from gate.data.few_shot.core import FewShotClassificationMetaDataset
 
 logger = get_logger(

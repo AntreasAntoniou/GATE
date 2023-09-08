@@ -2,14 +2,10 @@ import multiprocessing as mp
 import os
 
 import datasets
-import numpy as np
 import torch
-import torchvision.transforms as T
-from PIL.Image import LANCZOS
 from rich import print as rprint
 from tqdm.auto import tqdm
 
-from gate.data.image.segmentation.coco_10k import COCOStuff10K
 from gate.data.image.segmentation.coco_164k import COCOStuff164K
 
 dataset_root = os.environ["PYTEST_DIR"]

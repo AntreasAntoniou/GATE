@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from rich import print
 
 from gate.boilerplate.utils import get_logger
 

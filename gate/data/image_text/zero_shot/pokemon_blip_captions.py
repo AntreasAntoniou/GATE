@@ -50,9 +50,6 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
-import numpy as np
-
-
 def dataset_format_transform(sample: Dict) -> Dict:
     # Example of sample:
     #

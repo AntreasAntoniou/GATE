@@ -13,7 +13,6 @@ from ..iwildcam_2022 import (
     filter_metadata_with_counts,
     read_all_train_metadata,
 )
-from . import utils as utils
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,6 @@
 # test_food101.py
 import os
 
-import pytest
-
 from gate.data.medical.classification.diabetic_retinopathy import (
     build_dataset,
     build_gate_dataset,

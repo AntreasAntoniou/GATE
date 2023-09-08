@@ -2,7 +2,6 @@ import multiprocessing as mp
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
-import numpy as np
 import torch
 import torchvision.transforms as T
 from torch.utils.data import Dataset, random_split

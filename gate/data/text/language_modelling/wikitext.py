@@ -1,5 +1,4 @@
 # wikitext.py
-import multiprocessing as mp
 from typing import Any, Optional
 
 import numpy as np

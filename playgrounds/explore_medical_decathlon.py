@@ -1,7 +1,6 @@
 import os
 
 import datasets
-import numpy as np
 import torch
 import yaml
 from rich import print

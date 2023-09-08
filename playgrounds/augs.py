@@ -3,10 +3,9 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
-import torch
 from PIL import Image
 from timm.data.auto_augment import rand_augment_transform
-from torchvision.transforms import Compose, ToPILImage
+from torchvision.transforms import Compose
 
 # Download an image from the internet
 url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"

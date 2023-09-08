@@ -1,8 +1,6 @@
 # yahoo_answers.py
-import multiprocessing as mp
 from typing import Any, Optional
 
-import numpy as np
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable

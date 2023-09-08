@@ -2,8 +2,6 @@
 import os
 
 import pytest
-import torch.nn.functional as F
-import wandb
 
 from gate.boilerplate.utils import visualize_volume
 from gate.data.image.segmentation.ade20k import (

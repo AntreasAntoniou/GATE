@@ -2,7 +2,6 @@ from typing import Dict, Optional, Union
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from gate.models.core import reinit
 from gate.models.task_adapters.few_shot_classification import (

@@ -1,12 +1,10 @@
 import multiprocessing as mp
 import pathlib
 from collections import defaultdict
-from re import split
-from typing import Any, Counter, Dict, List, Optional
+from typing import Any, Counter, Dict, Optional
 
 import datasets
 import numpy as np
-import pandas as pd
 import PIL.Image as Image
 import torch
 import torchvision.transforms as T
@@ -19,20 +17,14 @@ from gate.boilerplate.utils import get_logger
 from gate.data.few_shot.utils import (
     FewShotSuperSplitSetOptions,
     get_class_to_idx_dict,
-    get_class_to_image_idx_and_bbox,
 )
 
 logger = get_logger(
     __name__,
 )
 
-import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-from datasets import load_dataset
 from torch.utils.data import Dataset
 
 

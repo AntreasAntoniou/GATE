@@ -5,14 +5,12 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import datasets
-import numpy as np
 import torch
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:

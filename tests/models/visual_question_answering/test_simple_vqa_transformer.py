@@ -2,7 +2,6 @@ from urllib.request import urlopen
 
 import accelerate
 import PIL.Image as Image
-import pytest
 import torch
 from tests.models.test_clip_vqa_model import pad_tokens
 

@@ -1,6 +1,6 @@
 # stl10.py
 import os
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import torch
 import torchvision
@@ -9,7 +9,6 @@ from torch.utils.data import random_split
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 

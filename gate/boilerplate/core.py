@@ -2,7 +2,6 @@ import copy
 import pathlib
 import time
 from pathlib import Path
-from time import sleep
 from typing import List, Optional, Union
 
 import torch
@@ -10,7 +9,6 @@ import torch.nn as nn
 from accelerate import Accelerator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoModel
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable

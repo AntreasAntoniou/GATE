@@ -4,7 +4,6 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-import torch
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable

@@ -1,16 +1,11 @@
-import collections
 import json
-import time
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
 
-import numpy as np
-import PIL
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
-from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(name=__name__)

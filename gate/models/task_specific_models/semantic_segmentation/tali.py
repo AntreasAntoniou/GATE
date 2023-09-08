@@ -1,8 +1,4 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
-
-import torch
-import torch.nn as nn
+from typing import Any, Dict, Union
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
@@ -12,9 +8,6 @@ from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
     TargetModalityConfig,
-)
-from gate.models.task_adapters.duo_modal_zero_shot_classification import (
-    DuoModalZeroShotModel,
 )
 from gate.models.task_adapters.semantic_segmentation import (
     SimpleSegmentationDecoder,

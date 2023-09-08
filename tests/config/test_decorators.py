@@ -1,9 +1,7 @@
-import pytest
 from hydra.core.config_store import ConfigStore
 from hydra_zen import instantiate
-from numpy import insert
 
-from gate.boilerplate.decorators import configurable, register_configurables
+from gate.boilerplate.decorators import register_configurables
 
 
 def test_configurable_and_register_configurables():

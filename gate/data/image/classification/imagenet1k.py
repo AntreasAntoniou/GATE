@@ -3,7 +3,6 @@ import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Optional
 
-import numpy as np
 import torchvision.transforms as T
 from datasets import load_dataset
 from timm.data import rand_augment_transform

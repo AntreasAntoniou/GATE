@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Union
 
 import torch
 
@@ -11,9 +10,6 @@ from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
     TargetModalityConfig,
-)
-from gate.models.task_adapters.medical_semantic_segmentation import (
-    VolumeSegmentationDecoder,
 )
 from gate.models.task_adapters.semantic_segmentation import (
     SimpleSegmentationDecoder,

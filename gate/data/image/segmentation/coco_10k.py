@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import torchvision.transforms as T
 from datasets import load_dataset
-from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR

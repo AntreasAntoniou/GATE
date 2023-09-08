@@ -1,14 +1,11 @@
 import math
 import time
-from collections import OrderedDict
-from functools import partial
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets.table import pa
 from mmseg.evaluation.metrics import IoUMetric
 from rich import print
 

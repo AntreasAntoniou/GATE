@@ -1,15 +1,10 @@
 import math
-import os
-import time
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional
 import torch.nn.functional as F
-from accelerate import Accelerator
-from rich import print
 
 from gate.boilerplate.utils import get_logger
 from gate.metrics.core import accuracy_top_k

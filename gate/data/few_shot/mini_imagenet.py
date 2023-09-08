@@ -12,10 +12,7 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.few_shot import bytes_to_string
 from gate.data.few_shot.core import FewShotClassificationMetaDataset
-from gate.data.few_shot.utils import FewShotSuperSplitSetOptions
-from gate.data.transforms.tiny_image_transforms import pad_image
 
 logger = get_logger(
     __name__,

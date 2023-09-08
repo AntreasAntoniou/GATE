@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 from gate.models.backbones.clip import CLIPAdapter

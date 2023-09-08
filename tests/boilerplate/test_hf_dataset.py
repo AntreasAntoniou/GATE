@@ -1,8 +1,3 @@
-import os
-from tempfile import TemporaryDirectory
-
-import pytest
-
 from gate.data.image.classification.cifar100 import build_cifar100_dataset
 
 

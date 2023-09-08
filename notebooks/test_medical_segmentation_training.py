@@ -1,11 +1,3 @@
-import multiprocessing as mp
-import os
-
-import datasets
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
-
 data_dir = "/data-fast0/"
 
 from gate.data.medical.segmentation.automated_cardiac_diagnosis import (

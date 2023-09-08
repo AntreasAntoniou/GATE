@@ -3,7 +3,6 @@ import pathlib
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 
-import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
@@ -11,11 +10,10 @@ from torch.utils.data import random_split
 from torch.utils.data.dataset import Dataset
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import count_files_recursive, get_logger
+from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
 
 logger = get_logger(name=__name__, set_rich=True)
 

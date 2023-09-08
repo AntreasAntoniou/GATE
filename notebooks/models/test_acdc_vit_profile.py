@@ -1,23 +1,16 @@
-import multiprocessing as mp
-
 import accelerate
 import fire
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import transformers
 from rich import print
 from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader
-from tqdm.auto import tqdm
 
 import gate.data.medical.segmentation.automated_cardiac_diagnosis as acd
 import gate.data.medical.segmentation.medical_decathlon as md
 from gate.models.task_adapters.medical_semantic_segmentation import logger
 from gate.models.task_specific_models.semantic_segmentation.timm import (
-    ModelAndTransform,
     build_gate_model,
-    build_model,
 )
 
 logger.setLevel("DEBUG")

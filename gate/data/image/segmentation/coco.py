@@ -1,13 +1,8 @@
-import random
 import subprocess
 import zipfile
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
-import cv2
-import numpy as np
-import torch
-from PIL import Image
 from torch.utils import data
 
 from gate.boilerplate.utils import get_logger

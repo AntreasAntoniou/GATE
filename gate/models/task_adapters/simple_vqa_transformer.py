@@ -4,14 +4,7 @@ from typing import Dict, Optional
 # Third-party imports
 import torch
 import torch.nn as nn
-from transformers import (
-    AutoTokenizer,
-    BartForQuestionAnswering,
-    BartTokenizer,
-    BartTokenizerFast,
-    GPT2LMHeadModel,
-    GPT2Tokenizer,
-)
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 from gate.models.task_adapters import BaseModule
 

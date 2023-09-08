@@ -1,11 +1,8 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
-import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.data.image_text.zero_shot.imagenet1k import (
     generate_per_class_prompts,
 )

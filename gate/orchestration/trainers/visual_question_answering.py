@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import torch
-import torch.nn.functional as F
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics, configurable

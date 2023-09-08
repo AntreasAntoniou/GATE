@@ -3,8 +3,6 @@ from collections import defaultdict
 from copy import deepcopy as copy
 from typing import Any, Dict, Union
 
-import torch
-
 
 def transform_wrapper(inputs: Union[Dict, Any], transform_dict: Dict):
     output_dict = defaultdict(dict)

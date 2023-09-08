@@ -1,13 +1,7 @@
-import multiprocessing as mp
-
 import accelerate
 import fire
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import transformers
-from rich import print
-from torch.profiler import ProfilerActivity, profile, record_function
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -15,12 +9,46 @@ import gate.data.medical.segmentation.automated_cardiac_diagnosis as acd
 import gate.data.medical.segmentation.medical_decathlon as md
 from gate.models.task_adapters.medical_semantic_segmentation import logger
 from gate.models.task_specific_models.semantic_segmentation.timm import (
-    ModelAndTransform,
     build_gate_model,
-    build_model,
 )
 
 logger.setLevel("DEBUG")
+
+
+def sub_batch_generator(batch_dict, sub_batch_size):
+    """
+    Generator function to yield sub-batches from a given batch dictionary.
+
+    Parameters:
+    - batch_dict (dict): Dictionary containing original batch data. Each key maps to a tensor or list.
+    - sub_batch_size (int): Size of each sub-batch to be returned.
+
+    Yields:
+    - dict: Dictionary containing sub-batch data.
+    """
+    batch_size = None
+
+    # Validate input and get original batch size
+    for key, value in batch_dict.items():
+        # print(f"key: {key}, value.shape: {value.shape}")
+        if batch_size is None:
+            batch_size = value.shape[0] * value.shape[1]
+        elif batch_size != value.shape[0] * value.shape[1]:
+            raise ValueError(
+                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}"
+            )
+
+    # Generate and yield sub-batches
+    for start_idx in range(0, batch_size, sub_batch_size):
+        end_idx = min(start_idx + sub_batch_size, batch_size)
+        sub_batch = {}
+
+        for key, value in batch_dict.items():
+            sub_batch[key] = value.reshape(-1, *value.shape[2:])[
+                start_idx:end_idx
+            ]
+
+        yield sub_batch
 
 
 def build_dataloader(
@@ -39,7 +67,7 @@ def build_dataloader(
             target_image_size=target_image_size,
             transforms=transforms,
         )
-    elif dataset_name == "acd":
+    elif dataset_name == "acdc":
         data = acd.build_gate_dataset(
             data_dir=data_dir,
             image_size=image_size,
@@ -50,51 +78,50 @@ def build_dataloader(
         raise ValueError("Invalid dataset name")
 
     return DataLoader(
-        data["train"],
+        data["val"],
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
     )
 
 
-def sub_batch_generator(batch_dict, sub_batch_size):
-    """
-    Generator function to yield sub-batches from a given batch dictionary.
+from collections import defaultdict
 
-    Parameters:
-    - batch_dict (dict): Dictionary containing original batch data. Each key maps to a tensor or list.
-    - sub_batch_size (int): Size of each sub-batch to be returned.
 
-    Yields:
-    - dict: Dictionary containing sub-batch data.
-    """
-    batch_size = None
+def integrate_output_list(output_list):
+    def accumulate_outputs(output_accumulator, output_dict):
+        for key, value in output_dict.items():
+            if isinstance(value, dict):
+                if key not in output_accumulator:
+                    output_accumulator[key] = {}
+                accumulate_outputs(output_accumulator[key], value)
+            else:
+                if isinstance(value, torch.Tensor):
+                    if key not in output_accumulator:
+                        output_accumulator[key] = []
+                    output_accumulator[key].append(value)
 
-    # Validate input and get original batch size
-    for key, value in batch_dict.items():
-        if batch_size is None:
-            batch_size = value.shape[0] * value.shape[1]
-        elif batch_size != value.shape[0] * value.shape[1]:
-            raise ValueError(
-                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}"
-            )
+    output_accumulator = {}
+    for output_dict in output_list:
+        accumulate_outputs(output_accumulator, output_dict)
 
-    if sub_batch_size > batch_size:
-        raise ValueError(
-            "Sub-batch size cannot be greater than the original batch size."
-        )
+    def concatenate_tensors(nested_dict):
+        for key, value in nested_dict.items():
+            if isinstance(value, dict):
+                concatenate_tensors(value)
+            else:
+                if isinstance(value, list) and len(value) > 0:
+                    if value[0].dim() == 0:
+                        # Handle scalar tensors
+                        nested_dict[key] = torch.cat(
+                            [v.unsqueeze(0) for v in value], dim=0
+                        )
+                    else:
+                        # Handle non-scalar tensors
+                        nested_dict[key] = torch.cat(value, dim=0)
 
-    # Generate and yield sub-batches
-    for start_idx in range(0, batch_size, sub_batch_size):
-        end_idx = min(start_idx + sub_batch_size, batch_size)
-        sub_batch = {}
-
-        for key, value in batch_dict.items():
-            sub_batch[key] = value.reshape(-1, *value.shape[2:])[
-                start_idx:end_idx
-            ]
-
-        yield sub_batch
+    concatenate_tensors(output_accumulator)
+    return output_accumulator
 
 
 def main(
@@ -135,13 +162,9 @@ def main(
     )
     optimizer = accelerator.prepare(optimizer)
 
-    input_dict = next(iter(dataloader))
-
-    for key, value in input_dict.items():
-        print(key, value.shape)
-
-    with tqdm(total=100) as pbar:
-        for i in range(100):
+    with tqdm(total=len(dataloader)) as pbar:
+        output_list = []
+        for input_dict in dataloader:
             for batch in sub_batch_generator(input_dict, sub_batch_size):
                 if eval_mode:
                     with torch.no_grad():
@@ -153,6 +176,14 @@ def main(
                     loss = output["image"]["image"]["loss"]
                     accelerator.backward(loss)
                     optimizer.step()
+                output_list.append(output)
+
+            if not eval_mode:
+                optimizer.step()
+            output = integrate_output_list(output_list)
+            loss = output["image"]["image"]["loss"].mean()
+            pbar.set_description(f"loss: {loss.item():.4f}")
+
             pbar.update(1)
 
 
