@@ -144,9 +144,8 @@ def main(
     target_image_size: int = 256,
     batch_size: int = 1,
     sub_batch_size: int = 1,
-    num_workers: int = 12,
+    num_workers: int = 8,
     eval_mode: bool = False,
-    gpu_id: int = 0,
 ):
     model_and_transform = build_gate_model(
         timm_model_name="vit_base_patch16_clip_224.laion2b",
