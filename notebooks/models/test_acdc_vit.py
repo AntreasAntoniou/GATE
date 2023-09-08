@@ -85,9 +85,6 @@ def build_dataloader(
     )
 
 
-from collections import defaultdict
-
-
 def integrate_output_list(output_list):
     def accumulate_outputs(output_accumulator, output_dict):
         for key, value in output_dict.items():
@@ -99,7 +96,7 @@ def integrate_output_list(output_list):
                 if isinstance(value, torch.Tensor):
                     if key not in output_accumulator:
                         output_accumulator[key] = []
-                    output_accumulator[key].append(value)
+                    output_accumulator[key].append(value.detach().cpu())
 
     output_accumulator = {}
     for output_dict in output_list:
@@ -133,6 +130,7 @@ def main(
     sub_batch_size: int = 1,
     num_workers: int = 12,
     eval_mode: bool = False,
+    gpu_id: int = 0,
 ):
     model_and_transform = build_gate_model(
         timm_model_name="vit_base_patch16_clip_224.laion2b",
@@ -154,7 +152,9 @@ def main(
         num_workers,
     )
 
-    accelerator = accelerate.Accelerator(mixed_precision="fp16")
+    accelerator = accelerate.Accelerator(
+        mixed_precision="fp16",
+    )
     model = accelerator.prepare(model)
     dataloader = accelerator.prepare(dataloader)
     optimizer = transformers.AdamW(
@@ -176,6 +176,9 @@ def main(
                     loss = output["image"]["image"]["loss"]
                     accelerator.backward(loss)
                     optimizer.step()
+
+                for key, item in output.items():
+                    output[key] = item
                 output_list.append(output)
 
             if not eval_mode:
