@@ -32,6 +32,8 @@ def build_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -54,7 +56,11 @@ def build_model(
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         num_patches=backbone_model.vision_model.embeddings.num_patches,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        target_image_size=(64, 64),
     )
+
     x = torch.randn(2, 3, image_size, image_size)
     dummy_out = model.forward(x)
 
@@ -95,6 +101,8 @@ def build_gate_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
 ):
     model_and_transform = build_model(
         model_name=model_name,
@@ -104,6 +112,8 @@ def build_gate_model(
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(

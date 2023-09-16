@@ -9,12 +9,12 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -76,19 +76,6 @@ def pretty_print_parameters(model: nn.Module):
 
     console.print(table)
     return table
-
-
-# # function to handle the alarm signal
-# def handle_alarm(signum, frame):
-#     print("Error: The application took longer than expected.")
-#     sys.exit(1)  # exit with error status
-
-
-# # set the signal handler
-# signal.signal(signal.SIGALRM, handle_alarm)
-
-# # set an alarm for 200 minutes
-# signal.alarm(60 * 200)
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)

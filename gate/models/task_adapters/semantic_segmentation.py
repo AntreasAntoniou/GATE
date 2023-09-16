@@ -29,7 +29,9 @@ def has_exact_square_root(s: int) -> bool:
     return root.is_integer()
 
 
-def optimization_loss(logits, labels, ignore_index: int = 0):
+def optimization_loss(
+    logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.0
+):
     """
     📝 Optimization Loss
     Args:
@@ -66,7 +68,7 @@ def optimization_loss(logits, labels, ignore_index: int = 0):
     # 0.1 * background_ce_loss
 
     return {
-        "loss": loss + 0.05 * background_loss,
+        "loss": loss + background_loss_weight * background_loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
@@ -532,6 +534,7 @@ class SimpleSegmentationDecoder(nn.Module):
         background_class: int = 0,
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
+        background_loss_weight: float = 0.0,
         target_image_size: tuple = (64, 64),
         decoder_layer_type: Union[
             PreResizeSimpleSegmentationDecoder,
@@ -575,9 +578,10 @@ class SimpleSegmentationDecoder(nn.Module):
 
         self.decoder_head = None
 
-        self.debug_mode = True
+        self.debug_mode = False
 
         self.iou_metric = IoUMetric(ignore_index=self.ignore_index)
+        self.background_loss_weight = background_loss_weight
 
     def compute_across_set_iou(self):
         # Call the compute_metrics method
@@ -597,7 +601,10 @@ class SimpleSegmentationDecoder(nn.Module):
 
     def optimization_loss(self, logits, labels):
         return optimization_loss(
-            logits, labels, ignore_index=self.ignore_index
+            logits,
+            labels,
+            ignore_index=self.ignore_index,
+            background_loss_weight=self.background_loss_weight,
         )
 
     def compute_loss_and_metrics(
@@ -647,6 +654,11 @@ class SimpleSegmentationDecoder(nn.Module):
         Returns:
             torch.Tensor: Segmentation map.
         """
+        if self.debug_mode:
+            print(f"Image shape: {image.shape}")
+            print(
+                f"Mean: {image.mean()}, Std: {image.std()}, Max: {image.max()}, Min: {image.min()}"
+            )
 
         if len(image.shape) == 4:
             batch, channels, height, width = image.shape

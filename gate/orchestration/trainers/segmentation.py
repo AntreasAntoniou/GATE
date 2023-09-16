@@ -7,7 +7,10 @@ from accelerate import Accelerator
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
-from gate.orchestration.trainers.classification import ClassificationTrainer
+from gate.orchestration.trainers.classification import (
+    ClassificationTrainer,
+    StepOutput,
+)
 
 logger = get_logger(__name__)
 
@@ -151,6 +154,7 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
         scheduler: torch.optim.lr_scheduler._LRScheduler = None,
         scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
+        sub_batch_size: int = 40,
     ):
         super().__init__(
             optimizer,
@@ -160,42 +164,62 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
             source_modality="image",
             target_modality="image",
         )
+        self.sub_batch_size = sub_batch_size
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
-        output_dict = model.forward(batch)[self.target_modality][
-            self.source_modality
-        ]
-
-        logger.debug(f"Forward time {time.time() - start_time}")
-
-        loss = output_dict["loss"]
-
-        start_time = time.time()
-        accelerator.backward(loss)
-        logger.debug(f"Backward time {time.time() - start_time}")
-
+    def collect_segmentation_episode(self, output_dict, global_step, batch):
         if "logits" in output_dict:
             if global_step % 100 == 0:
+                b, s, c = batch["image"].shape[:3]
                 height, width = output_dict["logits"].shape[-2:]
-                output_dict["med_seg_episode"] = {
-                    "image": F.interpolate(
-                        batch["image"], size=(height, width)
-                    ),
-                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
-                    "label": batch["labels"].squeeze(1),
+
+                image = F.interpolate(
+                    input=batch["image"].view(-1, *batch["image"].shape[2:]),
+                    size=(height, width),
+                )
+                image = image.reshape(b, s, c, height, width)
+                logits = output_dict["logits"].argmax(dim=1).squeeze(1)
+                logits = logits.reshape(b, s, *logits.shape[1:])
+                label = batch["labels"].squeeze(1)
+
+                output_dict["med_episode"] = {
+                    "image": image,
+                    "logits": logits,
+                    "label": label,
                     "label_idx_to_description": {
                         i: str(i)
-                        for i in range(output_dict["logits"].shape[1])
+                        for i in range(output_dict["logits"].shape[2])
                     },
                 }
 
             del output_dict["logits"]
+        return output_dict
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        output_list = []
+        for sub_batch in sub_batch_generator(batch, self.sub_batch_size):
+            output_dict = model.forward(sub_batch)[self.target_modality][
+                self.source_modality
+            ]
+
+            loss = output_dict["loss"]
+
+            accelerator.backward(loss)
+
+            for key, value in output_dict.items():
+                if "loss" in key or "iou" in key or "accuracy" in key:
+                    if isinstance(value, torch.Tensor):
+                        self.current_epoch_dict[key].append(
+                            value.detach().cpu()
+                        )
+            output_list.append(output_dict)
+        output_dict = integrate_output_list(output_list)
+        output_dict = self.collect_segmentation_episode(
+            output_dict=output_dict, global_step=global_step, batch=batch
+        )
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
-                if isinstance(value, torch.Tensor):
-                    self.current_epoch_dict[key].append(value.detach().cpu())
+                output_dict[key] = value.mean()
 
         return StepOutput(
             output_metrics_dict=output_dict,

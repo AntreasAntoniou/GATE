@@ -9,6 +9,11 @@ from gate.boilerplate.utils import get_logger
 from gate.orchestration.evaluators import EvaluatorOutput
 from gate.orchestration.evaluators.classification import (
     ClassificationEvaluator,
+    StepOutput,
+)
+from gate.orchestration.trainers.segmentation import (
+    integrate_output_list,
+    sub_batch_generator,
 )
 
 logger = get_logger(__name__)
@@ -132,6 +137,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
         experiment_tracker: Optional[Any] = None,
+        sub_batch_size: int = 40,
     ):
         super().__init__(
             experiment_tracker,
@@ -141,40 +147,66 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             model_selection_metric_higher_is_better=True,
         )
         self.model = None
+        self.sub_batch_size = sub_batch_size
+
+    def collect_segmentation_episode(self, output_dict, global_step, batch):
+        if "logits" in output_dict:
+            if self.starting_eval:
+                print(f"Collecting segmentation episode at {global_step}")
+                b, s, c = batch["image"].shape[:3]
+                height, width = output_dict["logits"].shape[-2:]
+
+                image = F.interpolate(
+                    input=batch["image"].view(-1, *batch["image"].shape[2:]),
+                    size=(height, width),
+                )
+                image = image.reshape(b, s, c, height, width)
+                logits = output_dict["logits"].argmax(dim=1).squeeze(1)
+                logits = logits.reshape(b, s, *logits.shape[1:])
+                label = batch["labels"].squeeze(1)
+
+                output_dict["med_episode"] = {
+                    "image": image,
+                    "logits": logits,
+                    "label": label,
+                    "label_idx_to_description": {
+                        i: str(i)
+                        for i in range(output_dict["logits"].shape[2])
+                    },
+                }
+
+                self.starting_eval = False
+            del output_dict["logits"]
+        return output_dict
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         if self.model is None:
             self.model = model
+        output_list = []
+        for sub_batch in sub_batch_generator(batch, self.sub_batch_size):
+            output_dict = model.forward(sub_batch)
+            output_dict = output_dict[self.target_modality][
+                self.source_modality
+            ]
 
-        output_dict = model.forward(batch)
-        output_dict = output_dict[self.target_modality][self.source_modality]
+            loss = output_dict["loss"]
 
-        loss = output_dict["loss"]
+            for key, value in output_dict.items():
+                if "loss" in key or "iou" in key or "accuracy" in key:
+                    if isinstance(value, torch.Tensor):
+                        self.current_epoch_dict[key].append(
+                            value.detach().float().mean().cpu()
+                        )
+            output_list.append(output_dict)
 
-        if "logits" in output_dict:
-            if self.starting_eval:
-                height, width = output_dict["logits"].shape[-2:]
-                output_dict["med_seg_episode"] = {
-                    "image": F.interpolate(
-                        batch["image"], size=(height, width)
-                    ),
-                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
-                    "label": batch["labels"].squeeze(1),
-                    "label_idx_to_description": {
-                        i: str(i)
-                        for i in range(output_dict["logits"].shape[1])
-                    },
-                }
-                self.starting_eval = False
-
-            del output_dict["logits"]
+        output_dict = integrate_output_list(output_list)
+        output_dict = self.collect_segmentation_episode(
+            output_dict=output_dict, global_step=global_step, batch=batch
+        )
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
-                if isinstance(value, torch.Tensor):
-                    self.current_epoch_dict[key].append(
-                        value.detach().float().mean().cpu()
-                    )
+                output_dict[key] = value.mean()
 
         return StepOutput(
             metrics=output_dict,
@@ -189,9 +221,9 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             model, batch, global_step, accelerator
         )
 
-        if "med_seg_episode" in output.metrics:
-            med_seg_episode = output.metrics["med_seg_episode"]
-            output.metrics = {"med_seg_episode": med_seg_episode}
+        if "med_episode" in output.metrics:
+            med_episode = output.metrics["med_episode"]
+            output.metrics = {"med_episode": med_episode}
         else:
             output.metrics = {}
         return output
@@ -203,9 +235,9 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         output: EvaluatorOutput = super().testing_step(
             model, batch, global_step, accelerator
         )
-        if "med_seg_episode" in output.metrics:
-            med_seg_episode = output.metrics["med_seg_episode"]
-            output.metrics = {"med_seg_episode": med_seg_episode}
+        if "med_episode" in output.metrics:
+            med_episode = output.metrics["med_episode"]
+            output.metrics = {"med_episode": med_episode}
         else:
             output.metrics = {}
         return output

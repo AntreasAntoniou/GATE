@@ -6,10 +6,10 @@ import threading
 from typing import Any, Callable, Dict, Optional
 
 import torch
-import wandb
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 
+import wandb
 from gate.boilerplate.utils import (
     get_logger,
     log_wandb_3d_volumes_and_masks,
@@ -112,10 +112,14 @@ class BackgroundLogging(threading.Thread):
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
-                # print(f"logging {metric_key}")
+                # `print(f"logging {metric_key}")
                 if "seg_episode" in metric_key:
                     # print("logging seg episode")
                     seg_episode = value
+
+                    # print(
+                    #     f"shapes: {seg_episode['image'].shape}, {seg_episode['logits'].shape}, {seg_episode['label'].shape}"
+                    # )
 
                     log_wandb_masks(
                         experiment_tracker=self.experiment_tracker,
@@ -130,12 +134,13 @@ class BackgroundLogging(threading.Thread):
                     )
                     continue
 
-                if "med_seg_episode" in metric_key:
-                    med_seg_episode = value
+                if "med_episode" in metric_key:
+                    med_episode = value
+
                     log_wandb_3d_volumes_and_masks(
-                        volumes=med_seg_episode["image"],
-                        logits=med_seg_episode["logits"],
-                        labels=med_seg_episode["label"],
+                        volumes=med_episode["image"],
+                        logits=med_episode["logits"],
+                        labels=med_episode["label"],
                         global_step=self.global_step,
                         prefix=self.phase_name,
                     )

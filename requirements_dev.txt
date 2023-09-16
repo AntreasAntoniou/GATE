@@ -10,3 +10,5 @@ sphinx-material
 matplotlib
 pytest-rich
 pytest-sugar
+pytest-xdist
+

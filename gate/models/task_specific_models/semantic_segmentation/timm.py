@@ -1,9 +1,14 @@
 from typing import Any, Dict, Union
 
 import torch
+from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
+from gate.config.variables import (
+    HYDRATED_IMAGE_SIZE,
+    HYDRATED_NUM_CLASSES,
+    HYDRATED_TASK_NAME,
+)
 from gate.models import ModelAndTransform
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
@@ -33,8 +38,9 @@ def build_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
-    num_channels: int = 3,
-    use_temporal_model: bool = False,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.0,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -61,7 +67,9 @@ def build_model(
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         num_patches=backbone_model.vision_model.num_patches,
-        decoder_layer_type="transformer",
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
     )
 
     x = torch.randn(2, 3, image_size, image_size)
@@ -96,7 +104,9 @@ def build_model(
     group="model",
     name="timm-segmentation-transformer",
     defaults=dict(
-        num_classes=HYDRATED_NUM_CLASSES, image_size=HYDRATED_IMAGE_SIZE
+        num_classes=HYDRATED_NUM_CLASSES,
+        image_size=HYDRATED_IMAGE_SIZE,
+        task_name=HYDRATED_TASK_NAME,
     ),
 )
 def build_gate_model(
@@ -108,9 +118,14 @@ def build_gate_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
-    num_channels: int = 3,
-    use_temporal_model: bool = False,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
+    task_name: str = "task01braintumour",
 ):
+    if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
+        num_classes = len(num_classes[task_name])
+
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,
@@ -120,8 +135,9 @@ def build_gate_model(
         mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
-        use_temporal_model=use_temporal_model,
-        num_channels=num_channels,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(

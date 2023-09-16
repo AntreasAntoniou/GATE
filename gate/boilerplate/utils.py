@@ -15,7 +15,6 @@ import orjson as json
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
-import wandb
 import yaml
 from omegaconf import DictConfig, OmegaConf
 from rich import print as rprint
@@ -25,6 +24,7 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+import wandb
 from gate.config.variables import HF_OFFLINE_MODE
 
 
@@ -540,6 +540,10 @@ def normalize_image(image: torch.Tensor) -> torch.Tensor:
     min_val = torch.min(image)
     max_val = torch.max(image)
     normalized_image = (image - min_val) / (max_val - min_val)
+    # print(
+    #     f"min: {torch.min(normalized_image)}, max: {torch.max(normalized_image)}, mean: {torch.mean(normalized_image)}, std: {torch.std(normalized_image)}"
+    # )
+    # normalized_image = normalized_image * 255.0
     return normalized_image
 
 
@@ -689,9 +693,9 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = normalize_image(volumes.float())
-    predicted_volumes_np = logits.long()
-    label_volumes_np = labels.long()
+    input_volumes_np = normalize_image(volumes.float()).cpu()
+    predicted_volumes_np = logits.long().cpu()
+    label_volumes_np = labels.long().cpu()
 
     # Check the shape of the data
     for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:

@@ -14,6 +14,7 @@ def download_kaggle_dataset(
 ):
     # Initialize the Kaggle API client
     from kaggle import KaggleApi
+
     dataset_download_path = pathlib.Path(target_dir_path) / dataset_name
     if (
         pathlib.Path(dataset_download_path).exists()

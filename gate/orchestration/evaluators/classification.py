@@ -15,9 +15,6 @@ from gate.metrics.multi_class_classification import (
     roc_auc_score,
 )
 from gate.orchestration.evaluators import Evaluator, EvaluatorOutput
-from gate.orchestration.evaluators.classification import (
-    ClassificationEvaluator,
-)
 
 logger = get_logger(__name__)
 

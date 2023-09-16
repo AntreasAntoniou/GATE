@@ -71,7 +71,7 @@ def build_dataset(
     torch.manual_seed(42)
 
     logger.info(
-        f"Loading Diabetic retinopathy dataset, will download to {data_dir} if necessary."
+        f"Loading Medical Decathlon {task_name} dataset, will download to {data_dir} if necessary."
     )
 
     dataset = datasets.load_dataset(
@@ -104,10 +104,8 @@ def build_dataset(
 
 
 def patient_normalization(input_volume):
-    input_volume = (
-        (input_volume - input_volume.min())
-        / (input_volume.max() - input_volume.min())
-        * 255.0
+    input_volume = (input_volume - input_volume.min()) / (
+        input_volume.max() - input_volume.min()
     )
 
     return input_volume
@@ -239,7 +237,7 @@ def build_gate_dataset(
         transforms=[train_transforms, transforms],
         meta_data={
             "class_names": CLASSES[task_name],
-            "num_classes": num_classes,
+            "num_classes": len(CLASSES[task_name]),
         },
     )
 
@@ -249,7 +247,7 @@ def build_gate_dataset(
         transforms=[eval_transforms, transforms],
         meta_data={
             "class_names": CLASSES[task_name],
-            "num_classes": num_classes,
+            "num_classes": len(CLASSES[task_name]),
         },
     )
 
@@ -259,7 +257,7 @@ def build_gate_dataset(
         transforms=[eval_transforms, transforms],
         meta_data={
             "class_names": CLASSES[task_name],
-            "num_classes": num_classes,
+            "num_classes": len(CLASSES[task_name]),
         },
     )
 
