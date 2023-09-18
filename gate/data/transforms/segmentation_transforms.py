@@ -1,12 +1,14 @@
 # Importing required modules
 import io
 import random
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
 import cv2
 import numpy as np
 import torch
 import torchvision.transforms as T
+import torchvision.transforms.functional as TF
 from PIL import Image
 
 
@@ -114,12 +116,9 @@ class PhotoMetricDistortion:
 
     The following distortions are applied:
     1. Random brightness
-    2. Random contrast (mode 0)
-    3. Convert color from BGR to HSV
-    4. Random saturation
-    5. Random hue
-    6. Convert color from HSV to BGR
-    7. Random contrast (mode 1)
+    2. Random contrast
+    3. Random saturation
+    4. Random hue
 
     Parameters:
     - brightness_delta (int): Delta value for brightness adjustment.
@@ -372,3 +371,79 @@ class BaseDatasetTransforms:
             "image": image,
             "labels": annotation.long(),
         }
+
+
+class MedicalPhotoMetricDistortion:
+    """Apply photometric distortion to a medical image."""
+
+    def __init__(self, brightness_delta=32, contrast_range=(0.5, 1.5)):
+        self.brightness_delta = brightness_delta / 255.0
+        self.contrast_lower, self.contrast_upper = contrast_range
+
+    def _apply_brightness(self, img):
+        delta = random.uniform(-self.brightness_delta, self.brightness_delta)
+        return img + delta
+
+    def _apply_contrast(self, img):
+        alpha = random.uniform(self.contrast_lower, self.contrast_upper)
+        return img * alpha
+
+    def __call__(self, img):
+        if random.randint(0, 1):
+            img = self._apply_brightness(img)
+        if random.randint(0, 1):
+            img = self._apply_contrast(img)
+        return img.clamp(0, 1)
+
+
+@dataclass
+class PhotometricParams:
+    brightness_delta: int = 32
+    contrast_range: tuple = (0.5, 1.5)
+
+
+class MedicalImageSegmentationTransforms:
+    """
+    Apply a series of data augmentation techniques for medical image segmentation.
+    """
+
+    def __init__(
+        self, photometric_params: PhotometricParams = PhotometricParams()
+    ):
+        self.photometric_transform = (
+            MedicalPhotoMetricDistortion()
+            if photometric_params is None
+            else MedicalPhotoMetricDistortion(**photometric_params.__dict__)
+        )
+
+    def _apply_random_rotation(self, img, mask):
+        """Apply random rotation in 90-degree increments."""
+        angle = random.choice([0, 90, 180, 270])
+        return TF.rotate(img, angle), TF.rotate(mask, angle)
+
+    def _apply_random_flip(self, img, mask):
+        """Apply random horizontal flip."""
+        if random.random() > 0.5:
+            return img.flip(-1), mask.flip(-1)
+        return img, mask
+
+    def __call__(self, img, mask):
+        """
+        Apply the data augmentation techniques.
+        """
+        # Validate input shape
+        if img.shape != mask.shape or len(img.shape) != 4:
+            raise ValueError(
+                "Input image and mask must have the same shape (num_scan, num_slices, height, width)"
+            )
+
+        # Apply random rotation
+        img, mask = self._apply_random_rotation(img, mask)
+
+        # Apply random horizontal flip
+        img, mask = self._apply_random_flip(img, mask)
+
+        # Apply photometric distortion
+        img = self.photometric_transform(img)
+
+        return img, mask

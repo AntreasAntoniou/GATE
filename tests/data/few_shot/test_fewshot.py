@@ -4,14 +4,16 @@ import pathlib
 import pytest
 from accelerate.utils import set_seed
 
-from gate.data.few_shot import (
-    AircraftFewShotClassificationDataset,
-    CUB200FewShotClassificationDataset,
+from gate.data.few_shot.aircraft import AircraftFewShotClassificationDataset
+from gate.data.few_shot.cubirds200 import CUB200FewShotClassificationDataset
+from gate.data.few_shot.describable_textures import (
     DescribableTexturesFewShotClassificationDataset,
-    FungiFewShotClassificationDataset,
-    MiniImageNetFewShotClassificationDataset,
-    OmniglotFewShotClassificationDataset,
 )
+from gate.data.few_shot.fungi import FungiFewShotClassificationDataset
+from gate.data.few_shot.mini_imagenet import (
+    MiniImageNetFewShotClassificationDataset,
+)
+from gate.data.few_shot.omniglot import OmniglotFewShotClassificationDataset
 
 set_seed(42)
 

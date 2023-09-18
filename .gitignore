@@ -142,4 +142,8 @@ dmypy.json
 # Huggingface 
 .huggingface/
 huggingface_cache/
-secrets/
+secrets/*
+datasets--*
+models--*
+wandb/*
+checkpoints/*

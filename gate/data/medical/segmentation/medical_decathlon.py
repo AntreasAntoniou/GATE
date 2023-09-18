@@ -15,7 +15,11 @@ from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
     medical_decathlon_labels as CLASSES,
 )
-from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
+from gate.data.transforms.segmentation_transforms import (
+    DualImageRandomCrop,
+    DualImageRandomFlip,
+    PhotoMetricDistortion,
+)
 
 logger = get_logger(name=__name__)
 
@@ -120,6 +124,12 @@ class DatasetTransforms:
         num_slices: Optional[int] = None,
         crop_size: Optional[Union[int, List[int]]] = None,
         label_size: Union[int, List[int]] = 256,
+        flip_probability: Optional[float] = None,
+        use_photo_metric_distortion: bool = True,
+        brightness_delta: int = 32,
+        contrast_range: tuple = (0.5, 1.5),
+        saturation_range: tuple = (0.5, 1.5),
+        hue_delta: int = 18,
     ):
         self.initial_size = (
             initial_size
@@ -155,6 +165,22 @@ class DatasetTransforms:
             self.crop_transform = DualImageRandomCrop(self.crop_size)
         else:
             self.crop_size = None
+
+        if flip_probability is not None:
+            self.flip_probability = flip_probability
+            self.random_flip = DualImageRandomFlip(p=flip_probability)
+        else:
+            self.flip_probability = None
+
+        if use_photo_metric_distortion:
+            self.photo_metric_distortion = PhotoMetricDistortion(
+                brightness_delta=brightness_delta,
+                contrast_range=contrast_range,
+                saturation_range=saturation_range,
+                hue_delta=hue_delta,
+            )
+        else:
+            self.photo_metric_distortion = None
 
         self.num_slices = num_slices
 
@@ -193,6 +219,12 @@ class DatasetTransforms:
 
         if self.crop_size is not None:
             image, annotation = self.crop_transform(image, annotation)
+
+        if self.flip_probability is not None:
+            image, annotation = self.random_flip(image, annotation)
+
+        if self.photo_metric_distortion is not None:
+            image = self.photo_metric_distortion(image)
 
         image = T.Resize(
             (self.input_size[0], self.input_size[1]),

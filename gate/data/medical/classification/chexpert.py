@@ -11,6 +11,7 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -109,9 +110,6 @@ class_map = {2: 0, 5: 1, 6: 2, 8: 3, 10: 4}
 
 
 def dataset_format_transform(sample: Dict) -> Dict:
-    # Example of sample:
-    #
-
     input_dict = {}
     input_dict["image"] = sample["image"]
     sample["labels"] = [class_map[label] for label in sample["labels"]]
@@ -134,7 +132,11 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[dataset_format_transform, transforms],
+        transforms=[
+            dataset_format_transform,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(

@@ -5,11 +5,13 @@ from typing import Any, Optional
 
 import torch
 import torchvision
+from timm.data import rand_augment_transform
 from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 
 def build_places365_dataset(
@@ -101,7 +103,11 @@ def build_gate_places365_dataset(
     train_set = GATEDataset(
         dataset=build_places365_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[data_format_transform, transforms],
+        transforms=[
+            data_format_transform,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(

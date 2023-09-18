@@ -9,6 +9,7 @@ from torch.utils.data import random_split
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 
@@ -94,7 +95,11 @@ def build_gate_stl10_dataset(
     train_set = GATEDataset(
         dataset=build_stl10_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[transform_wrapper, transforms],
+        transforms=[
+            transform_wrapper,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(

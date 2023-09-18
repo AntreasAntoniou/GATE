@@ -14,6 +14,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 
@@ -290,7 +291,11 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[transform_wrapper, transforms],
+        transforms=[
+            transform_wrapper,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(

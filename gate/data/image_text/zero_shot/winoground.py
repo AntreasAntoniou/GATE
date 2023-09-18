@@ -10,6 +10,7 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 logger = get_logger(name=__name__, set_rich=True)
 
@@ -80,10 +81,17 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
 ) -> dict:
+    aug_transforms = StandardAugmentations(image_key="image")
+
+    def augmentations(input_dict):
+        input_dict["image"][0] = aug_transforms(input_dict["image"][0])
+        input_dict["image"][1] = aug_transforms(input_dict["image"][1])
+        return input_dict
+
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[dataset_format_transform, transforms],
+        transforms=[dataset_format_transform, augmentations, transforms],
     )
 
     val_set = GATEDataset(

@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 from gate.data.core import collate_fn_with_token_pad
 from gate.data.image.classification.imagenet1k import build_gate_dataset
-from gate.metrics import accuracy_top_k
+from gate.metrics.core import accuracy_top_k
 from gate.models import ModelAndTransform
 from gate.models.task_specific_models.zero_shot_classification.tali import (
     build_gate_model_with_presets,

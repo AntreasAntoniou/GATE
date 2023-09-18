@@ -42,7 +42,6 @@ def test_build_gate_dataset():
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
     for idx, item in enumerate(gate_dataset["train"]):
-        print(item["image"]["image"]["support_set"].shape)
         if idx == 20:
             break
 

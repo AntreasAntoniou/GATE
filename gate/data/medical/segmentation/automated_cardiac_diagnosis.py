@@ -13,7 +13,12 @@ from gate.data.image.segmentation.classes import acdc_labels as CLASSES
 from gate.data.medical.segmentation.medical_decathlon import (
     patient_normalization,
 )
-from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
+from gate.data.transforms.segmentation_transforms import (
+    DualImageRandomCrop,
+    DualImageRandomFlip,
+    MedicalImageSegmentationTransforms,
+    PhotoMetricDistortion,
+)
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
@@ -68,6 +73,12 @@ class DatasetTransforms:
         initial_size: Union[int, List[int]] = 1024,
         label_size: Union[int, List[int]] = 256,
         crop_size: Optional[Union[int, List[int]]] = None,
+        flip_probability: Optional[float] = None,
+        use_photo_metric_distortion: bool = True,
+        brightness_delta: int = 32,
+        contrast_range: tuple = (0.5, 1.5),
+        saturation_range: tuple = (0.5, 1.5),
+        hue_delta: int = 18,
     ):
         self.initial_size = (
             initial_size
@@ -102,6 +113,8 @@ class DatasetTransforms:
         else:
             self.crop_size = None
 
+        self.med_transforms = MedicalImageSegmentationTransforms()
+
     def __call__(self, item: Dict):
         item["image"] = [sample["img"] for sample in item["frame_data"]]
         item["label"] = [sample["label"] for sample in item["frame_data"]]
@@ -132,20 +145,44 @@ class DatasetTransforms:
             antialias=True,
         )(annotation)
 
-        if self.crop_size is not None:
-            image, annotation = self.crop_transform(image, annotation)
+        image_list = []
+        annotation_list = []
+        image = image.reshape(-1, image.shape[-2], image.shape[-1])
+        annotation = annotation.reshape(
+            -1, annotation.shape[-2], annotation.shape[-1]
+        )
 
-        image = T.Resize(
-            (self.input_size[0], self.input_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
-            antialias=True,
-        )(image)
+        for image_item, annotation_item in zip(image, annotation):
+            image_item = image_item.unsqueeze(-1).numpy()
+            annotation_item = annotation_item.unsqueeze(-1).numpy()
 
-        annotation = T.Resize(
-            (self.label_size[0], self.label_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
-            antialias=True,
-        )(annotation)
+            if self.crop_size is not None:
+                image, annotation = self.crop_transform(image, annotation)
+
+            if self.flip_probability is not None:
+                image, annotation = self.random_flip(image, annotation)
+
+            if self.photo_metric_distortion is not None:
+                image = self.photo_metric_distortion(image)
+
+            image = T.Resize(
+                (self.input_size[0], self.input_size[1]),
+                interpolation=T.InterpolationMode.BICUBIC,
+                antialias=True,
+            )(image)
+
+            annotation = T.Resize(
+                (self.label_size[0], self.label_size[1]),
+                interpolation=T.InterpolationMode.BICUBIC,
+                antialias=True,
+            )(annotation)
+
+            image_list.append(image)
+            annotation_list.append(annotation)
+
+        image = torch.stack(image_list)
+        annotation = torch.stack(annotation_list)
+
         image = patient_normalization(image).unsqueeze(2)
         annotation = annotation.long()
         # by this point the shapes are num_scan, slices, channels, height, width, and each patient has about two scans
