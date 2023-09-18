@@ -1,4 +1,5 @@
 # Importing required modules
+import io
 import random
 from typing import Dict, List, Optional, Union
 
@@ -251,12 +252,26 @@ class KeySelectorTransforms:
 
     def __call__(self, inputs: Dict):
         image = inputs[self.image_label]
+        annotation = inputs[self.label_label]
+
+        if isinstance(image, dict):
+            image = image["bytes"]
+            # Create a BytesIO object and read the bytes into it
+            image = io.BytesIO(image)
+            # Use PIL to open the image from the BytesIO object
+            image = Image.open(image)
+
+        if isinstance(annotation, dict):
+            annotation = annotation["bytes"]
+            # Create a BytesIO object and read the bytes into it
+            annotation = io.BytesIO(annotation)
+            annotation = Image.open(annotation)
+
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
         )(image)
 
-        annotation = inputs[self.label_label]
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
@@ -332,7 +347,12 @@ class BaseDatasetTransforms:
 
         annotation = np.array(annotation)
         annotation = torch.from_numpy(annotation)
-        annotation = annotation.permute(2, 0, 1)[0].unsqueeze(0)
+        if len(annotation.shape) == 2:
+            annotation = annotation.unsqueeze(0)
+        elif len(annotation.shape) == 3:
+            annotation = annotation.permute(2, 0, 1)
+        else:
+            raise ValueError("Unsupported annotation shape")
 
         if not isinstance(image, torch.Tensor):
             image = T.ToTensor()(image)
