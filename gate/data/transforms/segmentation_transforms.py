@@ -265,6 +265,7 @@ class KeySelectorTransforms:
             annotation = annotation["bytes"]
             # Create a BytesIO object and read the bytes into it
             annotation = io.BytesIO(annotation)
+            # Use PIL to open the image from the BytesIO object
             annotation = Image.open(annotation)
 
         image = T.Resize(
