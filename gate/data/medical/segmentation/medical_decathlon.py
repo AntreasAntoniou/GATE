@@ -19,6 +19,7 @@ from gate.data.transforms.segmentation_transforms import (
     DualImageRandomCrop,
     DualImageRandomFlip,
     PhotoMetricDistortion,
+    PhotometricParams,
 )
 
 logger = get_logger(name=__name__)
@@ -121,15 +122,9 @@ class DatasetTransforms:
         input_size: Union[int, List[int]],
         target_size: Union[int, List[int]],
         initial_size: Union[int, List[int]] = 1024,
-        num_slices: Optional[int] = None,
-        crop_size: Optional[Union[int, List[int]]] = None,
         label_size: Union[int, List[int]] = 256,
-        flip_probability: Optional[float] = None,
-        use_photo_metric_distortion: bool = True,
-        brightness_delta: int = 32,
-        contrast_range: tuple = (0.5, 1.5),
-        saturation_range: tuple = (0.5, 1.5),
-        hue_delta: int = 18,
+        crop_size: Optional[Union[int, List[int]]] = None,
+        photometric_config: Optional[PhotometricParams] = None,
     ):
         self.initial_size = (
             initial_size
@@ -137,13 +132,11 @@ class DatasetTransforms:
             or isinstance(initial_size, list)
             else (initial_size, initial_size)
         )
-
         self.input_size = (
             input_size
             if isinstance(input_size, tuple) or isinstance(input_size, list)
             else (input_size, input_size)
         )
-
         self.target_size = (
             target_size
             if isinstance(target_size, tuple) or isinstance(target_size, list)
@@ -166,23 +159,12 @@ class DatasetTransforms:
         else:
             self.crop_size = None
 
-        if flip_probability is not None:
-            self.flip_probability = flip_probability
-            self.random_flip = DualImageRandomFlip(p=flip_probability)
-        else:
-            self.flip_probability = None
-
-        if use_photo_metric_distortion:
-            self.photo_metric_distortion = PhotoMetricDistortion(
-                brightness_delta=brightness_delta,
-                contrast_range=contrast_range,
-                saturation_range=saturation_range,
-                hue_delta=hue_delta,
+        if photometric_config is not None:
+            self.med_transforms = MedicalImageSegmentationTransforms(
+                photometric_params=photometric_config
             )
         else:
-            self.photo_metric_distortion = None
-
-        self.num_slices = num_slices
+            self.med_transforms = None
 
     def __call__(self, item: Dict):
         image = (
@@ -198,13 +180,6 @@ class DatasetTransforms:
         image = image.permute(3, 0, 1, 2)[:, :3]
         annotation = annotation.permute(0, 3, 1, 2)[0]
 
-        if self.num_slices is not None:
-            selected_slices = np.random.choice(
-                np.arange(image.shape[0]), self.num_slices, replace=False
-            )
-            image = image[selected_slices]
-            annotation = annotation[selected_slices]
-
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
@@ -217,31 +192,61 @@ class DatasetTransforms:
             antialias=True,
         )(annotation)
 
-        if self.crop_size is not None:
-            image, annotation = self.crop_transform(image, annotation)
+        image_list = []
+        annotation_list = []
+        image = image.reshape(-1, image.shape[-2], image.shape[-1])
+        annotation = annotation.reshape(
+            -1, annotation.shape[-2], annotation.shape[-1]
+        )
 
-        if self.flip_probability is not None:
-            image, annotation = self.random_flip(image, annotation)
+        for image_item, annotation_item in zip(image, annotation):
+            image_item = image_item.unsqueeze(0)
+            annotation_item = annotation_item.unsqueeze(0)
 
-        if self.photo_metric_distortion is not None:
-            image = self.photo_metric_distortion(image)
+            if self.crop_size is not None:
+                image_item, annotation_item = self.crop_transform(
+                    image_item, annotation_item
+                )
 
-        image = T.Resize(
-            (self.input_size[0], self.input_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
-            antialias=True,
-        )(image)
+            if self.med_transforms is not None:
+                image_item = self.med_transforms(image_item, annotation_item)
 
-        annotation = T.Resize(
-            (self.label_size[0], self.label_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
-            antialias=True,
-        )(annotation)
+            image_item = T.Resize(
+                (self.input_size[0], self.input_size[1]),
+                interpolation=T.InterpolationMode.BICUBIC,
+                antialias=True,
+            )(image_item)
 
-        image = patient_normalization(image)
-        labels = annotation.long()
+            annotation_item = T.Resize(
+                (self.label_size[0], self.label_size[1]),
+                interpolation=T.InterpolationMode.BICUBIC,
+                antialias=True,
+            )(annotation_item)
 
-        return {"image": image, "labels": labels}
+            image_list.append(image_item)
+            annotation_list.append(annotation_item)
+
+        image = torch.stack(image_list)
+        annotation = torch.stack(annotation_list)
+
+        image = patient_normalization(image).unsqueeze(2)
+        annotation = annotation.long()
+        # by this point the shapes are num_scan, slices, channels, height, width, and each patient has about two scans
+        # we choose to consider the two scans as one image, so we concatenate them along the slices dimension
+        image = image.reshape(
+            -1, image.shape[2], image.shape[3], image.shape[4]
+        )
+        annotation = annotation.reshape(
+            -1, annotation.shape[2], annotation.shape[3]
+        )
+
+        # convert 1 channel to 3 channels
+        image = torch.cat((image, image, image), dim=1)
+
+        return {
+            "image": image,
+            "labels": annotation,
+        }
 
 
 @configurable(
@@ -258,7 +263,11 @@ def build_gate_dataset(
     target_image_size=256,
 ) -> dict:
     train_transforms = DatasetTransforms(
-        512, target_image_size, initial_size=1024, crop_size=image_size
+        512,
+        target_image_size,
+        initial_size=1024,
+        crop_size=image_size,
+        photometric_config=None,
     )
     eval_transforms = DatasetTransforms(
         512, target_image_size, initial_size=512, crop_size=image_size

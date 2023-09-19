@@ -697,16 +697,25 @@ def log_wandb_3d_volumes_and_masks(
     predicted_volumes_np = logits.long().cpu()
     label_volumes_np = labels.long().cpu()
 
-    # Check the shape of the data
-    for data in [input_volumes_np, predicted_volumes_np, label_volumes_np]:
+    if len(input_volumes_np.shape) == 4:
+        input_volumes_np = input_volumes_np.unsqueeze(0)
+    if len(predicted_volumes_np.shape) == 3:
+        predicted_volumes_np = predicted_volumes_np.unsqueeze(0)
+    if len(label_volumes_np.shape) == 3:
+        label_volumes_np = label_volumes_np.unsqueeze(0)
+
+    for data, name in zip(
+        [input_volumes_np, predicted_volumes_np, label_volumes_np],
+        ["Input", "Predicted", "Label"],
+    ):
         if data is input_volumes_np:
             assert (
                 len(data.shape) == 5
-            ), "Input volumes should be 5D in the shape of (b, s, c, h, w)"
+            ), f"{name} volumes should be 5D in the shape of (b, s, c, h, w)"
         else:
             assert (
                 len(data.shape) == 4
-            ), "Predicted and label volumes should be 4D in the shape of (b, s, h, w)"
+            ), f"{name} volumes should be 4D in the shape of (b, s, h, w)"
 
     # If no label description is provided, use a default mapping of indices to themselves
     if label_idx_to_description is None:

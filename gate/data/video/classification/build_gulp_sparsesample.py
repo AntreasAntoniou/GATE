@@ -298,6 +298,7 @@ def build_squeezed_gulp_dataset(
     return dataset
 
 
+
 def build_gate_gulp_dataset(
     dataset_name: str,
     data_dir: str | Path,
@@ -311,7 +312,6 @@ def build_gate_gulp_dataset(
         dataset_dict["train"] = GATEDataset(
             dataset=datasets["train"],
             infinite_sampling=True,
-            task=ClassificationTask(),
             transforms=transforms,
         )
 
@@ -319,7 +319,6 @@ def build_gate_gulp_dataset(
         dataset_dict["val"] = GATEDataset(
             dataset=datasets["val"],
             infinite_sampling=False,
-            task=ClassificationTask(),
             transforms=transforms,
         )
 
@@ -327,7 +326,6 @@ def build_gate_gulp_dataset(
         dataset_dict["test"] = GATEDataset(
             dataset=datasets["test"],
             infinite_sampling=False,
-            task=ClassificationTask(),
             transforms=transforms,
         )
 

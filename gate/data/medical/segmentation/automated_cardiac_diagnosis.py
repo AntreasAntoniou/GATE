@@ -18,6 +18,7 @@ from gate.data.transforms.segmentation_transforms import (
     DualImageRandomFlip,
     MedicalImageSegmentationTransforms,
     PhotoMetricDistortion,
+    PhotometricParams,
 )
 
 
@@ -73,12 +74,7 @@ class DatasetTransforms:
         initial_size: Union[int, List[int]] = 1024,
         label_size: Union[int, List[int]] = 256,
         crop_size: Optional[Union[int, List[int]]] = None,
-        flip_probability: Optional[float] = None,
-        use_photo_metric_distortion: bool = True,
-        brightness_delta: int = 32,
-        contrast_range: tuple = (0.5, 1.5),
-        saturation_range: tuple = (0.5, 1.5),
-        hue_delta: int = 18,
+        photometric_config: Optional[PhotometricParams] = None,
     ):
         self.initial_size = (
             initial_size
@@ -113,7 +109,12 @@ class DatasetTransforms:
         else:
             self.crop_size = None
 
-        self.med_transforms = MedicalImageSegmentationTransforms()
+        if photometric_config is not None:
+            self.med_transforms = MedicalImageSegmentationTransforms(
+                photometric_params=photometric_config
+            )
+        else:
+            self.med_transforms = None
 
     def __call__(self, item: Dict):
         item["image"] = [sample["img"] for sample in item["frame_data"]]
@@ -153,32 +154,31 @@ class DatasetTransforms:
         )
 
         for image_item, annotation_item in zip(image, annotation):
-            image_item = image_item.unsqueeze(-1).numpy()
-            annotation_item = annotation_item.unsqueeze(-1).numpy()
+            image_item = image_item.unsqueeze(0)
+            annotation_item = annotation_item.unsqueeze(0)
 
             if self.crop_size is not None:
-                image, annotation = self.crop_transform(image, annotation)
+                image_item, annotation_item = self.crop_transform(
+                    image_item, annotation_item
+                )
 
-            if self.flip_probability is not None:
-                image, annotation = self.random_flip(image, annotation)
+            if self.med_transforms is not None:
+                image_item = self.med_transforms(image_item, annotation_item)
 
-            if self.photo_metric_distortion is not None:
-                image = self.photo_metric_distortion(image)
-
-            image = T.Resize(
+            image_item = T.Resize(
                 (self.input_size[0], self.input_size[1]),
                 interpolation=T.InterpolationMode.BICUBIC,
                 antialias=True,
-            )(image)
+            )(image_item)
 
-            annotation = T.Resize(
+            annotation_item = T.Resize(
                 (self.label_size[0], self.label_size[1]),
                 interpolation=T.InterpolationMode.BICUBIC,
                 antialias=True,
-            )(annotation)
+            )(annotation_item)
 
-            image_list.append(image)
-            annotation_list.append(annotation)
+            image_list.append(image_item)
+            annotation_list.append(annotation_item)
 
         image = torch.stack(image_list)
         annotation = torch.stack(annotation_list)
@@ -219,7 +219,11 @@ def build_gate_dataset(
         512, target_image_size, initial_size=1024, crop_size=image_size
     )
     eval_transforms = DatasetTransforms(
-        512, target_image_size, initial_size=512, crop_size=image_size
+        512,
+        target_image_size,
+        initial_size=512,
+        crop_size=image_size,
+        photometric_config=None,
     )
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),

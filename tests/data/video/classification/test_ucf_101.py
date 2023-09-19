@@ -70,7 +70,7 @@ def test_ucf_101_dataloader():
     test_loader = DataLoader(test_set, batch_size=2, shuffle=True)
 
     for batch in test_loader:
-        assert batch["pixel_values"].shape == (2, 3, 8, 224, 224)
+        assert batch["video"].shape == (2, 3, 8, 224, 224)
         assert batch["labels"].shape == (2,)
         assert batch["video_ids"].shape == (2,)
         break

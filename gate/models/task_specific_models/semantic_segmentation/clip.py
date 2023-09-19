@@ -1,6 +1,7 @@
 from typing import Any, Dict, Union
 
 import torch
+from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
@@ -34,6 +35,7 @@ def build_model(
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
     ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -59,6 +61,7 @@ def build_model(
         decoder_layer_type=decoder_layer_type,
         ignore_index=ignore_index,
         target_image_size=(64, 64),
+        background_loss_weight=background_loss_weight,
     )
 
     x = torch.randn(2, 3, image_size, image_size)
@@ -103,7 +106,12 @@ def build_gate_model(
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
     ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
+    task_name: str = "task01braintumour",
 ):
+    if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
+        num_classes = len(num_classes[task_name])
+
     model_and_transform = build_model(
         model_name=model_name,
         pretrained=pretrained,
@@ -114,6 +122,7 @@ def build_gate_model(
         image_size=image_size,
         decoder_layer_type=decoder_layer_type,
         ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(

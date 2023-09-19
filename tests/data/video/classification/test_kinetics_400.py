@@ -40,7 +40,7 @@ def test_kinetics_400_dataloader():
     val_loader = DataLoader(val_set, batch_size=2, shuffle=True)
 
     for batch in val_loader:
-        assert batch["pixel_values"].shape == (2, 3, 8, 224, 224)
+        assert batch["video"].shape == (2, 3, 8, 224, 224)
         assert batch["labels"].shape == (2,)
         assert batch["video_ids"].shape == (2,)
         break

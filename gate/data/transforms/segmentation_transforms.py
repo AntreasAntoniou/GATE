@@ -407,9 +407,7 @@ class MedicalImageSegmentationTransforms:
     Apply a series of data augmentation techniques for medical image segmentation.
     """
 
-    def __init__(
-        self, photometric_params: PhotometricParams = PhotometricParams()
-    ):
+    def __init__(self, photometric_params: Optional[PhotometricParams] = None):
         self.photometric_transform = (
             MedicalPhotoMetricDistortion()
             if photometric_params is None
