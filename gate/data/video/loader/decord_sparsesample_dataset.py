@@ -35,7 +35,7 @@ def get_next_on_error(func: Callable[..., Any]) -> Callable[..., Any]:
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            logger.exception(
+            logger.info(
                 f"Error occurred at idx {args[1]} {e}, getting the next item instead."
             )
             args = list(args)
@@ -183,10 +183,21 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
                 else:
                     label = int(label)
 
+                # if not os.path.exists(os.path.join(self._path_prefix, path)):
+                #     print(
+                #         f"Path does not exist: {os.path.join(self._path_prefix, path)}"
+                #     )
+                #     continue
+                # else:
+                #     print(
+                #         f"Path exists: {os.path.join(self._path_prefix, path)}"
+                #     )
+
                 for idx in range(self._num_clips):
                     self._path_to_videos.append(
                         os.path.join(self._path_prefix, path)
                     )
+
                     self._video_ids.append(int(video_id))
                     self._labels.append(label)
                     self._start_frames.append(int(start_frame))

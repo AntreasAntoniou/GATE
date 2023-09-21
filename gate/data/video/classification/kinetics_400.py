@@ -335,9 +335,6 @@ def arrange_by_classes(dataset_rootdir: Path) -> None:
     logger.info("Successfully arranged videos by classes.")
 
 
-# Continuing with the refactoring of the remaining functions
-
-
 def check_num_files_each_class(
     dataset_rootdir: Path, expected_file_counts: dict
 ) -> bool:

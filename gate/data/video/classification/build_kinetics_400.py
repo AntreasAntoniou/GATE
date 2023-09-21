@@ -11,9 +11,10 @@ from gate.data.transforms.video_transforms import (
     BaseVideoTransform,
     TrainVideoTransform,
 )
-
-from ..loader.decord_sparsesample_dataset import DecordSparsesampleDataset
-from .kinetics_400 import prepare_kinetics_400
+from gate.data.video.classification.kinetics_400 import prepare_kinetics_400
+from gate.data.video.loader.decord_sparsesample_dataset import (
+    DecordSparsesampleDataset,
+)
 
 
 def build_dataset(
@@ -64,7 +65,7 @@ def build_dataset(
     dataset = {}
     for set_name in sets_to_include:
         input_frame_length = 8
-        videos_dir = data_dir / "k400" / "videos"
+        videos_dir = data_dir / "kinetics-dataset" / "k400" / "videos"
 
         if set_name == "train":
             mode = "train"

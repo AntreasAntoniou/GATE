@@ -71,7 +71,7 @@ class TemporalScale:
         video = input_dict["video"]
         # Rescale all the frames
         # Assume video shape: (batch, channel, time, height, width)
-        b, c, t, h, w = video.shape
+        print(f"video.shape: {video.shape}")
         video_reshaped = video.permute(0, 2, 1, 3, 4).reshape(-1, c, h, w)
         video_resized = self.resizer(video_reshaped)
         new_h, new_w = video_resized.shape[-2:]

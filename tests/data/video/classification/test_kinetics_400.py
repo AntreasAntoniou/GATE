@@ -98,10 +98,12 @@ def test_build_gate_dataset():
 @pytest.mark.visual
 def test_visualize_in_wandb():
     datasets = build_gate_dataset(os.environ.get("PYTEST_DIR"))
+
     init_wandb()  # Initialize wandb
 
     for set_name, dataset in datasets.items():
-        for idx, item in enumerate(dataset):
+        dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+        for idx, item in enumerate(dataloader):
             # Replace 'visualize_video' with your actual visualization function
             visualize_video(item, name=f"{set_name}-visualization")
             if idx > 2:  # Limit the number of visualizations
