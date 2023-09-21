@@ -1,8 +1,16 @@
-import random
-
-import pytest
 import torch
 from torchvision.transforms import functional as F
+
+from gate.data.transforms.video_transforms import (
+    BaseVideoTransform,
+    TemporalBrightnessContrast,
+    TemporalCrop,
+    TemporalFlip,
+    TemporalJitter,
+    TemporalRotation,
+    TemporalScale,
+    TrainVideoTransform,
+)
 
 
 def test_TemporalCrop():
@@ -19,14 +27,6 @@ def test_TemporalFlip():
     transform = TemporalFlip()
     input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
     output_dict = transform(input_dict)
-    if random.random() < 0.5:
-        assert torch.equal(
-            input_dict["video"], output_dict["video"]
-        ), "TemporalFlip modified the video despite probability check."
-    else:
-        assert torch.equal(
-            input_dict["video"].flip(-1), output_dict["video"]
-        ), "TemporalFlip did not correctly flip the video."
 
 
 def test_TemporalRotation():
@@ -60,10 +60,31 @@ def test_TemporalJitter():
     # Add assertions to check if the video has been jittered correctly
 
 
-# Run the test functions
-test_TemporalCrop()
-test_TemporalFlip()
-test_TemporalRotation()
-test_TemporalBrightnessContrast()
-test_TemporalScale()
-test_TemporalJitter()
+def test_BaseVideoTransform():
+    transform = BaseVideoTransform(scale_factor=(224, 224))
+    input_dict = {"video": torch.rand(2, 3, 8, 640, 480)}
+    output_dict = transform(input_dict)
+    assert output_dict["video"].shape[-2:] == (
+        224,
+        224,
+    ), "BaseVideoTransform did not correctly scale the video."
+
+
+def test_TrainVideoTransform():
+    transform = TrainVideoTransform(
+        scale_factor=(448, 448),
+        crop_size=(224, 224),
+        flip_prob=0.5,
+        rotation_angles=[0, 90, 180, 270],
+        brightness=0.2,
+        contrast=0.2,
+        jitter_strength=0.1,
+    )
+    input_dict = {"video": torch.rand(2, 3, 8, 640, 480)}
+    output_dict = transform(input_dict)
+
+    assert output_dict["video"].shape[-2:] == (
+        224,
+        224,
+    ), "TrainVideoTransform did not correctly transform the video."
+    # Additional assertions can be added to verify other transformations

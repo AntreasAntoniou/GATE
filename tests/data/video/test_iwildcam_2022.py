@@ -3,13 +3,13 @@ import os
 import pytest
 from torch.utils.data import DataLoader
 
-from gate.data.video.build_iwildcam_2022 import build_iwildcam_2022_dataset
+from gate.data.video.build_iwildcam_2022 import build_dataset
 
 
 def test_build_iwildcam_2022_dataset():
     # Test if the function returns the correct dataset split
 
-    datasets = build_iwildcam_2022_dataset(
+    datasets = build_dataset(
         data_dir=os.environ.get("PYTEST_DIR"),
         sets_to_include=["train", "val", "test"],
     )
@@ -22,14 +22,14 @@ def test_build_iwildcam_2022_dataset():
 
     # Test if the function raises an error when an invalid set_name is given
     with pytest.raises(ValueError):
-        datasets = build_iwildcam_2022_dataset(
+        datasets = build_dataset(
             data_dir=os.environ.get("PYTEST_DIR"),
             sets_to_include=["invalid_set_name"],
         )
 
 
 def test_iwildcam_2022_dataloader():
-    datasets = build_iwildcam_2022_dataset(
+    datasets = build_dataset(
         data_dir=os.environ.get("PYTEST_DIR"),
         sets_to_include=["val"],
     )

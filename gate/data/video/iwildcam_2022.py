@@ -1,5 +1,6 @@
 import json
 import logging
+import multiprocessing as mp
 import os
 import random
 import shutil
@@ -182,6 +183,7 @@ def prepare_iwildcam_2022(dataset_rootdir: str | Path):
         cache_dir=cache_dir,
         local_dir=dataset_rootdir / "splits",
         resume_download=True,
+        max_workers=mp.cpu_count(),
     )
 
     try:

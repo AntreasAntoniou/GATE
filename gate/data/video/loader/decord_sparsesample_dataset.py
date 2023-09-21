@@ -1,7 +1,10 @@
 # Code inspired from https://github.com/facebookresearch/SlowFast
+import functools
 import logging
 import os
+import random
 from pathlib import Path
+from typing import Any, Callable
 
 import decord
 import numpy as np
@@ -13,6 +16,34 @@ from . import transform as transform
 from . import utils as utils
 
 logger = logging.getLogger(__name__)
+
+
+def get_next_on_error(func: Callable[..., Any]) -> Callable[..., Any]:
+    """A decorator that catches exceptions in the wrapped function.
+
+    If an exception occurs, it re-runs the function with the next index in sequence.
+
+    Args:
+        func: The function to decorate.
+
+    Returns:
+        A function with the same signature as `func`, but that catches exceptions and re-runs.
+    """
+
+    @functools.wraps(func)
+    def wrapper_collect_metrics(*args, **kwargs) -> Any:
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.exception(
+                f"Error occurred at idx {args[1]} {e}, getting the next item instead."
+            )
+            args = list(args)
+            args[1] = args[1] + 1
+            args = tuple(args)
+            return func(*args, **kwargs)
+
+    return wrapper_collect_metrics
 
 
 class DecordSparsesampleDataset(torch.utils.data.Dataset):
@@ -195,6 +226,7 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
             self._spatial_temporal_idx[x] for x in indices_of_video_ids
         ]
 
+    @get_next_on_error
     def __getitem__(self, index):
         """
         Given the video index, return the list of frames, label, and video

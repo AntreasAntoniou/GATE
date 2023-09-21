@@ -1,13 +1,20 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from accelerate import Accelerator
+
+from gate.data.core import GATEDataset
+from gate.data.transforms.video_transforms import (
+    BaseVideoTransform,
+    TrainVideoTransform,
+)
 
 from .iwildcam_2022 import prepare_iwildcam_2022
 from .loader.iwildcam2022_dataset import IWildCam2022Dataset
 
 
-def build_iwildcam_2022_dataset(
+def build_dataset(
     data_dir: str | Path,
     sets_to_include: list[str] | None = None,
     ensure_installed=True,
@@ -42,3 +49,63 @@ def build_iwildcam_2022_dataset(
         dataset[set_name] = data
 
     return dataset
+
+
+def build_gate_dataset(
+    data_dir: str | Path,
+    transforms: Any | None = None,
+    num_classes: int = 101,
+    scale_factor=(448, 448),
+    crop_size=(224, 224),
+    flip_prob=0.5,
+    rotation_angles=[0, 90, 180, 270],
+    brightness=0.2,
+    contrast=0.2,
+    jitter_strength=0.1,
+) -> dict[str, GATEDataset]:
+    datasets = build_dataset(
+        data_dir=data_dir,
+        sets_to_include=["train", "val", "test"],
+    )
+
+    dataset_dict = {}
+
+    if "train" in datasets:
+        dataset_dict["train"] = GATEDataset(
+            dataset=datasets["train"],
+            infinite_sampling=True,
+            transforms=[
+                TrainVideoTransform(
+                    scale_factor=scale_factor,
+                    crop_size=crop_size,
+                    flip_prob=flip_prob,
+                    rotation_angles=rotation_angles,
+                    brightness=brightness,
+                    contrast=contrast,
+                    jitter_strength=jitter_strength,
+                ),
+                transforms,
+            ],
+        )
+
+    if "val" in datasets:
+        dataset_dict["val"] = GATEDataset(
+            dataset=datasets["val"],
+            infinite_sampling=False,
+            transforms=[
+                BaseVideoTransform(scale_factor=crop_size),
+                transforms,
+            ],
+        )
+
+    if "test" in datasets:
+        dataset_dict["test"] = GATEDataset(
+            dataset=datasets["test"],
+            infinite_sampling=False,
+            transforms=[
+                BaseVideoTransform(scale_factor=crop_size),
+                transforms,
+            ],
+        )
+
+    return dataset_dict

@@ -1,3 +1,4 @@
+import multiprocessing as mp
 import os
 from pathlib import Path
 from typing import Any
@@ -7,6 +8,10 @@ from huggingface_hub import snapshot_download
 
 from gate.data.core import GATEDataset
 from gate.data.tasks.classification import ClassificationTask
+from gate.data.transforms.video_transforms import (
+    BaseVideoTransform,
+    TrainVideoTransform,
+)
 
 from ..loader.gulp_sparsesample_dataset import GulpSparsesampleDataset
 from ..loader.gulp_sparsesample_squeezed_dataset import (
@@ -14,7 +19,7 @@ from ..loader.gulp_sparsesample_squeezed_dataset import (
 )
 
 
-def build_gulp_dataset(
+def build_dataset(
     dataset_name: str,
     data_dir: str | Path,
     sets_to_include=None,
@@ -73,6 +78,7 @@ def build_gulp_dataset(
                 resume_download=True,
                 local_dir=data_dir,
                 cache_dir=cache_dir,
+                max_workers=mp.cpu_count(),
                 # allow_patterns="splits_gulp_rgb/*",
             )
 
@@ -218,6 +224,7 @@ def build_squeezed_gulp_dataset(
                 resume_download=True,
                 local_dir=data_dir,
                 cache_dir=cache_dir,
+                max_workers=mp.cpu_count(),
                 # allow_patterns="splits_gulp_rgb/*",
             )
 
@@ -298,13 +305,20 @@ def build_squeezed_gulp_dataset(
     return dataset
 
 
-
-def build_gate_gulp_dataset(
+def build_gate_dataset(
     dataset_name: str,
     data_dir: str | Path,
     transforms: Any | None = None,
+    num_classes: int = 101,
+    scale_factor=(448, 448),
+    crop_size=(224, 224),
+    flip_prob=0.5,
+    rotation_angles=[0, 90, 180, 270],
+    brightness=0.2,
+    contrast=0.2,
+    jitter_strength=0.1,
 ) -> dict[str, GATEDataset]:
-    datasets = build_gulp_dataset(dataset_name=dataset_name, data_dir=data_dir)
+    datasets = build_dataset(dataset_name=dataset_name, data_dir=data_dir)
 
     dataset_dict = {}
 
@@ -312,21 +326,38 @@ def build_gate_gulp_dataset(
         dataset_dict["train"] = GATEDataset(
             dataset=datasets["train"],
             infinite_sampling=True,
-            transforms=transforms,
+            transforms=[
+                TrainVideoTransform(
+                    scale_factor=scale_factor,
+                    crop_size=crop_size,
+                    flip_prob=flip_prob,
+                    rotation_angles=rotation_angles,
+                    brightness=brightness,
+                    contrast=contrast,
+                    jitter_strength=jitter_strength,
+                ),
+                transforms,
+            ],
         )
 
     if "val" in datasets:
         dataset_dict["val"] = GATEDataset(
             dataset=datasets["val"],
             infinite_sampling=False,
-            transforms=transforms,
+            transforms=[
+                BaseVideoTransform(scale_factor=crop_size),
+                transforms,
+            ],
         )
 
     if "test" in datasets:
         dataset_dict["test"] = GATEDataset(
             dataset=datasets["test"],
             infinite_sampling=False,
-            transforms=transforms,
+            transforms=[
+                BaseVideoTransform(scale_factor=crop_size),
+                transforms,
+            ],
         )
 
     return dataset_dict

@@ -91,3 +91,40 @@ class TemporalJitter:
         noise = torch.randn_like(video) * self.jitter_strength
         input_dict["video"] = torch.clamp(video + noise, 0, 1)
         return input_dict
+
+
+class BaseVideoTransform:
+    def __init__(self, scale_factor=(224, 224)):
+        self.scale = TemporalScale(scale_factor)
+
+    def __call__(self, input_dict):
+        return self.scale(input_dict)
+
+
+class TrainVideoTransform:
+    def __init__(
+        self,
+        scale_factor=(448, 448),
+        crop_size=(224, 224),
+        flip_prob=0.5,
+        rotation_angles=[0, 90, 180, 270],
+        brightness=0.2,
+        contrast=0.2,
+        jitter_strength=0.1,
+    ):
+        self.scale = TemporalScale(scale_factor)
+        self.crop = TemporalCrop(crop_size)
+        self.flip = TemporalFlip(flip_prob)
+        self.rotation = TemporalRotation(rotation_angles)
+        self.brightness_contrast = TemporalBrightnessContrast(
+            brightness, contrast
+        )
+        self.jitter = TemporalJitter(jitter_strength)
+
+    def __call__(self, input_dict):
+        input_dict = self.scale(input_dict)
+        input_dict = self.crop(input_dict)
+        input_dict = self.flip(input_dict)
+        input_dict = self.rotation(input_dict)
+        input_dict = self.brightness_contrast(input_dict)
+        return self.jitter(input_dict)

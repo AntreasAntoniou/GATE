@@ -4,7 +4,7 @@ import pytest
 from torch.utils.data import DataLoader
 
 from gate.data.video.classification.build_gulp_sparsesample import (
-    build_gulp_dataset,
+    build_dataset,
     build_squeezed_gulp_dataset,
 )
 
@@ -13,7 +13,7 @@ def test_build_ucf_101_dataset():
     # Test if the function returns the correct dataset split
 
     for split_num in range(1, 4):
-        datasets = build_gulp_dataset(
+        datasets = build_dataset(
             dataset_name="ucf-101-gulprgb",
             data_dir=os.environ.get("PYTEST_DIR"),
             sets_to_include=["train", "test"],
@@ -26,7 +26,7 @@ def test_build_ucf_101_dataset():
 
     # Test if the function raises an error when an invalid set_name is given
     with pytest.raises(ValueError):
-        datasets = build_gulp_dataset(
+        datasets = build_dataset(
             dataset_name="ucf-101-gulprgb",
             data_dir=os.environ.get("PYTEST_DIR"),
             sets_to_include=["invalid_set_name"],
@@ -60,7 +60,7 @@ def test_build_ucf_101_squeezed_dataset():
 
 
 def test_ucf_101_dataloader():
-    datasets = build_gulp_dataset(
+    datasets = build_dataset(
         dataset_name="ucf-101-gulprgb",
         data_dir=os.environ.get("PYTEST_DIR"),
         sets_to_include=["test"],
