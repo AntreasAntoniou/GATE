@@ -801,17 +801,18 @@ def visualize_volume(item, name):
 
 
 def visualize_video(item, name):
-    video_data = item["video"]
-    labels = item["labels"]
-
-    # If the video data is a PyTorch tensor, convert it to a NumPy array
-    if isinstance(video_data, torch.Tensor):
-        video_data = video_data.cpu().numpy()
+    video_data = item["video"].cpu() * 255.0
+    labels = item["labels"].cpu()
+    print(
+        f"name: {name}, mean: {video_data.mean()}, std: {video_data.std()}, min: {video_data.min()}, max: {video_data.max()}, dtype: {video_data.dtype}"
+    )
 
     # Log the video and labels to wandb
-    wandb.log(
-        {
-            f"{name}/video": wandb.Video(video_data, fps=4, format="gif"),
-            f"{name}/labels": wandb.Table(data=[labels]),
-        }
-    )
+    for idx, (video_clip, label) in enumerate(zip(video_data, labels)):
+        wandb.log(
+            {
+                f"{name}/video/{idx}": wandb.Video(
+                    video_clip, fps=4, format="gif", caption=f"Label: {label}"
+                ),
+            }
+        )

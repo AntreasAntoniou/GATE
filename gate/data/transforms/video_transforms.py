@@ -11,11 +11,14 @@ class TemporalCrop:
     def __call__(self, input_dict):
         video = input_dict["video"]
         # Assume video shape: (batch, channel, time, height, width)
-        _, _, _, H, W = video.shape
+        _, _, H, W = video.shape
         top = random.randint(0, H - self.crop_size[0])
         left = random.randint(0, W - self.crop_size[1])
         input_dict["video"] = video[
-            ..., top : top + self.crop_size[0], left : left + self.crop_size[1]
+            :,
+            :,
+            top : top + self.crop_size[0],
+            left : left + self.crop_size[1],
         ]
         return input_dict
 
@@ -46,19 +49,24 @@ class TemporalRotation:
 
 
 class TemporalBrightnessContrast:
-    def __init__(self, brightness=0.2, contrast=0.2):
-        self.brightness = brightness
-        self.contrast = contrast
+    def __init__(self, max_brightness=0.2, max_contrast=0.2):
+        self.max_brightness = max_brightness
+        self.max_contrast = max_contrast
 
     def __call__(self, input_dict):
         video = input_dict["video"]
-        brightness_factor = random.uniform(
-            1 - self.brightness, 1 + self.brightness
-        )
-        contrast_factor = random.uniform(1 - self.contrast, 1 + self.contrast)
-        input_dict["video"] = torch.clamp(
-            video * contrast_factor + brightness_factor, 0, 1
-        )
+        # Randomly choose brightness and contrast factors
+        brightness = random.uniform(0, self.max_brightness)
+        contrast = random.uniform(1, 1 + self.max_contrast)
+
+        # Apply brightness and contrast
+        x_transformed = contrast * (video - 0.5) + 0.5 + brightness
+
+        # Clip values to be in [0, 1]
+        x_transformed = torch.clamp(x_transformed, 0, 1)
+
+        input_dict["video"] = x_transformed
+
         return input_dict
 
 
@@ -71,13 +79,8 @@ class TemporalScale:
         video = input_dict["video"]
         # Rescale all the frames
         # Assume video shape: (batch, channel, time, height, width)
-        print(f"video.shape: {video.shape}")
-        video_reshaped = video.permute(0, 2, 1, 3, 4).reshape(-1, c, h, w)
-        video_resized = self.resizer(video_reshaped)
-        new_h, new_w = video_resized.shape[-2:]
-        video_resized = video_resized.reshape(b, t, c, new_h, new_w).permute(
-            0, 2, 1, 3, 4
-        )
+        t, c, h, w = video.shape
+        video_resized = self.resizer(video)
         input_dict["video"] = video_resized
         return input_dict
 
@@ -122,9 +125,18 @@ class TrainVideoTransform:
         self.jitter = TemporalJitter(jitter_strength)
 
     def __call__(self, input_dict):
+        # print("Before scale", input_dict["video"].shape)
         input_dict = self.scale(input_dict)
+        # print("After scale", input_dict["video"].shape)
         input_dict = self.crop(input_dict)
+        # print(f"After crop {input_dict['video'].shape}")
         input_dict = self.flip(input_dict)
+        # # print(f"After flip {input_dict['video'].shape}")
         input_dict = self.rotation(input_dict)
+        # # print(f"After rotation {input_dict['video'].shape}")
         input_dict = self.brightness_contrast(input_dict)
-        return self.jitter(input_dict)
+        # # print(f"After brightness contrast {input_dict['video'].shape}")
+        input_dict = self.jitter(input_dict)
+        # print(f"After jitter {input_dict['video'].shape}")
+
+        return input_dict
