@@ -4,14 +4,17 @@ from typing import Any
 
 from accelerate import Accelerator
 
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.transforms.video_transforms import (
     BaseVideoTransform,
     TrainVideoTransform,
 )
-
-from .iwildcam_2022 import prepare_iwildcam_2022
-from .loader.iwildcam2022_dataset import IWildCam2022Dataset
+from gate.data.video.regression.iwildcam_2022 import prepare_iwildcam_2022
+from gate.data.video.utils.loader.iwildcam2022_dataset import (
+    IWildCam2022Dataset,
+)
 
 
 def build_dataset(
@@ -51,6 +54,11 @@ def build_dataset(
     return dataset
 
 
+@configurable(
+    group="dataset",
+    name="iwildcam_2022",
+    defaults=dict(data_dir=DATASET_DIR),
+)
 def build_gate_dataset(
     data_dir: str | Path,
     transforms: Any | None = None,

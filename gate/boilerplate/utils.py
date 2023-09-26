@@ -802,13 +802,21 @@ def visualize_volume(item, name):
 
 def visualize_video(item, name):
     video_data = item["video"].cpu() * 255.0
-    labels = item["labels"].cpu()
+    if "labels" in item:
+        targets = item["labels"].cpu()
+
+    elif "counts" in item:
+        targets = item["counts"]
+
+    else:
+        raise ValueError("No labels or counts in item")
+
     print(
         f"name: {name}, mean: {video_data.mean()}, std: {video_data.std()}, min: {video_data.min()}, max: {video_data.max()}, dtype: {video_data.dtype}"
     )
 
     # Log the video and labels to wandb
-    for idx, (video_clip, label) in enumerate(zip(video_data, labels)):
+    for idx, (video_clip, label) in enumerate(zip(video_data, targets)):
         wandb.log(
             {
                 f"{name}/video/{idx}": wandb.Video(

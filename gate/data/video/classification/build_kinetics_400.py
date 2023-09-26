@@ -6,13 +6,16 @@ from typing import Any
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
 
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.transforms.video_transforms import (
     BaseVideoTransform,
     TrainVideoTransform,
 )
+from gate.data.video.classification.build_gulp_sparsesample import DatasetNames
 from gate.data.video.classification.kinetics_400 import prepare_kinetics_400
-from gate.data.video.loader.decord_sparsesample_dataset import (
+from gate.data.video.utils.loader.decord_sparsesample_dataset import (
     DecordSparsesampleDataset,
 )
 
@@ -84,6 +87,11 @@ def build_dataset(
     return dataset
 
 
+@configurable(
+    group="dataset",
+    name=DatasetNames.KINETICS_400.value,
+    defaults=dict(data_dir=DATASET_DIR),
+)
 def build_gate_dataset(
     data_dir: str | Path,
     transforms: Any | None = None,
