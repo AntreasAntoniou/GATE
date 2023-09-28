@@ -15,6 +15,7 @@ from gate.boilerplate.utils import (
     log_wandb_3d_volumes_and_masks,
     log_wandb_images,
     log_wandb_masks,
+    visualize_video_with_labels,
 )
 
 logger = get_logger(__name__)
@@ -144,6 +145,7 @@ class BackgroundLogging(threading.Thread):
                         global_step=self.global_step,
                         prefix=self.phase_name,
                     )
+                    continue
 
                 if "ae_episode" in metric_key:
                     # print("logging ae episode")
@@ -156,6 +158,13 @@ class BackgroundLogging(threading.Thread):
                         prefix=self.phase_name,
                     )
                     continue
+
+                if "video_episode" in metric_key:
+                    visualize_video_with_labels(
+                        name=self.phase_name,
+                        video=value["video"],
+                        targets=value["targets"],
+                    )
 
                 self.experiment_tracker.log(
                     {f"{self.phase_name}/{metric_key}": value},

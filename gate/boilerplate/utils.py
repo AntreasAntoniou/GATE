@@ -800,27 +800,22 @@ def visualize_volume(item, name):
     run.finish()
 
 
-def visualize_video(item, name):
-    video_data = item["video"].cpu() * 255.0
-    if "labels" in item:
-        targets = item["labels"].cpu()
+def visualize_video_with_labels(video, targets, name):
+    video_data = video.cpu() * 255.0
 
-    elif "counts" in item:
-        targets = item["counts"]
-
-    else:
-        raise ValueError("No labels or counts in item")
+    if isinstance(targets, torch.Tensor):
+        targets = targets.cpu()
 
     print(
         f"name: {name}, mean: {video_data.mean()}, std: {video_data.std()}, min: {video_data.min()}, max: {video_data.max()}, dtype: {video_data.dtype}"
     )
 
     # Log the video and labels to wandb
-    for idx, (video_clip, label) in enumerate(zip(video_data, targets)):
+    for idx, (video_clip, target) in enumerate(zip(video_data, targets)):
         wandb.log(
             {
                 f"{name}/video/{idx}": wandb.Video(
-                    video_clip, fps=4, format="gif", caption=f"Label: {label}"
+                    video_clip, fps=1, format="gif", caption=f"Label: {target}"
                 ),
             }
         )

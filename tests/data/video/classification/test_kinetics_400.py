@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from torch.utils.data import DataLoader
 
-from gate.boilerplate.utils import visualize_video
+from gate.boilerplate.utils import visualize_video_with_labels
 from gate.data.video.classification.build_kinetics_400 import (
     build_dataset,
     build_gate_dataset,
@@ -105,6 +105,10 @@ def test_visualize_in_wandb():
         dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
         for idx, item in enumerate(dataloader):
             # Replace 'visualize_video' with your actual visualization function
-            visualize_video(item, name=f"{set_name}-visualization")
+            visualize_video_with_labels(
+                item["video"],
+                targets=item["labels"],
+                name=f"{set_name}-visualization",
+            )
             if idx > 2:  # Limit the number of visualizations
                 break
