@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from gate.models.task_specific_models.temporal_image_classification.clip_temporal_image_classification import (
+from gate.models.task_specific_models.temporal_image_classification.clip import (
     ModelAndTransform,
     build_gate_model,
     build_model,
@@ -21,7 +21,6 @@ def test_build_model():
 @pytest.mark.parametrize("pretrained,num_classes", pytest_parameters)
 def test_model_with_linear_forward(pretrained, num_classes):
     model_and_transform = build_model(
-        modality="image",
         pretrained=pretrained,
         num_classes=num_classes,
     )
@@ -44,7 +43,6 @@ def test_model_with_linear_forward(pretrained, num_classes):
 @pytest.mark.parametrize("pretrained,num_classes", pytest_parameters)
 def test_model_gate_with_linear_forward(pretrained, num_classes):
     model_and_transform = build_gate_model(
-        modality="image",
         pretrained=pretrained,
         num_classes=num_classes,
     )

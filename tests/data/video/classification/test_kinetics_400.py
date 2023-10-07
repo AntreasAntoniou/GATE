@@ -107,7 +107,8 @@ def test_visualize_in_wandb():
             # Replace 'visualize_video' with your actual visualization function
             visualize_video_with_labels(
                 item["video"],
-                targets=item["labels"],
+                logits=item["labels"],
+                labels=item["labels"],
                 name=f"{set_name}-visualization",
             )
             if idx > 2:  # Limit the number of visualizations

@@ -215,9 +215,10 @@ class TimmCLIPAdapter(nn.Module):
         self,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
+        video: Optional[torch.Tensor] = None,
         **kwargs,
     ):
-        if image is None and text is None:
+        if image is None and text is None and video is None:
             raise ValueError(
                 f"Must provide at least one input modality"
                 f"to {self.__class__.__name__}"
@@ -238,6 +239,18 @@ class TimmCLIPAdapter(nn.Module):
         if image is not None:
             output_dict["image"] = self.vision_model.forward(image)
 
+        if video is not None:
+            if len(video.shape) == 5:
+                b, s, c, h, w = video.shape
+                output_dict["video"] = self.vision_model.forward(
+                    video.view(b * s, c, h, w)
+                )
+                for k, v in output_dict["video"].items():
+                    if v is not None:
+                        output_dict["video"][k] = v.view(b, s, *v.shape[1:])
+            else:
+                output_dict["video"] = self.vision_model.forward(video)
+
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
             output_dict["text"]["features"] = text.pooler_output
@@ -253,6 +266,10 @@ class TimmCLIPAdapter(nn.Module):
             return self.preprocessor(
                 text=x, return_tensors="pt", padding=True, truncation=True
             ).input_ids.squeeze(0)
+
+        def video_transforms(x):
+            x = image_transforms(x)
+            return x
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):
@@ -274,7 +291,14 @@ class TimmCLIPAdapter(nn.Module):
                 x=x, transforms=text_transforms, modality=Modality.text
             )
 
+        def video_transforms_process_multi_type(x):
+            return torch.stack(
+                [image_transforms_process_multi_type(item) for item in x],
+                dim=0,
+            )
+
         return {
             "image": lambda x: image_transforms_process_multi_type(x),
             "text": lambda x: text_transforms_process_multi_type(x),
+            "video": lambda x: video_transforms_process_multi_type(x),
         }

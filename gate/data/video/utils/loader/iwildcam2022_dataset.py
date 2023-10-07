@@ -109,7 +109,7 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
         video = video / 255.0
         return {
             "index": index,
-            "counts": counts,
+            "labels": counts,
             "num_frames": num_frames,
             "video": video,
         }

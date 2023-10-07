@@ -55,65 +55,20 @@ class PrototypicalNetwork(nn.Module):
     def init_weights(self):
         reinit(self)
 
-    def _process_episode(self, image, audio, video, text):
-        # check that only one of the inputs is not None
-        assert (
-            sum(
-                [
-                    image is not None,
-                    audio is not None,
-                    video is not None,
-                    text is not None,
-                ]
-            )
-            == 1
-        ), "Only one input must be provided."
-
+    def _process_episode(self, image, labels):
         # Get the inputs and labels
-        if isinstance(image, Dict):
-            image = FewShotLearningClassificationEpisode(**image)
-        if isinstance(audio, Dict):
-            audio = FewShotLearningClassificationEpisode(**audio)
-        if isinstance(video, Dict):
-            video = FewShotLearningClassificationEpisode(**video)
-        if isinstance(text, Dict):
-            text = FewShotLearningClassificationEpisode(**text)
-
-        if image is not None:
-            support_set_inputs = image.support_set_inputs
-            support_set_labels = image.support_set_labels
-            query_set_inputs = image.query_set_inputs
-            query_set_labels = image.query_set_labels
-        elif audio is not None:
-            support_set_inputs = audio.support_set_inputs
-            support_set_labels = audio.support_set_labels
-            query_set_inputs = audio.query_set_inputs
-            query_set_labels = audio.query_set_labels
-        elif video is not None:
-            support_set_inputs = video.support_set_inputs
-            support_set_labels = video.support_set_labels
-            query_set_inputs = video.query_set_inputs
-            query_set_labels = video.query_set_labels
-        elif text is not None:
-            support_set_inputs = text.support_set_inputs
-            support_set_labels = text.support_set_labels
-            query_set_inputs = text.query_set_inputs
-            query_set_labels = text.query_set_labels
 
         return (
-            support_set_inputs,
-            support_set_labels,
-            query_set_inputs,
-            query_set_labels,
+            image["support_set"],
+            labels["support_set"],
+            image["query_set"],
+            labels["query_set"] if "query_set" in labels else None,
         )
 
     def forward_features(
         self,
         input_dict: Optional[Dict[str, Union[torch.Tensor, Dict]]] = None,
         image: Optional[torch.Tensor] = None,
-        text: Optional[torch.Tensor] = None,
-        audio: Optional[torch.Tensor] = None,
-        video: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         This method takes an input dictionary and applies the model to the input.
@@ -121,25 +76,16 @@ class PrototypicalNetwork(nn.Module):
         Args:
             input_dict: A dictionary of input data.
             image: Optional image tensor.
-            text: Optional text tensor.
-            audio: Optional audio tensor.
-            video: Optional video tensor.
 
         Returns:
             The output tensor after being processed by the model and the linear layer.
         """
         x = None
-        # print(f"image: {image.shape}")
+
         if input_dict is not None:
             x = self.model(**input_dict)[self.modality]["features"]
         if image is not None:
             x = self.model(image=image)[self.modality]["features"]
-        if text is not None:
-            x = self.model(text=text)[self.modality]["features"]
-        if audio is not None:
-            x = self.model(audio=audio)[self.modality]["features"]
-        if video is not None:
-            x = self.model(video=video)[self.modality]["features"]
 
         assert x is not None, "At least one input must be provided."
 
@@ -148,26 +94,8 @@ class PrototypicalNetwork(nn.Module):
 
     def forward(
         self,
-        image: Optional[
-            Union[
-                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
-            ]
-        ] = None,
-        audio: Optional[
-            Union[
-                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
-            ]
-        ] = None,
-        video: Optional[
-            Union[
-                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
-            ]
-        ] = None,
-        text: Optional[
-            Union[
-                FewShotLearningClassificationEpisode, Dict[str, torch.Tensor]
-            ]
-        ] = None,
+        image: Dict[str, torch.Tensor],
+        labels: Dict[str, torch.Tensor],
     ) -> Dict[str, Union[torch.Tensor, float]]:
         """
         This method processes the support set and query set inputs and labels, and computes the loss and accuracy if the query set labels are provided.
@@ -186,23 +114,11 @@ class PrototypicalNetwork(nn.Module):
             support_set_labels,
             query_set_inputs,
             query_set_labels,
-        ) = self._process_episode(image, audio, video, text)
-        # print(
-        #     f"support_set_labels: {support_set_labels}, query_set_labels: {query_set_labels}"
-        # )
-        # Store outputs in this dictionary
+        ) = self._process_episode(image, labels)
+
         output_dict = {}
 
-        # Get the number of tasks and examples
         num_tasks, num_examples = support_set_inputs.shape[:2]
-        # print(
-        # f"Support set -> Mean: {support_set_inputs.mean()}, std: {support_set_inputs.std()}, max: {support_set_inputs.max()}, min: {support_set_inputs.min()}"
-        # )
-        # print(
-        # f"Query set -> Mean: {query_set_inputs.mean()}, std: {query_set_inputs.std()}, max: {query_set_inputs.max()}, min: {query_set_inputs.min()}"
-        # )
-        # Compute the support set features and embeddings
-        # print(f"support_set_inputs: {support_set_inputs.shape}")
         support_set_features = self.forward_features(
             **{
                 self.modality: support_set_inputs.view(
@@ -210,15 +126,10 @@ class PrototypicalNetwork(nn.Module):
                 )
             }
         )
-        # print(f"support_set_features: {support_set_features.shape}")
         support_set_embedding = support_set_features.view(
             num_tasks, num_examples, -1
         )
 
-        # print(f"support_set_embeddings: {support_set_embedding.shape}")
-
-        # Compute the query set features and embeddings
-        # print(f"query_set_inputs: {query_set_inputs.shape}")
         query_set_features = self.forward_features(
             **{
                 self.modality: query_set_inputs.view(
@@ -226,23 +137,16 @@ class PrototypicalNetwork(nn.Module):
                 )
             }
         )
-        # print(f"query_set_features: {query_set_features.shape}")
         query_set_embedding = query_set_features.view(
             num_tasks, -1, query_set_features.shape[-1]
         )
 
-        # print(f"query_set_embeddings: {query_set_embedding.shape}")
-
-        # Get the prototypes
         prototypes = get_prototypes(
             embeddings=support_set_embedding,
             labels=support_set_labels,
             num_classes=int(torch.max(support_set_labels)) + 1,
         )
 
-        # print(f"prototypes: {prototypes.shape}")
-
-        # Store the outputs
         output_dict["prototypes"] = prototypes
         output_dict["support_set_embedding"] = support_set_embedding
         output_dict["query_set_embedding"] = query_set_embedding
@@ -264,7 +168,6 @@ class PrototypicalNetwork(nn.Module):
     def compute_loss_and_metrics(self, logits, labels):
         loss = prototypical_loss(logits, labels)
         loss = torch.mean(loss)
-        logits = logits.permute([0, 2, 1])
 
         accuracy = get_accuracy(logits=logits, labels=labels)
         return {"loss": loss, "accuracy_top_1": accuracy}

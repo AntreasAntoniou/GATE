@@ -12,9 +12,7 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import (
-    SimpleSegmentationDecoder,
-)
+from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -49,15 +47,10 @@ def build_model(
         model_name=model_name, pretrained=pretrained, image_size=image_size
     )
 
-    model = SimpleSegmentationDecoder(
+    model = SegmentationAdapter(
         encoder_model=backbone_model,
-        embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=backbone_model.image_num_features,
-        decoder_depth=decoder_depth,
-        decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
         num_classes=num_classes,
-        num_patches=backbone_model.vision_model.embeddings.num_patches,
         decoder_layer_type=decoder_layer_type,
         ignore_index=ignore_index,
         target_image_size=(64, 64),
@@ -68,7 +61,7 @@ def build_model(
     dummy_out = model.forward(x)
 
     if not pretrained:
-        model.init_weights()
+        backbone_model.init_weights()
 
     transform_dict = backbone_model.get_transforms(image_size=image_size)
 
@@ -137,7 +130,6 @@ def build_gate_model(
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

@@ -807,3 +807,19 @@ class FewShotClassificationMetaDataset(Dataset):
         )
 
         return input_dict, label_dict
+
+
+def key_mapper(input_tuple):
+    image = input_tuple[0]["image"]
+    labels = input_tuple[1]["image"]
+
+    image["support_set"] = [
+        T.ToPILImage()(item) for item in image["support_set"]
+    ]
+
+    image["query_set"] = [T.ToPILImage()(item) for item in image["query_set"]]
+
+    return {
+        "image": image,
+        "labels": labels,
+    }

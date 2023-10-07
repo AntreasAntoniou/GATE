@@ -16,9 +16,7 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import (
-    SimpleSegmentationDecoder,
-)
+from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -57,7 +55,7 @@ def build_model(
         img_size=image_size,
     )
 
-    model = SimpleSegmentationDecoder(
+    model = SegmentationAdapter(
         encoder_model=backbone_model,
         embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=256,
@@ -79,7 +77,7 @@ def build_model(
     # do the same for all others? sounds like the most general way to do this
 
     if not pretrained:
-        model.init_weights()
+        backbone_model.init_weights()
 
     transform_dict = backbone_model.get_transforms()
 
@@ -144,15 +142,9 @@ def build_gate_model(
         image=[SourceModalityConfig(image=True)]
     )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "text",
-    }
-
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

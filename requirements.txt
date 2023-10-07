@@ -21,7 +21,6 @@ opencv-python
 scipy
 scikit-learn
 soundfile
-monai
 nibabel
 decord
 kaggle
@@ -37,4 +36,3 @@ fire
 moviepy
 imageio
 git+https://github.com/kiyoon/GulpIO2#egg=gulpio2
-git+https://github.com/AntreasAntoniou/TALI.git#egg=tali

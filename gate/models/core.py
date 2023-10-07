@@ -46,7 +46,6 @@ class GATEModel(nn.Module):
         self,
         config: Any,
         model: nn.Module,
-        key_remapper_dict: Optional[Dict] = None,
         meta_data: Optional[Dict] = None,
     ):
         """
@@ -59,7 +58,6 @@ class GATEModel(nn.Module):
         super().__init__()
         self.model = model
         self.config = config
-        self.key_remapper_dict = key_remapper_dict
         self._meta_data = meta_data
 
         self.supported_input_modalities = {}
@@ -120,20 +118,8 @@ class GATEModel(nn.Module):
         #     f"pre pre model {list(input_modalities.keys())}"
         # )  # 📋 Print the input modalities
         if key in self.supported_input_modalities:
-            # 🎛️ Define the transformation logic here
-            if self.key_remapper_dict is not None:
-                input_modalities: Dict = {
-                    self.key_remapper_dict[key]
-                    if key in self.key_remapper_dict
-                    else key: value
-                    for key, value in input_modalities.items()
-                }
-            # print(
-            #     f"pre model {list(input_modalities.keys())}"
-            # )  # 📋 Print the input modalities
             if extra_arg_items is not None:
                 input_modalities.update(extra_arg_items)
-            # print(input_modalities)
             return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported modality: {key}")
@@ -164,12 +150,6 @@ class GATEModel(nn.Module):
             for key, value in input_dict.items()
             if key not in self.supported_input_modalities
         }
-
-        # for key, value in input_dict.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(
-        #             f"{key}: {value.shape}, {value.float().max()}, {value.float().min()}"
-        #         )
 
         for (
             supported_modalities,
@@ -311,25 +291,29 @@ class Ensemble(nn.Module):
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
 
+            if isinstance(model_outputs[0], torch.Tensor):
+                logits = model_outputs
+            else:
+                logits = [output["logits"] for output in model_outputs]
+
             if "labels" in kwargs:
                 labels = kwargs["labels"]
 
-            if "labels" in model_outputs[0]:
-                labels = model_outputs[0]["labels"]
+            if not isinstance(model_outputs[0], torch.Tensor):
+                if "labels" in model_outputs[0]:
+                    labels = model_outputs[0]["labels"]
 
             ensemble_pred = {}
 
-            if isinstance(model_outputs[0]["logits"], torch.Tensor):
+            if isinstance(logits[0], torch.Tensor):
                 ensemble_pred = torch.mean(
-                    torch.stack(
-                        [output["logits"] for output in model_outputs]
-                    ),
+                    torch.stack(logits),
                     dim=0,
                 )
             else:
-                for key in model_outputs[0]["logits"].keys():
+                for key in logits[0].keys():
                     ensemble_pred[key] = recursive_mean(
-                        [output["logits"][key] for output in model_outputs]
+                        [output[key] for output in logits]
                     )
 
             output_dict = {"logits": ensemble_pred}

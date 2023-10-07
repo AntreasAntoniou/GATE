@@ -12,7 +12,10 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.few_shot.core import FewShotClassificationMetaDataset
+from gate.data.few_shot.core import (
+    FewShotClassificationMetaDataset,
+    key_mapper,
+)
 
 logger = get_logger(
     __name__,
@@ -125,32 +128,13 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-def key_mapper(input_tuple):
-    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
-
-    input_dict["image"]["image"]["support_set"] = [
-        T.ToPILImage()(item)
-        for item in input_dict["image"]["image"]["support_set"]
-    ]
-
-    input_dict["image"]["image"]["query_set"] = [
-        T.ToPILImage()(item)
-        for item in input_dict["image"]["image"]["query_set"]
-    ]
-
-    return {
-        "image": input_dict["image"],
-        "labels": input_dict["labels"],
-    }
-
-
 @configurable(
     group="dataset",
     name="cubirds-fs-classification",
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
-    data_dir: Optional[str] = None,
+    data_dir: str,
     transforms: Optional[Any] = None,
 ) -> dict:
     train_set = GATEDataset(

@@ -7,7 +7,8 @@ from gate.models.task_specific_models.semantic_segmentation.clip import (
     build_model,
 )
 
-pytest_parameters = [(True), (False)]
+pretrained_parameters = [(True), (False)]
+decoder_type_parameters = ["transformer", "simple"]
 
 
 def test_build_model():
@@ -18,7 +19,7 @@ def test_build_model():
     assert model_and_transform.transform is not None
 
 
-@pytest.mark.parametrize("pretrained", pytest_parameters)
+@pytest.mark.parametrize("pretrained", pretrained_parameters)
 def test_model_with_linear_forward(pretrained):
     model_and_transform = build_model(
         num_classes=100,
@@ -36,13 +37,13 @@ def test_model_with_linear_forward(pretrained):
     output = model.forward(**input_dict)
 
     output["loss"].backward()
-    # assert output["logits"].shape == (2, 10, 5)
+    assert output["logits"].shape == (2, 1, 224, 224)
 
-    # assert output["loss"].item() > 0
+    assert output["loss"].item() > 0
 
 
-@pytest.mark.parametrize("pretrained", pytest_parameters)
-def test_model_gate_with_linear_forward(pretrained):
+@pytest.mark.parametrize("pretrained", pretrained_parameters)
+def test_model_gate_with_linear_forward(pretrained, decoder_type):
     model_and_transform = build_gate_model(
         num_classes=100,
         pretrained=pretrained,
@@ -60,11 +61,6 @@ def test_model_gate_with_linear_forward(pretrained):
 
     output["image"]["image"]["loss"].backward()
 
-    # assert output["image"]["image"]["logits"].shape == (2, 10, 5)
+    assert output["image"]["image"]["logits"].shape == (2, 100, 224, 224)
 
-    # assert output["image"]["image"]["loss"].item() > 0
-
-
-if __name__ == "__main__":
-    test_build_model()
-    test_model_gate_with_linear_forward()
+    assert output["image"]["image"]["loss"].item() > 0

@@ -113,14 +113,8 @@ class BackgroundLogging(threading.Thread):
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
-                # `print(f"logging {metric_key}")
                 if "seg_episode" in metric_key:
-                    # print("logging seg episode")
                     seg_episode = value
-
-                    # print(
-                    #     f"shapes: {seg_episode['image'].shape}, {seg_episode['logits'].shape}, {seg_episode['label'].shape}"
-                    # )
 
                     log_wandb_masks(
                         experiment_tracker=self.experiment_tracker,
@@ -163,7 +157,8 @@ class BackgroundLogging(threading.Thread):
                     visualize_video_with_labels(
                         name=self.phase_name,
                         video=value["video"],
-                        targets=value["targets"],
+                        logits=value["logits"],
+                        labels=value["label"],
                     )
 
                 self.experiment_tracker.log(

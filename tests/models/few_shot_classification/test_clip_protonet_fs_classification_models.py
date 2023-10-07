@@ -34,16 +34,18 @@ def test_model_with_linear_forward(pretrained, num_output_features):
     model = model_and_transform.model
     transform = model_and_transform.transform
 
-    input_dict = transform(
-        {
-            "image": {
-                "support_set_inputs": support_set_inputs,
-                "query_set_inputs": query_set_inputs,
-                "support_set_labels": support_set_labels,
-                "query_set_labels": query_set_labels,
-            }
-        }
-    )
+    input_dict = {
+        "image": {
+            "support_set": support_set_inputs,
+            "query_set": query_set_inputs,
+        },
+        "labels": {
+            "support_set": support_set_labels,
+            "query_set": query_set_labels,
+        },
+    }
+
+    input_dict = transform(input_dict)
 
     output = model.forward(**input_dict)
 
@@ -68,24 +70,21 @@ def test_model_gate_with_linear_forward(pretrained, num_output_features):
     model = model_and_transform.model
     transform = model_and_transform.transform
 
-    input_dict = transform(
-        {
-            "image": {
-                "support_set_inputs": support_set_inputs,
-                "query_set_inputs": query_set_inputs,
-                "support_set_labels": support_set_labels,
-                "query_set_labels": query_set_labels,
-            }
-        }
-    )
+    input_dict = {
+        "image": {
+            "support_set": support_set_inputs,
+            "query_set": query_set_inputs,
+        },
+        "labels": {
+            "support_set": support_set_labels,
+            "query_set": query_set_labels,
+        },
+    }
+
+    input_dict = transform(input_dict)
 
     output = model.forward(input_dict)
 
     assert output["image"]["image"]["logits"].shape == (2, 10, 5)
 
     assert output["image"]["image"]["loss"].item() > 0
-
-
-if __name__ == "__main__":
-    test_build_model()
-    test_clip_with_linear_forward()

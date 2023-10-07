@@ -33,10 +33,9 @@ def test_clip_with_linear_forward():
 
     output = model.forward(input_dict)
 
-    assert output.shape == (2, 100)
+    assert output["logits"].shape == (2, 100)
 
-    loss = F.cross_entropy(output, y_dummy)
-    assert loss.item() > 0
+    assert output["loss"].item() > 0
 
 
 def test_clip_with_linear_forward_loss():

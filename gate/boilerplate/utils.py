@@ -27,11 +27,15 @@ from rich.tree import Tree
 import wandb
 from gate.config.variables import HF_OFFLINE_MODE
 
+int_or_str = Union[int, str]
+
 
 def get_logger(
-    name=__name__, logging_level: str = None, set_rich: bool = False
+    name=__name__,
+    logging_level: Optional[int_or_str] = None,
+    set_rich: bool = False,
 ) -> logging.Logger:
-    """Initializes multi-GPU-friendly python command line logger."""
+    """Initializes a python command line logger with nice defaults."""
 
     logger = logging.getLogger(name)
 
@@ -800,22 +804,30 @@ def visualize_volume(item, name):
     run.finish()
 
 
-def visualize_video_with_labels(video, targets, name):
+def visualize_video_with_labels(video, logits, labels, name):
     video_data = video.cpu() * 255.0
 
-    if isinstance(targets, torch.Tensor):
-        targets = targets.cpu()
+    if isinstance(logits, torch.Tensor):
+        logits = logits.cpu()
+
+    if isinstance(labels, torch.Tensor):
+        labels = labels.cpu()
 
     print(
         f"name: {name}, mean: {video_data.mean()}, std: {video_data.std()}, min: {video_data.min()}, max: {video_data.max()}, dtype: {video_data.dtype}"
     )
 
     # Log the video and labels to wandb
-    for idx, (video_clip, target) in enumerate(zip(video_data, targets)):
+    for idx, (video_clip, logit, label) in enumerate(
+        zip(video_data, logits, labels)
+    ):
         wandb.log(
             {
                 f"{name}/video/{idx}": wandb.Video(
-                    video_clip, fps=1, format="gif", caption=f"Label: {target}"
+                    video_clip,
+                    fps=1,
+                    format="gif",
+                    caption=f"Predicted: {logit}, True: {label}",
                 ),
             }
         )

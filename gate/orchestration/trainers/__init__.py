@@ -4,18 +4,18 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
-import wandb
 from accelerate import Accelerator
 
+import wandb
 from gate.boilerplate.decorators import collect_metrics
 
 
 @dataclass
 class TrainerOutput:
-    opt_loss: torch.Tensor
     global_step: int
     metrics: Dict[str, Any]
     phase_name: str
+    opt_loss: Optional[torch.Tensor] = None
     experiment_tracker: Any = None
 
 
@@ -23,7 +23,7 @@ class Trainer(ABC):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
         source_modality: Optional[str] = None,
@@ -39,6 +39,7 @@ class Trainer(ABC):
         self.starting_train = True
         self.source_modality = source_modality
         self.target_modality = target_modality
+        self.epoch_metrics = {}
 
         if self.scheduler is not None:
             assert scheduler_interval in {"step"}

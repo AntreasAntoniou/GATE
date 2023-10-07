@@ -121,21 +121,20 @@ omniglot_transforms = T.Compose([lambda x: 1.0 - x, T.ToPILImage()])
 
 
 def key_mapper(input_tuple):
-    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
+    image = input_tuple[0]["image"]
+    labels = input_tuple[1]["image"]
 
-    input_dict["image"]["image"]["support_set"] = [
-        omniglot_transforms(item)
-        for item in input_dict["image"]["image"]["support_set"]
+    image["support_set"] = [
+        omniglot_transforms(item) for item in image["support_set"]
     ]
 
-    input_dict["image"]["image"]["query_set"] = [
-        omniglot_transforms(item)
-        for item in input_dict["image"]["image"]["query_set"]
+    image["query_set"] = [
+        omniglot_transforms(item) for item in image["query_set"]
     ]
 
     return {
-        "image": input_dict["image"],
-        "labels": input_dict["labels"],
+        "image": image,
+        "labels": labels,
     }
 
 
@@ -145,7 +144,7 @@ def key_mapper(input_tuple):
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
-    data_dir: Optional[str] = None,
+    data_dir: str,
     transforms: Optional[Any] = None,
 ) -> dict:
     train_set = GATEDataset(

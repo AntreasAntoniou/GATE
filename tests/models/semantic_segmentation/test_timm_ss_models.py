@@ -60,11 +60,6 @@ def test_model_gate_with_linear_forward(pretrained):
 
     output["image"]["image"]["loss"].backward()
 
-    # assert output["image"]["image"]["logits"].shape == (2, 10, 5)
+    assert output["image"]["image"]["logits"].shape == (2, 100, 224, 224)
 
-    # assert output["image"]["image"]["loss"].item() > 0
-
-
-if __name__ == "__main__":
-    test_build_model()
-    test_model_gate_with_linear_forward()
+    assert output["image"]["image"]["loss"].item() > 0

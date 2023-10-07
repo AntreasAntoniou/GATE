@@ -39,23 +39,22 @@ class ClassificationTrainer(Trainer):
     def get_optimizer(self):
         return self.optimizer
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        start_time = time.time()
-        output_dict = model.forward(batch)[self.target_modality][
-            self.source_modality
-        ]
-        logger.debug(f"Forward time {time.time() - start_time}")
-
-        loss = output_dict["loss"]
-
-        start_time = time.time()
-        accelerator.backward(loss)
-        logger.debug(f"Backward time {time.time() - start_time}")
-
+    def select_metrics_to_report(self, output_dict):
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
                 if isinstance(value, torch.Tensor):
                     self.current_epoch_dict[key].append(value.detach().cpu())
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        output_dict = model.forward(batch)[self.target_modality][
+            self.source_modality
+        ]
+
+        loss = output_dict["loss"]
+
+        accelerator.backward(loss)
+
+        self.select_metrics_to_report(output_dict)
 
         return StepOutput(
             output_metrics_dict=output_dict,
@@ -71,22 +70,16 @@ class ClassificationTrainer(Trainer):
         accelerator: Accelerator,
     ) -> TrainerOutput:
         model.train()
-        start_time = time.time()
         self.optimizer.zero_grad()
-        logger.debug(f"Zero grad time {time.time() - start_time}")
-        start_time = time.time()
         step_output: StepOutput = self.step(
             model=model,
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
         )
-        logger.debug(f"Step time {time.time() - start_time}")
-        start_time = time.time()
 
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
-        logger.debug(f"Optimizer step time {time.time() - start_time}")
 
         metrics = step_output.output_metrics_dict
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
@@ -105,17 +98,67 @@ class ImageClassificationTrainer(ClassificationTrainer):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
     ):
         super().__init__(
-            optimizer,
-            scheduler,
-            scheduler_interval,
-            experiment_tracker,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scheduler_interval=scheduler_interval,
+            experiment_tracker=experiment_tracker,
             source_modality="image",
             target_modality="image",
+        )
+
+
+@configurable(group="trainer", name="video_classification")
+class VideoClassificationTrainer(ClassificationTrainer):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scheduler_interval=scheduler_interval,
+            experiment_tracker=experiment_tracker,
+            source_modality="video",
+            target_modality="video",
+        )
+
+    def collect_video_episode(self, output_dict, global_step, batch):
+        if "logits" in output_dict:
+            if global_step % 100 == 0:
+                output_dict["video_episode"] = {
+                    "video": output_dict["video"],
+                    "logits": output_dict["logits"],
+                    "label": output_dict["labels"],
+                }
+
+            del output_dict["logits"]
+        return output_dict
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        output_dict = model.forward(batch)[self.target_modality][
+            self.source_modality
+        ]
+
+        loss = output_dict["loss"]
+
+        accelerator.backward(loss)
+
+        self.select_metrics_to_report(output_dict)
+        output_dict = self.collect_video_episode(
+            output_dict, global_step, batch
+        )
+
+        return StepOutput(
+            output_metrics_dict=output_dict,
+            loss=loss,
         )
 
 
@@ -124,7 +167,7 @@ class VisualRelationalClassificationTrainer(ClassificationTrainer):
     def __init__(
         self,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler._LRScheduler = None,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
     ):
