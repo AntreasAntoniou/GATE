@@ -1,3 +1,5 @@
+from itertools import product
+
 import pytest
 import torch
 
@@ -42,11 +44,15 @@ def test_model_with_linear_forward(pretrained):
     assert output["loss"].item() > 0
 
 
-@pytest.mark.parametrize("pretrained", pretrained_parameters)
+@pytest.mark.parametrize(
+    "pretrained, decoder_type",
+    product(pretrained_parameters, decoder_type_parameters),
+)
 def test_model_gate_with_linear_forward(pretrained, decoder_type):
     model_and_transform = build_gate_model(
         num_classes=100,
         pretrained=pretrained,
+        decoder_layer_type=decoder_type,
     )
 
     image = torch.rand(2, 3, 224, 224)

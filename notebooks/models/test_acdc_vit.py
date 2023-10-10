@@ -121,9 +121,6 @@ def integrate_output_list(output_list):
     return output_accumulator
 
 
-import torch
-
-
 def detach_and_move_to_cpu(obj):
     if isinstance(obj, torch.Tensor):
         return obj.detach().cpu()

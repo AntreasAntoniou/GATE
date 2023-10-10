@@ -26,9 +26,8 @@ from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
 def build_model(
     model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
-    decoder_depth: int = 2,
+    decoder_num_blocks: int = 2,
     decoder_num_heads: int = 8,
-    mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
@@ -52,13 +51,15 @@ def build_model(
         decoder_embed_dim=backbone_model.image_num_features,
         num_classes=num_classes,
         decoder_layer_type=decoder_layer_type,
+        decoder_num_blocks=decoder_num_blocks,
+        decoder_num_heads=decoder_num_heads,
         ignore_index=ignore_index,
         target_image_size=(64, 64),
         background_loss_weight=background_loss_weight,
     )
 
     x = torch.randn(2, 3, image_size, image_size)
-    dummy_out = model.forward(x)
+    _ = model.forward(x)
 
     if not pretrained:
         backbone_model.init_weights()
@@ -108,9 +109,8 @@ def build_gate_model(
     model_and_transform = build_model(
         model_name=model_name,
         pretrained=pretrained,
-        decoder_depth=decoder_depth,
+        decoder_num_blocks=decoder_depth,
         decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
         decoder_layer_type=decoder_layer_type,

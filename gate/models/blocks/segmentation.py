@@ -1,13 +1,26 @@
 import math
 import time
 from collections import OrderedDict
-from typing import List
+from typing import List, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers.activations import AccurateGELUActivation
-from transformers.models.sam.modeling_sam import SamLayerNorm
+from einops import rearrange
+
+
+def upsample_tensor(input_tensor):
+    b, c, s = input_tensor.shape
+    new_size = math.ceil(math.sqrt(s)) ** 2
+    sq_root = int(math.sqrt(new_size))
+    output_tensor = F.upsample(
+        input_tensor,
+        size=(sq_root * sq_root),
+    )
+    return rearrange(
+        output_tensor, "b c (h w) -> b c h w", h=sq_root, w=sq_root
+    )
+
 
 from gate.boilerplate.utils import get_logger
 
@@ -209,123 +222,243 @@ class UpscaleMultiBlock(nn.Module):
         return out
 
 
-class SimpleSegmentationDecoder(nn.Module):
+class ChannelMixerDecoder(nn.Module):
     def __init__(
         self,
-        input_feature_maps: List[torch.Tensor],
         num_classes: int,
-        target_image_size: tuple,
+        target_image_size: Union[int, tuple],
         hidden_size: int = 256,
+        decoder_num_blocks: int = 2,
+        pre_output_dropout_rate: float = 0.3,
+        dropout_rate: float = 0.5,
     ):
-        """
-        SimpleSegmentationDecoder class for segmentation tasks.
-
-        :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
-        :param num_classes: Integer representing the number of classes to predict for segmentation.
-        :param target_size: Tuple containing the height and width for the target output size.
-        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
-        """
         super().__init__()
-        self.num_feature_maps = len(input_feature_maps)
-        self.hidden_size = hidden_size
         self.num_classes = num_classes
-        self.target_size = target_image_size
-
-        self.pixel_wise_mlps = nn.ModuleList()
-
-        for input_features in input_feature_maps:
-            if len(input_features.shape) == 4:
-                in_channels = input_features.shape[1]
-            elif len(input_features.shape) == 3:
-                in_channels = input_features.shape[2]
-
-            mlp = nn.Sequential(
-                nn.Conv2d(in_channels, hidden_size, kernel_size=1),
-                SamLayerNorm(
-                    normalized_shape=hidden_size, data_format="channels_first"
-                ),
-                nn.LeakyReLU(inplace=True),
-                nn.Conv2d(hidden_size, hidden_size, kernel_size=1),
-                SamLayerNorm(
-                    normalized_shape=hidden_size, data_format="channels_first"
-                ),
-                nn.LeakyReLU(inplace=True),
-            )
-            self.pixel_wise_mlps.append(mlp)
-
-        self.fuse_features = nn.Conv2d(
-            hidden_size * self.num_feature_maps, hidden_size * 2, kernel_size=1
+        self.target_image_size = (
+            target_image_size
+            if isinstance(target_image_size, int)
+            else target_image_size[0]
         )
-        self.fuse_features_norm = nn.LazyInstanceNorm2d()
+        self.hidden_size = hidden_size
+        self.dropout_rate = dropout_rate
+        self.decoder_num_blocks = decoder_num_blocks
+        self.pre_output_dropout_rate = pre_output_dropout_rate
+        self.is_built = False
 
-        self.fuse_features_act = AccurateGELUActivation()
-        self.final_conv = nn.Conv2d(
-            hidden_size * 2, num_classes, kernel_size=1
-        )
+    def build(self, input_list: List[torch.Tensor]):
         self.upsample = nn.Upsample(
-            size=self.target_size, mode="bilinear", align_corners=True
+            size=self.target_image_size, mode="bilinear", align_corners=True
+        )
+        out = torch.cat([self.upsample(x) for x in input_list], dim=1)
+        input_shape = out.shape
+
+        norm = (
+            nn.LazyInstanceNorm2d
+            if len(input_shape) == 4
+            else nn.LazyInstanceNorm1d
+        )
+        conv = nn.LazyConv2d if len(input_shape) == 4 else nn.LazyConv1d
+        dropout = nn.Dropout2d if len(input_shape) == 4 else nn.Dropout1d
+        act = nn.LeakyReLU
+
+        block = [
+            conv(out_channels=self.hidden_size, kernel_size=1),
+            norm(),
+            act(),
+            dropout(self.dropout_rate),
+        ]
+        mlp_layers = []
+
+        for _ in range(self.decoder_num_blocks):
+            mlp_layers.extend(block)
+
+        self.mlp = nn.Sequential(
+            *mlp_layers,
         )
 
-    def forward(self, input_list: list):
-        """
-        Forward pass of SimpleSegmentationDecoder.
+        print(self.mlp)
 
-        📮 Passes the input list through pixel-wise MLPs, fuses the features, and upscales the result to the target size.
-
-        :param input_list: List of input tensors, either shape (b, c, h, w) or (b, sequence, features).
-        :return: Output tensor representing class feature maps of shape (b, num_classes, target_h, target_w).
-        """
-        processed_features = []
-        for mlp, x in zip(self.pixel_wise_mlps, input_list):
-            # Check if input is (b, sequence, features)
-            start_time = time.time()
-            if len(x.shape) == 3:
-                sequence_length = x.shape[1]
-                num_features = x.shape[2]
-                square_root = int(math.sqrt(sequence_length))
-
-                # If the sequence has an exact square root, reshape it to (b, c, h, w) format
-                if sequence_length == square_root * square_root:
-                    c = num_features
-                    h = w = square_root
-                    x = x.permute([0, 2, 1]).reshape(-1, c, h, w)
-                # If not, apply a linear projection
-                else:
-                    target_sequence = square_root**2
-                    x = x.permute([0, 2, 1])  # (b, features, sequence)
-                    x = F.adaptive_avg_pool1d(x, target_sequence)
-
-                    x = x.reshape(-1, num_features, square_root, square_root)
-            logger.debug(f"Reshaping took {time.time() - start_time} seconds")
-            # Apply pixel-wise MLP
-            # logger.debug(f"Input shape: {x.shape}, MLP: {mlp}")
-            start_time = time.time()
-            processed_x = mlp(x)
-            logger.debug(f"MLP took {time.time() - start_time} seconds")
-            # Upscale the result to the target size
-            start_time = time.time()
-            processed_x = self.upsample(processed_x)
-            logger.debug(f"Upsampled shape: {processed_x.shape}")
-            logger.debug(f"Upsampling took {time.time() - start_time} seconds")
-            processed_features.append(processed_x)
-
-        # Concatenate the processed features along the channel dimension
-        start_time = time.time()
-        fused_features = torch.cat(processed_features, dim=1)
-        logger.debug(f"Concatenation took {time.time() - start_time} seconds")
-
-        # Fuse the features, apply the final convolution layers, and upscale to target size
-        start_time = time.time()
-        fused_features = self.fuse_features(fused_features)
-        fused_norm_features = self.fuse_features_norm(fused_features)
-        fused_act_features = self.fuse_features_act(fused_norm_features)
-        logger.debug(
-            f"Fusing features took {time.time() - start_time} seconds"
+        self.fuse_features = nn.Sequential(
+            conv(out_channels=self.hidden_size, kernel_size=1),
+            norm(self.hidden_size),
+            act(),
+            dropout(self.pre_output_dropout_rate),
         )
-        start_time = time.time()
-        class_features = self.final_conv(fused_act_features)
-        logger.debug(
-            f"Final convolution took {time.time() - start_time} seconds"
+
+        self.final_conv = nn.LazyConv2d(
+            out_channels=self.num_classes, kernel_size=1
         )
+        self.is_built = True
+
+    def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
+        if not self.is_built:
+            self.build(input_list)
+
+        input_feature_maps = [self.upsample(x) for x in input_list]
+        input_feature_maps = torch.cat(input_feature_maps, dim=1)
+        print(f"Input feature maps shape: {input_feature_maps.shape}")
+        processed_features = self.mlp(input_feature_maps)
+        fused_features = self.fuse_features(processed_features)
+        class_features = self.final_conv(fused_features)
+        return class_features
+
+
+class TransformerSegmentationDecoder(nn.Module):
+    def __init__(
+        self,
+        num_classes: int,
+        target_image_size: Union[int, tuple],
+        hidden_size: int = 256,
+        pre_output_dropout_rate: float = 0.3,
+        dropout_rate: float = 0.5,
+        decoder_num_heads: int = 8,
+        decoder_num_blocks: int = 4,
+    ):
+        super().__init__()
+        self.num_classes = num_classes
+        self.target_image_size = (
+            target_image_size
+            if isinstance(target_image_size, int)
+            else target_image_size[0]
+        )
+        self.decoder_num_heads = decoder_num_heads
+        self.decoder_num_blocks = decoder_num_blocks
+        self.hidden_size = hidden_size
+        self.dropout_rate = dropout_rate
+        self.pre_output_dropout_rate = pre_output_dropout_rate
+        self.upsample = nn.Upsample(
+            size=self.target_image_size, mode="bilinear", align_corners=True
+        )
+        self.is_built = False
+
+    def build(self, in_channels: int):
+        self.projection_layer = nn.Conv2d(in_channels, self.hidden_size, 1)
+        self.fuse_features = nn.Sequential(
+            nn.Conv2d(self.hidden_size, self.hidden_size, 1),
+            nn.InstanceNorm2d(self.hidden_size),
+            nn.LeakyReLU(),
+            nn.Dropout2d(self.pre_output_dropout_rate),
+        )
+
+        transformer_encoder_layer = nn.TransformerEncoderLayer(
+            d_model=self.hidden_size,
+            nhead=self.decoder_num_heads,
+            dim_feedforward=self.hidden_size * 4,
+            dropout=self.dropout_rate,
+            activation="gelu",
+            batch_first=True,
+        )
+        self.segmentation_processing_head = nn.TransformerEncoder(
+            encoder_layer=transformer_encoder_layer,
+            num_layers=self.decoder_num_blocks,
+            norm=nn.LayerNorm(self.hidden_size),
+        )
+
+        self.final_conv = nn.Conv2d(self.hidden_size, self.num_classes, 1)
+        self.is_built = True
+
+    def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
+        input_feature_maps = [self.upsample(x) for x in input_list]
+        input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        if not self.is_built:
+            self.build(input_feature_maps.shape[1])
+
+        projected_features = self.projection_layer(input_feature_maps)
+        fused_features = self.fuse_features(projected_features)
+
+        fused_features = rearrange(fused_features, "b c h w -> b (h w) c")
+
+        transformed_features = self.segmentation_processing_head(
+            fused_features
+        )
+
+        transformed_features = rearrange(
+            transformed_features,
+            "b (h w) c -> b c h w",
+            h=self.target_image_size,
+            w=self.target_image_size,
+        )
+        class_features = self.final_conv(transformed_features)
+
+        return class_features
+
+    def __init__(
+        self,
+        num_classes: int,
+        target_image_size: Union[int, tuple],
+        hidden_size: int = 256,
+        dropout_rate: float = 0.5,
+        pre_output_dropout_rate: float = 0.3,
+        num_transformer_blocks: int = 4,
+    ):
+        super().__init__()
+        self.num_classes = num_classes
+        self.target_image_size = (
+            target_image_size
+            if isinstance(target_image_size, int)
+            else target_image_size[0]
+        )
+        self.hidden_size = hidden_size
+        self.dropout_rate = dropout_rate
+        self.pre_output_dropout_rate = pre_output_dropout_rate
+        self.decoder_num_blocks = num_transformer_blocks
+        self.upsample = nn.Upsample(
+            size=self.target_image_size, mode="bilinear", align_corners=True
+        )
+        self.is_built = False
+
+    def build(self, in_channels: int):
+        # Define projection layer
+        self.projection_layer = nn.Conv2d(in_channels, self.hidden_size, 1)
+
+        # Define feature fusion and transformer layers
+        self.fuse_features = nn.Sequential(
+            nn.Conv2d(self.hidden_size, self.hidden_size, 1),
+            nn.InstanceNorm2d(self.hidden_size),
+            nn.LeakyReLU(),
+            nn.Dropout2d(self.pre_output_dropout_rate),
+        )
+
+        transformer_encoder_layer = nn.TransformerEncoderLayer(
+            d_model=self.hidden_size,
+            nhead=8,
+            dim_feedforward=self.hidden_size * 4,
+            dropout=self.dropout_rate,
+            activation="gelu",
+            batch_first=True,
+        )
+        self.segmentation_processing_head = nn.TransformerEncoder(
+            encoder_layer=transformer_encoder_layer,
+            num_layers=self.decoder_num_blocks,
+            norm=nn.LayerNorm(self.hidden_size),
+        )
+
+        self.final_conv = nn.Conv2d(self.hidden_size, self.num_classes, 1)
+        self.is_built = True
+
+    def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
+        input_feature_maps = [self.upsample(x) for x in input_list]
+        input_feature_maps = torch.cat(input_feature_maps, dim=1)
+
+        if not self.is_built:
+            self.build(input_feature_maps.shape[1])
+
+        projected_features = self.projection_layer(input_feature_maps)
+        fused_features = self.fuse_features(projected_features)
+
+        fused_features = rearrange(fused_features, "b c h w -> b (h w) c")
+
+        transformed_features = self.segmentation_processing_head(
+            fused_features
+        )
+
+        transformed_features = rearrange(
+            transformed_features,
+            "b (h w) c -> b c h w",
+            h=self.target_image_size,
+            w=self.target_image_size,
+        )
+        class_features = self.final_conv(transformed_features)
 
         return class_features

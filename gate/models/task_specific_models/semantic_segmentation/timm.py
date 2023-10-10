@@ -31,14 +31,13 @@ def build_model(
     timm_model_name: str = "resnet50.a1_in1k",
     clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
-    decoder_depth: int = 2,
+    decoder_num_blocks: int = 2,
     decoder_num_heads: int = 8,
-    mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
     ignore_index: int = 0,
-    background_loss_weight: float = 0.0,
+    background_loss_weight: float = 0.1,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -57,16 +56,13 @@ def build_model(
 
     model = SegmentationAdapter(
         encoder_model=backbone_model,
-        embed_dim=backbone_model.image_num_features,
-        decoder_embed_dim=256,
-        target_image_size=(64, 64),
-        decoder_depth=decoder_depth,
-        decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
+        decoder_embed_dim=backbone_model.image_num_features,
         num_classes=num_classes,
-        num_patches=backbone_model.vision_model.num_patches,
         decoder_layer_type=decoder_layer_type,
+        decoder_num_blocks=decoder_num_blocks,
+        decoder_num_heads=decoder_num_heads,
         ignore_index=ignore_index,
+        target_image_size=(64, 64),
         background_loss_weight=background_loss_weight,
     )
 
@@ -113,7 +109,6 @@ def build_gate_model(
     pretrained: bool = True,
     decoder_depth: int = 2,
     decoder_num_heads: int = 8,
-    mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
@@ -128,9 +123,8 @@ def build_gate_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,
         pretrained=pretrained,
-        decoder_depth=decoder_depth,
+        decoder_num_blocks=decoder_depth,
         decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
         decoder_layer_type=decoder_layer_type,
