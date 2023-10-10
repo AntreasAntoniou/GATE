@@ -7,16 +7,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import gate.models.blocks.segmentation as segmentation
 from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (
     DiceLoss,
     FocalLoss,
     IoUMetric,
     WeightedCrossEntropyLoss,
-)
-from gate.models.blocks.segmentation import (
-    ChannelMixerDecoder,
-    TransformerSegmentationDecoder,
 )
 
 logger = get_logger(__name__)
@@ -88,7 +85,8 @@ class SegmentationAdapter(nn.Module):
         background_loss_weight: float = 0.0,
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
-        target_image_size: tuple = (64, 64),
+        output_target_image_size: int = 256,
+        decoder_target_image_size: tuple = (64, 64),
         decoder_embed_dim: int = 512,
         decoder_num_blocks: int = 2,
         decoder_num_heads: int = 8,
@@ -107,22 +105,23 @@ class SegmentationAdapter(nn.Module):
         )
         self.ignore_index = ignore_index
         self.decoder_embedding_dimension = decoder_embed_dim
+        self.output_target_image_size = output_target_image_size
 
         # Assuming decoder_layer_mapping and other related classes and functions are defined elsewhere in the code
 
         decoder_layer_mapping = {
-            "transformer": TransformerSegmentationDecoder(
+            "transformer": segmentation.TransformerSegmentationDecoder(
                 num_classes=num_classes,
-                target_image_size=target_image_size[0],
+                target_image_size=decoder_target_image_size[0],
                 hidden_size=decoder_embed_dim,
                 pre_output_dropout_rate=decoder_pre_output_dropout_rate,
                 dropout_rate=decoder_dropout_rate,
                 decoder_num_blocks=decoder_num_blocks,
                 decoder_num_heads=decoder_num_heads,
             ),
-            "simple": ChannelMixerDecoder(
+            "simple": segmentation.ChannelMixerDecoder(
                 num_classes=num_classes,
-                target_image_size=target_image_size[0],
+                target_image_size=decoder_target_image_size[0],
                 hidden_size=decoder_embed_dim,
                 decoder_num_blocks=decoder_num_blocks,
                 pre_output_dropout_rate=decoder_pre_output_dropout_rate,
@@ -130,11 +129,7 @@ class SegmentationAdapter(nn.Module):
             ),
         }
 
-        self.decoder_head = decoder_layer_mapping[decoder_layer_type](
-            num_classes=num_classes,
-            target_image_size=target_image_size[0],
-            hidden_size=decoder_embed_dim,
-        )
+        self.decoder_head = decoder_layer_mapping[decoder_layer_type]
 
         self.iou_metric = IoUMetric(
             num_classes,
@@ -156,9 +151,9 @@ class SegmentationAdapter(nn.Module):
         logits = F.interpolate(
             input=mask_predictions,
             size=(
-                256,
-                256,
-            ),  # Changed to a more common image size for generality; adjust as needed
+                self.output_target_image_size,
+                self.output_target_image_size,
+            ),
             mode="bicubic",
             align_corners=True,
         )
@@ -182,5 +177,4 @@ class SegmentationAdapter(nn.Module):
             preds = torch.argmax(logits, dim=1)
             self.iou_metric.update(preds, labels)
 
-        return loss_and_metrics
         return loss_and_metrics

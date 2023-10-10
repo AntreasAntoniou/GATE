@@ -62,12 +62,12 @@ def build_model(
         decoder_num_blocks=decoder_num_blocks,
         decoder_num_heads=decoder_num_heads,
         ignore_index=ignore_index,
-        target_image_size=(64, 64),
+        decoder_target_image_size=(64, 64),
         background_loss_weight=background_loss_weight,
     )
 
     x = torch.randn(2, 3, image_size, image_size)
-    dummy_out = model.forward(x)
+    _ = model.forward(x)
 
     # forward features for conv nets, and get the patches for the transformer manually
     # do the same for all others? sounds like the most general way to do this

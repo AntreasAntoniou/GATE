@@ -29,7 +29,7 @@ def test_model_with_linear_forward(pretrained):
     )
 
     image = torch.rand(2, 3, 224, 224)
-    labels = torch.randint(low=0, high=100, size=(2, 1, 224, 224))
+    labels = torch.randint(low=0, high=100, size=(2, 1, 256, 256))
 
     model = model_and_transform.model
     transform = model_and_transform.transform
@@ -39,7 +39,7 @@ def test_model_with_linear_forward(pretrained):
     output = model.forward(**input_dict)
 
     output["loss"].backward()
-    assert output["logits"].shape == (2, 1, 224, 224)
+    assert output["logits"].shape == (2, 100, 256, 256)
 
     assert output["loss"].item() > 0
 
@@ -56,7 +56,7 @@ def test_model_gate_with_linear_forward(pretrained, decoder_type):
     )
 
     image = torch.rand(2, 3, 224, 224)
-    labels = torch.randint(low=0, high=100, size=(2, 1, 224, 224))
+    labels = torch.randint(low=0, high=100, size=(2, 1, 256, 256))
 
     model = model_and_transform.model
     transform = model_and_transform.transform
@@ -67,6 +67,6 @@ def test_model_gate_with_linear_forward(pretrained, decoder_type):
 
     output["image"]["image"]["loss"].backward()
 
-    assert output["image"]["image"]["logits"].shape == (2, 100, 224, 224)
+    assert output["image"]["image"]["logits"].shape == (2, 100, 256, 256)
 
     assert output["image"]["image"]["loss"].item() > 0

@@ -226,7 +226,7 @@ class ChannelMixerDecoder(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        target_image_size: Union[int, tuple],
+        target_image_size: Union[int, tuple] = (64, 64),
         hidden_size: int = 256,
         decoder_num_blocks: int = 2,
         pre_output_dropout_rate: float = 0.3,
@@ -244,12 +244,23 @@ class ChannelMixerDecoder(nn.Module):
         self.decoder_num_blocks = decoder_num_blocks
         self.pre_output_dropout_rate = pre_output_dropout_rate
         self.is_built = False
+        self.weighted_upscale = nn.LazyConv1d(
+            self.target_image_size * self.target_image_size, 1
+        )
 
     def build(self, input_list: List[torch.Tensor]):
         self.upsample = nn.Upsample(
             size=self.target_image_size, mode="bilinear", align_corners=True
         )
-        out = torch.cat([self.upsample(x) for x in input_list], dim=1)
+        input_list = (
+            [self.upsample(x) for x in input_list]
+            if len(input_list[0].shape) == 4
+            else [
+                rearrange(self.weighted_upscale(x), "b l c -> b c l")
+                for x in input_list
+            ]
+        )
+        out = torch.cat(input_list, dim=1)
         input_shape = out.shape
 
         norm = (
@@ -261,22 +272,21 @@ class ChannelMixerDecoder(nn.Module):
         dropout = nn.Dropout2d if len(input_shape) == 4 else nn.Dropout1d
         act = nn.LeakyReLU
 
-        block = [
-            conv(out_channels=self.hidden_size, kernel_size=1),
-            norm(),
-            act(),
-            dropout(self.dropout_rate),
-        ]
         mlp_layers = []
 
         for _ in range(self.decoder_num_blocks):
-            mlp_layers.extend(block)
+            mlp_layers.extend(
+                [
+                    conv(out_channels=self.hidden_size, kernel_size=1),
+                    norm(),
+                    act(),
+                    dropout(self.dropout_rate),
+                ]
+            )
 
         self.mlp = nn.Sequential(
             *mlp_layers,
         )
-
-        print(self.mlp)
 
         self.fuse_features = nn.Sequential(
             conv(out_channels=self.hidden_size, kernel_size=1),
@@ -293,13 +303,27 @@ class ChannelMixerDecoder(nn.Module):
     def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
         if not self.is_built:
             self.build(input_list)
+        input_list = (
+            [self.upsample(x) for x in input_list]
+            if len(input_list[0].shape) == 4
+            else [
+                rearrange(self.weighted_upscale(x), "b l c -> b c l")
+                for x in input_list
+            ]
+        )
 
-        input_feature_maps = [self.upsample(x) for x in input_list]
-        input_feature_maps = torch.cat(input_feature_maps, dim=1)
-        print(f"Input feature maps shape: {input_feature_maps.shape}")
+        input_feature_maps = torch.cat(input_list, dim=1)
         processed_features = self.mlp(input_feature_maps)
         fused_features = self.fuse_features(processed_features)
+        if len(fused_features.shape) == 3:
+            fused_features = rearrange(
+                fused_features,
+                "b c (h w) -> b c h w",
+                h=self.target_image_size,
+                w=self.target_image_size,
+            )
         class_features = self.final_conv(fused_features)
+
         return class_features
 
 
@@ -307,7 +331,7 @@ class TransformerSegmentationDecoder(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        target_image_size: Union[int, tuple],
+        target_image_size: Union[int, tuple] = (64, 64),
         hidden_size: int = 256,
         pre_output_dropout_rate: float = 0.3,
         dropout_rate: float = 0.5,
@@ -329,15 +353,32 @@ class TransformerSegmentationDecoder(nn.Module):
         self.upsample = nn.Upsample(
             size=self.target_image_size, mode="bilinear", align_corners=True
         )
+        self.weighted_upscale = nn.LazyConv1d(
+            self.target_image_size * self.target_image_size, 1
+        )
         self.is_built = False
 
-    def build(self, in_channels: int):
-        self.projection_layer = nn.Conv2d(in_channels, self.hidden_size, 1)
-        self.fuse_features = nn.Sequential(
-            nn.Conv2d(self.hidden_size, self.hidden_size, 1),
-            nn.InstanceNorm2d(self.hidden_size),
-            nn.LeakyReLU(),
-            nn.Dropout2d(self.pre_output_dropout_rate),
+    def build(self, input_shape: tuple):
+        self.projection_layer = (
+            nn.Conv2d(input_shape[1], self.hidden_size, 1)
+            if len(input_shape) == 4
+            else nn.Conv1d(input_shape[1], self.hidden_size, 1)
+        )
+
+        self.fuse_features = (
+            nn.Sequential(
+                nn.Conv2d(self.hidden_size, self.hidden_size, 1),
+                nn.InstanceNorm2d(self.hidden_size),
+                nn.LeakyReLU(),
+                nn.Dropout2d(self.pre_output_dropout_rate),
+            )
+            if len(input_shape) == 4
+            else nn.Sequential(
+                nn.Conv1d(self.hidden_size, self.hidden_size, 1),
+                nn.InstanceNorm1d(self.hidden_size),
+                nn.LeakyReLU(),
+                nn.Dropout1d(self.pre_output_dropout_rate),
+            )
         )
 
         transformer_encoder_layer = nn.TransformerEncoderLayer(
@@ -358,107 +399,65 @@ class TransformerSegmentationDecoder(nn.Module):
         self.is_built = True
 
     def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
-        input_feature_maps = [self.upsample(x) for x in input_list]
-        input_feature_maps = torch.cat(input_feature_maps, dim=1)
+        for x in input_list:
+            print(f"input shape: {x.shape}")
+        input_list = (
+            [self.upsample(x) for x in input_list]
+            if len(input_list[0].shape) == 4
+            else [
+                rearrange(self.weighted_upscale(x), "b l c -> b c l")
+                for x in input_list
+            ]
+        )
+        for x in input_list:
+            print(f"post upsample input shape: {x.shape}")
+        input_feature_maps = torch.cat(input_list, dim=1)
+        print(f"input_feature_maps shape: {input_feature_maps.shape}")
 
         if not self.is_built:
-            self.build(input_feature_maps.shape[1])
+            self.build(input_feature_maps.shape)
 
         projected_features = self.projection_layer(input_feature_maps)
-        fused_features = self.fuse_features(projected_features)
+        print(f"projected_features maps shape: {projected_features.shape}")
 
-        fused_features = rearrange(fused_features, "b c h w -> b (h w) c")
+        fused_features = self.fuse_features(projected_features)
+        print(f"fused_features maps shape: {fused_features.shape}")
+
+        fused_features = (
+            rearrange(fused_features, "b c h w -> b (h w) c")
+            if len(fused_features.shape) == 4
+            else rearrange(fused_features, "b c l -> b (l) c")
+        )
+        print(f"fused_features maps shape: {fused_features.shape}")
 
         transformed_features = self.segmentation_processing_head(
             fused_features
         )
+        print(f"transformed_features maps shape: {transformed_features.shape}")
+        print(
+            f"{transformed_features.shape[1]} != {(self.target_image_size) ** 2}"
+        )
+        if transformed_features.shape[1] != (self.target_image_size) ** 2:
+            transformed_features = F.adaptive_avg_pool1d(
+                rearrange(transformed_features, "b l c -> b c l"),
+                (self.target_image_size) ** 2,
+            )
+            transformed_features = rearrange(
+                transformed_features,
+                "b c (h w) -> b (h w) c",
+                h=self.target_image_size,
+                w=self.target_image_size,
+            )
 
+        print(f"transformed_features maps shape: {transformed_features.shape}")
         transformed_features = rearrange(
             transformed_features,
             "b (h w) c -> b c h w",
             h=self.target_image_size,
             w=self.target_image_size,
         )
+        print(f"transformed_features maps shape: {transformed_features.shape}")
         class_features = self.final_conv(transformed_features)
-
-        return class_features
-
-    def __init__(
-        self,
-        num_classes: int,
-        target_image_size: Union[int, tuple],
-        hidden_size: int = 256,
-        dropout_rate: float = 0.5,
-        pre_output_dropout_rate: float = 0.3,
-        num_transformer_blocks: int = 4,
-    ):
-        super().__init__()
-        self.num_classes = num_classes
-        self.target_image_size = (
-            target_image_size
-            if isinstance(target_image_size, int)
-            else target_image_size[0]
-        )
-        self.hidden_size = hidden_size
-        self.dropout_rate = dropout_rate
-        self.pre_output_dropout_rate = pre_output_dropout_rate
-        self.decoder_num_blocks = num_transformer_blocks
-        self.upsample = nn.Upsample(
-            size=self.target_image_size, mode="bilinear", align_corners=True
-        )
-        self.is_built = False
-
-    def build(self, in_channels: int):
-        # Define projection layer
-        self.projection_layer = nn.Conv2d(in_channels, self.hidden_size, 1)
-
-        # Define feature fusion and transformer layers
-        self.fuse_features = nn.Sequential(
-            nn.Conv2d(self.hidden_size, self.hidden_size, 1),
-            nn.InstanceNorm2d(self.hidden_size),
-            nn.LeakyReLU(),
-            nn.Dropout2d(self.pre_output_dropout_rate),
-        )
-
-        transformer_encoder_layer = nn.TransformerEncoderLayer(
-            d_model=self.hidden_size,
-            nhead=8,
-            dim_feedforward=self.hidden_size * 4,
-            dropout=self.dropout_rate,
-            activation="gelu",
-            batch_first=True,
-        )
-        self.segmentation_processing_head = nn.TransformerEncoder(
-            encoder_layer=transformer_encoder_layer,
-            num_layers=self.decoder_num_blocks,
-            norm=nn.LayerNorm(self.hidden_size),
-        )
-
-        self.final_conv = nn.Conv2d(self.hidden_size, self.num_classes, 1)
-        self.is_built = True
-
-    def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
-        input_feature_maps = [self.upsample(x) for x in input_list]
-        input_feature_maps = torch.cat(input_feature_maps, dim=1)
-
-        if not self.is_built:
-            self.build(input_feature_maps.shape[1])
-
-        projected_features = self.projection_layer(input_feature_maps)
-        fused_features = self.fuse_features(projected_features)
-
-        fused_features = rearrange(fused_features, "b c h w -> b (h w) c")
-
-        transformed_features = self.segmentation_processing_head(
-            fused_features
-        )
-
-        transformed_features = rearrange(
-            transformed_features,
-            "b (h w) c -> b c h w",
-            h=self.target_image_size,
-            w=self.target_image_size,
-        )
-        class_features = self.final_conv(transformed_features)
+        print(f"class_features maps shape: {class_features.shape}")
 
         return class_features

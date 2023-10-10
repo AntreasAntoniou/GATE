@@ -5,6 +5,8 @@ import pytest
 import torch
 from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
 
+from gate.metrics.segmentation import IoUMetric
+
 # Creating dummy data for testing
 num_classes = 21
 ignore_index = 255

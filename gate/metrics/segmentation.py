@@ -208,6 +208,7 @@ class DiceLoss(nn.Module):
 
         if self.ignore_index is not None:
             ignore_mask = (labels != self.ignore_index).unsqueeze(1)
+
             labels_one_hot *= ignore_mask
 
         intersection = torch.sum(logits * labels_one_hot, dim=(2, 3))

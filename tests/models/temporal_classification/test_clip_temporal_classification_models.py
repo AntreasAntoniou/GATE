@@ -26,18 +26,20 @@ def test_model_with_linear_forward(pretrained, num_classes):
     )
 
     inputs = torch.rand(2, 10, 3, 224, 224)
-    labels = torch.randint(0, num_classes, (2, 10))
+    labels = torch.randint(0, num_classes, (2,))
 
     model = model_and_transform.model
     transform = model_and_transform.transform
 
-    input_dict = transform({"image": inputs})
+    input_dict = transform(
+        {"video": inputs, "labels": labels, "return_loss_and_metrics": True}
+    )
 
     output = model.forward(**input_dict)
 
-    # assert output["logits"].shape == (2, 10, 5)
+    assert output["logits"].shape == (2, 512)
 
-    # assert output["loss"].item() > 0
+    assert output["loss"].item() > 0
 
 
 @pytest.mark.parametrize("pretrained,num_classes", pytest_parameters)
@@ -48,20 +50,17 @@ def test_model_gate_with_linear_forward(pretrained, num_classes):
     )
 
     inputs = torch.rand(2, 10, 3, 224, 224)
-    labels = torch.randint(0, num_classes, (2, 10))
+    labels = torch.randint(0, num_classes, (2,))
 
     model = model_and_transform.model
     transform = model_and_transform.transform
 
-    input_dict = transform({"image": inputs})
+    input_dict = transform(
+        {"video": inputs, "labels": labels, "return_loss_and_metrics": True}
+    )
 
     output = model.forward(input_dict)
 
-    # assert output["image"]["image"]["logits"].shape == (2, 10, 5)
+    assert output["video"]["video"]["logits"].shape == (2, 512)
 
-    # assert output["image"]["image"]["loss"].item() > 0
-
-
-if __name__ == "__main__":
-    test_build_model()
-    test_model_gate_with_linear_forward()
+    assert output["video"]["video"]["loss"].item() > 0

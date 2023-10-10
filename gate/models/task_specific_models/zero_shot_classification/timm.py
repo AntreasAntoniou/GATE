@@ -95,6 +95,9 @@ def build_model(
                 temp_text = (
                     torch.ones((2, max_length), dtype=torch.long) * text[0, -1]
                 )
+                print(
+                    f"temp_text.shape: {temp_text.shape}, text.shape: {text.shape}"
+                )
                 for i, t in enumerate(text):
                     temp_text[i, : t.shape[0]] = t
                 text = temp_text

@@ -48,7 +48,9 @@ def test_model_with_linear_forward(pretrained, num_projection_features):
 @pytest.mark.parametrize(
     "pretrained,num_projection_features", pytest_parameters
 )
-def test_model_gate_with_linear_forward(pretrained, num_projection_features):
+def test_model_gate_with_linear_forward_5D(
+    pretrained, num_projection_features
+):
     model_and_transform = build_gate_model(
         modality_a_identifier="image",
         modality_b_identifier="text",
@@ -56,8 +58,8 @@ def test_model_gate_with_linear_forward(pretrained, num_projection_features):
         num_projection_features=num_projection_features,
     )
 
-    image = torch.rand(20, 3, 224, 224)
-    text = ["Let's go for a walk"] * 20
+    image = torch.rand(10, 2, 3, 224, 224)
+    text = [["Let's go for a walk"] * 2] * 10
 
     model = model_and_transform.model
     transform = model_and_transform.transform
@@ -69,12 +71,3 @@ def test_model_gate_with_linear_forward(pretrained, num_projection_features):
     output = model.forward(input_dict)
 
     output["image_text"]["image_text"]["loss"].backward()
-
-    # assert output["image"]["image"]["logits"].shape == (2, 10, 5)
-
-    # assert output["image"]["image"]["loss"].item() > 0
-
-
-if __name__ == "__main__":
-    test_build_model()
-    test_model_gate_with_linear_forward()

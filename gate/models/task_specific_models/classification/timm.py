@@ -75,7 +75,7 @@ def build_model(
     name="timm-classification",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-def build_gate_timm_model(
+def build_gate_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     timm_model_name: str = "resnet50.a1_in1k",
     modality: str = "image",
@@ -99,11 +99,6 @@ def build_gate_timm_model(
         model_modality_config_image_classification = TargetModalityConfig(
             text=[SourceModalityConfig(text=True)]
         )
-
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "image",
-    }
 
     gate_model = GATEModel(
         config=model_modality_config_image_classification,

@@ -1,7 +1,8 @@
 import pytest
 import torch
+from rich import print
 
-from gate.models.task_adapters.semantic_segmentation import (
+from gate.models.blocks.segmentation import (
     ChannelMixerDecoder,
     TransformerSegmentationDecoder,
     upsample_tensor,
@@ -13,10 +14,11 @@ from gate.models.task_adapters.semantic_segmentation import (
 )
 def test_forward_pass(model_type):
     # Initialize the model
-    model = model_type(num_classes=3, target_image_size=(32, 32))
+    print(model_type.__text_signature__)
+    model = model_type(num_classes=100)
 
     # Create synthetic input tensor lists with varying shapes
-    input_list = [torch.randn(1, 5, 16, 16), torch.randn(1, 4, 32, 32)]
+    input_list = [torch.randn(1, 3, 224, 224), torch.randn(1, 3, 224, 224)]
 
     # Forward pass
     output = model(input_list)
@@ -24,10 +26,10 @@ def test_forward_pass(model_type):
     # Validate output shape
     assert output.shape == (
         1,
-        3,
-        32,
-        32,
-    ), f"Expected output shape to be (4, 10, 128, 128), got {output.shape}"
+        100,
+        64,
+        64,
+    ), f"Expected output shape to be (1, 100, 256, 256), got {output.shape}"
 
     # Validate that the model is built
     assert (

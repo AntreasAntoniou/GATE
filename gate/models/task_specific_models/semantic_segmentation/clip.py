@@ -54,7 +54,7 @@ def build_model(
         decoder_num_blocks=decoder_num_blocks,
         decoder_num_heads=decoder_num_heads,
         ignore_index=ignore_index,
-        target_image_size=(64, 64),
+        decoder_target_image_size=(64, 64),
         background_loss_weight=background_loss_weight,
     )
 

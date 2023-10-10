@@ -73,7 +73,7 @@ def build_model(
     name="clip-classification",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-def build_gate_clip_model(
+def build_gate_model(
     model_name: str = CLIPModelPaths.openai_b_16,
     modality: str = "image",
     pretrained: bool = True,
@@ -95,11 +95,6 @@ def build_gate_clip_model(
         model_modality_config_image_classification = TargetModalityConfig(
             text=[SourceModalityConfig(text=True)]
         )
-
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "image",
-    }
 
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
