@@ -585,6 +585,10 @@ def log_wandb_masks(
     global_step: int = 0,
     prefix: str = "general",
 ):
+    if experiment_tracker is None:
+        wandb.init()
+        experiment_tracker = wandb
+
     def wb_mask(bg_img, pred_mask, true_mask):
         return wandb.Image(
             bg_img,

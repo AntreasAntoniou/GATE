@@ -28,8 +28,8 @@ from gate.models.task_adapters.duo_modal_zero_shot_classification import (
 
 
 def build_model(
-    timm_model_name: str = "resnet50.a1_in1k",
-    clip_model_name: str = "openai/clip-vit-base-patch16",
+    image_model_name: str = "resnet50.a1_in1k",
+    text_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
@@ -44,8 +44,8 @@ def build_model(
     :return: A ModelAndTransform instance containing the model and transform function.
     """
     backbone_model = TimmCLIPAdapter(
-        timm_model_name=timm_model_name,
-        clip_model_name=clip_model_name,
+        timm_model_name=image_model_name,
+        clip_model_name=text_model_name,
         pretrained=pretrained,
     )
     num_feature_dict = {
@@ -111,8 +111,8 @@ def build_gate_model(
     num_projection_features: Optional[int] = 512,
 ):
     model_and_transform = build_model(
-        timm_model_name=timm_model_name,
-        clip_model_name=clip_model_name,
+        image_model_name=timm_model_name,
+        text_model_name=clip_model_name,
         pretrained=pretrained,
         modality_a_identifier=modality_a_identifier,
         modality_b_identifier=modality_b_identifier,
@@ -122,11 +122,6 @@ def build_gate_model(
     model_modality_config_image_classification = TargetModalityConfig(
         image_text=[SourceModalityConfig(image=True, text=True)]
     )
-
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "text",
-    }
 
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
