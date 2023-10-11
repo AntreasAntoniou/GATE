@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pytest
 import torch
@@ -25,7 +23,9 @@ class_idx_to_name = {
 }  # Example class index to name mapping
 iou_metric = IoUMetric(num_classes=20, class_idx_to_name=class_idx_to_name)
 iou_metric.update(pred, label)  # Update with predictions and labels
-metrics = iou_metric.get_metrics()  # Get the computed metrics with class names
+metrics = (
+    iou_metric.compute_metrics()
+)  # Get the computed metrics with class names
 
 print(metrics)
 
@@ -69,7 +69,7 @@ def test_iou_metrics(preds, labels):
     for pred, label in zip(preds, labels):
         your_metric.update(pred, label)
 
-    metrics = your_metric.get_metrics()
+    metrics = your_metric.compute_metrics()
     your_metric.pretty_print()
     your_iou = metrics["mIoU"]
 

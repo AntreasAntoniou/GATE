@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import torch
-import wandb
 
+import wandb
 from gate.boilerplate.utils import log_wandb_masks
 
 wandb.init()
@@ -10,8 +10,8 @@ wandb.init()
 
 def test_log_wandb_masks():
     images = torch.rand(5, 3, 256, 256)
-    predicted_masks = np.random.randint(0, 19, (5, 256, 256))
-    labels = np.random.randint(0, 19, (5, 256, 256))
+    predicted_masks = torch.randint(0, 19, (5, 256, 256))
+    labels = torch.randint(0, 19, (5, 256, 256))
     label_descriptions = [
         "background",
         "person",
@@ -39,11 +39,12 @@ def test_log_wandb_masks():
 
     try:
         log_wandb_masks(
+            wandb.run,
             images,
             predicted_masks,
             labels,
             label_idx_to_description_dict,
-            num_to_log=5,
+            prefix="test",
         )
     except Exception as e:
         pytest.fail(f"Failed to log masks with wandb: {e}")

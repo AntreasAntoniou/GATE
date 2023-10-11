@@ -114,9 +114,7 @@ class GATEModel(nn.Module):
         :raises ValueError: If the given transformation is unsupported.
         """
         key = (tuple(input_modalities.keys()), target_modality_name)
-        # print(
-        #     f"pre pre model {list(input_modalities.keys())}"
-        # )  # 📋 Print the input modalities
+
         if key in self.supported_input_modalities:
             if extra_arg_items is not None:
                 input_modalities.update(extra_arg_items)

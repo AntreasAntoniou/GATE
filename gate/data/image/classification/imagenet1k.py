@@ -86,6 +86,7 @@ def build_gate_dataset(
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)
+        input_dict["image"] = x
 
         return input_dict
 

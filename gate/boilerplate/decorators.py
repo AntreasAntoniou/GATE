@@ -53,7 +53,7 @@ def configurable(
 
 def register_configurables(
     package_name: str,
-):
+) -> ConfigStore:
     """
     Registers all configurable functions in the specified package to the config store.
 
@@ -93,6 +93,8 @@ def register_configurables(
             register_configurables(module_name)
         else:
             _process_module(module_name)
+
+    return config_store
 
 
 class BackgroundLogging(threading.Thread):

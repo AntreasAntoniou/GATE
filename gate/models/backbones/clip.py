@@ -1,11 +1,10 @@
 from collections import defaultdict
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
 from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
-
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.utils import get_logger
@@ -30,6 +29,26 @@ def forward_dict(self, x):
     }
 
 
+class TextProcessor:
+    def __init__(self, preprocessor):
+        self.preprocessor = preprocessor
+
+    def text_transforms(self, x: Union[List[str], List[List[str]]]):
+        if isinstance(x[0], list):
+            x = [item for sublist in x for item in sublist]
+        return self.preprocessor(
+            text=x, return_tensors="pt", padding=True, truncation=True
+        ).input_ids.squeeze(0)
+
+    def apply_transform(self, text: Union[List[str], List[List[str]]]):
+        if not all(
+            isinstance(i, list) for i in text
+        ):  # if text is list of strings
+            text = [text]
+        transformed_text = self.text_transforms(text)
+        return transformed_text
+
+
 class CLIPModelPaths:
     laion_b_16: str = "laion/CLIP-ViT-B-16-laion2B-s34B-b88K"
     openai_b_16: str = "openai/clip-vit-base-patch16"
@@ -46,8 +65,8 @@ class CLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
-        self.tokenizer = self.preprocessor.tokenizer
         self.clip = CLIPModel.from_pretrained(model_name)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         if not pretrained:
             self.clip.init_weights()
@@ -153,9 +172,7 @@ class CLIPAdapter(nn.Module):
             ).pixel_values.squeeze(0)
 
         def text_transforms(x):
-            return self.preprocessor(
-                text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0)
+            return self.text_transforms.apply_transform(x)
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):

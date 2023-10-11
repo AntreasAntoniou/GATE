@@ -15,6 +15,7 @@ from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.boilerplate.utils import get_logger
 from gate.models.backbones import Modality, image_dim_reshape
+from gate.models.backbones.clip import TextProcessor
 from gate.models.core import reinit
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
@@ -191,9 +192,9 @@ class TimmCLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
-        self.tokenizer = self.preprocessor
 
         self.clip = CLIPModel.from_pretrained(clip_model_name)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         self.vision_model = TimmModel(
             model_identifier=timm_model_name,
@@ -263,13 +264,7 @@ class TimmCLIPAdapter(nn.Module):
             return self.vision_model.transforms(x)
 
         def text_transforms(x):
-            return self.preprocessor(
-                text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0)
-
-        def video_transforms(x):
-            x = image_transforms(x)
-            return x
+            return self.text_transforms(x)
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):

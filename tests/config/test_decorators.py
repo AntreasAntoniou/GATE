@@ -8,7 +8,7 @@ def test_configurable_and_register_configurables():
     # Register the configurables
     config_store = ConfigStore.instance()
 
-    config_store = register_configurables("gate", config_store)
+    config_store = register_configurables("gate")
 
     # Retrieve the configuration from the config store
     config = config_store.load(config_path="test_group/test_function.yaml")

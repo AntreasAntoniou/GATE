@@ -1,4 +1,4 @@
-from hydra.experimental import compose, initialize
+from hydra import compose, initialize
 
 from gate.boilerplate.utils import pretty_config
 from gate.config.config import collect_config_store
