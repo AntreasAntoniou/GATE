@@ -201,7 +201,6 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         b, s = x["video"].shape[:2]
         x = x["video"].view(-1, *x["video"].shape[2:])
         x = self._process_through_backbone(x)
-        print(f"backbone output shape: {x.shape}")
         x = x.view(b, s, -1)
         x = self._process_through_temporal_encoder(x)
         logits = self.linear(x)

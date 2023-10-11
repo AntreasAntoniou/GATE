@@ -17,7 +17,6 @@ logger = get_logger(__name__)
 
 
 def get_dict_shapes(x):
-    print(x)
     if not isinstance(x, dict):
         return get_dict_shapes(x.__dict__)
     return {

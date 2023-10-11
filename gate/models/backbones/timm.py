@@ -118,9 +118,7 @@ class TimmModel(nn.Module):
         )
         # iterate over compose transforms and remove centercrop and resize
 
-        print(f"{model_identifier} transforms: {self.transforms}")
         output_shape = self.get_output_shape()["raw_features"]
-        print(f"{model_identifier} output shape: {output_shape}")
         self.num_output_features = output_shape[2]
         self.num_patches = output_shape[1]
 

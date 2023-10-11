@@ -103,11 +103,3 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-if __name__ == "__main__":
-    dataset_dict = build_gate_dataset()
-
-    for item in dataset_dict["train"]:
-        print(item["labels"])
-        break

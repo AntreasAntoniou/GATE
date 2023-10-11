@@ -18,7 +18,6 @@ def forward_dict(self, x):
     output = self.legacy_forward(
         x, return_dict=False, output_hidden_states=True
     )
-    # print(f"len(output): {len(output)}")
     (last_hidden_state, pooled_output, encoder_outputs) = output
     encoder_outputs = [f for f in encoder_outputs]
 

@@ -280,7 +280,6 @@ class MultiClassClassificationTrainer(Trainer):
         return self.optimizer
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # print({key: value.shape for key, value in batch.items()})
         batch["return_loss_and_metrics"] = False
         output_dict = model.forward(batch)
         logits = output_dict[self.target_modality][self.source_modality][

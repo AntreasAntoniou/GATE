@@ -144,18 +144,11 @@ class TrainVideoTransform:
         self.jitter = TemporalJitter(jitter_strength)
 
     def __call__(self, input_dict):
-        # print("Before scale", input_dict["video"].shape)
         input_dict = self.scale(input_dict)
-        # print("After scale", input_dict["video"].shape)
         input_dict = self.crop(input_dict)
-        # print(f"After crop {input_dict['video'].shape}")
         input_dict = self.flip(input_dict)
-        # # print(f"After flip {input_dict['video'].shape}")
         input_dict = self.rotation(input_dict)
-        # # print(f"After rotation {input_dict['video'].shape}")
         input_dict = self.brightness_contrast(input_dict)
-        # # print(f"After brightness contrast {input_dict['video'].shape}")
         input_dict = self.jitter(input_dict)
-        # print(f"After jitter {input_dict['video'].shape}")
 
         return input_dict

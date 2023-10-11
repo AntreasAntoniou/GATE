@@ -113,7 +113,6 @@ def dataclass_collate(batch):
 
 def pad_and_stack_tensors(tensor_list):
     tensor_list = list(tensor_list)
-    # print(f"total tensor_list: {len(tensor_list)}")
     for idx, tensor in enumerate(tensor_list):
         if len(tensor.shape) == 2 and tensor.shape[0] == 1:
             tensor = tensor.squeeze(0)
@@ -142,7 +141,7 @@ def pad_and_stack_tensors(tensor_list):
             )  # use the last value (eos)
             tensor = torch.cat([tensor, padding], dim=0)
         padded_list.append(tensor)
-    # print(f"padded_list: {[tensor.shape for tensor in padded_list]}")
+
     if not is_ireggular_shape:
         padded_list = torch.stack(padded_list)
     else:
@@ -156,9 +155,7 @@ def collate_fn_with_token_pad(data):
     def process_value(value):
         if isinstance(value[0], torch.Tensor):
             if value[0].dim() == 0 and value[-1].dim() == 0:
-                # print(value)
                 return torch.stack(value)
-            # print(f"tensor: {value}")
             return (
                 pad_and_stack_tensors(value)
                 if value[0].dtype == torch.long

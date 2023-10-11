@@ -70,7 +70,6 @@ class DuoModalFusionModel(BaseModule):
         self.image_instance_norm = nn.InstanceNorm2d(
             3, affine=True, track_running_stats=False
         )
-        # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
         self.fusion_post_processing = VariableSequenceTransformerEncoder(
             d_model=self.fusion_in_features,
             nhead=8,

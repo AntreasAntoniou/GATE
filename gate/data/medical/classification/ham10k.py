@@ -212,13 +212,6 @@ class DefaultHyperparameters:
     num_classes: int = 4
 
 
-if __name__ == "__main__":
-    dataset = build_gate_dataset(data_dir=DATASET_DIR)
-
-    for item in dataset["train"]:
-        print(item)
-        break
-
 # Details on classes https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6091241/
 
 # akiec

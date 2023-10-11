@@ -399,8 +399,6 @@ class TransformerSegmentationDecoder(nn.Module):
         self.is_built = True
 
     def forward(self, input_list: List[torch.Tensor]) -> torch.Tensor:
-        for x in input_list:
-            print(f"input shape: {x.shape}")
         input_list = (
             [self.upsample(x) for x in input_list]
             if len(input_list[0].shape) == 4
@@ -409,34 +407,26 @@ class TransformerSegmentationDecoder(nn.Module):
                 for x in input_list
             ]
         )
-        for x in input_list:
-            print(f"post upsample input shape: {x.shape}")
+
         input_feature_maps = torch.cat(input_list, dim=1)
-        print(f"input_feature_maps shape: {input_feature_maps.shape}")
 
         if not self.is_built:
             self.build(input_feature_maps.shape)
 
         projected_features = self.projection_layer(input_feature_maps)
-        print(f"projected_features maps shape: {projected_features.shape}")
 
         fused_features = self.fuse_features(projected_features)
-        print(f"fused_features maps shape: {fused_features.shape}")
 
         fused_features = (
             rearrange(fused_features, "b c h w -> b (h w) c")
             if len(fused_features.shape) == 4
             else rearrange(fused_features, "b c l -> b (l) c")
         )
-        print(f"fused_features maps shape: {fused_features.shape}")
 
         transformed_features = self.segmentation_processing_head(
             fused_features
         )
-        print(f"transformed_features maps shape: {transformed_features.shape}")
-        print(
-            f"{transformed_features.shape[1]} != {(self.target_image_size) ** 2}"
-        )
+
         if transformed_features.shape[1] != (self.target_image_size) ** 2:
             transformed_features = F.adaptive_avg_pool1d(
                 rearrange(transformed_features, "b l c -> b c l"),
@@ -449,15 +439,12 @@ class TransformerSegmentationDecoder(nn.Module):
                 w=self.target_image_size,
             )
 
-        print(f"transformed_features maps shape: {transformed_features.shape}")
         transformed_features = rearrange(
             transformed_features,
             "b (h w) c -> b c h w",
             h=self.target_image_size,
             w=self.target_image_size,
         )
-        print(f"transformed_features maps shape: {transformed_features.shape}")
         class_features = self.final_conv(transformed_features)
-        print(f"class_features maps shape: {class_features.shape}")
 
         return class_features

@@ -13,7 +13,6 @@ def sub_batch_generator(batch_dict, sub_batch_size):
 
     # Validate input and get original batch size
     for key, value in batch_dict.items():
-        # print(f"key: {key}, value.shape: {value.shape}")
         if batch_size is None:
             batch_size = value.shape[0] * value.shape[1]
         elif batch_size != value.shape[0] * value.shape[1]:

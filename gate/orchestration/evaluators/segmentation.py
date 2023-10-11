@@ -152,7 +152,6 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
     def collect_segmentation_episode(self, output_dict, global_step, batch):
         if "logits" in output_dict:
             if self.starting_eval:
-                print(f"Collecting segmentation episode at {global_step}")
                 b, s, c = batch["image"].shape[:3]
                 height, width = output_dict["logits"].shape[-2:]
 

@@ -165,15 +165,3 @@ class DefaultHyperparameters:
     train_batch_size: int = 256
     eval_batch_size: int = 512
     num_classes: int = 101
-
-
-import torchvision.transforms as T
-
-if __name__ == "__main__":
-    data_dir = pathlib.Path("/data0/datasets/medical/chexpert")
-    dataset = build_dataset(set_name="train", data_dir=data_dir)
-
-    for item in dataset:
-        image = T.ToTensor()(item["image"])
-
-        print(image.shape)

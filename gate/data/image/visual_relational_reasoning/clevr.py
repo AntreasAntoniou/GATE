@@ -193,7 +193,6 @@ class CLEVRClassificationDataset(Dataset):
         split = self.questions[idx]["split"]
         image_filename = self.questions[idx]["image_filename"]
         answer = self.questions[idx]["answer"]
-        # print(answer)
         if answer in yes_no_dict.keys():
             labels = torch.tensor(yes_no_dict[answer])
             answer_type = "yes_no"

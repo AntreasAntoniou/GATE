@@ -110,8 +110,6 @@ def _get_start_end_indices(num_classes, split_percentage, split_name):
     else:
         raise ValueError(f"Unknown split name: {split_name}")
 
-    # print(f"start_idx: {start_idx}, end_idx: {end_idx}, for {split_name}")
-
     return start_idx, end_idx
 
 
@@ -338,9 +336,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 transforms=self.preprocess_transform,
             )
 
-            print("Converting to hf dataset...")
             hf_dataset = datasets.Dataset.from_dict(dataset_dict)
-            print("Saving hf dataset...")
             hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
         else:
             hf_dataset = datasets.load_from_disk(dataset_path)

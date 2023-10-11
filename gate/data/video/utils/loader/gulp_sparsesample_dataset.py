@@ -252,7 +252,6 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         )  # T, C=3*neighbours, H, W
 
         # T, C, H, W -> C, T, H, W
-        print(f"frames.shape: {frames.shape}")
         video_id = self._video_ids[index]
         label = self._labels[index]
 

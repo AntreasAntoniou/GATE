@@ -171,11 +171,3 @@ class DefaultHyperparameters:
     train_batch_size: int = 256
     eval_batch_size: int = 512
     num_classes: int = 4
-
-
-if __name__ == "__main__":
-    dataset = build_gate_dataset(data_dir=DATASET_DIR)
-
-    for item in dataset["train"]:
-        print(item)
-        break

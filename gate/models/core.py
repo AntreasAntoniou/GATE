@@ -160,7 +160,6 @@ class GATEModel(nn.Module):
 
             # 📞 Call the process_modalities method with the
             # target_modality_name and input_modalities
-            # print(f"{supported_modalities} -> {target_modality_name}")
             try:
                 output = self.process_modalities(
                     target_modality_name=target_modality_name,
