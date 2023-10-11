@@ -44,31 +44,37 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ZeroShotViaLabelDescriptionTask(
-            prompt_templates=imagenet_prompt_templates,
-            label_map=imagenet_classes,
-        ),
-        transforms=transforms,
+        transforms=[
+            ZeroShotViaLabelDescriptionTask(
+                prompt_templates=imagenet_prompt_templates,
+                label_map=imagenet_classes,
+            ),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ZeroShotViaLabelDescriptionTask(
-            prompt_templates=imagenet_prompt_templates,
-            label_map=imagenet_classes,
-        ),
-        transforms=transforms,
+        transforms=[
+            ZeroShotViaLabelDescriptionTask(
+                prompt_templates=imagenet_prompt_templates,
+                label_map=imagenet_classes,
+            ),
+            transforms,
+        ],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ZeroShotViaLabelDescriptionTask(
-            prompt_templates=imagenet_prompt_templates,
-            label_map=imagenet_classes,
-        ),
-        transforms=transforms,
+        transforms=[
+            ZeroShotViaLabelDescriptionTask(
+                prompt_templates=imagenet_prompt_templates,
+                label_map=imagenet_classes,
+            ),
+            transforms,
+        ],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

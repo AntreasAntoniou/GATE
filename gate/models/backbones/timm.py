@@ -264,7 +264,7 @@ class TimmCLIPAdapter(nn.Module):
             return self.vision_model.transforms(x)
 
         def text_transforms(x):
-            return self.text_transforms(x)
+            return self.text_transforms.apply_transform(x)
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):

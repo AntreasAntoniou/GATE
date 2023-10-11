@@ -15,7 +15,7 @@ from gate.data.transforms.video_transforms import (
 
 def test_TemporalCrop():
     transform = TemporalCrop((200, 200))
-    input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
+    input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
     output_dict = transform(input_dict)
     assert output_dict["video"].shape[-2:] == (
         200,
@@ -25,27 +25,27 @@ def test_TemporalCrop():
 
 def test_TemporalFlip():
     transform = TemporalFlip()
-    input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
+    input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
     output_dict = transform(input_dict)
 
 
 def test_TemporalRotation():
     transform = TemporalRotation()
-    input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
+    input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
     output_dict = transform(input_dict)
     # Add assertions to check if the video has been rotated correctly
 
 
 def test_TemporalBrightnessContrast():
     transform = TemporalBrightnessContrast()
-    input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
+    input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
     output_dict = transform(input_dict)
     # Add assertions to check if the brightness and contrast have been modified correctly
 
 
 def test_TemporalScale():
     transform = TemporalScale((128, 128))
-    input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
+    input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
     output_dict = transform(input_dict)
     assert output_dict["video"].shape[-2:] == (
         128,
@@ -55,14 +55,14 @@ def test_TemporalScale():
 
 def test_TemporalJitter():
     transform = TemporalJitter(0.1)
-    input_dict = {"video": torch.rand(2, 3, 8, 224, 224)}
+    input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
     output_dict = transform(input_dict)
     # Add assertions to check if the video has been jittered correctly
 
 
 def test_BaseVideoTransform():
     transform = BaseVideoTransform(scale_factor=(224, 224))
-    input_dict = {"video": torch.rand(2, 3, 8, 640, 480)}
+    input_dict = {"video": torch.rand(2, 8, 3, 640, 480)}
     output_dict = transform(input_dict)
     assert output_dict["video"].shape[-2:] == (
         224,
@@ -80,7 +80,7 @@ def test_TrainVideoTransform():
         contrast=0.2,
         jitter_strength=0.1,
     )
-    input_dict = {"video": torch.rand(2, 3, 8, 640, 480)}
+    input_dict = {"video": torch.rand(2, 8, 3, 640, 480)}
     output_dict = transform(input_dict)
 
     assert output_dict["video"].shape[-2:] == (

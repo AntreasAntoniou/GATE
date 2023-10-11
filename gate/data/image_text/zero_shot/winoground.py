@@ -81,7 +81,7 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
 ) -> dict:
-    aug_transforms = StandardAugmentations(image_key="image")
+    aug_transforms = StandardAugmentations()
 
     def augmentations(input_dict):
         input_dict["image"][0] = aug_transforms(input_dict["image"][0])

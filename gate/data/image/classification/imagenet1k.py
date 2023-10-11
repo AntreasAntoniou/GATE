@@ -45,19 +45,26 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
 
 class StandardAugmentations:
-    def __init__(self, image_key) -> None:
+    def __init__(self, image_key: Optional[str] = None) -> None:
         self.image_key = image_key
 
     def __call__(self, input_dict: Dict) -> Any:
         rand_augment = rand_augment_transform(
             "rand-m9-n3-mstd0.5-inc1", hparams={}
         )
-        x = input_dict[self.image_key]
+
+        if self.image_key is None:
+            x = input_dict
+        else:
+            x = input_dict[self.image_key]
+
         try:
-            input_dict[self.image_key] = rand_augment(x)
+            if self.image_key is None:
+                input_dict = rand_augment(x)
+            else:
+                input_dict[self.image_key] = rand_augment(x)
         except Exception as e:
             logger.warn(f"RandAugment failed with error: {e}")
-            input_dict[self.image_key] = x
 
         return input_dict
 

@@ -11,15 +11,27 @@ class TemporalCrop:
     def __call__(self, input_dict):
         video = input_dict["video"]
         # Assume video shape: (batch, channel, time, height, width)
-        _, _, H, W = video.shape
-        top = random.randint(0, H - self.crop_size[0])
-        left = random.randint(0, W - self.crop_size[1])
-        input_dict["video"] = video[
-            :,
-            :,
-            top : top + self.crop_size[0],
-            left : left + self.crop_size[1],
-        ]
+        if len(video.shape) == 5:
+            B, S, C, H, W = video.shape
+            top = random.randint(0, H - self.crop_size[0])
+            left = random.randint(0, W - self.crop_size[1])
+            input_dict["video"] = video[
+                :,
+                :,
+                :,
+                top : top + self.crop_size[0],
+                left : left + self.crop_size[1],
+            ]
+        else:
+            _, _, H, W = video.shape
+            top = random.randint(0, H - self.crop_size[0])
+            left = random.randint(0, W - self.crop_size[1])
+            input_dict["video"] = video[
+                :,
+                :,
+                top : top + self.crop_size[0],
+                left : left + self.crop_size[1],
+            ]
         return input_dict
 
 
@@ -79,9 +91,16 @@ class TemporalScale:
         video = input_dict["video"]
         # Rescale all the frames
         # Assume video shape: (batch, channel, time, height, width)
-        t, c, h, w = video.shape
-        video_resized = self.resizer(video)
-        input_dict["video"] = video_resized
+        if len(video.shape) == 5:
+            b, s, c, h, w = video.shape
+            video_resized = self.resizer(video.view(b * s, c, h, w))
+            input_dict["video"] = video_resized.view(
+                b, s, c, *video_resized.shape[-2:]
+            )
+        else:
+            t, c, h, w = video.shape
+            video_resized = self.resizer(video)
+            input_dict["video"] = video_resized
         return input_dict
 
 

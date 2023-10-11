@@ -52,7 +52,7 @@ def test_iwildcam_2022_dataloader():
         for idx, item in enumerate(dataloader):
             assert item["video"].shape == (2, 10, 3, 224, 224)
             assert item["index"].shape == (2,)
-            assert len(item["counts"]) == 2
+            assert len(item["labels"]) == 2
             assert len(item["num_frames"]) == 2
             break
 
@@ -72,14 +72,9 @@ def test_visualize_in_wandb():
             # Replace 'visualize_video' with your actual visualization function
             visualize_video_with_labels(
                 item["video"],
-                logits=item["counts"],
-                labels=item["counts"],
+                logits=item["labels"],
+                labels=item["labels"],
                 name=f"{set_name}-visualization",
             )
             if idx > 2:  # Limit the number of visualizations
                 break
-
-
-if __name__ == "__main__":
-    test_build_iwildcam_2022_dataset()
-    test_iwildcam_2022_dataloader()
