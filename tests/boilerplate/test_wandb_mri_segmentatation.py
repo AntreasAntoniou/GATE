@@ -1,6 +1,6 @@
 import torch
-import wandb
 
+import wandb
 from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 
 
@@ -23,8 +23,10 @@ def test_wandb_mri_segmentation_channel_1():
     )
 
     # Visualize the data
-    log_wandb_3d_volumes_and_masks(
-        input_volumes, predicted_volumes, label_volumes
+    run.log(
+        log_wandb_3d_volumes_and_masks(
+            input_volumes, predicted_volumes, label_volumes
+        )
     )
 
     # Finish the run
@@ -50,8 +52,10 @@ def test_wandb_mri_segmentation_channel_3():
     )
 
     # Visualize the data
-    log_wandb_3d_volumes_and_masks(
-        input_volumes, predicted_volumes, label_volumes
+    run.log(
+        log_wandb_3d_volumes_and_masks(
+            input_volumes, predicted_volumes, label_volumes
+        )
     )
 
     # Finish the run

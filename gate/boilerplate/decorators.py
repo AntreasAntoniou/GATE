@@ -3,6 +3,7 @@ import importlib
 import inspect
 import pkgutil
 import threading
+from time import sleep
 from typing import Any, Callable, Dict, Optional
 
 import torch
@@ -99,15 +100,22 @@ def register_configurables(
 
 class BackgroundLogging(threading.Thread):
     def __init__(
-        self, experiment_tracker, metrics_dict, phase_name, global_step
+        self,
+        experiment_tracker,
+        metrics_dict,
+        phase_name,
+        global_step,
+        sleep_time,
     ):
         super().__init__()
-        self.experiment_tracker = experiment_tracker
+        self.experiment_tracker: wandb = experiment_tracker
         self.metrics_dict = metrics_dict
         self.phase_name = phase_name
         self.global_step = global_step
+        self.sleep_time = sleep_time
 
     def run(self):
+        sleep(self.sleep_time)
         for metric_key, computed_value in self.metrics_dict.items():
             if computed_value is not None:
                 value = (
@@ -179,8 +187,17 @@ def collect_metrics(func: Callable) -> Callable:
                 )
                 detached_metrics_dict[metric_key] = value
 
+        if global_step % 100 == 0:
+            sleep_time = 0
+        else:
+            sleep_time = 10
+
         logging_thread = BackgroundLogging(
-            experiment_tracker, detached_metrics_dict, phase_name, global_step
+            experiment_tracker,
+            detached_metrics_dict,
+            phase_name,
+            global_step,
+            sleep_time,
         )
         logging_thread.start()
 

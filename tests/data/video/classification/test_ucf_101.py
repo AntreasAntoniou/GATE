@@ -3,6 +3,7 @@ import os
 import pytest
 from torch.utils.data import DataLoader
 
+import wandb
 from gate.boilerplate.utils import visualize_video_with_labels
 from gate.data.video.classification.build_gulp_sparsesample import (
     build_ucf_101_gate_dataset,
@@ -36,11 +37,13 @@ def test_visualize_in_wandb():
         dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
         for idx, item in enumerate(dataloader):
             # Replace 'visualize_video' with your actual visualization function
-            visualize_video_with_labels(
-                item["video"],
-                logits=item["labels"],
-                labels=item["labels"],
-                name=f"{set_name}-visualization",
+            wandb.log(
+                visualize_video_with_labels(
+                    item["video"],
+                    logits=item["labels"],
+                    labels=item["labels"],
+                    name=f"{set_name}-visualization",
+                )
             )
             if idx > 2:  # Limit the number of visualizations
                 break

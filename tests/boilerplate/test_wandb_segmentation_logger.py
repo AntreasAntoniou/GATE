@@ -38,13 +38,15 @@ def test_log_wandb_masks():
     }
 
     try:
-        log_wandb_masks(
-            wandb.run,
-            images,
-            predicted_masks,
-            labels,
-            label_idx_to_description_dict,
-            prefix="test",
+        wandb.log(
+            log_wandb_masks(
+                wandb.run,
+                images,
+                predicted_masks,
+                labels,
+                label_idx_to_description_dict,
+                prefix="test",
+            )
         )
     except Exception as e:
         pytest.fail(f"Failed to log masks with wandb: {e}")
