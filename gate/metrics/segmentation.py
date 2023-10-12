@@ -48,8 +48,8 @@ class IoUMetric:
 
     def update(self, pred: torch.Tensor, label: torch.Tensor):
         mask = label != self.ignore_index
-        pred = pred[mask]
-        label = label[mask]
+        pred = pred[mask].cpu()
+        label = label[mask].cpu()
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)

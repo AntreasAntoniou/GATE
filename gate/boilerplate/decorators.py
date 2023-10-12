@@ -10,8 +10,8 @@ from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 
 import wandb
-from gate.boilerplate.utils import (
-    get_logger,
+from gate.boilerplate.utils import get_logger
+from gate.boilerplate.wandb_utils import (
     log_wandb_3d_volumes_and_masks,
     log_wandb_images,
     log_wandb_masks,
@@ -115,58 +115,48 @@ class BackgroundLogging(threading.Thread):
                     if isinstance(computed_value, torch.Tensor)
                     else computed_value
                 )
-                if "seg_episode" in metric_key:
-                    seg_episode = value
 
-                    log_wandb_masks(
-                        experiment_tracker=self.experiment_tracker,
-                        images=seg_episode["image"],
-                        logits=seg_episode["logits"],
-                        labels=seg_episode["label"],
-                        label_idx_to_description=seg_episode[
+                log_dict = {f"{self.phase_name}/{metric_key}": value}
+
+                if "seg_episode" in metric_key:
+                    mask_dict = log_wandb_masks(
+                        images=value["image"],
+                        logits=value["logits"],
+                        labels=value["label"],
+                        label_idx_to_description=value[
                             "label_idx_to_description"
                         ],
-                        global_step=self.global_step,
                         prefix=self.phase_name,
                     )
-                    continue
+                    log_dict.update(mask_dict)
 
                 if "med_episode" in metric_key:
-                    med_episode = value
-
-                    log_wandb_3d_volumes_and_masks(
-                        volumes=med_episode["image"],
-                        logits=med_episode["logits"],
-                        labels=med_episode["label"],
-                        global_step=self.global_step,
+                    volume_dict = log_wandb_3d_volumes_and_masks(
+                        volumes=value["image"],
+                        logits=value["logits"],
+                        labels=value["label"],
                         prefix=self.phase_name,
                     )
-                    continue
+                    log_dict.update(volume_dict)
 
                 if "ae_episode" in metric_key:
-                    # print("logging ae episode")
-                    ae_episode = value
-                    log_wandb_images(
-                        experiment_tracker=self.experiment_tracker,
-                        images=ae_episode["image"],
-                        reconstructions=ae_episode["recon"],
-                        global_step=self.global_step,
+                    image_dict = log_wandb_images(
+                        images=value["image"],
+                        reconstructions=value["recon"],
                         prefix=self.phase_name,
                     )
-                    continue
+                    log_dict.update(image_dict)
 
                 if "video_episode" in metric_key:
-                    visualize_video_with_labels(
+                    video_dict = visualize_video_with_labels(
                         name=self.phase_name,
                         video=value["video"],
                         logits=value["logits"],
                         labels=value["label"],
                     )
+                    log_dict.update(video_dict)
 
-                self.experiment_tracker.log(
-                    {f"{self.phase_name}/{metric_key}": value},
-                    step=self.global_step,
-                )
+                self.experiment_tracker.log(log_dict, step=self.global_step)
 
 
 def collect_metrics(func: Callable) -> Callable:
@@ -176,6 +166,9 @@ def collect_metrics(func: Callable) -> Callable:
         experiment_tracker: Any,
         global_step: int,
     ) -> None:
+        if experiment_tracker is None:
+            experiment_tracker = wandb
+
         detached_metrics_dict = {}
         for metric_key, computed_value in metrics_dict.items():
             if computed_value is not None:
@@ -187,7 +180,7 @@ def collect_metrics(func: Callable) -> Callable:
                 detached_metrics_dict[metric_key] = value
 
         logging_thread = BackgroundLogging(
-            wandb, detached_metrics_dict, phase_name, global_step
+            experiment_tracker, detached_metrics_dict, phase_name, global_step
         )
         logging_thread.start()
 

@@ -166,31 +166,27 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
         self.sub_batch_size = sub_batch_size
 
     def collect_segmentation_episode(self, output_dict, global_step, batch):
-        if "logits" in output_dict:
-            if global_step % 100 == 0:
-                b, s, c = batch["image"].shape[:3]
-                height, width = output_dict["logits"].shape[-2:]
+        b, s, c = batch["image"].shape[:3]
+        height, width = output_dict["logits"].shape[-2:]
 
-                image = F.interpolate(
-                    input=batch["image"].view(-1, *batch["image"].shape[2:]),
-                    size=(height, width),
-                )
-                image = image.reshape(b, s, c, height, width)
-                logits = output_dict["logits"].argmax(dim=1).squeeze(1)
-                logits = logits.reshape(b, s, *logits.shape[1:])
-                label = batch["labels"].squeeze(1)
+        image = F.interpolate(
+            input=batch["image"].view(-1, *batch["image"].shape[2:]),
+            size=(height, width),
+        )
+        image = image.reshape(b, s, c, height, width)
+        logits = output_dict["logits"].argmax(dim=1).squeeze(1)
+        logits = logits.reshape(b, s, *logits.shape[1:])
+        label = batch["labels"].squeeze(1)
 
-                output_dict["med_episode"] = {
-                    "image": image,
-                    "logits": logits,
-                    "label": label,
-                    "label_idx_to_description": {
-                        i: str(i)
-                        for i in range(output_dict["logits"].shape[2])
-                    },
-                }
+        output_dict["med_episode"] = {
+            "image": image,
+            "logits": logits,
+            "label": label,
+            "label_idx_to_description": {
+                i: str(i) for i in range(output_dict["logits"].shape[2])
+            },
+        }
 
-            del output_dict["logits"]
         return output_dict
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
@@ -212,9 +208,14 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
                         )
             output_list.append(output_dict)
         output_dict = integrate_output_list(output_list)
-        output_dict = self.collect_segmentation_episode(
-            output_dict=output_dict, global_step=global_step, batch=batch
-        )
+        if "logits" in output_dict:
+            if global_step % 100 == 0:
+                output_dict = self.collect_segmentation_episode(
+                    output_dict=output_dict,
+                    global_step=global_step,
+                    batch=batch,
+                )
+            del output_dict["logits"]
 
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
