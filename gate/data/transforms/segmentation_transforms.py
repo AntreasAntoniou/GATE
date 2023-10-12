@@ -349,7 +349,9 @@ class BaseDatasetTransforms:
 
         annotation = np.array(annotation)
         annotation = torch.from_numpy(annotation)
-        print(f"Annotation shape: {annotation.shape}")
+        if annotation.shape[2] == 3:
+            annotation = annotation[:, :, 0].unsqueeze(2)
+
         if len(annotation.shape) == 2:
             annotation = annotation.unsqueeze(0)
         elif len(annotation.shape) == 3:

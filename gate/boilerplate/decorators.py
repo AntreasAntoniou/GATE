@@ -91,7 +91,7 @@ class BackgroundLogging(threading.Thread):
                     )
                     log_dict.update(video_dict)
 
-                self.experiment_tracker.log(log_dict, step=global_step)
+                self.experiment_tracker.log(log_dict)
 
 
 def configurable(
