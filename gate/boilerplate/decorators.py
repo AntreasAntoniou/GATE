@@ -3,12 +3,14 @@ import importlib
 import inspect
 import pkgutil
 import threading
+from queue import PriorityQueue
 from time import sleep
 from typing import Any, Callable, Dict, Optional
 
 import torch
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
+from regex import P
 
 import wandb
 from gate.boilerplate.utils import get_logger
@@ -20,6 +22,80 @@ from gate.boilerplate.wandb_utils import (
 )
 
 logger = get_logger(__name__)
+
+
+class BackgroundLogging(threading.Thread):
+    def __init__(self, experiment_tracker: wandb, queue: PriorityQueue):
+        super().__init__()
+        self.experiment_tracker = experiment_tracker  # Experiment tracker
+        self.queue = queue  # Priority queue passed in
+
+    def run(self):
+        while True:
+            if not self.queue.empty():
+                global_step, item = self.queue.get()
+                (
+                    metrics_dict,
+                    phase_name,
+                ) = item
+
+                for metric_key, computed_value in metrics_dict.items():
+                    if computed_value is not None:
+                        value = (
+                            computed_value.detach()
+                            if isinstance(computed_value, torch.Tensor)
+                            else computed_value
+                        )
+
+                        log_dict = {f"{phase_name}/{metric_key}": value}
+
+                        if "seg_episode" in metric_key:
+                            mask_dict = log_wandb_masks(
+                                images=value["image"],
+                                logits=value["logits"],
+                                labels=value["label"],
+                                label_idx_to_description=value[
+                                    "label_idx_to_description"
+                                ],
+                                prefix=phase_name,
+                            )
+                            log_dict.update(mask_dict)
+
+                        if "med_episode" in metric_key:
+                            volume_dict = log_wandb_3d_volumes_and_masks(
+                                volumes=value["image"],
+                                logits=value["logits"],
+                                labels=value["label"],
+                                prefix=phase_name,
+                            )
+                            log_dict.update(volume_dict)
+
+                        if "ae_episode" in metric_key:
+                            image_dict = log_wandb_images(
+                                images=value["image"],
+                                reconstructions=value["recon"],
+                                prefix=phase_name,
+                            )
+                            log_dict.update(image_dict)
+
+                        if "video_episode" in metric_key:
+                            video_dict = visualize_video_with_labels(
+                                name=phase_name,
+                                video=value["video"],
+                                logits=value["logits"],
+                                labels=value["label"],
+                            )
+                            log_dict.update(video_dict)
+
+                        self.experiment_tracker.log(log_dict, step=global_step)
+
+
+# Initialize a global priority queue to hold metrics to be logged
+metrics_queue = PriorityQueue()
+wandb_logging_thread = BackgroundLogging(
+    experiment_tracker=wandb, queue=metrics_queue
+)
+wandb_logging_thread.start()
 
 
 def configurable(
@@ -98,75 +174,6 @@ def register_configurables(
     return config_store
 
 
-class BackgroundLogging(threading.Thread):
-    def __init__(
-        self,
-        experiment_tracker,
-        metrics_dict,
-        phase_name,
-        global_step,
-        sleep_time,
-    ):
-        super().__init__()
-        self.experiment_tracker: wandb = experiment_tracker
-        self.metrics_dict = metrics_dict
-        self.phase_name = phase_name
-        self.global_step = global_step
-        self.sleep_time = sleep_time
-
-    def run(self):
-        sleep(self.sleep_time)
-        for metric_key, computed_value in self.metrics_dict.items():
-            if computed_value is not None:
-                value = (
-                    computed_value.detach()
-                    if isinstance(computed_value, torch.Tensor)
-                    else computed_value
-                )
-
-                log_dict = {f"{self.phase_name}/{metric_key}": value}
-
-                if "seg_episode" in metric_key:
-                    mask_dict = log_wandb_masks(
-                        images=value["image"],
-                        logits=value["logits"],
-                        labels=value["label"],
-                        label_idx_to_description=value[
-                            "label_idx_to_description"
-                        ],
-                        prefix=self.phase_name,
-                    )
-                    log_dict.update(mask_dict)
-
-                if "med_episode" in metric_key:
-                    volume_dict = log_wandb_3d_volumes_and_masks(
-                        volumes=value["image"],
-                        logits=value["logits"],
-                        labels=value["label"],
-                        prefix=self.phase_name,
-                    )
-                    log_dict.update(volume_dict)
-
-                if "ae_episode" in metric_key:
-                    image_dict = log_wandb_images(
-                        images=value["image"],
-                        reconstructions=value["recon"],
-                        prefix=self.phase_name,
-                    )
-                    log_dict.update(image_dict)
-
-                if "video_episode" in metric_key:
-                    video_dict = visualize_video_with_labels(
-                        name=self.phase_name,
-                        video=value["video"],
-                        logits=value["logits"],
-                        labels=value["label"],
-                    )
-                    log_dict.update(video_dict)
-
-                self.experiment_tracker.log(log_dict, step=self.global_step)
-
-
 def collect_metrics(func: Callable) -> Callable:
     def collect_metrics(
         metrics_dict: dict(),
@@ -187,19 +194,7 @@ def collect_metrics(func: Callable) -> Callable:
                 )
                 detached_metrics_dict[metric_key] = value
 
-        if global_step % 100 == 0:
-            sleep_time = 0
-        else:
-            sleep_time = 10
-
-        logging_thread = BackgroundLogging(
-            experiment_tracker,
-            detached_metrics_dict,
-            phase_name,
-            global_step,
-            sleep_time,
-        )
-        logging_thread.start()
+        metrics_queue.put((global_step, (detached_metrics_dict, phase_name)))
 
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):

@@ -1,8 +1,8 @@
 import os
 
 import torch.nn.functional as F
-import wandb
 
+import wandb
 from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 from gate.data.medical.segmentation.medical_decathlon import (
     TASK_LIST,
@@ -70,18 +70,17 @@ def visualize_volume(item):
     )
 
     # Visualize the data
-    log_wandb_3d_volumes_and_masks(
-        F.interpolate(
-            input_volumes.view(-1, input_volumes.shape[-3], 512, 512),
-            size=(256, 256),
-            mode="bicubic",
-        ).view(*input_volumes.shape[:-2] + (256, 256)),
-        predicted_volumes.long(),
-        label_volumes.long(),
+    wandb.log(
+        log_wandb_3d_volumes_and_masks(
+            F.interpolate(
+                input_volumes.view(-1, input_volumes.shape[-3], 512, 512),
+                size=(256, 256),
+                mode="bicubic",
+            ).view(*input_volumes.shape[:-2] + (256, 256)),
+            predicted_volumes.long(),
+            label_volumes.long(),
+        )
     )
-
-    # Finish the run
-    run.finish()
 
 
 def test_build_gate_visualize_dataset():
@@ -101,19 +100,19 @@ def test_build_gate_visualize_dataset():
             print(list(item.keys()))
             assert item["image"] is not None, "Image should not be None"
             assert item["labels"] is not None, "Label should not be None"
-            visualize_volume(item)
+            wandb.log(visualize_volume(item))
             break
 
         for item in gate_dataset["val"]:
             print(list(item.keys()))
             assert item["image"] is not None, "Image should not be None"
             assert item["labels"] is not None, "Label should not be None"
-            visualize_volume(item)
+            wandb.log(visualize_volume(item))
             break
 
         for item in gate_dataset["test"]:
             print(list(item.keys()))
             assert item["image"] is not None, "Image should not be None"
             assert item["labels"] is not None, "Label should not be None"
-            visualize_volume(item)
+            wandb.log(visualize_volume(item))
             break
