@@ -138,13 +138,11 @@ class DatasetTransforms:
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
             antialias=True,
-            antialias=True,
         )(image)
 
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.BICUBIC,
-            antialias=True,
             antialias=True,
         )(annotation)
 
@@ -171,13 +169,11 @@ class DatasetTransforms:
                 (self.input_size[0], self.input_size[1]),
                 interpolation=T.InterpolationMode.BICUBIC,
                 antialias=True,
-                antialias=True,
             )(image_item)
 
             annotation_item = T.Resize(
                 (self.label_size[0], self.label_size[1]),
                 interpolation=T.InterpolationMode.BICUBIC,
-                antialias=True,
                 antialias=True,
             )(annotation_item)
 

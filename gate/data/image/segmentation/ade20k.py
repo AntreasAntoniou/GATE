@@ -13,10 +13,7 @@ from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import ade20_classes as CLASSES
 from gate.data.transforms.segmentation_transforms import (
     BaseDatasetTransforms,
-    DualImageRandomCrop,
-    DualImageRandomFlip,
     KeySelectorTransforms,
-    PhotoMetricDistortion,
 )
 
 
