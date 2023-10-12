@@ -128,9 +128,7 @@ def configurable(
     return wrapper
 
 
-def register_configurables(
-    package_name: str,
-) -> ConfigStore:
+def register_configurables(package_name: str) -> ConfigStore:
     """
     Registers all configurable functions in the specified package to the config store.
 
@@ -143,33 +141,23 @@ def register_configurables(
     package = importlib.import_module(package_name)
     prefix = package.__name__ + "."
 
-    def _process_module(module_name):
+    for _, module_name, _ in pkgutil.walk_packages(package.__path__, prefix):
         module = importlib.import_module(module_name)
+
         for name, obj in inspect.getmembers(module):
+            if not (
+                inspect.isfunction(obj) or inspect.isclass(obj)
+            ):  # Skip if not a function or class
+                continue
             if hasattr(obj, "__configurable__") and obj.__configurable__:
-                if hasattr(obj, "__config_group__") and hasattr(
-                    obj, "__config_name__"
-                ):
-                    group = obj.__config_group__
-                    name = obj.__config_name__
+                group = obj.__config_group__
+                name = obj.__config_name__
 
-                    config_store.store(
-                        group=group,
-                        name=name,
-                        node=obj.__config__(populate_full_signature=True),
-                    )
-                else:
-                    logger.debug(
-                        f"Excluding {name} from config store, as it does not have a group or name."
-                    )
-
-    for importer, module_name, is_pkg in pkgutil.walk_packages(
-        package.__path__, prefix
-    ):
-        if is_pkg:
-            register_configurables(module_name)
-        else:
-            _process_module(module_name)
+                config_store.store(
+                    group=group,
+                    name=name,
+                    node=obj.__config__(populate_full_signature=True),
+                )
 
     return config_store
 

@@ -92,7 +92,7 @@ class TimmModel(nn.Module):
                 img_size=img_size,
                 pretrained=pretrained,
             )
-        logger.info(f"Model {self.model} loaded")
+        # logger.info(f"Model {self.model} loaded")
         if img_size is None:
             img_size = self.model.default_cfg["input_size"][-2:]
 
