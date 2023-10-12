@@ -94,6 +94,9 @@ class GATEModel(nn.Module):
     def meta_data(self, meta_data: dict) -> None:
         self._meta_data = meta_data
 
+        if meta_data is None:
+            return
+
         for key, value in meta_data.items():
             if hasattr(self.model, key):
                 setattr(self.model, key, value)

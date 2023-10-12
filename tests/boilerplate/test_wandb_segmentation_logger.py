@@ -3,7 +3,7 @@ import pytest
 import torch
 
 import wandb
-from gate.boilerplate.utils import log_wandb_masks
+from gate.boilerplate.wandb_utils import log_wandb_masks
 
 wandb.init()
 
