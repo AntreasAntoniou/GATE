@@ -204,6 +204,7 @@ class DiceLoss(nn.Module):
         labels = labels.squeeze(1)
 
         labels_one_hot = torch.zeros_like(logits)
+
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
 
         if self.ignore_index is not None:

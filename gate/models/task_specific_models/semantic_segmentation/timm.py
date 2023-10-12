@@ -96,7 +96,7 @@ def build_model(
 
 @configurable(
     group="model",
-    name="timm-segmentation-transformer",
+    name="timm-md-segmentation-transformer",
     defaults=dict(
         num_classes=HYDRATED_NUM_CLASSES,
         image_size=HYDRATED_IMAGE_SIZE,
@@ -119,6 +119,53 @@ def build_gate_model(
     if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
         num_classes = len(num_classes[task_name])
 
+    model_and_transform = build_model(
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
+        pretrained=pretrained,
+        decoder_num_blocks=decoder_depth,
+        decoder_num_heads=decoder_num_heads,
+        num_classes=num_classes,
+        image_size=image_size,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
+    )
+
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+
+    gate_model = GATEModel(
+        config=model_modality_config_image_classification,
+        model=model_and_transform.model,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
+
+
+@configurable(
+    group="model",
+    name="timm-segmentation-transformer",
+    defaults=dict(
+        num_classes=HYDRATED_NUM_CLASSES,
+        image_size=HYDRATED_IMAGE_SIZE,
+    ),
+)
+def build_gate_model(
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    pretrained: bool = True,
+    decoder_depth: int = 2,
+    decoder_num_heads: int = 8,
+    num_classes: int = 10,
+    image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
+):
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,

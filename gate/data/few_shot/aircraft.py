@@ -83,7 +83,7 @@ def convert_single_to_three_channel_maybe(image):
 
 def preprocess_transforms(sample: Tuple):
     image = convert_single_to_three_channel_maybe(
-        T.Resize(size=(224, 224))(sample[0])
+        T.Resize(size=(224, 224), antialias=True)(sample[0])
     )
     label = sample[1]
     return {"image": image, "label": label}
