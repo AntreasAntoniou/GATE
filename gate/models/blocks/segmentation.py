@@ -529,23 +529,17 @@ class TransformerSegmentationDecoder(nn.Module):
                 kernel_size=1,
                 stride=1,
             )
-            for f in input_list:
-                print(f"build time input_list shape: {f.shape}")
 
             input_list = [
-                self.rescale_conv(
-                    x, output_size=target_image_size * target_image_size
-                ).permute([0, 2, 1])
+                self.rescale_conv(x).permute([0, 2, 1])
                 if x.shape[1] != target_image_size * target_image_size
                 else x.permute(
                     [0, 2, 1]
                 )  # (b, sequence, features) -> (b, features, sequence)
                 for x in input_list
             ]
-            for f in input_list:
-                print(f"build time input_list shape: {f.shape}")
+
             input_list = torch.cat(input_list, dim=1)
-            print(f"build time input_list shape: {input_list.shape}")
 
         if len(input_list.shape) == 4:
             in_channels = input_list.shape[1]
@@ -647,11 +641,7 @@ class TransformerSegmentationDecoder(nn.Module):
 
         elif len(input_list[0].shape) == 3:
             input_list = [
-                self.rescale_conv(
-                    x,
-                    output_size=self.target_image_size
-                    * self.target_image_size,
-                ).permute([0, 2, 1])
+                self.rescale_conv(x).permute([0, 2, 1])
                 if x.shape[1]
                 != self.target_image_size * self.target_image_size
                 else x.permute(
