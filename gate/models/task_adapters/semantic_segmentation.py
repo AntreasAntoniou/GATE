@@ -2,12 +2,10 @@ import math
 import time
 from typing import List, Optional, Union
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import gate.models.blocks.segmentation as segmentation
 from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (
     DiceLoss,
@@ -15,22 +13,16 @@ from gate.metrics.segmentation import (
     IoUMetric,
     WeightedCrossEntropyLoss,
 )
+from gate.models.blocks.segmentation import (
+    ChannelMixerDecoder,
+    TransformerSegmentationDecoder,
+)
 
 logger = get_logger(__name__)
 
 
-def has_exact_square_root(s: int) -> bool:
-    # Get the size of the second dimension (s)
-
-    # Calculate the square root of s
-    root = math.sqrt(s)
-
-    # Check if the square root is an integer
-    return root.is_integer()
-
-
 def optimization_loss(
-    logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.0
+    logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.01
 ):
     """
     📝 Optimization Loss
@@ -62,7 +54,7 @@ def optimization_loss(
 
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = dice_loss + focal_loss
+    loss = focal_loss + dice_loss
     background_loss = background_dice_loss + background_focal_loss
 
     return {
@@ -82,7 +74,7 @@ class SegmentationAdapter(nn.Module):
         self,
         encoder_model: nn.Module,
         num_classes: int = 100,
-        background_loss_weight: float = 0.0,
+        background_loss_weight: float = 0.01,
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
         output_target_image_size: int = 256,
@@ -110,7 +102,7 @@ class SegmentationAdapter(nn.Module):
         # Assuming decoder_layer_mapping and other related classes and functions are defined elsewhere in the code
 
         decoder_layer_mapping = {
-            "transformer": segmentation.TransformerSegmentationDecoder(
+            "transformer": TransformerSegmentationDecoder(
                 num_classes=num_classes,
                 target_image_size=decoder_target_image_size[0],
                 hidden_size=decoder_embed_dim,
@@ -119,7 +111,7 @@ class SegmentationAdapter(nn.Module):
                 decoder_num_blocks=decoder_num_blocks,
                 decoder_num_heads=decoder_num_heads,
             ),
-            "simple": segmentation.ChannelMixerDecoder(
+            "simple": ChannelMixerDecoder(
                 num_classes=num_classes,
                 target_image_size=decoder_target_image_size[0],
                 hidden_size=decoder_embed_dim,
@@ -140,12 +132,14 @@ class SegmentationAdapter(nn.Module):
 
     def compute_across_set_iou(self):
         metrics = self.iou_metric.compute_metrics()
+        self.iou_metric.pretty_print(metrics=metrics)
         self.iou_metric.reset()  # Resetting the metrics after computation
+        metrics = {k: v for k, v in metrics.items() if "per_class" not in k}
         return metrics
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
         features = self.encoder(image)["image"]["per_layer_raw_features"]
-
+        # feature shape is either B, C, H, W or B, (W * H), C
         mask_predictions = self.decoder_head(features)
 
         logits = F.interpolate(
@@ -173,8 +167,11 @@ class SegmentationAdapter(nn.Module):
             background_loss_weight=self.background_loss_weight,  # Assuming optimization_loss is defined elsewhere
         )
 
+        # print("logit shape: ", logits.shape)
+
         if not self.training:
             preds = torch.argmax(logits, dim=1)
+            labels = labels.squeeze()
             self.iou_metric.update(preds, labels)
 
         return loss_and_metrics

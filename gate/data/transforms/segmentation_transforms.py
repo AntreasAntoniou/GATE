@@ -146,9 +146,19 @@ class PhotoMetricDistortion:
         elif isinstance(img, np.ndarray):
             return torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
         elif isinstance(img, Image.Image):
-            return torch.tensor(np.array(img)).permute(2, 0, 1).float() / 255.0
+            img = T.ToTensor()(img)
+
+            if img.shape[0] == 1:
+                transform = T.Compose(
+                    [
+                        T.Lambda(lambda x: x.repeat(3, 1, 1)),
+                    ]
+                )
+                img = transform(img)
+
+            return img
         else:
-            raise TypeError("Unsupported image type")
+            raise TypeError(f"Unsupported image type {type(img)}")
 
     def _apply_brightness(self, img):
         """Apply random brightness adjustment."""
@@ -162,6 +172,7 @@ class PhotoMetricDistortion:
 
     def _convert_to_hsv(self, img):
         """Convert image to HSV."""
+
         return (
             torch.tensor(
                 cv2.cvtColor(

@@ -11,8 +11,11 @@ import torch.nn as nn
 from huggingface_hub import HfApi
 from hydra_zen import instantiate
 from torch.utils.data import DataLoader
+from transformers import logging
 
 from gate.boilerplate.utils import get_logger
+
+logging.disable_progress_bar()
 
 logger = get_logger(__name__)
 hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
@@ -376,27 +379,21 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
     def run(self):
         self.start_time = time.time()
         self.started = True
-        hf_logger = get_logger("huggingface_hub")
-        hf_logger.setLevel(logging.ERROR)
-        for handler in hf_logger.handlers:
-            handler.setLevel(logging.ERROR)
 
-        # retry = 0
+        # Suppress logging
+        transformers_logger = logging.get_logger("transformers")
+        original_level = transformers_logger.level
+        transformers_logger.setLevel(logging.CRITICAL)
 
-        # while not self.done and retry < 3:
-        # try:
-        with SuppressOutput():  # Add this line
-            self.hf_api.upload_folder(
-                repo_id=f"{self.repo_owner}/{self.repo_name}",
-                folder_path=self.checkpoint_path,
-                path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
-                run_as_future=False,
-            )
-        self.done = True
+        self.hf_api.upload_folder(
+            repo_id=f"{self.repo_owner}/{self.repo_name}",
+            folder_path=self.checkpoint_path,
+            path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+            run_as_future=False,
+        )
 
-        # except Exception as e:
-        #     logger.info(e)
-        # retry += 1
+        # Reset logging level to original
+        transformers_logger.setLevel(original_level)
 
 
 class UploadCheckpointsToHuggingFace(Callback):

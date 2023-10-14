@@ -51,7 +51,10 @@ class BackgroundLogging(threading.Thread):
                     else computed_value
                 )
 
-                log_dict = {f"{phase_name}/{metric_key}": value}
+                log_dict = {
+                    f"{phase_name}/{metric_key}": value,
+                    "global_step": global_step,
+                }
 
                 if "seg_episode" in metric_key:
                     mask_dict = log_wandb_masks(

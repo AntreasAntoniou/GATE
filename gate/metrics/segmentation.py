@@ -40,6 +40,7 @@ class IoUMetric:
         self.num_classes = num_classes
         self.ignore_index = ignore_index
         self.class_idx_to_name = class_idx_to_name
+        self.total_updates = 0
 
         self.total_area_intersect = torch.zeros(num_classes)
         self.total_area_union = torch.zeros(num_classes)
@@ -50,6 +51,13 @@ class IoUMetric:
         mask = label != self.ignore_index
         pred = pred[mask].cpu()
         label = label[mask].cpu()
+        # unique_preds = torch.unique(pred)
+        # unique_labels = torch.unique(label)
+
+        # print(f"unique_preds: {unique_preds}, unique_labels: {unique_labels}")
+        # print(
+        #     f"total unique_preds: {len(unique_preds)}, total unique_labels: {len(unique_labels)}"
+        # )
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
@@ -63,13 +71,17 @@ class IoUMetric:
         self.total_area_intersect += area_intersect.float()
         self.total_area_union += area_union.float()
         self.total_area_label += area_label.float()
+        self.total_updates += 1
+        # print(f"total_updates: {self.total_updates}")
 
     def reset(self):
         self.total_area_intersect = torch.zeros(self.num_classes)
         self.total_area_union = torch.zeros(self.num_classes)
         self.total_area_label = torch.zeros(self.num_classes)
+        self.total_updates = 0
 
     def compute_metrics(self):
+        # print(f"compute_metrics for {self.total_updates} updates")
         iou = self.total_area_intersect / (self.total_area_union + 1e-6)
         miou = iou.mean().item() * 100.0
 

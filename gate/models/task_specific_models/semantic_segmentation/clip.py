@@ -122,11 +122,6 @@ def build_gate_model(
         image=[SourceModalityConfig(image=True)]
     )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "text",
-    }
-
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,

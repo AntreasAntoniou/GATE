@@ -37,7 +37,7 @@ def build_model(
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
     ignore_index: int = 0,
-    background_loss_weight: float = 0.1,
+    background_loss_weight: float = 0.01,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -113,7 +113,7 @@ def build_gate_model(
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
     ignore_index: int = 0,
-    background_loss_weight: float = 0.1,
+    background_loss_weight: float = 0.01,
     task_name: str = "task01braintumour",
 ):
     if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
