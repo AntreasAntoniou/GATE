@@ -23,9 +23,11 @@ RUN conda create -n main python=3.10 -y
 SHELL ["/opt/conda/bin/conda", "run", "-n", "main", "/bin/bash", "-c"]
 
 RUN conda install -c conda-forge mamba -y
-RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat -y
+RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances gh micro bat exa -y
 RUN mamba install -c conda-forge git-crypt nvitop -y
 RUN echo y | pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# RUN mamba install -c conda-forge gcc gxx_linux-64 -y
 
 # pip install -U openmim
 # mim install mmengine

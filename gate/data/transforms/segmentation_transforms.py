@@ -177,7 +177,7 @@ class PhotoMetricDistortion:
             torch.tensor(
                 cv2.cvtColor(
                     (img * 255).byte().cpu().numpy().transpose(1, 2, 0),
-                    cv2.COLOR_BGR2HSV,
+                    cv2.COLOR_RGB2HSV,
                 )
             )
             .permute(2, 0, 1)
@@ -185,13 +185,13 @@ class PhotoMetricDistortion:
             / 255.0
         )
 
-    def _convert_to_bgr(self, img):
+    def _convert_to_rgb(self, img):
         """Convert image back to BGR."""
         return (
             torch.tensor(
                 cv2.cvtColor(
                     (img * 255).byte().cpu().numpy().transpose(1, 2, 0),
-                    cv2.COLOR_HSV2BGR,
+                    cv2.COLOR_HSV2RGB,
                 )
             )
             .permute(2, 0, 1)
@@ -235,10 +235,7 @@ class PhotoMetricDistortion:
         if random.randint(0, 1):
             img_hsv = self._apply_hue(img_hsv)
 
-        img = self._convert_to_bgr(img_hsv)
-
-        if random.randint(0, 1):
-            img = self._apply_contrast(img)
+        img = self._convert_to_rgb(img_hsv)
 
         img = img.clamp(0, 1)
         return img
@@ -296,6 +293,65 @@ class KeySelectorTransforms:
         }
 
 
+def is_grayscale(image):
+    """
+    Check if an image is grayscale.
+
+    Parameters:
+        image (PIL.Image.Image | np.ndarray | torch.Tensor): The image to check.
+
+    Returns:
+        bool: True if the image is grayscale, False otherwise.
+
+    Raises:
+        TypeError: If the input image type is not supported.
+    """
+    if isinstance(image, Image.Image):
+        return image.mode == "L" or image.mode == "1" or image.mode == "I;16"
+    elif isinstance(image, np.ndarray):
+        return len(image.shape) == 2 or (
+            len(image.shape) == 3 and image.shape[2] == 1
+        )
+    elif torch.is_tensor(image):
+        return len(image.shape) == 2 or (
+            len(image.shape) == 3 and image.shape[0] == 1
+        )
+    else:
+        raise TypeError(
+            "Input type not supported. Expected one of [PIL.Image, np.ndarray, torch.Tensor]."
+        )
+
+
+def grayscale_to_rgb(image: Union[Image.Image, np.ndarray, torch.Tensor]):
+    """
+    Convert a grayscale image to RGB.
+
+    Parameters:
+        image (PIL.Image.Image | np.ndarray | torch.Tensor): The grayscale image to convert.
+
+    Returns:
+        PIL.Image.Image | np.ndarray | torch.Tensor: The converted RGB image.
+
+    Raises:
+        TypeError: If the input image type is not supported.
+    """
+    if isinstance(image, Image.Image):
+        return image.convert("RGB")
+    elif isinstance(image, np.ndarray):
+        if len(image.shape) == 2:
+            return np.stack([image] * 3, axis=-1)
+        elif len(image.shape) == 3:
+            return np.concatenate([image] * 3, axis=2)
+    elif torch.is_tensor(image):
+        if len(image.shape) == 2:
+            image = image.unsqueeze(0)
+        return image.repeat((3, 1, 1))
+    else:
+        raise TypeError(
+            "Input type not supported. Expected one of [PIL.Image, np.ndarray, torch.Tensor]."
+        )
+
+
 class BaseDatasetTransforms:
     def __init__(
         self,
@@ -347,6 +403,10 @@ class BaseDatasetTransforms:
 
     def __call__(self, inputs: Dict):
         image = inputs["image"]
+
+        if is_grayscale(image):
+            image = grayscale_to_rgb(image)
+
         annotation = inputs["labels"]
 
         if self.crop_size is not None:

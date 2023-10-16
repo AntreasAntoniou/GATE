@@ -269,30 +269,32 @@ class ChannelMixerDecoder(nn.Module):
         self.spatial_mixer = None
         self.closest_square_root = None
         self.num_blocks = len(input_list)
+        target_image_size = self.target_image_size
 
         if len(input_list[0].shape) == 4:
             input_list = [
-                self.upsample(x)
-                if x.shape[-1] != self.target_image_size[0]
-                else x
+                self.upsample(x) if x.shape[-1] != target_image_size[0] else x
                 for x in input_list
             ]
             input_list = torch.cat(input_list, dim=1)
 
         elif len(input_list[0].shape) == 3:
+            self.rescale_conv = nn.Conv1d(
+                input_list[0].shape[1],
+                target_image_size * target_image_size,
+                kernel_size=1,
+                stride=1,
+            )
+
             input_list = [
-                x.permute([0, 2, 1]) for x in input_list
-            ]  # (b, sequence, features) -> (b, features, sequence)
-            input_list = [
-                F.adaptive_avg_pool1d(
-                    x,
-                    output_size=self.target_image_size
-                    * self.target_image_size,
-                )
-                if x.shape[2] != self.target_image_size
-                else x
+                self.rescale_conv(x).permute([0, 2, 1])
+                if x.shape[1] != target_image_size * target_image_size
+                else x.permute(
+                    [0, 2, 1]
+                )  # (b, sequence, features) -> (b, features, sequence)
                 for x in input_list
             ]
+
             input_list = torch.cat(input_list, dim=1)
 
         if len(input_list.shape) == 4:
@@ -401,34 +403,29 @@ class ChannelMixerDecoder(nn.Module):
         if not self.built:
             self.build(input_list)
 
-        input_feature_maps = input_list
-        if len(input_feature_maps[0].shape) == 4:
-            input_feature_maps = [
+        if len(input_list[0].shape) == 4:
+            input_list = [
                 self.upsample(x)
                 if x.shape[-1] != self.target_image_size
                 else x
-                for x in input_feature_maps
+                for x in input_list
             ]
-            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+            input_list = torch.cat(input_list, dim=1)
 
-        elif len(input_feature_maps[0].shape) == 3:
-            input_feature_maps = [
-                x.permute([0, 2, 1]) for x in input_feature_maps
-            ]  # (b, sequence, features) -> (b, features, sequence)
-            input_feature_maps = [
-                F.adaptive_avg_pool1d(
-                    x,
-                    output_size=self.target_image_size
-                    * self.target_image_size,
-                )
-                if x.shape[2] != self.target_image_size
-                else x
-                for x in input_feature_maps
+        elif len(input_list[0].shape) == 3:
+            input_list = [
+                self.rescale_conv(x).permute([0, 2, 1])
+                if x.shape[1]
+                != self.target_image_size * self.target_image_size
+                else x.permute(
+                    [0, 2, 1]
+                )  # (b, sequence, features) -> (b, features, sequence)
+                for x in input_list
             ]
-            input_feature_maps = torch.cat(input_feature_maps, dim=1)
+            input_list = torch.cat(input_list, dim=1)
 
         # print(f"input_feature_maps shape: {input_feature_maps.shape}")
-        processed_features = self.mlp(input_feature_maps)
+        processed_features = self.mlp(input_list)
         # Concatenate the processed features along the channel dimension
         fused_features = processed_features
 

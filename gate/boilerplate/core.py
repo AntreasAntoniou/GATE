@@ -43,7 +43,7 @@ from typing import Union
         evaluate_every_n_steps=250,
         checkpoint_after_validation=True,
         train_iters=HYDRATED_TRAIN_ITERS,
-        limit_val_iters=1000,
+        limit_val_iters=None,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
         hf_cache_dir=HYDRATED_HF_CACHE_DIR,

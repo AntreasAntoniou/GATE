@@ -5,13 +5,14 @@ from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
 
 from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (
+    CrossEntropyLoss,
     DiceLoss,
     FocalLoss,
     IoUMetric,
-    WeightedCrossEntropyLoss,
 )
 from gate.models.blocks.segmentation import (
     ChannelMixerDecoder,
@@ -38,7 +39,7 @@ def optimization_loss(
 
     focal_loss = focal_loss_fn.forward(logits, labels)
 
-    ce_loss_fn = WeightedCrossEntropyLoss(ignore_index=ignore_index)
+    ce_loss_fn = CrossEntropyLoss(ignore_index=ignore_index)
 
     ce_loss = ce_loss_fn.forward(logits, labels)
 
@@ -50,15 +51,15 @@ def optimization_loss(
 
     background_focal_loss = background_focal_loss_fn.forward(logits, labels)
 
-    background_ce_loss_fn = WeightedCrossEntropyLoss(ignore_index=-1)
+    background_ce_loss_fn = CrossEntropyLoss(ignore_index=-1)
 
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = focal_loss + dice_loss
-    background_loss = background_dice_loss + background_focal_loss
+    loss = ce_loss
+    background_loss = background_ce_loss
 
     return {
-        "loss": loss + background_loss_weight * background_loss,
+        "loss": loss + 0.01 * background_loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
@@ -104,12 +105,12 @@ class SegmentationAdapter(nn.Module):
         decoder_layer_mapping = {
             "transformer": TransformerSegmentationDecoder(
                 num_classes=num_classes,
-                target_image_size=decoder_target_image_size[0],
-                hidden_size=decoder_embed_dim,
-                pre_output_dropout_rate=decoder_pre_output_dropout_rate,
-                dropout_rate=decoder_dropout_rate,
-                decoder_num_blocks=decoder_num_blocks,
-                decoder_num_heads=decoder_num_heads,
+                target_image_size=64,
+                hidden_size=256,
+                pre_output_dropout_rate=0.3,
+                dropout_rate=0.2,
+                decoder_num_blocks=4,
+                decoder_num_heads=8,
             ),
             "simple": ChannelMixerDecoder(
                 num_classes=num_classes,
@@ -128,6 +129,13 @@ class SegmentationAdapter(nn.Module):
             ignore_index,
             {i: name for i, name in enumerate(self.class_names)},
         )
+        self.iou_metric_mmseg = mmsegIoUMetric(
+            num_classes=num_classes, ignore_index=ignore_index
+        )
+        self.iou_metric_mmseg.dataset_meta = {
+            "classes": list(range(num_classes))
+        }
+
         self.background_loss_weight = background_loss_weight
 
     def compute_across_set_iou(self):
@@ -135,7 +143,13 @@ class SegmentationAdapter(nn.Module):
         self.iou_metric.pretty_print(metrics=metrics)
         self.iou_metric.reset()  # Resetting the metrics after computation
         metrics = {k: v for k, v in metrics.items() if "per_class" not in k}
-        return metrics
+
+        mmseg_metrics = self.iou_metric_mmseg.compute_metrics(
+            self.iou_metric_mmseg.results
+        )
+        self.iou_metric_mmseg.results.clear()
+        mmseg_metrics = {f"mmseg{k}": v for k, v in mmseg_metrics.items()}
+        return metrics | mmseg_metrics
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
         features = self.encoder(image)["image"]["per_layer_raw_features"]
@@ -173,5 +187,15 @@ class SegmentationAdapter(nn.Module):
             preds = torch.argmax(logits, dim=1)
             labels = labels.squeeze()
             self.iou_metric.update(preds, labels)
+
+            self.iou_metric_mmseg.process(
+                data_batch=None,
+                data_samples=[
+                    {
+                        "pred_sem_seg": {"data": preds},
+                        "gt_sem_seg": {"data": labels},
+                    }
+                ],
+            )
 
         return loss_and_metrics

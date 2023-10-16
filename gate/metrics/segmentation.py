@@ -81,15 +81,41 @@ class IoUMetric:
         self.total_updates = 0
 
     def compute_metrics(self):
-        # print(f"compute_metrics for {self.total_updates} updates")
-        iou = self.total_area_intersect / (self.total_area_union + 1e-6)
-        miou = iou.mean().item() * 100.0
+        # IoU Calculation
+        iou = torch.zeros_like(self.total_area_union)
+        non_zero_union_mask = self.total_area_union > 0
+        iou[non_zero_union_mask] = self.total_area_intersect[
+            non_zero_union_mask
+        ] / (self.total_area_union[non_zero_union_mask] + 1e-6)
+        iou[~non_zero_union_mask] = torch.tensor(float("nan"))
 
-        per_class_iou = iou * 100.0
+        valid_iou = iou[~torch.isnan(iou)]
+        miou = valid_iou.mean().item() * 100.0
 
-        per_class_acc = (
-            self.total_area_intersect / (self.total_area_label + 1e-6)
+        # Per-class Accuracy
+        per_class_acc = torch.zeros_like(self.total_area_label)
+        valid_label_mask = self.total_area_label > 0
+        per_class_acc[valid_label_mask] = (
+            self.total_area_intersect[valid_label_mask]
+            / (self.total_area_label[valid_label_mask] + 1e-6)
         ) * 100.0
+        per_class_acc[~valid_label_mask] = torch.tensor(float("nan"))
+
+        # Overall Accuracy
+        valid_intersect = (
+            self.total_area_intersect[~torch.isnan(per_class_acc)].sum().item()
+        )
+        valid_label = (
+            self.total_area_label[~torch.isnan(per_class_acc)].sum().item()
+        )
+        overall_acc = (valid_intersect / (valid_label + 1e-6)) * 100.0
+
+        # Mean Accuracy
+        valid_acc = per_class_acc[~torch.isnan(per_class_acc)]
+        mean_acc = valid_acc.mean().item()
+
+        # Convert to dictionary format
+        per_class_iou = iou * 100.0
 
         if self.class_idx_to_name:
             per_class_iou = {
@@ -100,18 +126,6 @@ class IoUMetric:
                 self.class_idx_to_name[i]: val.item()
                 for i, val in enumerate(per_class_acc)
             }
-
-        overall_acc = (
-            self.total_area_intersect.sum().item()
-            / (self.total_area_label.sum().item() + 1e-6)
-            * 100.0
-        )
-
-        mean_acc = (
-            per_class_acc.mean().item()
-            if isinstance(per_class_acc, torch.Tensor)
-            else np.mean(list(per_class_acc.values()))
-        )
 
         return {
             "mIoU": miou,
@@ -193,7 +207,7 @@ class FocalLoss(nn.Module):
 
         ce_loss = F.cross_entropy(logits, labels, reduction="none")
         pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        focal_loss = self.alpha * ((1 - pt) ** self.gamma) * ce_loss
 
         if self.reduction == "mean":
             return focal_loss.mean()
@@ -301,7 +315,41 @@ class WeightedCrossEntropyLoss(nn.Module):
         :return: torch.Tensor representing the loss
         """
         labels = labels.squeeze(1)
-        # class_weights = self.compute_class_weights(labels) * 1000
+        class_weights = self.compute_class_weights(labels) * 1000
+
+        # Perform standard cross-entropy loss computation
+        loss = nn.functional.cross_entropy(
+            logits,
+            labels,
+            weight=class_weights,
+            reduction=self.reduction,
+            ignore_index=self.ignore_index,
+        )
+
+        return loss
+
+
+class CrossEntropyLoss(nn.Module):
+    def __init__(
+        self,
+        reduction="mean",
+        ignore_index: int = -1,
+    ):
+        super(CrossEntropyLoss, self).__init__()
+        self.reduction = reduction
+        self.ignore_index = ignore_index
+
+    def forward(
+        self, logits: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Compute the weighted cross-entropy loss.
+
+        :param logits: torch.Tensor with shape (b, num_classes, h, w)
+        :param labels: torch.Tensor with shape (b, h, w)
+        :return: torch.Tensor representing the loss
+        """
+        labels = labels.squeeze(1)
 
         # Perform standard cross-entropy loss computation
         loss = nn.functional.cross_entropy(
