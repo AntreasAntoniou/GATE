@@ -5,7 +5,6 @@ from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
 
 from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (
@@ -18,6 +17,9 @@ from gate.models.blocks.segmentation import (
     ChannelMixerDecoder,
     TransformerSegmentationDecoder,
 )
+
+# from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
+
 
 logger = get_logger(__name__)
 
@@ -55,11 +57,11 @@ def optimization_loss(
 
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = ce_loss
-    background_loss = background_ce_loss
+    loss = ce_loss + focal_loss
+    background_loss = background_ce_loss + background_focal_loss
 
     return {
-        "loss": loss + 0.01 * background_loss,
+        "loss": loss + 0.1 * background_loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,
@@ -106,9 +108,9 @@ class SegmentationAdapter(nn.Module):
             "transformer": TransformerSegmentationDecoder(
                 num_classes=num_classes,
                 target_image_size=64,
-                hidden_size=256,
-                pre_output_dropout_rate=0.3,
-                dropout_rate=0.2,
+                hidden_size=768,
+                pre_output_dropout_rate=0.0,
+                dropout_rate=0.0,
                 decoder_num_blocks=4,
                 decoder_num_heads=8,
             ),
@@ -129,12 +131,6 @@ class SegmentationAdapter(nn.Module):
             ignore_index,
             {i: name for i, name in enumerate(self.class_names)},
         )
-        self.iou_metric_mmseg = mmsegIoUMetric(
-            num_classes=num_classes, ignore_index=ignore_index
-        )
-        self.iou_metric_mmseg.dataset_meta = {
-            "classes": list(range(num_classes))
-        }
 
         self.background_loss_weight = background_loss_weight
 
@@ -142,14 +138,7 @@ class SegmentationAdapter(nn.Module):
         metrics = self.iou_metric.compute_metrics()
         self.iou_metric.pretty_print(metrics=metrics)
         self.iou_metric.reset()  # Resetting the metrics after computation
-        metrics = {k: v for k, v in metrics.items() if "per_class" not in k}
-
-        mmseg_metrics = self.iou_metric_mmseg.compute_metrics(
-            self.iou_metric_mmseg.results
-        )
-        self.iou_metric_mmseg.results.clear()
-        mmseg_metrics = {f"mmseg{k}": v for k, v in mmseg_metrics.items()}
-        return metrics | mmseg_metrics
+        return {k: v for k, v in metrics.items() if "per_class" not in k}
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
         features = self.encoder(image)["image"]["per_layer_raw_features"]
@@ -181,21 +170,9 @@ class SegmentationAdapter(nn.Module):
             background_loss_weight=self.background_loss_weight,  # Assuming optimization_loss is defined elsewhere
         )
 
-        # print("logit shape: ", logits.shape)
-
         if not self.training:
             preds = torch.argmax(logits, dim=1)
             labels = labels.squeeze()
             self.iou_metric.update(preds, labels)
-
-            self.iou_metric_mmseg.process(
-                data_batch=None,
-                data_samples=[
-                    {
-                        "pred_sem_seg": {"data": preds},
-                        "gt_sem_seg": {"data": labels},
-                    }
-                ],
-            )
 
         return loss_and_metrics

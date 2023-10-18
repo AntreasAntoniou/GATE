@@ -66,7 +66,7 @@ def build_gate_dataset(
         target_size=target_image_size,
         crop_size=image_size,
         flip_probability=0.5,
-        use_photo_metric_distortion=False,
+        use_photo_metric_distortion=True,
     )
 
     eval_transforms = BaseDatasetTransforms(
