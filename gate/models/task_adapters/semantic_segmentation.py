@@ -1,13 +1,13 @@
-from collections import OrderedDict
 import math
-from functools import partial
 import time
+from collections import OrderedDict
+from functools import partial
 from typing import Dict, List, Optional
-from datasets.table import pa
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from datasets.table import pa
 
 from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (

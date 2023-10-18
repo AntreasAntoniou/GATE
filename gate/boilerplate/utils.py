@@ -14,6 +14,7 @@ import numpy as np
 import orjson as json
 import torch
 import torch.nn.functional as F
+import wandb
 import yaml
 from matplotlib.pyplot import step
 from omegaconf import DictConfig, OmegaConf
@@ -24,7 +25,6 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
-import wandb
 from gate.config.variables import HF_OFFLINE_MODE
 
 int_or_str = Union[int, str]
