@@ -1,8 +1,4 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
-
-import torch
-import torch.nn as nn
+from typing import Any, Dict, Union
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
@@ -77,7 +73,7 @@ def build_model(
     name="clip-classification",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-def build_gate_clip_model(
+def build_gate_model(
     model_name: str = CLIPModelPaths.openai_b_16,
     modality: str = "image",
     pretrained: bool = True,
@@ -100,15 +96,9 @@ def build_gate_clip_model(
             text=[SourceModalityConfig(text=True)]
         )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "image",
-    }
-
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

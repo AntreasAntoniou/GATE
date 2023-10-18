@@ -1,16 +1,11 @@
-import collections
 import json
-import time
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
 
-import numpy as np
-import PIL
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
-from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(name=__name__)
@@ -118,7 +113,6 @@ def dataclass_collate(batch):
 
 def pad_and_stack_tensors(tensor_list):
     tensor_list = list(tensor_list)
-    # print(f"total tensor_list: {len(tensor_list)}")
     for idx, tensor in enumerate(tensor_list):
         if len(tensor.shape) == 2 and tensor.shape[0] == 1:
             tensor = tensor.squeeze(0)
@@ -147,7 +141,7 @@ def pad_and_stack_tensors(tensor_list):
             )  # use the last value (eos)
             tensor = torch.cat([tensor, padding], dim=0)
         padded_list.append(tensor)
-    # print(f"padded_list: {[tensor.shape for tensor in padded_list]}")
+
     if not is_ireggular_shape:
         padded_list = torch.stack(padded_list)
     else:
@@ -161,9 +155,7 @@ def collate_fn_with_token_pad(data):
     def process_value(value):
         if isinstance(value[0], torch.Tensor):
             if value[0].dim() == 0 and value[-1].dim() == 0:
-                # print(value)
                 return torch.stack(value)
-            # print(f"tensor: {value}")
             return (
                 pad_and_stack_tensors(value)
                 if value[0].dtype == torch.long
@@ -199,11 +191,25 @@ class GATEDataset(Dataset):
         dataset: Any,
         infinite_sampling: bool = False,
         transforms: Optional[Any] = None,
+        meta_data: Optional[Any] = None,
     ):
         super().__init__()
         self.dataset = dataset
         self.infinite_sampling = infinite_sampling
         self.transforms = transforms
+        self._meta_data = meta_data
+
+    @property
+    def meta_data(self) -> Optional[dict]:
+        return self._meta_data
+
+    @meta_data.setter
+    def meta_data(self, meta_data: dict) -> None:
+        self._meta_data = meta_data
+        if meta_data is not None:
+            for key, value in meta_data.items():
+                if hasattr(self.model, key):
+                    setattr(self.model, key, value)
 
     def __len__(self) -> int:
         if self.infinite_sampling:

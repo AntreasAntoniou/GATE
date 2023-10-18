@@ -1,5 +1,4 @@
 import os
-import pathlib
 from typing import Any, Callable, Optional
 
 from accelerate import Accelerator
@@ -8,18 +7,14 @@ from accelerate import Accelerator
 os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
-import signal
-import sys
-import time
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
-from torch.utils.data import Subset
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -53,7 +48,6 @@ logger = get_logger(name=__name__)
 
 accelerator = Accelerator()
 
-import torch
 from rich import print
 from rich.console import Console
 from rich.style import Style
@@ -82,19 +76,6 @@ def pretty_print_parameters(model: nn.Module):
 
     console.print(table)
     return table
-
-
-# # function to handle the alarm signal
-# def handle_alarm(signum, frame):
-#     print("Error: The application took longer than expected.")
-#     sys.exit(1)  # exit with error status
-
-
-# # set the signal handler
-# signal.signal(signal.SIGALRM, handle_alarm)
-
-# # set an alarm for 200 minutes
-# signal.alarm(60 * 200)
 
 
 @hydra.main(config_path=None, config_name="config", version_base=None)
@@ -149,6 +130,8 @@ def run(cfg: Any) -> None:
     train_dataset, val_dataset, test_dataset = get_datasets(
         dataset, global_step
     )
+
+    model.meta_data = val_dataset.meta_data
 
     train_dataloader = instantiate_dataloader(
         cfg, train_dataset, cfg.train_batch_size, shuffle=True

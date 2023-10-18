@@ -2,7 +2,6 @@ import copy
 import pathlib
 import time
 from pathlib import Path
-from time import sleep
 from typing import List, Optional, Union
 
 import torch
@@ -10,7 +9,6 @@ import torch.nn as nn
 from accelerate import Accelerator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoModel
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
@@ -42,10 +40,10 @@ from typing import Union
         experiment_name=HYDRATED_EXPERIMENT_NAME,
         root_dir=HYDRATED_CURRENT_EXPERIMENT_DIR,
         resume=RESUME,
-        evaluate_every_n_steps=1000,
+        evaluate_every_n_steps=250,
         checkpoint_after_validation=True,
         train_iters=HYDRATED_TRAIN_ITERS,
-        limit_val_iters=1000,
+        limit_val_iters=None,
         dummy_batch_mode=DUMMY_BATCH_MODE,
         print_model_parameters=False,
         hf_cache_dir=HYDRATED_HF_CACHE_DIR,
@@ -279,10 +277,10 @@ class Learner(nn.Module):
 
         for thread in self.background_threads:
             if not thread.done:
-                if not thread.is_alive():
+                if not thread.is_alive() and not thread.started:
                     print(f"Starting thread {thread}")
                     thread.start()
-                    break
+
                 else:
                     # Check if the thread has been running for too long
                     elapsed_time = time.time() - thread.start_time
@@ -651,6 +649,7 @@ class Learner(nn.Module):
                 hf_repo_path=self.hf_repo_path,
                 hf_cache_dir=self.hf_cache_dir,
                 model_name=f"ckpt_{global_step}",
+                local_checkpoint_store_dir=self.checkpoints_dir,
             )
             if download_dict["validation_passed"] is True:
                 download_dict_list.append(download_dict)

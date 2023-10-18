@@ -1,21 +1,13 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
-
-import torch
-import torch.nn as nn
+from typing import Any, Dict, Union
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
     TargetModalityConfig,
-)
-from gate.models.task_adapters.duo_modal_zero_shot_classification import (
-    DuoModalZeroShotModel,
 )
 from gate.models.task_adapters.visual_relational_reasoning_classification import (
     DuoModalFusionModel,
@@ -135,7 +127,6 @@ def build_gate_model(
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(
@@ -229,7 +220,6 @@ def build_gate_model_multi_task(
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

@@ -84,7 +84,7 @@ def get_prototypes(embeddings, labels, num_classes):
     return prototypes
 
 
-def prototypical_loss(logits, labels) -> dict[str, torch.Tensor]:
+def prototypical_loss(logits, labels) -> torch.Tensor:
     """Compute the loss (i.e. negative log-likelihood) for the prototypical
     network, on the test/query points.
 
@@ -108,36 +108,51 @@ def prototypical_loss(logits, labels) -> dict[str, torch.Tensor]:
         The negative log-likelihood on the query points.
     """
 
-    return F.cross_entropy(logits, labels)
+    # Compute log probabilities using softmax
+    # We negate the distances as we are dealing with similarity
+    log_prob = F.log_softmax(-logits, dim=2)
+
+    # Gather log probabilities using labels; shape will be (batch_size, num_examples)
+    relevant_log_prob = torch.gather(
+        log_prob, 2, labels.unsqueeze(2)
+    ).squeeze()
+
+    # Compute negative log-likelihood loss
+    loss = -relevant_log_prob.mean()
+
+    return loss
 
 
-def prototypical_logits(prototypes, embeddings) -> dict[str, torch.Tensor]:
-    """Compute the loss (i.e. negative log-likelihood) for the prototypical
+def prototypical_logits(prototypes, embeddings):
+    """
+    Compute the loss (i.e. negative log-likelihood) for the prototypical
     network, on the test/query points.
 
     Parameters
     ----------
-    prototypes : `torch.FloatTensor` instance
+    prototypes : torch.FloatTensor
         A tensor containing the prototypes for each class. This tensor has shape
-        `(batch_size, num_classes, embedding_size)`.
+        (batch_size, num_classes, embedding_size).
 
-    embeddings : `torch.FloatTensor` instance
+    embeddings : torch.FloatTensor
         A tensor containing the embeddings of the query points. This tensor has
-        shape `(batch_size, num_examples, embedding_size)`.
+        shape (batch_size, num_examples, embedding_size).
 
-    labels : `torch.LongTensor` instance
+    labels : torch.LongTensor
         A tensor containing the labels of the query points. This tensor has
-        shape `(batch_size, num_examples)`.
+        shape (batch_size, num_examples).
 
     Returns
     -------
-    loss : `torch.FloatTensor` instance
+    loss : torch.FloatTensor
         The negative log-likelihood on the query points.
     """
-    squared_distances = torch.sum(
-        (prototypes.unsqueeze(2) - embeddings.unsqueeze(1)) ** 2, dim=-1
-    )
-    return -squared_distances
+
+    # Compute pairwise squared Euclidean distances
+    # The resulting shape will be (batch_size, num_examples, num_classes)
+    pairwise_distances = torch.cdist(embeddings, prototypes, p=2) ** 2
+
+    return pairwise_distances
 
 
 def get_accuracy(logits, labels):
@@ -160,10 +175,8 @@ def get_accuracy(logits, labels):
     accuracy : `torch.FloatTensor` instance
         Mean accuracy on the query points.
     """
-    # print(f"Logits shape is {logits.shape}, labels shape is {labels.shape}")
     _, predictions = torch.min(-logits, dim=-1)
     accuracy = torch.mean(predictions.eq(labels).float())
-    # print(f"Accuracy is {accuracy}, predictions are {predictions}")
     return accuracy
 
 

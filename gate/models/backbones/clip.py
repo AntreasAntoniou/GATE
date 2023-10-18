@@ -1,23 +1,14 @@
 from collections import defaultdict
-from typing import List, Optional
-from urllib.request import urlopen
+from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
-from PIL import Image
 from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import (
-    CLIPOutput,
-    CLIPVisionEmbeddings,
-)
+from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.utils import get_logger
-from gate.models.backbones import (
-    Modality,
-    apply_preprocessing_transforms,
-    image_dim_reshape,
-)
+from gate.models.backbones import Modality, apply_preprocessing_transforms
 from gate.models.core import reinit
 
 logger = get_logger(__name__)
@@ -27,7 +18,6 @@ def forward_dict(self, x):
     output = self.legacy_forward(
         x, return_dict=False, output_hidden_states=True
     )
-    # print(f"len(output): {len(output)}")
     (last_hidden_state, pooled_output, encoder_outputs) = output
     encoder_outputs = [f for f in encoder_outputs]
 
@@ -36,6 +26,26 @@ def forward_dict(self, x):
         "raw_features": last_hidden_state,
         "per_layer_raw_features": encoder_outputs,
     }
+
+
+class TextProcessor:
+    def __init__(self, preprocessor):
+        self.preprocessor = preprocessor
+
+    def text_transforms(self, x: Union[List[str], List[List[str]]]):
+        if isinstance(x[0], list):
+            x = [item for sublist in x for item in sublist]
+        return self.preprocessor(
+            text=x, return_tensors="pt", padding=True, truncation=True
+        ).input_ids.squeeze(0)
+
+    def apply_transform(self, text: Union[List[str], List[List[str]]]):
+        if not all(
+            isinstance(i, list) for i in text
+        ):  # if text is list of strings
+            text = [text]
+        transformed_text = self.text_transforms(text)
+        return transformed_text
 
 
 class CLIPModelPaths:
@@ -54,8 +64,8 @@ class CLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
-        self.tokenizer = self.preprocessor.tokenizer
         self.clip = CLIPModel.from_pretrained(model_name)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         if not pretrained:
             self.clip.init_weights()
@@ -101,9 +111,10 @@ class CLIPAdapter(nn.Module):
         self,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
+        video: Optional[torch.Tensor] = None,
         **kwargs,
     ):
-        if image is None and text is None:
+        if image is None and text is None and video is None:
             raise ValueError(
                 f"Must provide at least one input modality"
                 f"to {self.__class__.__name__}"
@@ -126,6 +137,22 @@ class CLIPAdapter(nn.Module):
                 output_dict["image"]["features"]
             )
 
+        if video is not None:
+            if len(video.shape) == 5:
+                b, s, c, h, w = video.shape
+                output_dict["video"] = self.vision_model.forward(
+                    video.view(b * s, c, h, w)
+                )
+                for k, v in output_dict["video"].items():
+                    if v is not None:
+                        output_dict["video"][k] = v.view(b, s, *v.shape[1:])
+            else:
+                output_dict["video"] = self.vision_model.forward(video)
+
+            output_dict["video"]["projection_output"] = self.visual_projection(
+                output_dict["video"]["features"]
+            )
+
         if text is not None:
             output_dict["text"] = self.text_model(x=text)
             output_dict["text"]["projection_output"] = self.text_projection(
@@ -144,9 +171,7 @@ class CLIPAdapter(nn.Module):
             ).pixel_values.squeeze(0)
 
         def text_transforms(x):
-            return self.preprocessor(
-                text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0)
+            return self.text_transforms.apply_transform(x)
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):
@@ -168,7 +193,14 @@ class CLIPAdapter(nn.Module):
                 x=x, transforms=text_transforms, modality=Modality.text
             )
 
+        def video_transforms_process_multi_type(x):
+            return torch.stack(
+                [image_transforms_process_multi_type(item) for item in x],
+                dim=0,
+            )
+
         return {
             "image": lambda x: image_transforms_process_multi_type(x),
             "text": lambda x: text_transforms_process_multi_type(x),
+            "video": lambda x: video_transforms_process_multi_type(x),
         }

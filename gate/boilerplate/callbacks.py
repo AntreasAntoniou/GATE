@@ -12,14 +12,17 @@ from huggingface_hub import HfApi
 from hydra_zen import instantiate
 from numpy import False_
 from torch.utils.data import DataLoader
+from transformers import logging
 
-from .utils import get_logger
+from gate.boilerplate.utils import get_logger
+
+logging.disable_progress_bar()
 
 logger = get_logger(__name__)
 hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
 
 import contextlib
-import os
+import time
 
 
 @contextlib.contextmanager
@@ -354,9 +357,6 @@ class CallbackHandler(Callback):
             )
 
 
-import time
-
-
 class UploadCheckpointToHuggingFaceBackground(threading.Thread):
     def __init__(
         self,
@@ -375,30 +375,26 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         self.should_stop = False  # Flag to indicate the thread should stop
         self.timeout = timeout  # Timeout in seconds
         self.start_time = None
+        self.started = False
 
     def run(self):
         self.start_time = time.time()
-        hf_logger = get_logger("huggingface_hub")
-        hf_logger.setLevel(logging.ERROR)
-        for handler in hf_logger.handlers:
-            handler.setLevel(logging.ERROR)
+        self.started = True
 
-        retry = 0
+        # Suppress logging
+        transformers_logger = logging.get_logger("transformers")
+        original_level = transformers_logger.level
+        transformers_logger.setLevel(logging.CRITICAL)
 
-        while not self.done and retry < 3:
-            try:
-                with SuppressOutput():  # Add this line
-                    self.hf_api.upload_folder(
-                        repo_id=f"{self.repo_owner}/{self.repo_name}",
-                        folder_path=self.checkpoint_path,
-                        path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
-                        run_as_future=False,
-                    )
-                self.done = True
+        self.hf_api.upload_folder(
+            repo_id=f"{self.repo_owner}/{self.repo_name}",
+            folder_path=self.checkpoint_path,
+            path_in_repo=f"checkpoints/{self.checkpoint_path.name}",
+            run_as_future=False,
+        )
 
-            except Exception as e:
-                logger.info(e)
-            retry += 1
+        # Reset logging level to original
+        transformers_logger.setLevel(original_level)
 
 
 class UploadCheckpointsToHuggingFace(Callback):

@@ -63,12 +63,10 @@ def get_class_to_idx_dict(
     dataset: Iterator,
 ):
     class_to_idx_dict = defaultdict(list)
-    print("Building class to idx dict")
     for sample_idx, sample in tqdm(enumerate(dataset)):
         key = sample["label"]
         class_to_idx_dict[key].append(int(sample_idx))
 
-    print("Sorting class to idx dict")
     temp_class_to_idx_dict = {}
     for key in tqdm(sorted(class_to_idx_dict.keys())):
         temp_class_to_idx_dict[key] = class_to_idx_dict[key]

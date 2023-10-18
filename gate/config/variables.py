@@ -2,8 +2,6 @@ import multiprocessing as mp
 import os
 from typing import Any
 
-from hydra_zen import hydra_list
-
 
 def get_env_var(key: str, default: Any) -> Any:
     return os.environ.get(key, default)
@@ -36,6 +34,8 @@ RESUME = get_env_var("RESUME", True)
 LOGGER_LEVEL = get_env_var("LOGGER_LEVEL", "INFO")
 DUMMY_BATCH_MODE = get_env_var("DUMMY_BATCH_MODE", False)
 GPU_MEMORY = 24  # in GB
+HF_OFFLINE_MODE = get_env_var("HF_OFFLINE_MODE", False)
+WANDB_OFFLINE_MODE = get_env_var("WANDB_OFFLINE_MODE", False)
 
 ## Define yaml variable access codes here
 HYDRATED_EXPERIMENT_NAME = "${exp_name}"
@@ -43,6 +43,7 @@ HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
 HYDRATED_LABEL_IDX_TO_CLASS_NAME = "${dataset.label_idx_to_class_name}"
 HYDRATED_NUM_CLASSES = "${dataset.num_classes}"
+HYDRATED_TASK_NAME = "${dataset.task_name}"
 HYDRATED_IMAGE_SIZE = "${dataset.image_size}"
 HYDRATED_TRAINER_CONFIG = "${trainer}"
 HYDRATED_EVALUATOR_CONFIG = "${evaluator}"

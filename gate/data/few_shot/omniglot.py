@@ -4,17 +4,14 @@ from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
 import datasets
-import torch
 from torchvision import transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.few_shot import bytes_to_string
 from gate.data.few_shot.core import FewShotClassificationMetaDataset
 from gate.data.few_shot.utils import FewShotSuperSplitSetOptions
-from gate.data.transforms.tiny_image_transforms import pad_image
 
 logger = get_logger(
     __name__,
@@ -53,7 +50,7 @@ class OmniglotFewShotClassificationDataset(FewShotClassificationMetaDataset):
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
             dataset_dict=datasets.load_dataset(
-                path="Antreas/omniglot",
+                path="GATE-engine/omniglot",
                 cache_dir=dataset_root,
                 num_proc=mp.cpu_count(),
             ),
@@ -124,21 +121,20 @@ omniglot_transforms = T.Compose([lambda x: 1.0 - x, T.ToPILImage()])
 
 
 def key_mapper(input_tuple):
-    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
+    image = input_tuple[0]["image"]
+    labels = input_tuple[1]["image"]
 
-    input_dict["image"]["image"]["support_set"] = [
-        omniglot_transforms(item)
-        for item in input_dict["image"]["image"]["support_set"]
+    image["support_set"] = [
+        omniglot_transforms(item) for item in image["support_set"]
     ]
 
-    input_dict["image"]["image"]["query_set"] = [
-        omniglot_transforms(item)
-        for item in input_dict["image"]["image"]["query_set"]
+    image["query_set"] = [
+        omniglot_transforms(item) for item in image["query_set"]
     ]
 
     return {
-        "image": input_dict["image"],
-        "labels": input_dict["labels"],
+        "image": image,
+        "labels": labels,
     }
 
 
@@ -148,7 +144,7 @@ def key_mapper(input_tuple):
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
-    data_dir: Optional[str] = None,
+    data_dir: str,
     transforms: Optional[Any] = None,
 ) -> dict:
     train_set = GATEDataset(

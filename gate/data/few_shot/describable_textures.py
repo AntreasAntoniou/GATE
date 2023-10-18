@@ -6,15 +6,16 @@ from typing import Any, Optional, Tuple, Union
 import datasets
 import PIL
 import torch
-from rich import print
 from torchvision import transforms as T
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.few_shot import bytes_to_string
-from gate.data.few_shot.core import FewShotClassificationMetaDataset
+from gate.data.few_shot.core import (
+    FewShotClassificationMetaDataset,
+    key_mapper,
+)
 
 logger = get_logger(
     __name__,
@@ -48,7 +49,7 @@ class DescribableTexturesFewShotClassificationDataset(
             dataset_name=DATASET_NAME,
             dataset_root=dataset_root,
             dataset_dict=datasets.load_dataset(
-                path="Antreas/describable_textures",
+                path="GATE-engine/describable_textures",
                 cache_dir=dataset_root,
                 num_proc=mp.cpu_count(),
             ),
@@ -84,7 +85,7 @@ def convert_single_to_three_channel_maybe(image):
 
 def preprocess_transforms(sample: Tuple):
     image = convert_single_to_three_channel_maybe(
-        T.Resize(size=(224, 224))(sample[0])
+        T.Resize(size=(224, 224), antialias=True)(sample[0])
     )
     label = sample[1]
     return {"image": image, "label": label}
@@ -129,32 +130,13 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     return data_set
 
 
-def key_mapper(input_tuple):
-    input_dict = {"image": input_tuple[0], "labels": input_tuple[1]}
-
-    input_dict["image"]["image"]["support_set"] = [
-        T.ToPILImage()(item)
-        for item in input_dict["image"]["image"]["support_set"]
-    ]
-
-    input_dict["image"]["image"]["query_set"] = [
-        T.ToPILImage()(item)
-        for item in input_dict["image"]["image"]["query_set"]
-    ]
-
-    return {
-        "image": input_dict["image"],
-        "labels": input_dict["labels"],
-    }
-
-
 @configurable(
     group="dataset",
     name="dtextures-fs-classification",
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
-    data_dir: Optional[str] = None,
+    data_dir: str,
     transforms: Optional[Any] = None,
 ) -> dict:
     train_set = GATEDataset(

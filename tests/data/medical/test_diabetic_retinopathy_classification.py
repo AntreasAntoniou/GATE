@@ -1,8 +1,6 @@
 # test_food101.py
 import os
 
-import pytest
-
 from gate.data.medical.classification.diabetic_retinopathy import (
     build_dataset,
     build_gate_dataset,
@@ -27,5 +25,5 @@ def test_build_gate_dataset():
     for item in gate_dataset["train"]:
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
-        assert item["label"] is not None, "Label should not be None"
+        assert item["labels"] is not None, "Label should not be None"
         break

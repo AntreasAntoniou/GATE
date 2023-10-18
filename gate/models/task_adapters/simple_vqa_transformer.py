@@ -4,14 +4,7 @@ from typing import Dict, Optional
 # Third-party imports
 import torch
 import torch.nn as nn
-from transformers import (
-    AutoTokenizer,
-    BartForQuestionAnswering,
-    BartTokenizer,
-    BartTokenizerFast,
-    GPT2LMHeadModel,
-    GPT2Tokenizer,
-)
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 from gate.models.task_adapters import BaseModule
 
@@ -92,7 +85,6 @@ class SimpleVQATransformer(BaseModule):
         num_added_tokens = self.text_decoder_tokenizer.add_tokens(
             new_tokens, special_tokens=True
         )
-        # print(f"Added {num_added_tokens} tokens")
 
         pad_token = self.text_decoder_tokenizer.encode("<pad>")[0]
 
@@ -101,8 +93,6 @@ class SimpleVQATransformer(BaseModule):
             "pad_token_id",
             pad_token,
         )
-
-        # print(self.text_decoder_tokenizer.additional_special_tokens_ids)
 
         self.text_decoder.resize_token_embeddings(
             len(self.text_decoder_tokenizer)
@@ -127,7 +117,6 @@ class SimpleVQATransformer(BaseModule):
         question_decoder_tokens[
             question_decoder_tokens == -1
         ] = self.text_decoder_tokenizer.pad_token_id
-        # print(f"pad_token_id: {self.text_decoder_tokenizer.pad_token_id}")
         if answer_decoder_tokens is not None:
             ###########################################################
             answer_decoder_tokens_attention_mask = torch.ones(
@@ -246,16 +235,6 @@ class SimpleVQATransformer(BaseModule):
             # torch.set_printoptions(
             #     edgeitems=1000
             # )  # Adjust the number as needed
-
-            # print(
-            #     f"question_answer_tokens: {question_answer_tokens['input_ids'][0]}"
-            # )
-
-            # print(
-            #     f"input: {input_dict['input_ids']}, input_shape: {input_dict['input_ids'].shape},\n"
-            #     f"attention_mask: {input_dict['attention_mask']}, attention_mask_shape: {input_dict['attention_mask'].shape},\n"
-            #     f"label: {label_dict['input_ids']}, label_shape: {label_dict['input_ids'].shape}"
-            # )
 
             # Return the output of the text decoder, using combined embeddings as encoder hidden states
             # and question tokens as labels

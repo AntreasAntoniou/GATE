@@ -1,12 +1,10 @@
 import multiprocessing as mp
 import pathlib
 from collections import defaultdict
-from re import split
-from typing import Any, Counter, Dict, List, Optional
+from typing import Any, Counter, Dict, Optional
 
 import datasets
 import numpy as np
-import pandas as pd
 import PIL.Image as Image
 import torch
 import torchvision.transforms as T
@@ -19,20 +17,14 @@ from gate.boilerplate.utils import get_logger
 from gate.data.few_shot.utils import (
     FewShotSuperSplitSetOptions,
     get_class_to_idx_dict,
-    get_class_to_image_idx_and_bbox,
 )
 
 logger = get_logger(
     __name__,
 )
 
-import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-from datasets import load_dataset
 from torch.utils.data import Dataset
 
 
@@ -117,8 +109,6 @@ def _get_start_end_indices(num_classes, split_percentage, split_name):
         end_idx = start_idx + int(num_classes * test_percentage)
     else:
         raise ValueError(f"Unknown split name: {split_name}")
-
-    # print(f"start_idx: {start_idx}, end_idx: {end_idx}, for {split_name}")
 
     return start_idx, end_idx
 
@@ -346,9 +336,7 @@ class FewShotClassificationMetaDataset(Dataset):
                 transforms=self.preprocess_transform,
             )
 
-            print("Converting to hf dataset...")
             hf_dataset = datasets.Dataset.from_dict(dataset_dict)
-            print("Saving hf dataset...")
             hf_dataset.save_to_disk(dataset_path, num_proc=mp.cpu_count())
         else:
             hf_dataset = datasets.load_from_disk(dataset_path)
@@ -815,3 +803,19 @@ class FewShotClassificationMetaDataset(Dataset):
         )
 
         return input_dict, label_dict
+
+
+def key_mapper(input_tuple):
+    image = input_tuple[0]["image"]
+    labels = input_tuple[1]["image"]
+
+    image["support_set"] = [
+        T.ToPILImage()(item) for item in image["support_set"]
+    ]
+
+    image["query_set"] = [T.ToPILImage()(item) for item in image["query_set"]]
+
+    return {
+        "image": image,
+        "labels": labels,
+    }

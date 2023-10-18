@@ -1,16 +1,28 @@
 # cityscapes.py
 import multiprocessing as mp
-from typing import Optional
+from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
 import torch
+import torchvision.transforms as T
 from datasets import load_dataset
 
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import DATASET_DIR
+from gate.data.core import GATEDataset
+from gate.data.image.segmentation.classes import (
+    nyu_depth_v2_classes as CLASSES,
+)
+from gate.data.transforms.segmentation_transforms import (
+    BaseDatasetTransforms,
+    DualImageRandomCrop,
+    KeySelectorTransforms,
+)
 
-def build_nyu_depth_v2_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
-    Build a Food-101 dataset using the Hugging Face datasets library.
+    Build a NYU Depth V2 dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -20,9 +32,6 @@ def build_nyu_depth_v2_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    # Create a generator with the specified seed
-    rng = torch.Generator().manual_seed(42)
-
     train_val_data = load_dataset(
         path="sayakpaul/nyu_depth_v2",
         split="train",
@@ -46,46 +55,56 @@ def build_nyu_depth_v2_dataset(
     return dataset_dict[set_name]
 
 
-# from datasets import load_dataset
-# import numpy as np
-# import matplotlib.pyplot as plt
+@configurable(
+    group="dataset", name="nyu_depth_v2", defaults=dict(data_dir=DATASET_DIR)
+)
+def build_gate_dataset(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes=len(CLASSES),
+    image_size=512,
+    target_image_size=256,
+) -> dict:
+    input_transforms = KeySelectorTransforms(
+        initial_size=1024, image_label="image", label_label="depth_map"
+    )
 
+    train_transforms = BaseDatasetTransforms(
+        input_size=image_size,
+        target_size=target_image_size,
+        crop_size=512,
+        flip_probability=0.5,
+        use_photo_metric_distortion=True,
+    )
 
-# cmap = plt.cm.viridis
+    eval_transforms = BaseDatasetTransforms(
+        input_size=image_size,
+        target_size=target_image_size,
+        crop_size=None,
+        flip_probability=None,
+        use_photo_metric_distortion=False,
+    )
 
-# ds = load_dataset("sayakpaul/nyu_depth_v2")
+    train_set = GATEDataset(
+        dataset=build_dataset("train", data_dir=data_dir),
+        infinite_sampling=True,
+        transforms=[input_transforms, train_transforms, transforms],
+        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+    )
 
+    val_set = GATEDataset(
+        dataset=build_dataset("val", data_dir=data_dir),
+        infinite_sampling=False,
+        transforms=[input_transforms, eval_transforms, transforms],
+        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+    )
 
-# def colored_depthmap(depth, d_min=None, d_max=None):
-#     if d_min is None:
-#         d_min = np.min(depth)
-#     if d_max is None:
-#         d_max = np.max(depth)
-#     depth_relative = (depth - d_min) / (d_max - d_min)
-#     return 255 * cmap(depth_relative)[:,:,:3] # H, W, C
+    test_set = GATEDataset(
+        dataset=build_dataset("test", data_dir=data_dir),
+        infinite_sampling=False,
+        transforms=[input_transforms, eval_transforms, transforms],
+        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+    )
 
-
-# def merge_into_row(input, depth_target):
-#     input = np.array(input)
-#     depth_target = np.squeeze(np.array(depth_target))
-
-#     d_min = np.min(depth_target)
-#     d_max = np.max(depth_target)
-#     depth_target_col = colored_depthmap(depth_target, d_min, d_max)
-#     img_merge = np.hstack([input, depth_target_col])
-
-#     return img_merge
-
-
-# random_indices = np.random.choice(len(ds["train"]), 9).tolist()
-# train_set = ds["train"]
-
-# plt.figure(figsize=(15, 6))
-
-# for i, idx in enumerate(random_indices):
-#     ax = plt.subplot(3, 3, i + 1)
-#     image_viz = merge_into_row(
-#         train_set[idx]["image"], train_set[idx]["depth_map"]
-#     )
-#     plt.imshow(image_viz.astype("uint8"))
-#     plt.axis("off")
+    dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+    return dataset_dict

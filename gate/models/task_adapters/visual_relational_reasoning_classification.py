@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from omegaconf import DictConfig
-from rich import print
 
 from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule
@@ -71,7 +70,6 @@ class DuoModalFusionModel(BaseModule):
         self.image_instance_norm = nn.InstanceNorm2d(
             3, affine=True, track_running_stats=False
         )
-        # print(self.fusion_in_features, dropout_fusion_prob, num_classes)
         self.fusion_post_processing = VariableSequenceTransformerEncoder(
             d_model=self.fusion_in_features,
             nhead=8,

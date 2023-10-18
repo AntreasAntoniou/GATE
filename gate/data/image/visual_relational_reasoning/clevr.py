@@ -1,15 +1,12 @@
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import datasets
-import numpy as np
 import orjson as json
 import torch
 import torchvision.transforms as T
 from PIL import Image
-from rich import print
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import random_split
 
@@ -17,7 +14,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
-from gate.data.transforms.tiny_image_transforms import pad_image
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 
@@ -196,7 +193,6 @@ class CLEVRClassificationDataset(Dataset):
         split = self.questions[idx]["split"]
         image_filename = self.questions[idx]["image_filename"]
         answer = self.questions[idx]["answer"]
-        # print(answer)
         if answer in yes_no_dict.keys():
             labels = torch.tensor(yes_no_dict[answer])
             answer_type = "yes_no"
@@ -275,7 +271,9 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
 def transform_wrapper(inputs: Dict, target_size=224):
     return {
-        "image": T.Resize(size=(target_size, target_size))(inputs["image"]),
+        "image": T.Resize(size=(target_size, target_size), antialias=True)(
+            inputs["image"]
+        ),
         "text": inputs["text"],
         "labels": torch.tensor(int(inputs["labels"])).long(),
         "answer_type": inputs["answer_type"],
@@ -294,7 +292,11 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[transform_wrapper, transforms],
+        transforms=[
+            transform_wrapper,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(

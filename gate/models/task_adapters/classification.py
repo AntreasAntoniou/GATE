@@ -3,10 +3,9 @@ from typing import Dict, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from timm.data.auto_augment import rand_augment_transform
 
 from gate.boilerplate.utils import get_logger
-from gate.metrics import accuracy_top_k
+from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule
 
 logger = get_logger(__name__)

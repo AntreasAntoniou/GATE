@@ -19,8 +19,6 @@ from gate.data.tasks.zero_shot_classification import (
 
 def generate_per_class_prompts():
     prompt_dict = {}
-    print(f"Number of classes: {len(imagenet_classes)}")
-    print(f"Number of prompt templates: {len(imagenet_prompt_templates)}")
     for idx, class_name in enumerate(imagenet_classes):
         prompts = [
             template.format(class_name)
@@ -44,31 +42,37 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ZeroShotViaLabelDescriptionTask(
-            prompt_templates=imagenet_prompt_templates,
-            label_map=imagenet_classes,
-        ),
-        transforms=transforms,
+        transforms=[
+            ZeroShotViaLabelDescriptionTask(
+                prompt_templates=imagenet_prompt_templates,
+                label_map=imagenet_classes,
+            ),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ZeroShotViaLabelDescriptionTask(
-            prompt_templates=imagenet_prompt_templates,
-            label_map=imagenet_classes,
-        ),
-        transforms=transforms,
+        transforms=[
+            ZeroShotViaLabelDescriptionTask(
+                prompt_templates=imagenet_prompt_templates,
+                label_map=imagenet_classes,
+            ),
+            transforms,
+        ],
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ZeroShotViaLabelDescriptionTask(
-            prompt_templates=imagenet_prompt_templates,
-            label_map=imagenet_classes,
-        ),
-        transforms=transforms,
+        transforms=[
+            ZeroShotViaLabelDescriptionTask(
+                prompt_templates=imagenet_prompt_templates,
+                label_map=imagenet_classes,
+            ),
+            transforms,
+        ],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

@@ -2,21 +2,35 @@ import os
 import pathlib
 
 import pytest
-import torch
 from accelerate.utils import set_seed
 
-from gate.data.few_shot import (
-    AircraftFewShotClassificationDataset,
-    CIFARFewShotClassificationDataset,
-    CUB200FewShotClassificationDataset,
+from gate.data.few_shot.aircraft import AircraftFewShotClassificationDataset
+from gate.data.few_shot.aircraft import (
+    build_gate_dataset as build_gate_dataset_aircraft,
+)
+from gate.data.few_shot.cubirds200 import CUB200FewShotClassificationDataset
+from gate.data.few_shot.cubirds200 import (
+    build_gate_dataset as build_gate_dataset_cubirds200,
+)
+from gate.data.few_shot.describable_textures import (
     DescribableTexturesFewShotClassificationDataset,
-    FC100FewShotClassificationDataset,
-    FungiFewShotClassificationDataset,
+)
+from gate.data.few_shot.describable_textures import (
+    build_gate_dataset as build_gate_dataset_describable_textures,
+)
+from gate.data.few_shot.fungi import FungiFewShotClassificationDataset
+from gate.data.few_shot.fungi import (
+    build_gate_dataset as build_gate_dataset_fungi,
+)
+from gate.data.few_shot.mini_imagenet import (
     MiniImageNetFewShotClassificationDataset,
-    OmniglotFewShotClassificationDataset,
-    QuickDrawFewShotClassificationDataset,
-    TieredImageNetFewShotClassificationDataset,
-    VGGFlowersFewShotClassificationDataset,
+)
+from gate.data.few_shot.mini_imagenet import (
+    build_gate_dataset as build_gate_dataset_mini_imagenet,
+)
+from gate.data.few_shot.omniglot import OmniglotFewShotClassificationDataset
+from gate.data.few_shot.omniglot import (
+    build_gate_dataset as build_gate_dataset_omniglot,
 )
 
 set_seed(42)
@@ -24,13 +38,19 @@ set_seed(42)
 classes_to_test = [
     AircraftFewShotClassificationDataset,
     CUB200FewShotClassificationDataset,
-    # CIFARFewShotClassificationDataset,
     DescribableTexturesFewShotClassificationDataset,
-    # FC100FewShotClassificationDataset,
     FungiFewShotClassificationDataset,
     MiniImageNetFewShotClassificationDataset,
     OmniglotFewShotClassificationDataset,
-    # QuickDrawFewShotClassificationDataset,
+]
+
+gate_classes_to_test = [
+    build_gate_dataset_aircraft,
+    build_gate_dataset_cubirds200,
+    build_gate_dataset_describable_textures,
+    build_gate_dataset_fungi,
+    build_gate_dataset_mini_imagenet,
+    build_gate_dataset_omniglot,
 ]
 
 
@@ -54,6 +74,11 @@ def dataset_init(DATASET_CLASS):
         support_set_target_transform=None,
         query_set_target_transform=None,
     )
+
+
+def gate_dataset_init(DATASET_CLASS):
+    dataset_root = pathlib.Path(os.environ["PYTEST_DIR"])
+    return DATASET_CLASS(data_dir=dataset_root, transforms=None)
 
 
 @pytest.mark.parametrize("dataset_item", classes_to_test)
@@ -86,7 +111,10 @@ def test_dataset_sample(
         for subkey, subvalue in value.items():
             print(f"{key}.{subkey}: {subvalue.shape}")
 
-    # assert input_dict["image"]["support_set"].shape == (488, 3, 224, 224)
-    # assert input_dict["image"]["query_set"].shape == (460, 3, 224, 224)
-    # assert label_dict["image"]["support_set"].shape == torch.Size([488])
-    # assert label_dict["image"]["query_set"] == torch.Size([460])
+
+@pytest.mark.parametrize("dataset_item", gate_classes_to_test)
+def test_gate_dataset_creation(
+    dataset_item,
+):
+    dataset_instance = gate_dataset_init(dataset_item)
+    assert isinstance(dataset_instance, dict)

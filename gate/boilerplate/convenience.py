@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 
 import torch
 import torch.nn as nn
+import transformers
 import wandb
 from hydra_zen import instantiate
 from torch.utils.data import Subset
@@ -64,7 +65,7 @@ def log_wandb_parameters(config_dict: dict, global_step: int) -> None:
     wandb.config.update({"init_global_step": global_step})
 
 
-def get_datasets(dataset: GATEDataset, global_step: int):
+def get_datasets(dataset: Dict[str, GATEDataset], global_step: int):
     """
     Get training, validation, and test datasets.
 
@@ -120,6 +121,22 @@ def count_model_parameters(model: GATEModel):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+def get_parameter_names(model, forbidden_layer_types):
+    """
+    Returns the names of the model parameters that are not inside a forbidden layer.
+    """
+    result = []
+    for name, child in model.named_children():
+        result += [
+            f"{name}.{n}"
+            for n in get_parameter_names(child, forbidden_layer_types)
+            if not isinstance(child, tuple(forbidden_layer_types))
+        ]
+    # Add model specific parameters (defined with nn.Parameter) since they are not in any child.
+    result += list(model._parameters.keys())
+    return result
+
+
 def instantiate_optimizer(cfg: Any, model: GATEModel):
     """
     Instantiate an optimizer.
@@ -131,8 +148,78 @@ def instantiate_optimizer(cfg: Any, model: GATEModel):
     Returns:
         Optimizer: The instantiated optimizer.
     """
-    return instantiate(
-        cfg.optimizer, params=model.parameters(), _partial_=False
+    lr = cfg.optimizer.lr
+    weight_decay = cfg.optimizer.weight_decay
+    decay_parameters = get_parameter_names(
+        model=model,
+        forbidden_layer_types=[
+            torch.nn.LayerNorm,
+            torch.nn.BatchNorm2d,
+            torch.nn.BatchNorm1d,
+            nn.InstanceNorm1d,
+            nn.InstanceNorm2d,
+        ],
+    )
+
+    decoder_decay_parameters = [
+        name
+        for name in decay_parameters
+        if "decoder_head" in name and "bias" not in name
+    ]
+
+    encoder_decay_parameters = [
+        name
+        for name in decay_parameters
+        if "bias" not in name and name not in decoder_decay_parameters
+    ]
+
+    decay_parameters = encoder_decay_parameters + decoder_decay_parameters
+
+    optimizer_grouped_parameters = [
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n in encoder_decay_parameters
+            ],
+            "weight_decay": weight_decay,
+        },
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n not in decay_parameters and "decoder_head" not in n
+            ],
+            "weight_decay": 0.0,
+        },
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n in decoder_decay_parameters
+            ],
+            "weight_decay": weight_decay,
+            "lr": lr * 10.0,
+        },
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n not in decay_parameters and "decoder_head" in n
+            ],
+            "weight_decay": 0.0,
+            "lr": lr * 10.0,
+        },
+    ]
+
+    logger.info(f"Optimizer hyperparameters: {cfg.optimizer}")
+
+    return transformers.AdamW(
+        params=optimizer_grouped_parameters,
+        lr=lr,
+        weight_decay=weight_decay,
+        betas=(0.9, 0.98),
+        eps=1e-06,
     )
 
 

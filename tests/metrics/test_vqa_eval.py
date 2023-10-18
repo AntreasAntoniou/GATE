@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from gate.metrics.vqa_eval import vqa_metric
 

@@ -1,14 +1,9 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Union
 
 import torch
-import torch.nn as nn
-from numpy import isin
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
@@ -61,39 +56,21 @@ def build_model(
     transform_dict = backbone_model.get_transforms()
 
     def transform_wrapper(inputs: Union[Dict, Any]):
-        inputs["image"]["image"]["support_set"] = torch.stack(
+        inputs["image"]["support_set"] = torch.stack(
             [
                 transform_dict["image"](item)
-                for item in inputs["image"]["image"]["support_set"]
+                for item in inputs["image"]["support_set"]
             ]
         )
 
-        inputs["image"]["image"]["query_set"] = torch.stack(
+        inputs["image"]["query_set"] = torch.stack(
             [
                 transform_dict["image"](item)
-                for item in inputs["image"]["image"]["query_set"]
+                for item in inputs["image"]["query_set"]
             ]
         )
 
-        output_dict = {"image": {}}
-
-        output_dict["image"]["support_set_inputs"] = inputs["image"]["image"][
-            "support_set"
-        ]
-
-        output_dict["image"]["query_set_inputs"] = inputs["image"]["image"][
-            "query_set"
-        ]
-
-        output_dict["image"]["support_set_labels"] = inputs["labels"]["image"][
-            "support_set"
-        ]
-
-        output_dict["image"]["query_set_labels"] = inputs["labels"]["image"][
-            "query_set"
-        ]
-
-        return output_dict
+        return inputs
 
     return ModelAndTransform(model=model, transform=transform_wrapper)
 
@@ -125,15 +102,9 @@ def build_gate_model(
             text=[SourceModalityConfig(text=True)]
         )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "image",
-    }
-
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

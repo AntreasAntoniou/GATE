@@ -1,40 +1,24 @@
-import os
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import hydra
 import torch
-import yaml
 from hydra.core.config_store import ConfigStore
 from hydra_zen import MISSING, ZenField, builds, make_config
-from omegaconf import OmegaConf
-from rich import print
-from rich.syntax import Syntax
-from timm.scheduler import CosineLRScheduler, PlateauLRScheduler
+from timm.scheduler import CosineLRScheduler
 from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
-from gate.boilerplate.core import Learner
 from gate.boilerplate.decorators import register_configurables
-from gate.boilerplate.utils import (
-    get_hydra_config,
-    get_logger,
-    pretty_config,
-    pretty_print_dictionary,
-)
+from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
 from gate.config.variables import (
     CODE_DIR,
-    CURRENT_EXPERIMENT_DIR,
     DATASET_DIR,
     DUMMY_BATCH_MODE,
     EVAL_BATCH_SIZE,
-    EXPERIMENT_NAME,
     EXPERIMENTS_ROOT_DIR,
-    GPU_MEMORY,
-    HF_CACHE_DIR,
     HF_USERNAME,
     HYDRATED_NUM_WORKERS,
-    HYDRATED_TRAIN_ITERS,
     LOGGER_LEVEL,
     NUM_WORKERS,
     PERSISTENT_WORKERS,
@@ -142,16 +126,19 @@ def collect_config_store():
     ##########################################################################
     # Optimizer configs
 
-    adamw_optimizer_config = builds(
-        torch.optim.AdamW,
-        populate_full_signature=True,
-        zen_partial=True,
-    )
+    # adamw_optimizer_config = builds(
+    #     transformers.AdamW, populate_full_signature=True, zen_partial=True
+    # )
 
     config_store.store(
         group="optimizer",
         name="adamw",
-        node=adamw_optimizer_config(lr=1e-5, weight_decay=0.0),
+        node=dict(
+            lr=1e-5,
+            weight_decay=0.0,
+            betas=(0.9, 0.98),
+            eps=1e-6,
+        ),
     )
 
     ##########################################################################

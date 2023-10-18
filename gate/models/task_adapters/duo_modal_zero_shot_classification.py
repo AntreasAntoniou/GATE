@@ -1,4 +1,3 @@
-import logging
 import time
 from typing import Dict, List, Optional
 
@@ -49,10 +48,14 @@ class DuoModalZeroShotModel(BaseModule):
 
         if self.projection_num_features is not None:
             self.modality_a_linear = nn.Linear(
-                modality_a_num_features, projection_num_features, bias=False
+                in_features=modality_a_num_features,
+                out_features=projection_num_features,
+                bias=False,
             )
             self.modality_b_linear = nn.Linear(
-                modality_b_num_features, projection_num_features, bias=False
+                in_features=modality_b_num_features,
+                out_features=projection_num_features,
+                bias=False,
             )
 
     def compute_loss_and_metrics(self, logits, **kwargs):
@@ -67,6 +70,7 @@ class DuoModalZeroShotModel(BaseModule):
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
+        return_loss: bool = True,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
         modalities = [image, text, audio, video]
@@ -84,7 +88,6 @@ class DuoModalZeroShotModel(BaseModule):
 
         is_irregular_shape = False
 
-        start_time = time.time()
         if len(image.shape) == 5:
             image = image.view(-1, *image.shape[2:])
             is_irregular_shape = True
@@ -102,8 +105,7 @@ class DuoModalZeroShotModel(BaseModule):
                 modality_b_features = self.modality_b_model(image=image)[
                     self.modality_b_identifier
                 ][self.head_identifier]
-        logger.debug(f"Time taken for image: {time.time() - start_time}")
-        start_time = time.time()
+
         if text is not None:
             if self.modality_a_identifier == "text":
                 modality_a_features = self.modality_a_model(text=text)[
@@ -113,7 +115,7 @@ class DuoModalZeroShotModel(BaseModule):
                 modality_b_features = self.modality_b_model(text=text)[
                     self.modality_b_identifier
                 ][self.head_identifier]
-        logger.debug(f"Time taken for text: {time.time() - start_time}")
+
         if audio is not None:
             if self.modality_a_identifier == "audio":
                 modality_a_features = self.modality_a_model(audio=audio)[
@@ -134,22 +136,16 @@ class DuoModalZeroShotModel(BaseModule):
                     self.modality_b_identifier
                 ][self.head_identifier]
 
-        start_time = time.time()
         if self.projection_num_features is not None:
             modality_a_features = self.modality_a_linear(modality_a_features)
             modality_b_features = self.modality_b_linear(modality_b_features)
-        logger.debug(f"Time taken for projection: {time.time() - start_time}")
 
-        start_time = time.time()
         similarities_dict = get_similarities(
             modality_a_name=self.modality_a_identifier,
             modality_a_features=modality_a_features,
             modality_b_name=self.modality_b_identifier,
             modality_b_features=modality_b_features,
             temperature_parameter=self.temperature_parameter,
-        )
-        logger.debug(
-            f"Time taken for similarities: {time.time() - start_time}"
         )
 
         output_dict = {
@@ -159,19 +155,17 @@ class DuoModalZeroShotModel(BaseModule):
             },
             "labels": similarities_dict,
         }
-        start_time = time.time()
+
         metrics_dict = self.compute_loss_and_metrics(
             logits=output_dict["logits"]
         )
-        logger.debug(f"Time taken for metrics: {time.time() - start_time}")
-        start_time = time.time()
+
         losses_list = [
             value for key, value in metrics_dict.items() if "loss" in key
         ]
-        if len(losses_list) > 0:
+        if len(losses_list) > 0 and return_loss:
             loss = torch.mean(torch.stack(losses_list))
             metrics_dict["loss"] = loss
-        logger.debug(f"Time taken for loss: {time.time() - start_time}")
 
         return output_dict | metrics_dict
 

@@ -1,8 +1,8 @@
-import time
+from typing import Dict, List, Optional
 
-import evaluate
-import monai
+import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from gate.boilerplate.utils import get_logger
@@ -29,380 +29,140 @@ def one_hot_encoding(tensor, num_classes, dim):
     return one_hot
 
 
-def loss_adapter(
-    loss_fn,
-    logits,
-    labels,
-    label_dim,
-    num_classes,
-    remove_dim: bool = True,
-    **kwargs,
-):
-    if remove_dim:
-        labels = labels.squeeze(label_dim)
+class IoUMetric:
+    def __init__(
+        self,
+        num_classes: int,
+        ignore_index: int = 255,
+        class_idx_to_name: Optional[dict] = None,
+    ):
+        self.num_classes = num_classes
+        self.ignore_index = ignore_index
+        self.class_idx_to_name = class_idx_to_name
+        self.total_updates = 0
 
-    labels_one_hot = one_hot_encoding(
-        labels,
-        num_classes=num_classes,
-        dim=label_dim,
-    )
+        self.total_area_intersect = torch.zeros(num_classes)
+        self.total_area_union = torch.zeros(num_classes)
+        self.total_area_pred = torch.zeros(num_classes)
+        self.total_area_label = torch.zeros(num_classes)
 
-    # print(
-    #     f"labels_one_hot.shape: {labels_one_hot.shape}, logits.shape: {logits.shape}"
-    # )
+    def update(self, pred: torch.Tensor, label: torch.Tensor):
+        mask = label != self.ignore_index
+        pred = pred[mask].cpu()
+        label = label[mask].cpu()
+        # unique_preds = torch.unique(pred)
+        # unique_labels = torch.unique(label)
 
-    return loss_fn(
-        logits,
-        labels_one_hot,
-        **kwargs,
-    )
+        # print(f"unique_preds: {unique_preds}, unique_labels: {unique_labels}")
+        # print(
+        #     f"total unique_preds: {len(unique_preds)}, total unique_labels: {len(unique_labels)}"
+        # )
 
-
-def normalized_surface_dice_loss(
-    logits, labels, label_dim, num_classes, class_thresholds: list = [0.5]
-):
-    logits = logits.permute(0, 2, 3, 1).reshape(-1, num_classes)
-    labels = labels.permute(0, 2, 3, 1).reshape(-1)
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_surface_dice,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-        remove_dim=True,
-        class_thresholds=class_thresholds,
-    )
-
-
-def dice_loss(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_meandice,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-    )
-
-
-def miou_loss(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_meaniou,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-    )
-
-
-def generalized_dice_loss(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_generalized_dice,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-    )
-
-
-def roc_auc_score(logits, labels, label_dim, num_classes):
-    return loss_adapter(
-        loss_fn=monai.metrics.compute_roc_auc,
-        logits=logits,
-        labels=labels,
-        label_dim=label_dim,
-        num_classes=num_classes,
-        remove_dim=False,
-    )
-
-
-def diff_dice_loss(inputs, targets):
-    """
-    Compute the DICE loss, similar to generalized IOU for masks
-    Args:
-        inputs: A float tensor of arbitrary shape.
-                The predictions for each example.
-        targets: A float tensor with the same shape as inputs. Stores the binary
-                 classification label for each element in inputs
-                (0 for the negative class and 1 for the positive class).
-    """
-    inputs = inputs.sigmoid()
-    inputs = inputs.flatten(1)
-    targets = one_hot_encoding(
-        targets,
-        num_classes=inputs.shape[1],
-        dim=1,
-    )
-
-    numerator = 2 * (inputs * targets).sum(1)
-    denominator = inputs.sum(-1) + targets.sum(-1)
-    loss = 1 - (numerator + 1) / (denominator + 1)
-    return loss.mean()
-
-
-def diff_sigmoid_focal_loss(
-    inputs, targets, alpha: float = 0.15, gamma: float = 2
-):
-    """
-    Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
-    Args:
-        inputs: A float tensor of arbitrary shape.
-                The predictions for each example.
-        targets: A float tensor with the same shape as inputs. Stores the binary
-                 classification label for each element in inputs
-                (0 for the negative class and 1 for the positive class).
-        alpha: (optional) Weighting factor in range (0,1) to balance
-                positive vs negative examples. Default = -1 (no weighting).
-        gamma: Exponent of the modulating factor (1 - p_t) to
-               balance easy vs hard examples.
-    Returns:
-        Loss tensor
-    """
-    targets = targets = one_hot_encoding(
-        targets,
-        num_classes=inputs.shape[1],
-        dim=1,
-    )
-    prob = inputs.sigmoid()
-    ce_loss = F.binary_cross_entropy_with_logits(
-        inputs, targets, reduction="none"
-    )
-    p_t = prob * targets + (1 - prob) * (1 - targets)
-    loss = ce_loss * ((1 - p_t) ** gamma)
-
-    if alpha >= 0:
-        alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
-        loss = alpha_t * loss
-
-    return loss.mean()
-
-
-from typing import Dict, Optional
-
-import torch
-
-
-def intersect_and_union(
-    pred_label,
-    label,
-    num_labels,
-    ignore_index: int,
-    label_map: Optional[Dict[int, int]] = None,
-    reduce_labels: bool = False,
-):
-    if label_map is not None:
-        for old_id, new_id in label_map.items():
-            label[label == old_id] = new_id
-
-    if reduce_labels:
-        label[label == 0] = 255
-        label = label - 1
-        label[label == 254] = 255
-
-    mask = label != ignore_index
-    mask = torch.not_equal(label, ignore_index)
-    pred_label = pred_label[mask]
-    label = label[mask]
-
-    intersect = pred_label[pred_label == label]
-
-    area_intersect = torch.histogram(
-        intersect.float(), bins=num_labels, range=(0, num_labels - 1)
-    )[0]
-    area_pred_label = torch.histogram(
-        pred_label.float(), bins=num_labels, range=(0, num_labels - 1)
-    )[0]
-    area_label = torch.histogram(
-        label.float(), bins=num_labels, range=(0, num_labels - 1)
-    )[0]
-
-    area_union = area_pred_label + area_label - area_intersect
-
-    return area_intersect, area_union, area_pred_label, area_label
-
-
-def total_intersect_and_union(
-    results,
-    gt_seg_maps,
-    num_labels,
-    ignore_index: int,
-    label_map: Optional[Dict[int, int]] = None,
-    reduce_labels: bool = False,
-):
-    total_area_intersect = torch.zeros((num_labels,), dtype=torch.float64)
-    total_area_union = torch.zeros((num_labels,), dtype=torch.float64)
-    total_area_pred_label = torch.zeros((num_labels,), dtype=torch.float64)
-    total_area_label = torch.zeros((num_labels,), dtype=torch.float64)
-    for result, gt_seg_map in zip(results, gt_seg_maps):
-        (
-            area_intersect,
-            area_union,
-            area_pred_label,
-            area_label,
-        ) = intersect_and_union(
-            result,
-            gt_seg_map,
-            num_labels,
-            ignore_index,
-            label_map,
-            reduce_labels,
+        intersect = pred[pred == label]
+        area_intersect = torch.bincount(intersect, minlength=self.num_classes)
+        area_union = (
+            torch.bincount(pred, minlength=self.num_classes)
+            + torch.bincount(label, minlength=self.num_classes)
+            - area_intersect
         )
-        total_area_intersect += area_intersect
-        total_area_union += area_union
-        total_area_pred_label += area_pred_label
-        total_area_label += area_label
-    return (
-        total_area_intersect,
-        total_area_union,
-        total_area_pred_label,
-        total_area_label,
-    )
+        area_label = torch.bincount(label, minlength=self.num_classes)
 
+        self.total_area_intersect += area_intersect.float()
+        self.total_area_union += area_union.float()
+        self.total_area_label += area_label.float()
+        self.total_updates += 1
+        # print(f"total_updates: {self.total_updates}")
 
-def mean_iou(
-    logits,
-    labels,
-    num_labels,
-    ignore_index: int,
-    nan_to_num: Optional[int] = None,
-    label_map: Optional[Dict[int, int]] = None,
-    reduce_labels: bool = False,
-):
-    (
-        total_area_intersect,
-        total_area_union,
-        total_area_pred_label,
-        total_area_label,
-    ) = total_intersect_and_union(
-        logits,
-        labels,
-        num_labels,
-        ignore_index,
-        label_map,
-        reduce_labels,
-    )
+    def reset(self):
+        self.total_area_intersect = torch.zeros(self.num_classes)
+        self.total_area_union = torch.zeros(self.num_classes)
+        self.total_area_label = torch.zeros(self.num_classes)
+        self.total_updates = 0
 
-    # compute metrics
-    metrics = dict()
+    def compute_metrics(self):
+        # IoU Calculation
+        iou = torch.zeros_like(self.total_area_union)
+        non_zero_union_mask = self.total_area_union > 0
+        iou[non_zero_union_mask] = self.total_area_intersect[
+            non_zero_union_mask
+        ] / (self.total_area_union[non_zero_union_mask] + 1e-6)
+        iou[~non_zero_union_mask] = torch.tensor(float("nan"))
 
-    all_acc = total_area_intersect.sum() / total_area_label.sum()
-    iou = total_area_intersect / total_area_union
-    acc = total_area_intersect / total_area_label
+        valid_iou = iou[~torch.isnan(iou)]
+        miou = valid_iou.mean().item() * 100.0
 
-    metrics["mean_iou"] = torch.nanmean(iou)
-    metrics["mean_accuracy"] = torch.nanmean(acc)
-    metrics["overall_accuracy"] = all_acc
-    # metrics["per_category_iou"] = iou
-    # metrics["per_category_accuracy"] = acc
+        # Per-class Accuracy
+        per_class_acc = torch.zeros_like(self.total_area_label)
+        valid_label_mask = self.total_area_label > 0
+        per_class_acc[valid_label_mask] = (
+            self.total_area_intersect[valid_label_mask]
+            / (self.total_area_label[valid_label_mask] + 1e-6)
+        ) * 100.0
+        per_class_acc[~valid_label_mask] = torch.tensor(float("nan"))
 
-    if nan_to_num is not None:
-        metrics = dict(
-            {
-                metric: torch.nan_to_num(
-                    metric_value, nan=torch.tensor(nan_to_num)
-                )
-                for metric, metric_value in metrics.items()
+        # Overall Accuracy
+        valid_intersect = (
+            self.total_area_intersect[~torch.isnan(per_class_acc)].sum().item()
+        )
+        valid_label = (
+            self.total_area_label[~torch.isnan(per_class_acc)].sum().item()
+        )
+        overall_acc = (valid_intersect / (valid_label + 1e-6)) * 100.0
+
+        # Mean Accuracy
+        valid_acc = per_class_acc[~torch.isnan(per_class_acc)]
+        mean_acc = valid_acc.mean().item()
+
+        # Convert to dictionary format
+        per_class_iou = iou * 100.0
+
+        if self.class_idx_to_name:
+            per_class_iou = {
+                self.class_idx_to_name[i]: val.item()
+                for i, val in enumerate(per_class_iou)
             }
-        )
+            per_class_acc = {
+                self.class_idx_to_name[i]: val.item()
+                for i, val in enumerate(per_class_acc)
+            }
 
-    return metrics
+        return {
+            "mIoU": miou,
+            "per_class_iou": per_class_iou,
+            "per_class_accuracy": per_class_acc,
+            "overall_accuracy": overall_acc,
+            "mean_accuracy": mean_acc,
+        }
 
+    def pretty_print(self, metrics: Optional[dict] = None):
+        from rich.console import Console
+        from rich.table import Table
 
-def fast_miou(
-    logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 0
-):
-    """
-    Compute mean Intersection over Union (IoU) for a batch of predicted segmentation masks and ground truth labels.
+        if metrics is None:
+            metrics = self.compute_metrics()
 
-    Args:
-        logits (torch.Tensor): Predicted segmentation masks, shape (batch_size, num_classes, height, width).
-        labels (torch.Tensor): Ground truth labels, shape (batch_size, 1, height, width).
+        console = Console()
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Class")
+        table.add_column("IoU")
+        table.add_column("Accuracy")
 
-    Returns:
-        mean_iou (torch.Tensor): Mean IoU for the batch.
-    """
-    # Ensure the logits are a probability distribution (i.e., softmax has been applied)
-    # Then, get the predicted class for each pixel (shape: batch_size, height, width)
-    num_classes = logits.shape[1]
-    logits = logits.argmax(dim=1).detach().cpu()
+        for idx in range(self.num_classes):
+            if self.class_idx_to_name is not None:
+                class_name = self.class_idx_to_name[idx]
+            else:
+                class_name = str(idx)
 
-    # Remove the channel dimension from labels (shape: batch_size, height, width)
-    labels = labels.squeeze(1).detach().cpu()
+            table.add_row(
+                class_name,
+                f"{metrics['per_class_iou'][class_name]:.2f}",
+                f"{metrics['per_class_accuracy'][class_name]:.2f}",
+            )
 
-    # Inputs
-    # Mandatory inputs
-
-    # predictions (List[ndarray]): List of predicted segmentation maps, each of shape (height, width).
-    # Each segmentation map can be of a different size.
-    # references (List[ndarray]): List of ground truth segmentation maps, each of shape (height, width).
-    # Each segmentation map can be of a different size.
-    # num_labels (int): Number of classes (categories).
-    # ignore_index (int): Index that will be ignored during evaluation.
-    # Optional inputs
-
-    # nan_to_num (int): If specified, NaN values will be replaced by the number defined by the user.
-    # label_map (dict): If specified, dictionary mapping old label indices to new label indices.
-    # reduce_labels (bool): Whether or not to reduce all label values of segmentation maps by 1.
-    # Usually used for datasets where 0 is used for background, and background itself is not included
-    # in all classes of a dataset (e.g. ADE20k). The background label will be replaced by 255.
-    # The default value is False.
-
-    # mean_iou = evaluate.load("mean_iou")
-    return mean_iou(
-        logits=logits,
-        labels=labels,
-        num_labels=num_classes,
-        ignore_index=ignore_index,
-        nan_to_num=1e-8,
-    )
-
-
-def fast_miou_numpy(
-    logits: torch.Tensor, labels: torch.Tensor, ignore_index: int = 0
-):
-    """
-    Compute mean Intersection over Union (IoU) for a batch of predicted segmentation masks and ground truth labels.
-
-    Args:
-        logits (torch.Tensor): Predicted segmentation masks, shape (batch_size, num_classes, height, width).
-        labels (torch.Tensor): Ground truth labels, shape (batch_size, 1, height, width).
-
-    Returns:
-        mean_iou (torch.Tensor): Mean IoU for the batch.
-    """
-    # Ensure the logits are a probability distribution (i.e., softmax has been applied)
-    # Then, get the predicted class for each pixel (shape: batch_size, height, width)
-    num_classes = logits.shape[1]
-    logits = logits.argmax(dim=1)
-
-    # Remove the channel dimension from labels (shape: batch_size, height, width)
-    labels = labels.squeeze(1)
-
-    # Inputs
-    # Mandatory inputs
-
-    # predictions (List[ndarray]): List of predicted segmentation maps, each of shape (height, width).
-    # Each segmentation map can be of a different size.
-    # references (List[ndarray]): List of ground truth segmentation maps, each of shape (height, width).
-    # Each segmentation map can be of a different size.
-    # num_labels (int): Number of classes (categories).
-    # ignore_index (int): Index that will be ignored during evaluation.
-    # Optional inputs
-
-    # nan_to_num (int): If specified, NaN values will be replaced by the number defined by the user.
-    # label_map (dict): If specified, dictionary mapping old label indices to new label indices.
-    # reduce_labels (bool): Whether or not to reduce all label values of segmentation maps by 1.
-    # Usually used for datasets where 0 is used for background, and background itself is not included
-    # in all classes of a dataset (e.g. ADE20k). The background label will be replaced by 255.
-    # The default value is False.
-
-    mean_iou_numpy = evaluate.load("mean_iou")
-    return mean_iou_numpy.compute(
-        predictions=logits,
-        references=labels,
-        num_labels=num_classes,
-        ignore_index=ignore_index,
-        nan_to_num=1e-8,
-    )
+        console.print(table)
+        console.print(f"mIoU: {metrics['mIoU']:.2f}")
+        console.print(f"Overall Accuracy: {metrics['overall_accuracy']:.2f}")
+        console.print(f"Mean Accuracy: {metrics['mean_accuracy']:.2f}")
 
 
 def one_hot(labels: torch.Tensor, num_classes: int):
@@ -421,11 +181,6 @@ def one_hot(labels: torch.Tensor, num_classes: int):
     )
     one_hot_vectors.scatter_(1, labels.unsqueeze(1), 1.0)
     return one_hot_vectors
-
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 
 class FocalLoss(nn.Module):
@@ -451,7 +206,7 @@ class FocalLoss(nn.Module):
 
         ce_loss = F.cross_entropy(logits, labels, reduction="none")
         pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        focal_loss = self.alpha * ((1 - pt) ** self.gamma) * ce_loss
 
         if self.reduction == "mean":
             return focal_loss.mean()
@@ -474,10 +229,12 @@ class DiceLoss(nn.Module):
         labels = labels.squeeze(1)
 
         labels_one_hot = torch.zeros_like(logits)
+
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
 
         if self.ignore_index is not None:
             ignore_mask = (labels != self.ignore_index).unsqueeze(1)
+
             labels_one_hot *= ignore_mask
 
         intersection = torch.sum(logits * labels_one_hot, dim=(2, 3))
@@ -536,7 +293,6 @@ class WeightedCrossEntropyLoss(nn.Module):
         :return: torch.Tensor with shape (num_classes,)
         """
         unique_labels, counts = torch.unique(labels, return_counts=True)
-        print(f"Unique labels: {unique_labels}, counts: {counts}")
         counts_float = counts.type(torch.float)
 
         # Apply the inverse of the class frequency
@@ -544,7 +300,6 @@ class WeightedCrossEntropyLoss(nn.Module):
 
         # Normalize the vector using a softmax function
         class_weights = torch.softmax(class_weights, dim=0)
-        print(f"Class weights: {class_weights}")
 
         return class_weights
 
@@ -559,7 +314,41 @@ class WeightedCrossEntropyLoss(nn.Module):
         :return: torch.Tensor representing the loss
         """
         labels = labels.squeeze(1)
-        # class_weights = self.compute_class_weights(labels) * 1000
+        class_weights = self.compute_class_weights(labels) * 1000
+
+        # Perform standard cross-entropy loss computation
+        loss = nn.functional.cross_entropy(
+            logits,
+            labels,
+            weight=class_weights,
+            reduction=self.reduction,
+            ignore_index=self.ignore_index,
+        )
+
+        return loss
+
+
+class CrossEntropyLoss(nn.Module):
+    def __init__(
+        self,
+        reduction="mean",
+        ignore_index: int = -1,
+    ):
+        super(CrossEntropyLoss, self).__init__()
+        self.reduction = reduction
+        self.ignore_index = ignore_index
+
+    def forward(
+        self, logits: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Compute the weighted cross-entropy loss.
+
+        :param logits: torch.Tensor with shape (b, num_classes, h, w)
+        :param labels: torch.Tensor with shape (b, h, w)
+        :return: torch.Tensor representing the loss
+        """
+        labels = labels.squeeze(1)
 
         # Perform standard cross-entropy loss computation
         loss = nn.functional.cross_entropy(

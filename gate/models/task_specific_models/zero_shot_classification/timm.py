@@ -1,16 +1,12 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
-import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.data.image_text.zero_shot.imagenet1k import (
     generate_per_class_prompts,
 )
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
@@ -32,8 +28,8 @@ from gate.models.task_adapters.duo_modal_zero_shot_classification import (
 
 
 def build_model(
-    timm_model_name: str = "resnet50.a1_in1k",
-    clip_model_name: str = "openai/clip-vit-base-patch16",
+    image_model_name: str = "resnet50.a1_in1k",
+    text_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
     modality_a_identifier: str = "image",
     modality_b_identifier: str = "text",
@@ -48,8 +44,8 @@ def build_model(
     :return: A ModelAndTransform instance containing the model and transform function.
     """
     backbone_model = TimmCLIPAdapter(
-        timm_model_name=timm_model_name,
-        clip_model_name=clip_model_name,
+        timm_model_name=image_model_name,
+        clip_model_name=text_model_name,
         pretrained=pretrained,
     )
     num_feature_dict = {
@@ -93,18 +89,7 @@ def build_model(
 
         if "text" in inputs:
             text = inputs["text"]
-            if isinstance(text, List):
-                text = transform_dict["text"](text)
-                max_length = max([t.shape[0] for t in text])
-                temp_text = (
-                    torch.ones((2, max_length), dtype=torch.long) * text[0, -1]
-                )
-                for i, t in enumerate(text):
-                    temp_text[i, : t.shape[0]] = t
-                text = temp_text
-
-            else:
-                text = transform_dict["text"](text)
+            text = transform_dict["text"](text)
 
             inputs["text"] = text
 
@@ -126,8 +111,8 @@ def build_gate_model(
     num_projection_features: Optional[int] = 512,
 ):
     model_and_transform = build_model(
-        timm_model_name=timm_model_name,
-        clip_model_name=clip_model_name,
+        image_model_name=timm_model_name,
+        text_model_name=clip_model_name,
         pretrained=pretrained,
         modality_a_identifier=modality_a_identifier,
         modality_b_identifier=modality_b_identifier,
@@ -138,15 +123,9 @@ def build_gate_model(
         image_text=[SourceModalityConfig(image=True, text=True)]
     )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "text",
-    }
-
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(
@@ -266,7 +245,6 @@ def build_gate_model_with_presets(
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

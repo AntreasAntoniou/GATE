@@ -5,14 +5,13 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import datasets
-import numpy as np
 import torch
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -111,9 +110,6 @@ class_map = {2: 0, 5: 1, 6: 2, 8: 3, 10: 4}
 
 
 def dataset_format_transform(sample: Dict) -> Dict:
-    # Example of sample:
-    #
-
     input_dict = {}
     input_dict["image"] = sample["image"]
     sample["labels"] = [class_map[label] for label in sample["labels"]]
@@ -136,7 +132,11 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[dataset_format_transform, transforms],
+        transforms=[
+            dataset_format_transform,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(
@@ -165,15 +165,3 @@ class DefaultHyperparameters:
     train_batch_size: int = 256
     eval_batch_size: int = 512
     num_classes: int = 101
-
-
-import torchvision.transforms as T
-
-if __name__ == "__main__":
-    data_dir = pathlib.Path("/data0/datasets/medical/chexpert")
-    dataset = build_dataset(set_name="train", data_dir=data_dir)
-
-    for item in dataset:
-        image = T.ToTensor()(item["image"])
-
-        print(image.shape)

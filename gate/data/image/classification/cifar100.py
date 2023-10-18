@@ -1,7 +1,7 @@
 # cifar100.py
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import torch
 import torchvision
@@ -10,13 +10,11 @@ from torch.utils.data import random_split
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 
-def build_cifar100_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a Food-101 dataset using the Hugging Face datasets library.
 
@@ -95,20 +93,21 @@ def build_gate_cifar100_dataset(
     transforms: Optional[Any] = None,
     num_classes=100,
 ):
+    augmentations = StandardAugmentations(image_key="image")
     train_set = GATEDataset(
-        dataset=build_cifar100_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[transform_wrapper, transforms],
+        transforms=[transform_wrapper, augmentations, transforms],
     )
 
     val_set = GATEDataset(
-        dataset=build_cifar100_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
-        dataset=build_cifar100_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[transform_wrapper, transforms],
     )

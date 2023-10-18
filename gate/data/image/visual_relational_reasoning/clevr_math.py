@@ -11,8 +11,7 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
-from gate.data.transforms.tiny_image_transforms import pad_image
+from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 logger = get_logger(name=__name__, set_rich=True)
 
@@ -69,7 +68,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
 def transform_wrapper(inputs: Dict, target_size=224):
     return {
-        "image": T.Resize(size=(target_size, target_size))(
+        "image": T.Resize(size=(target_size, target_size), antialias=True)(
             inputs["image"].convert("RGB")
         ),
         "text": inputs["question"],
@@ -90,7 +89,11 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[transform_wrapper, transforms],
+        transforms=[
+            transform_wrapper,
+            StandardAugmentations(image_key="image"),
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(

@@ -1,112 +1,25 @@
-import os
-import pathlib
-import zipfile
-from typing import Any, Dict, List, Optional, Tuple, Union
+import multiprocessing as mp
+from typing import Any, Dict, List, Optional, Union
 
-import nibabel as nib
-import requests
+import datasets
 import torch
+import torchvision.transforms as T
 from torch.utils.data import Dataset, random_split
-from tqdm import tqdm
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.tasks.classification import ClassificationTask
-
-
-def download_and_extract_file(extract_to: str) -> pathlib.Path:
-    """
-    Downloads and extracts the ACDC dataset to the specified directory.
-
-    :param extract_to: Path to the directory where the dataset will be extracted.
-    :return: The path to the extracted dataset.
-    """
-    local_filename = pathlib.Path(extract_to) / "ACDC.tar.gz"
-    extract_to = pathlib.Path(extract_to) / "ACDC"
-
-    # Download the dataset only if it hasn't been downloaded yet
-    if not local_filename.exists():
-        url = "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1/collection/637218c173e9f0047faa00fb/download"
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-
-        total_size = int(response.headers.get("content-length", 0))
-        chunk_size = 8192
-
-        # Save the downloaded dataset to a local file
-        with open(local_filename, "wb") as file:
-            with tqdm(
-                total=total_size,
-                unit="B",
-                unit_scale=True,
-                desc=str(local_filename),
-            ) as progress_bar:
-                for chunk in response.iter_content(chunk_size=chunk_size):
-                    file.write(chunk)
-                    progress_bar.update(len(chunk))
-
-    # Extract the dataset
-    with zipfile.ZipFile(local_filename, "r") as zip_ref:
-        zip_ref.extractall(path=extract_to)
-
-    return pathlib.Path(extract_to) / "ACDC"
-
-
-class ACDCDataset(Dataset):
-    def __init__(self, root_dir: str, mode: str = "train"):
-        self.root_dir = root_dir
-        self.mode = mode
-
-        # Download and extract the dataset
-        self.root_dir = download_and_extract_file(self.root_dir)
-
-        # Set the data directory based on the mode
-        self.data_dir = pathlib.Path(self.root_dir) / "database" / f"{mode}ing"
-
-        # Get the list of patients
-        self.patients = sorted(
-            [
-                d
-                for d in self.data_dir.iterdir()
-                if d.is_dir() and d.name.startswith("patient")
-            ]
-        )
-
-    def __len__(self) -> int:
-        return len(self.patients)
-
-    def __getitem__(
-        self, idx: int
-    ) -> Dict[str, Union[torch.Tensor, List[Dict[str, torch.Tensor]]]]:
-        patient_dir = self.patients[idx]
-
-        # Get the image and label file paths
-        img_files = sorted(
-            [
-                f
-                for f in patient_dir.glob("*_frame*.nii.gz")
-                if not f.name.endswith("_gt.nii.gz")
-            ]
-        )
-        label_files = sorted(patient_dir.glob("*_frame*_gt.nii.gz"))
-        img_label_pairs = list(zip(img_files, label_files))
-
-        four_d_img_file = patient_dir / f"{patient_dir.name}_4d.nii.gz"
-        four_d_img = nib.load(four_d_img_file).get_fdata()
-        four_d_img_tensor = torch.from_numpy(four_d_img).float()
-
-        frame_data = []
-        for img_file, label_file in img_label_pairs:
-            img = nib.load(img_file).get_fdata()
-            label = nib.load(label_file).get_fdata()
-
-            img_tensor = torch.from_numpy(img).float()
-            label_tensor = torch.from_numpy(label).long()
-
-            frame_data.append({"img": img_tensor, "label": label_tensor})
-
-        return {"four_d_img": four_d_img_tensor, "frame_data": frame_data}
+from gate.data.image.segmentation.classes import acdc_labels as CLASSES
+from gate.data.medical.segmentation.medical_decathlon import (
+    patient_normalization,
+)
+from gate.data.transforms.segmentation_transforms import (
+    DualImageRandomCrop,
+    DualImageRandomFlip,
+    MedicalImageSegmentationTransforms,
+    PhotoMetricDistortion,
+    PhotometricParams,
+)
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
@@ -122,7 +35,19 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
     """
     # Create a generator with the specified seed
     rng = torch.Generator().manual_seed(42)
-    train_data = ACDCDataset(root_dir=data_dir, mode="train")
+    train_data = datasets.load_dataset(
+        path="GATE-engine/automated_cardiac_diagnosis_competition.ACDC",
+        split="train",
+        cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
+    )
+
+    test_data = datasets.load_dataset(
+        path="GATE-engine/automated_cardiac_diagnosis_competition.ACDC",
+        split="test",
+        cache_dir=data_dir,
+        num_proc=mp.cpu_count(),
+    )
 
     dataset_length = len(train_data)
     val_split = 0.1  # Fraction for the validation set (e.g., 10%)
@@ -136,67 +61,199 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
         train_data, [train_length, val_length], generator=rng
     )
 
-    test_data = ACDCDataset(root_dir=data_dir, mode="test")
-
     dataset_dict = {"train": train_data, "val": val_data, "test": test_data}
 
     return dataset_dict[set_name]
 
 
+class DatasetTransforms:
+    def __init__(
+        self,
+        input_size: Union[int, List[int]],
+        target_size: Union[int, List[int]],
+        initial_size: Union[int, List[int]] = 1024,
+        label_size: Union[int, List[int]] = 256,
+        crop_size: Optional[Union[int, List[int]]] = None,
+        photometric_config: Optional[PhotometricParams] = None,
+    ):
+        self.initial_size = (
+            initial_size
+            if isinstance(initial_size, tuple)
+            or isinstance(initial_size, list)
+            else (initial_size, initial_size)
+        )
+        self.input_size = (
+            input_size
+            if isinstance(input_size, tuple) or isinstance(input_size, list)
+            else (input_size, input_size)
+        )
+        self.target_size = (
+            target_size
+            if isinstance(target_size, tuple) or isinstance(target_size, list)
+            else (target_size, target_size)
+        )
+
+        self.label_size = (
+            label_size
+            if isinstance(label_size, tuple) or isinstance(label_size, list)
+            else (label_size, label_size)
+        )
+
+        if crop_size is not None:
+            self.crop_size = (
+                crop_size
+                if isinstance(crop_size, list) or isinstance(crop_size, tuple)
+                else [crop_size, crop_size]
+            )
+            self.crop_transform = DualImageRandomCrop(self.crop_size)
+        else:
+            self.crop_size = None
+
+        if photometric_config is not None:
+            self.med_transforms = MedicalImageSegmentationTransforms(
+                photometric_params=photometric_config
+            )
+        else:
+            self.med_transforms = None
+
+    def __call__(self, item: Dict):
+        item["image"] = [sample["img"] for sample in item["frame_data"]]
+        item["label"] = [sample["label"] for sample in item["frame_data"]]
+
+        image = (
+            torch.stack([torch.tensor(i) for i in item["image"]])
+            if isinstance(item["image"], list)
+            else item["image"]
+        )
+        annotation = (
+            torch.stack([torch.tensor(i) for i in item["label"]])
+            if isinstance(item["label"], list)
+            else item["label"]
+        )
+
+        image = image.permute(0, 3, 1, 2)
+        annotation = annotation.permute(0, 3, 1, 2)
+
+        image = T.Resize(
+            (self.initial_size[0], self.initial_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
+        )(image)
+
+        annotation = T.Resize(
+            (self.initial_size[0], self.initial_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
+        )(annotation)
+
+        image_list = []
+        annotation_list = []
+        image = image.reshape(-1, image.shape[-2], image.shape[-1])
+        annotation = annotation.reshape(
+            -1, annotation.shape[-2], annotation.shape[-1]
+        )
+
+        for image_item, annotation_item in zip(image, annotation):
+            image_item = image_item.unsqueeze(0)
+            annotation_item = annotation_item.unsqueeze(0)
+
+            if self.crop_size is not None:
+                image_item, annotation_item = self.crop_transform(
+                    image_item, annotation_item
+                )
+
+            if self.med_transforms is not None:
+                image_item = self.med_transforms(image_item, annotation_item)
+
+            image_item = T.Resize(
+                (self.input_size[0], self.input_size[1]),
+                interpolation=T.InterpolationMode.BICUBIC,
+                antialias=True,
+            )(image_item)
+
+            annotation_item = T.Resize(
+                (self.label_size[0], self.label_size[1]),
+                interpolation=T.InterpolationMode.BICUBIC,
+                antialias=True,
+            )(annotation_item)
+
+            image_list.append(image_item)
+            annotation_list.append(annotation_item)
+
+        image = torch.stack(image_list)
+        annotation = torch.stack(annotation_list)
+
+        image = patient_normalization(image).unsqueeze(2)
+        annotation = annotation.long()
+        # by this point the shapes are num_scan, slices, channels, height, width, and each patient has about two scans
+        # we choose to consider the two scans as one image, so we concatenate them along the slices dimension
+        image = image.reshape(
+            -1, image.shape[2], image.shape[3], image.shape[4]
+        )
+        annotation = annotation.reshape(
+            -1, annotation.shape[2], annotation.shape[3]
+        )
+
+        # convert 1 channel to 3 channels
+        image = torch.cat((image, image, image), dim=1)
+
+        return {
+            "image": image,
+            "labels": annotation,
+        }
+
+
 @configurable(
     group="dataset",
-    name="automated_cardiac_diagnosis_challenge",
+    name="acdc",
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=4,
+    num_classes=len(CLASSES),
+    image_size=512,
+    target_image_size=256,
 ) -> dict:
-    dataset_dict = build_dataset(data_dir=data_dir)
+    train_transforms = DatasetTransforms(
+        512, target_image_size, initial_size=1024, crop_size=image_size
+    )
+    eval_transforms = DatasetTransforms(
+        512,
+        target_image_size,
+        initial_size=512,
+        crop_size=image_size,
+        photometric_config=None,
+    )
     train_set = GATEDataset(
-        dataset=dataset_dict["train"],
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        task=ClassificationTask(),
-        transforms=transforms,
+        transforms=[train_transforms, transforms],
+        meta_data={
+            "class_names": CLASSES,
+            "num_classes": num_classes,
+        },
     )
 
     val_set = GATEDataset(
-        dataset=dataset_dict["val"],
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        transforms=transforms,
+        transforms=[eval_transforms, transforms],
+        meta_data={
+            "class_names": CLASSES,
+            "num_classes": num_classes,
+        },
     )
 
     test_set = GATEDataset(
-        dataset=dataset_dict["test"],
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        task=ClassificationTask(),
-        transforms=transforms,
+        transforms=[eval_transforms, transforms],
+        meta_data={
+            "class_names": CLASSES,
+            "num_classes": num_classes,
+        },
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def main():
-    dataset_path = os.environ.get("PYTEST_DIR")
-    dataset_path = pathlib.Path(dataset_path)
-    dataset = ACDCDataset(root_dir=dataset_path)
-
-    for i, sample in enumerate(dataset):
-        four_d_img = sample["four_d_img"]
-        frame_data = sample["frame_data"]
-
-        print(f"Patient {i + 1}: 4D Image shape: {four_d_img.shape}")
-
-        for j, frame in enumerate(frame_data):
-            img = frame["img"]
-            label = frame["label"]
-            print(
-                f"  Frame {j + 1}: Image shape: {img.shape}, Label shape: {label.shape}"
-            )
-
-
-if __name__ == "__main__":
-    main()

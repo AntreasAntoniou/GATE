@@ -1,44 +1,113 @@
 import os
 
-import pytest
+import torch.nn.functional as F
 
+import wandb
+from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
-    ACDCDataset,
-    download_and_extract_file,
+    build_dataset,
+    build_gate_dataset,
 )
 
 # You can set this to the path where you have the dataset stored on your machine
 DATASET_PATH = os.environ.get("PYTEST_DIR")
 
 
-def test_download_and_extract_file():
-    dataset_path = download_and_extract_file(DATASET_PATH)
-    assert dataset_path.is_dir()
-    assert (dataset_path / "database").is_dir()
+def test_build_dataset():
+    # Test if the function returns the correct dataset split
+
+    train_set = build_dataset(
+        set_name="train", data_dir=os.environ.get("PYTEST_DIR")
+    )
+    assert train_set is not None, "Train set should not be None"
+
+    val_set = build_dataset(
+        set_name="val", data_dir=os.environ.get("PYTEST_DIR")
+    )
+    assert val_set is not None, "Validation set should not be None"
+
+    test_set = build_dataset(
+        set_name="test", data_dir=os.environ.get("PYTEST_DIR")
+    )
+    assert test_set is not None, "Test set should not be None"
 
 
-@pytest.mark.parametrize("mode", ["train", "test"])
-def test_acdc_dataset(mode):
-    dataset = ACDCDataset(root_dir=DATASET_PATH, mode=mode)
+def test_build_gate_dataset():
+    # Test if the function returns the correct dataset split
 
-    assert len(dataset) > 0
+    gate_dataset = build_gate_dataset(data_dir=os.environ.get("PYTEST_DIR"))
+    assert gate_dataset["train"] is not None, "Train set should not be None"
+    assert gate_dataset["val"] is not None, "Validation set should not be None"
+    assert gate_dataset["test"] is not None, "Test set should not be None"
 
-    sample = dataset[0]
+    for item in gate_dataset["train"]:
+        print(list(item.keys()))
+        assert item["image"] is not None, "Image should not be None"
+        assert item["labels"] is not None, "Label should not be None"
+        break
 
-    assert "four_d_img" in sample
-    assert "frame_data" in sample
 
-    four_d_img = sample["four_d_img"]
-    assert four_d_img.dim() == 4
+def visualize_volume(item):
+    input_volumes = item["image"]
+    input_volumes = input_volumes.float()
+    predicted_volumes = item["labels"].float()
+    label_volumes = item["labels"].float()
 
-    frame_data = sample["frame_data"]
-    assert len(frame_data) > 0
+    predicted_volumes[predicted_volumes == -1] = 10
+    label_volumes[label_volumes == -1] = 10
 
-    for frame in frame_data:
-        assert "img" in frame
-        assert "label" in frame
-        img = frame["img"]
-        label = frame["label"]
-        assert img.dim() == 3
-        assert label.dim() == 3
-        assert img.shape == label.shape
+    print(
+        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
+    )
+    print(
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+    )
+    print(
+        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+    )
+
+    # Start a Weights & Biases run
+    run = wandb.init(
+        project="gate-visualization", job_type="visualize_dataset"
+    )
+
+    # Visualize the data
+    wandb.log(
+        log_wandb_3d_volumes_and_masks(
+            F.interpolate(
+                input_volumes.reshape(-1, input_volumes.shape[-3], 512, 512),
+                size=(256, 256),
+                mode="bicubic",
+            ).reshape(*input_volumes.shape[:-2] + (256, 256)),
+            predicted_volumes.long(),
+            label_volumes.long(),
+        )
+    )
+
+
+def test_build_gate_visualize_dataset():
+    gate_dataset = build_gate_dataset(data_dir=os.environ.get("PYTEST_DIR"))
+    assert gate_dataset["train"] is not None, "Train set should not be None"
+    assert gate_dataset["val"] is not None, "Validation set should not be None"
+    assert gate_dataset["test"] is not None, "Test set should not be None"
+
+    for item in gate_dataset["train"]:
+        print(list(item.keys()))
+        assert item["image"] is not None, "Image should not be None"
+        assert item["labels"] is not None, "Label should not be None"
+        wandb.log(visualize_volume(item))
+        break
+
+    for item in gate_dataset["val"]:
+        print(list(item.keys()))
+        assert item["image"] is not None, "Image should not be None"
+        assert item["labels"] is not None, "Label should not be None"
+        wandb.log(visualize_volume(item))
+        break
+
+    for item in gate_dataset["test"]:
+        print(list(item.keys()))
+        assert item["image"] is not None, "Image should not be None"
+        assert item["labels"] is not None, "Label should not be None"
+        wandb.log(visualize_volume(item))
+        break

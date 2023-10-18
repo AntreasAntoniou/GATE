@@ -1,5 +1,3 @@
-import time
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -11,7 +9,6 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import collect_metrics, configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
-from gate.metrics.core import accuracy_top_k
 from gate.metrics.multi_class_classification import (
     average_precision_score,
     brier_score_loss,
@@ -23,7 +20,6 @@ logger = get_logger(__name__)
 
 
 def get_dict_shapes(x):
-    print(x)
     if not isinstance(x, dict):
         return get_dict_shapes(x.__dict__)
     return {
@@ -127,103 +123,6 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
         )
 
 
-@configurable(group="evaluator", name="image_semantic_segmentation")
-class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
-    def __init__(
-        self,
-        experiment_tracker: Optional[Any] = None,
-    ):
-        super().__init__(
-            experiment_tracker,
-            source_modality="image",
-            target_modality="image",
-            model_selection_metric_name="mean_iou-epoch-mean",
-            model_selection_metric_higher_is_better=True,
-        )
-
-    def step(self, model, batch, global_step, accelerator: Accelerator):
-        # start_time = time.time()
-        output_dict = model.forward(batch)
-        # logger.info(f"forward time: {time.time() - start_time}")
-        output_dict = output_dict[self.target_modality][self.source_modality]
-
-        loss = output_dict["loss"]
-
-        if "logits" in output_dict:
-            if self.starting_eval:
-                height, width = output_dict["logits"].shape[-2:]
-                output_dict["seg_episode"] = {
-                    "image": F.interpolate(
-                        batch["image"], size=(height, width)
-                    ),
-                    "logits": output_dict["logits"].argmax(dim=1).squeeze(1),
-                    "label": batch["labels"].squeeze(1),
-                    "label_idx_to_description": {
-                        i: str(i)
-                        for i in range(output_dict["logits"].shape[1])
-                    },
-                }
-                self.starting_eval = False
-
-            # output_dict["ae_episode"] = {
-            #     "image": F.interpolate(
-            #         batch["image"],
-            #         size=(
-            #             output_dict["ae_output"].shape[2],
-            #             output_dict["ae_output"].shape[3],
-            #         ),
-            #         mode="bicubic",
-            #     ),
-            #     "recon": output_dict["ae_output"],
-            # }
-
-            del output_dict["logits"]
-        # del output_dict["ae_output"]
-
-        for key, value in output_dict.items():
-            if "loss" in key or "iou" in key or "accuracy" in key:
-                if isinstance(value, torch.Tensor):
-                    self.current_epoch_dict[key].append(
-                        value.detach().float().mean().cpu()
-                    )
-
-        return StepOutput(
-            metrics=output_dict,
-            loss=loss,
-        )
-
-    @collect_metrics
-    def validation_step(
-        self, model, batch, global_step, accelerator: Accelerator
-    ):
-        output: EvaluatorOutput = super().validation_step(
-            model, batch, global_step, accelerator
-        )
-
-        if "seg_episode" in output.metrics:
-            seg_episode = output.metrics["seg_episode"]
-            # ae_episode = output.metrics["ae_episode"]
-            output.metrics = {"seg_episode": seg_episode}
-        else:
-            output.metrics = {}
-        return output
-
-    @collect_metrics
-    def testing_step(
-        self, model, batch, global_step, accelerator: Accelerator
-    ):
-        output: EvaluatorOutput = super().testing_step(
-            model, batch, global_step, accelerator
-        )
-        if "seg_episode" in output.metrics:
-            seg_episode = output.metrics["seg_episode"]
-            # ae_episode = output.metrics["ae_episode"]
-            output.metrics = {"seg_episode": seg_episode}
-        else:
-            output.metrics = {}
-        return output
-
-
 @configurable(group="evaluator", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationEvaluator):
     def __init__(
@@ -235,21 +134,6 @@ class VisualRelationalClassificationTrainer(ClassificationEvaluator):
             source_modality="image_text",
             target_modality="image_text",
             model_selection_metric_name="accuracy_top_1-epoch-mean",
-            model_selection_metric_higher_is_better=True,
-        )
-
-
-@configurable(group="evaluator", name="image_to_text_zero_shot_classification")
-class ImageToTextZeroShotClassificationEvaluator(ClassificationEvaluator):
-    def __init__(
-        self,
-        experiment_tracker: Optional[Any] = None,
-    ):
-        super().__init__(
-            experiment_tracker,
-            source_modality="image_text",
-            target_modality="image_text",
-            model_selection_metric_name="image_to_text_accuracy-epoch-mean",
             model_selection_metric_higher_is_better=True,
         )
 
@@ -377,7 +261,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         batch,
         global_step,
         accelerator: Accelerator,
-    ) -> StepOutput:
+    ) -> EvaluatorOutput:
         model.eval()
 
         step_output: StepOutput = self.step(
@@ -405,7 +289,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         global_step,
         accelerator: Accelerator,
         prefix: Optional[str] = None,
-    ) -> StepOutput:
+    ) -> EvaluatorOutput:
         model.eval()
 
         step_output: StepOutput = self.step(

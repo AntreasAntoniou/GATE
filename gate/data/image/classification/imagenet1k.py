@@ -1,9 +1,8 @@
 # imagenet1k.py
 import multiprocessing as mp
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
-import numpy as np
 import torchvision.transforms as T
 from datasets import load_dataset
 from timm.data import rand_augment_transform
@@ -45,6 +44,31 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     return dataset_dict[set_name]
 
 
+class StandardAugmentations:
+    def __init__(self, image_key: Optional[str] = None) -> None:
+        self.image_key = image_key
+
+    def __call__(self, input_dict: Dict) -> Any:
+        rand_augment = rand_augment_transform(
+            "rand-m9-n3-mstd0.5-inc1", hparams={}
+        )
+
+        if self.image_key is None:
+            x = input_dict
+        else:
+            x = input_dict[self.image_key]
+
+        try:
+            if self.image_key is None:
+                input_dict = rand_augment(x)
+            else:
+                input_dict[self.image_key] = rand_augment(x)
+        except Exception as e:
+            logger.warn(f"RandAugment failed with error: {e}")
+
+        return input_dict
+
+
 logger = get_logger(name=__name__)
 
 
@@ -58,22 +82,18 @@ def build_gate_dataset(
     transforms: Optional[Any] = None,
     num_classes=1000,
 ) -> dict:
-    rand_augment = rand_augment_transform(
-        "rand-m9-n3-mstd0.5-inc1", hparams={}
-    )
     single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+    augmentations = StandardAugmentations(image_key="image")
 
     def train_augment(input_dict):
+        input_dict = augmentations(input_dict)
+
         x = input_dict["image"]
         x = T.ToTensor()(x)
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)
-        try:
-            input_dict["image"] = rand_augment(x)
-        except Exception as e:
-            logger.warn(f"RandAugment failed with error: {e}")
-            input_dict["image"] = x
+        input_dict["image"] = x
 
         return input_dict
 

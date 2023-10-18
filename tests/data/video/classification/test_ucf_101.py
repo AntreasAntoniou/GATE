@@ -3,80 +3,47 @@ import os
 import pytest
 from torch.utils.data import DataLoader
 
+import wandb
+from gate.boilerplate.utils import visualize_video_with_labels
 from gate.data.video.classification.build_gulp_sparsesample import (
-    build_gulp_dataset,
-    build_squeezed_gulp_dataset,
+    build_ucf_101_gate_dataset,
 )
 
 
-def test_build_ucf_101_dataset():
-    # Test if the function returns the correct dataset split
+# Helper function to initialize wandb if you wish to visualize
+def init_wandb():
+    import wandb
 
-    for split_num in range(1, 4):
-        datasets = build_gulp_dataset(
-            dataset_name="ucf-101-gulprgb",
-            data_dir=os.environ.get("PYTEST_DIR"),
-            sets_to_include=["train", "test"],
-            split_num=split_num,
-        )
-        train_set = datasets["train"]
-        test_set = datasets["test"]
-        assert train_set is not None, "Train set should not be None"
-        assert test_set is not None, "Test set should not be None"
-
-    # Test if the function raises an error when an invalid set_name is given
-    with pytest.raises(ValueError):
-        datasets = build_gulp_dataset(
-            dataset_name="ucf-101-gulprgb",
-            data_dir=os.environ.get("PYTEST_DIR"),
-            sets_to_include=["invalid_set_name"],
-        )
+    wandb.init(project="video-dataset-visualization", job_type="dataset_test")
 
 
-def test_build_ucf_101_squeezed_dataset():
-    # Test if the function returns the correct dataset split
+# Test for build_gate_dataset
+def test_build_gate_dataset():
+    datasets = build_ucf_101_gate_dataset(os.environ.get("PYTEST_DIR"))
 
-    for data_format in ["BTCHW", "BCTHW"]:
-        for split_num in range(1, 4):
-            datasets = build_squeezed_gulp_dataset(
-                dataset_name="ucf-101-gulprgb",
-                data_dir=os.environ.get("PYTEST_DIR"),
-                sets_to_include=["train", "test"],
-                split_num=split_num,
-                data_format=data_format,
+    assert datasets is not None, "Dataset should not be None"
+    for set_name in ["train", "val", "test"]:
+        assert set_name in datasets, f"{set_name} should be in the dataset"
+
+
+# Test for visualization in wandb
+@pytest.mark.visual
+def test_visualize_in_wandb():
+    datasets = build_ucf_101_gate_dataset(os.environ.get("PYTEST_DIR"))
+
+    init_wandb()  # Initialize wandb
+
+    for set_name, dataset in datasets.items():
+        dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
+        for idx, item in enumerate(dataloader):
+            # Replace 'visualize_video' with your actual visualization function
+            wandb.log(
+                visualize_video_with_labels(
+                    item["video"],
+                    logits=item["labels"],
+                    labels=item["labels"],
+                    name=f"{set_name}-visualization",
+                )
             )
-            train_set = datasets["train"]
-            test_set = datasets["test"]
-            assert train_set is not None, "Train set should not be None"
-            assert test_set is not None, "Test set should not be None"
-
-    # Test if the function raises an error when an invalid set_name is given
-    with pytest.raises(ValueError):
-        datasets = build_squeezed_gulp_dataset(
-            dataset_name="ucf-101-gulprgb",
-            data_dir=os.environ.get("PYTEST_DIR"),
-            sets_to_include=["invalid_set_name"],
-        )
-
-
-def test_ucf_101_dataloader():
-    datasets = build_gulp_dataset(
-        dataset_name="ucf-101-gulprgb",
-        data_dir=os.environ.get("PYTEST_DIR"),
-        sets_to_include=["test"],
-    )
-    test_set = datasets["test"]
-
-    test_loader = DataLoader(test_set, batch_size=2, shuffle=True)
-
-    for batch in test_loader:
-        assert batch["pixel_values"].shape == (2, 3, 8, 224, 224)
-        assert batch["labels"].shape == (2,)
-        assert batch["video_ids"].shape == (2,)
-        break
-
-
-if __name__ == "__main__":
-    test_build_ucf_101_dataset()
-    test_build_ucf_101_squeezed_dataset()
-    test_ucf_101_dataloader()
+            if idx > 2:  # Limit the number of visualizations
+                break

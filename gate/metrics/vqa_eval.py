@@ -2,11 +2,9 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import torch
-from rich import print
-from tqdm.auto import tqdm
 
 from gate.metrics.glossary import (
     articles,

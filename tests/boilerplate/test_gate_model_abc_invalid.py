@@ -15,12 +15,7 @@ def test_gate_model_unsupported_transformation():
 
     model = GATEModel(target_config, nn.Linear(10, 10))
 
-    with pytest.raises(ValueError, match="Unsupported transformation"):
+    with pytest.raises(ValueError, match="Unsupported modality"):
         model.process_modalities(
             "image", dict(audio=torch.randn(1, 10), image=torch.randn(1, 10))
         )
-
-
-if __name__ == "__main__":
-    test_gate_model_unsupported_transformation()
-    print("All tests passed!")

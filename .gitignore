@@ -138,3 +138,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Huggingface 
+.huggingface/
+huggingface_cache/
+secrets/*
+datasets--*
+models--*
+wandb/*
+checkpoints/*

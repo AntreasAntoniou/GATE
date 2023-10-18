@@ -1,5 +1,4 @@
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import List, Optional
 from urllib.request import urlopen
 
@@ -8,7 +7,6 @@ import PIL.Image as Image
 import timm
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.transforms as T
 from timm.data import InterpolationMode, resolve_data_config
 from timm.data.transforms_factory import create_transform
@@ -17,6 +15,7 @@ from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.boilerplate.utils import get_logger
 from gate.models.backbones import Modality, image_dim_reshape
+from gate.models.backbones.clip import TextProcessor
 from gate.models.core import reinit
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
@@ -42,10 +41,19 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
 
     if transforms is not None:
         if isinstance(x, torch.Tensor):
-            x = T.ToPILImage()(x)
+            if len(x.shape) == 5:
+                x = x.view(-1, *x.shape[2:])  # flatten batch and sequence dims
+                x = [T.ToPILImage()(item) for item in x]
+            elif len(x.shape) == 4:
+                x = [T.ToPILImage()(item) for item in x]
+            else:
+                x = T.ToPILImage()(x)
 
-        x = transforms(x)
-        # print(x.shape)
+        if isinstance(x, List):
+            x = [transforms(item) for item in x]
+            x = torch.stack(x)
+        else:
+            x = transforms(x)
 
     if (
         input_shape is not None
@@ -84,7 +92,7 @@ class TimmModel(nn.Module):
                 img_size=img_size,
                 pretrained=pretrained,
             )
-        logger.info(f"Model {self.model} loaded")
+        logger.info(f"Loaded Model {self.model}")
         if img_size is None:
             img_size = self.model.default_cfg["input_size"][-2:]
 
@@ -110,9 +118,7 @@ class TimmModel(nn.Module):
         )
         # iterate over compose transforms and remove centercrop and resize
 
-        print(f"{model_identifier} transforms: {self.transforms}")
         output_shape = self.get_output_shape()["raw_features"]
-        print(f"{model_identifier} output shape: {output_shape}")
         self.num_output_features = output_shape[2]
         self.num_patches = output_shape[1]
 
@@ -184,9 +190,9 @@ class TimmCLIPAdapter(nn.Module):
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
-        self.tokenizer = self.preprocessor
 
         self.clip = CLIPModel.from_pretrained(clip_model_name)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         self.vision_model = TimmModel(
             model_identifier=timm_model_name,
@@ -208,9 +214,10 @@ class TimmCLIPAdapter(nn.Module):
         self,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
+        video: Optional[torch.Tensor] = None,
         **kwargs,
     ):
-        if image is None and text is None:
+        if image is None and text is None and video is None:
             raise ValueError(
                 f"Must provide at least one input modality"
                 f"to {self.__class__.__name__}"
@@ -231,6 +238,18 @@ class TimmCLIPAdapter(nn.Module):
         if image is not None:
             output_dict["image"] = self.vision_model.forward(image)
 
+        if video is not None:
+            if len(video.shape) == 5:
+                b, s, c, h, w = video.shape
+                output_dict["video"] = self.vision_model.forward(
+                    video.view(b * s, c, h, w)
+                )
+                for k, v in output_dict["video"].items():
+                    if v is not None:
+                        output_dict["video"][k] = v.view(b, s, *v.shape[1:])
+            else:
+                output_dict["video"] = self.vision_model.forward(video)
+
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
             output_dict["text"]["features"] = text.pooler_output
@@ -243,9 +262,7 @@ class TimmCLIPAdapter(nn.Module):
             return self.vision_model.transforms(x)
 
         def text_transforms(x):
-            return self.preprocessor(
-                text=x, return_tensors="pt", padding=True, truncation=True
-            ).input_ids.squeeze(0)
+            return self.text_transforms.apply_transform(x)
 
         def image_transforms_process_multi_type(x):
             if isinstance(x, List):
@@ -267,7 +284,14 @@ class TimmCLIPAdapter(nn.Module):
                 x=x, transforms=text_transforms, modality=Modality.text
             )
 
+        def video_transforms_process_multi_type(x):
+            return torch.stack(
+                [image_transforms_process_multi_type(item) for item in x],
+                dim=0,
+            )
+
         return {
             "image": lambda x: image_transforms_process_multi_type(x),
             "text": lambda x: text_transforms_process_multi_type(x),
+            "video": lambda x: video_transforms_process_multi_type(x),
         }

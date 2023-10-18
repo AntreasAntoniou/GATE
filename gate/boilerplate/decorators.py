@@ -3,24 +3,98 @@ import importlib
 import inspect
 import pkgutil
 import threading
-import time
-from collections import defaultdict
+from time import sleep
 from typing import Any, Callable, Dict, Optional
 
 import torch
-import wandb
+from cv2 import exp
 from hydra.core.config_store import ConfigStore
-from hydra_zen import builds, instantiate
-from rich import print
-from traitlets import default
+from hydra_zen import builds
+from regex import P
 
-from gate.boilerplate.utils import (
-    get_logger,
+import wandb
+from gate.boilerplate.utils import get_logger
+from gate.boilerplate.wandb_utils import (
+    log_wandb_3d_volumes_and_masks,
     log_wandb_images,
     log_wandb_masks,
+    visualize_video_with_labels,
 )
 
 logger = get_logger(__name__)
+
+
+class BackgroundLogging(threading.Thread):
+    def __init__(
+        self,
+        experiment_tracker: wandb,
+        global_step: int,
+        phase_name: str,
+        metrics_dict: Dict,
+    ):
+        super().__init__()
+        self.experiment_tracker = experiment_tracker  # Experiment tracker
+        self.global_step = global_step  # Global step
+        self.phase_name = phase_name  # Phase name
+        self.metrics_dict = metrics_dict  # Metrics dictionary
+
+    def run(self):
+        metrics_dict = self.metrics_dict
+        phase_name = self.phase_name
+        global_step = self.global_step
+
+        for metric_key, computed_value in metrics_dict.items():
+            if computed_value is not None:
+                value = (
+                    computed_value.detach()
+                    if isinstance(computed_value, torch.Tensor)
+                    else computed_value
+                )
+
+                log_dict = {
+                    f"{phase_name}/{metric_key}": value,
+                    "global_step": global_step,
+                }
+
+                if "seg_episode" in metric_key:
+                    mask_dict = log_wandb_masks(
+                        images=value["image"],
+                        logits=value["logits"],
+                        labels=value["label"],
+                        label_idx_to_description=value[
+                            "label_idx_to_description"
+                        ],
+                        prefix=phase_name,
+                    )
+                    log_dict.update(mask_dict)
+
+                if "med_episode" in metric_key:
+                    volume_dict = log_wandb_3d_volumes_and_masks(
+                        volumes=value["image"],
+                        logits=value["logits"],
+                        labels=value["label"],
+                        prefix=phase_name,
+                    )
+                    log_dict.update(volume_dict)
+
+                if "ae_episode" in metric_key:
+                    image_dict = log_wandb_images(
+                        images=value["image"],
+                        reconstructions=value["recon"],
+                        prefix=phase_name,
+                    )
+                    log_dict.update(image_dict)
+
+                if "video_episode" in metric_key:
+                    video_dict = visualize_video_with_labels(
+                        name=phase_name,
+                        video=value["video"],
+                        logits=value["logits"],
+                        labels=value["label"],
+                    )
+                    log_dict.update(video_dict)
+
+                self.experiment_tracker.log(log_dict)
 
 
 def configurable(
@@ -53,9 +127,7 @@ def configurable(
     return wrapper
 
 
-def register_configurables(
-    package_name: str,
-):
+def register_configurables(package_name: str) -> ConfigStore:
     """
     Registers all configurable functions in the specified package to the config store.
 
@@ -68,84 +140,25 @@ def register_configurables(
     package = importlib.import_module(package_name)
     prefix = package.__name__ + "."
 
-    def _process_module(module_name):
+    for _, module_name, _ in pkgutil.walk_packages(package.__path__, prefix):
         module = importlib.import_module(module_name)
+
         for name, obj in inspect.getmembers(module):
+            if not (
+                inspect.isfunction(obj) or inspect.isclass(obj)
+            ):  # Skip if not a function or class
+                continue
             if hasattr(obj, "__configurable__") and obj.__configurable__:
-                if hasattr(obj, "__config_group__") and hasattr(
-                    obj, "__config_name__"
-                ):
-                    group = obj.__config_group__
-                    name = obj.__config_name__
+                group = obj.__config_group__
+                name = obj.__config_name__
 
-                    config_store.store(
-                        group=group,
-                        name=name,
-                        node=obj.__config__(populate_full_signature=True),
-                    )
-                else:
-                    logger.debug(
-                        f"Excluding {name} from config store, as it does not have a group or name."
-                    )
-
-    for importer, module_name, is_pkg in pkgutil.walk_packages(
-        package.__path__, prefix
-    ):
-        if is_pkg:
-            register_configurables(module_name)
-        else:
-            _process_module(module_name)
-
-
-class BackgroundLogging(threading.Thread):
-    def __init__(
-        self, experiment_tracker, metrics_dict, phase_name, global_step
-    ):
-        super().__init__()
-        self.experiment_tracker = experiment_tracker
-        self.metrics_dict = metrics_dict
-        self.phase_name = phase_name
-        self.global_step = global_step
-
-    def run(self):
-        for metric_key, computed_value in self.metrics_dict.items():
-            if computed_value is not None:
-                value = (
-                    computed_value.detach()
-                    if isinstance(computed_value, torch.Tensor)
-                    else computed_value
+                config_store.store(
+                    group=group,
+                    name=name,
+                    node=obj.__config__(populate_full_signature=True),
                 )
-                # print(f"logging {metric_key}")
-                if "seg_episode" in metric_key:
-                    # print("logging seg episode")
-                    seg_episode = value
 
-                    log_wandb_masks(
-                        experiment_tracker=self.experiment_tracker,
-                        images=seg_episode["image"],
-                        logits=seg_episode["logits"],
-                        labels=seg_episode["label"],
-                        label_idx_to_description=seg_episode[
-                            "label_idx_to_description"
-                        ],
-                        global_step=self.global_step,
-                    )
-                    continue
-                if "ae_episode" in metric_key:
-                    # print("logging ae episode")
-                    ae_episode = value
-                    log_wandb_images(
-                        experiment_tracker=self.experiment_tracker,
-                        images=ae_episode["image"],
-                        reconstructions=ae_episode["recon"],
-                        global_step=self.global_step,
-                    )
-                    continue
-
-                self.experiment_tracker.log(
-                    {f"{self.phase_name}/{metric_key}": value},
-                    step=self.global_step,
-                )
+    return config_store
 
 
 def collect_metrics(func: Callable) -> Callable:
@@ -155,6 +168,9 @@ def collect_metrics(func: Callable) -> Callable:
         experiment_tracker: Any,
         global_step: int,
     ) -> None:
+        if experiment_tracker is None:
+            experiment_tracker = wandb
+
         detached_metrics_dict = {}
         for metric_key, computed_value in metrics_dict.items():
             if computed_value is not None:
@@ -165,10 +181,10 @@ def collect_metrics(func: Callable) -> Callable:
                 )
                 detached_metrics_dict[metric_key] = value
 
-        logging_thread = BackgroundLogging(
-            wandb, detached_metrics_dict, phase_name, global_step
+        background_logging = BackgroundLogging(
+            experiment_tracker, global_step, phase_name, detached_metrics_dict
         )
-        logging_thread.start()
+        background_logging.start()
 
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
@@ -182,27 +198,3 @@ def collect_metrics(func: Callable) -> Callable:
         return outputs
 
     return wrapper_collect_metrics
-
-
-if __name__ == "__main__":
-
-    @configurable
-    def build_something(batch_size: int, num_layers: int):
-        return batch_size, num_layers
-
-    build_something_config = build_something.build_config(
-        populate_full_signature=True
-    )
-    dummy_config = build_something_config(batch_size=32, num_layers=2)
-    print(dummy_config)
-
-    from hydra_zen import builds, instantiate
-
-    def build_something(batch_size: int, num_layers: int):
-        return batch_size, num_layers
-
-    dummy_config = builds(build_something, populate_full_signature=True)
-
-    dummy_function_instantiation = instantiate(dummy_config)
-
-    print(dummy_function_instantiation)

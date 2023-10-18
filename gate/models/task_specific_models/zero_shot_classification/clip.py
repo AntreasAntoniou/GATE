@@ -1,11 +1,8 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
-import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.data.image_text.zero_shot.imagenet1k import (
     generate_per_class_prompts,
 )
@@ -62,6 +59,7 @@ def build_model(
             modality_a_num_features=num_feature_dict[modality_a_identifier],
             modality_b_num_features=num_feature_dict[modality_b_identifier],
             projection_num_features=num_projection_features,
+            head_identifier="features",
         )
     else:
         raise ValueError(
@@ -86,18 +84,7 @@ def build_model(
 
         if "text" in inputs:
             text = inputs["text"]
-            if isinstance(text, List):
-                text = transform_dict["text"](text)
-                max_length = max([t.shape[0] for t in text])
-                temp_text = (
-                    torch.ones((2, max_length), dtype=torch.long) * text[0, -1]
-                )
-                for i, t in enumerate(text):
-                    temp_text[i, : t.shape[0]] = t
-                text = temp_text
-
-            else:
-                text = transform_dict["text"](text)
+            text = transform_dict["text"](text)
 
             inputs["text"] = text
 
@@ -238,7 +225,6 @@ def build_gate_model_with_presets(
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

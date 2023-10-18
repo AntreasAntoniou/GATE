@@ -28,7 +28,6 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     is_5d_tensor = False
     if isinstance(x, PIL.Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
-        # print(x.shape)
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
         x = T.ToPILImage()(x)

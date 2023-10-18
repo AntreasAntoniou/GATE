@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import os.path
 import pathlib
@@ -8,27 +9,33 @@ from functools import wraps
 from typing import Any, Dict, Optional, Tuple, Union
 
 import accelerate
+import huggingface_hub
+import numpy as np
 import orjson as json
 import torch
+import torch.nn.functional as F
 import yaml
-from huggingface_hub import (
-    HfApi,
-    create_repo,
-    hf_hub_download,
-    login,
-    snapshot_download,
-)
+from matplotlib.pyplot import step
 from omegaconf import DictConfig, OmegaConf
+from rich import print as rprint
 from rich.logging import RichHandler
+from rich.pretty import Pretty
 from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+import wandb
+from gate.config.variables import HF_OFFLINE_MODE
+
+int_or_str = Union[int, str]
+
 
 def get_logger(
-    name=__name__, logging_level: str = None, set_rich: bool = False
+    name=__name__,
+    logging_level: Optional[int_or_str] = None,
+    set_rich: bool = False,
 ) -> logging.Logger:
-    """Initializes multi-GPU-friendly python command line logger."""
+    """Initializes a python command line logger with nice defaults."""
 
     logger = logging.getLogger(name)
 
@@ -49,9 +56,6 @@ def get_logger(
         logger.addHandler(ch)
 
     install()
-
-    # this ensures all logging levels get marked with the rank zero decorator
-    # otherwise logs would get multiplied for each GPU process in multi-GPU setup
 
     return logger
 
@@ -189,12 +193,6 @@ def pretty_config(
     return tree
 
 
-from typing import Any, Dict
-
-from rich import print as rprint
-from rich.pretty import Pretty
-
-
 def pretty_print_dictionary(dictionary: Dict[str, Any]) -> None:
     rprint(Pretty(dictionary))
 
@@ -283,65 +281,73 @@ def download_model_with_name(
             if validated_ckpt_dir:
                 return path_dict
 
-    def download_and_copy(
-        filename: str,
-        target_path: pathlib.Path,
-        subfolder: str = f"checkpoints/{model_name}",
-    ) -> None:
-        file_path = hf_hub_download(
-            repo_id=hf_repo_path,
-            cache_dir=pathlib.Path(hf_cache_dir),
-            resume_download=True,
-            subfolder=subfolder,
-            filename=filename,
-            repo_type="model",
+    if not HF_OFFLINE_MODE:
+
+        def download_and_copy(
+            filename: str,
+            target_path: pathlib.Path,
+            subfolder: str = f"checkpoints/{model_name}",
+        ) -> None:
+            file_path = huggingface_hub.hf_hub_download(
+                repo_id=hf_repo_path,
+                cache_dir=pathlib.Path(hf_cache_dir),
+                resume_download=True,
+                subfolder=subfolder,
+                filename=filename,
+                repo_type="model",
+            )
+            shutil.copy(pathlib.Path(file_path), target_path)
+
+        checkpoint_dir = (
+            pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
         )
-        shutil.copy(pathlib.Path(file_path), target_path)
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    checkpoint_dir = pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        file_mapping = {
+            "trainer_state.pt": "trainer_state_filepath",
+            "optimizer.bin": "optimizer_filepath",
+            "pytorch_model.bin": "model_filepath",
+            "random_states_0.pkl": "random_states_filepath",
+            "scaler.pt": "scaler_filepath",
+        }
 
-    file_mapping = {
-        "trainer_state.pt": "trainer_state_filepath",
-        "optimizer.bin": "optimizer_filepath",
-        "pytorch_model.bin": "model_filepath",
-        "random_states_0.pkl": "random_states_filepath",
-        "scaler.pt": "scaler_filepath",
-    }
+        downloaded_files = {}
+        invalid_download = False
+        for filename, key in file_mapping.items():
+            try:
+                target_path = checkpoint_dir / filename
+                download_and_copy(filename, target_path)
+                downloaded_files[key] = target_path
+            except Exception as e:
+                if filename != "scaler.pt":
+                    invalid_download = True
+                logger.info(f"Error downloading {filename}: {e}")
+        # Handle config.yaml separately
+        config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
+        download_and_copy("config.yaml", config_target_path, subfolder="")
+        downloaded_files["config_filepath"] = config_target_path
 
-    downloaded_files = {}
-    invalid_download = False
-    for filename, key in file_mapping.items():
-        try:
-            target_path = checkpoint_dir / filename
-            download_and_copy(filename, target_path)
-            downloaded_files[key] = target_path
-        except Exception as e:
-            if filename != "scaler.pt":
-                invalid_download = True
-            logger.info(f"Error downloading {filename}: {e}")
-    # Handle config.yaml separately
-    config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
-    download_and_copy("config.yaml", config_target_path, subfolder="")
-    downloaded_files["config_filepath"] = config_target_path
+        if download_only_if_finished:
+            state_dict = torch.load(
+                downloaded_files["trainer_state_filepath"]
+            )["state_dict"]["eval"][0]["auc-macro"]
+            if len(state_dict.keys()) < 40:
+                return {}
 
-    if download_only_if_finished:
-        state_dict = torch.load(downloaded_files["trainer_state_filepath"])[
-            "state_dict"
-        ]["eval"][0]["auc-macro"]
-        if len(state_dict.keys()) < 40:
-            return {}
+        downloaded_files["root_filepath"] = checkpoint_dir
+        downloaded_files["validation_passed"] = not invalid_download
 
-    downloaded_files["root_filepath"] = checkpoint_dir
-    downloaded_files["validation_passed"] = not invalid_download
+        return downloaded_files
 
-    return downloaded_files
+    return None
 
 
 def create_hf_model_repo(hf_repo_path: str) -> str:
-    login(token=os.environ["HF_TOKEN"], add_to_git_credential=True)
+    huggingface_hub.login(
+        token=os.environ["HF_TOKEN"], add_to_git_credential=True
+    )
     print(f"Creating repo {hf_repo_path}")
-    return create_repo(
+    return huggingface_hub.create_repo(
         hf_repo_path, repo_type="model", exist_ok=True, private=True
     )
 
@@ -351,26 +357,30 @@ def create_directories(hf_cache_dir: str) -> None:
     (pathlib.Path(hf_cache_dir) / "checkpoints").mkdir(
         parents=True, exist_ok=True
     )
+    return hf_cache_dir
 
 
-def upload_config_files(
-    cfg: Any, hf_cache_dir: str, hf_repo_path: str
-) -> None:
+def store_config_yaml(
+    cfg: Any,
+    hf_cache_dir: str,
+):
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
-    hf_api = HfApi(token=os.environ["HF_TOKEN"])
 
     with open(config_yaml_path, "w") as file:
         yaml.dump(config_dict, file)
 
-    for filepath, path_in_repo in [
-        (config_yaml_path, "config.yaml"),
-    ]:
-        hf_api.upload_file(
-            repo_id=hf_repo_path,
-            path_or_fileobj=filepath.as_posix(),
-            path_in_repo=path_in_repo,
-        )
+    return config_yaml_path
+
+
+def upload_config_files(hf_repo_path: str, config_yaml_path) -> None:
+    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
+
+    hf_api.upload_file(
+        repo_id=hf_repo_path,
+        path_or_fileobj=config_yaml_path.as_posix(),
+        path_in_repo="config.yaml",
+    )
 
 
 def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
@@ -410,31 +420,43 @@ def create_hf_model_repo_and_download_maybe(
     resume_from_checkpoint: str,
     resume: bool,
 ) -> Tuple[Optional[pathlib.Path], str]:
-    create_hf_model_repo(hf_repo_path)
-    create_directories(hf_cache_dir)
-    upload_config_files(
-        cfg=cfg, hf_repo_path=hf_repo_path, hf_cache_dir=hf_cache_dir
-    )
+    if not HF_OFFLINE_MODE:
+        create_hf_model_repo(hf_repo_path)
+
+    hf_cache_dir = create_directories(hf_cache_dir)
+    config_yaml_path = store_config_yaml(cfg, hf_cache_dir)
+
+    if not HF_OFFLINE_MODE:
+        upload_config_files(
+            hf_repo_path=hf_repo_path, config_yaml_path=config_yaml_path
+        )
+
     checkpoint_store_dir = (
         pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
     )
 
-    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    if not HF_OFFLINE_MODE:
+        hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
+        remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
+        remote_ckpt_dict = get_checkpoint_dict(remote_files)
+        remote_ckpt_names = sorted(list(remote_ckpt_dict.keys()), reverse=True)
+        logger.info(
+            f"remote ckpt dict: {remote_ckpt_dict}, remote ckpt names: {remote_ckpt_names}"
+        )
+    else:
+        remote_ckpt_names = []
 
     local_files = [str(file) for file in checkpoint_store_dir.glob("*")]
     local_ckpt_dict = {
         int(file.split("checkpoints/ckpt_")[1]): file for file in local_files
     }
-    remote_files = hf_api.list_repo_files(repo_id=hf_repo_path)
-    remote_ckpt_dict = get_checkpoint_dict(remote_files)
+    local_ckpt_names = sorted(list(local_ckpt_dict.keys()), reverse=True)
 
-    latest_remote_ckpt_names = sorted(
-        list(remote_ckpt_dict.keys()), reverse=True
+    logger.info(
+        f"local ckpt dict: {local_ckpt_dict}, local ckpt names: {local_ckpt_names}"
     )
-    latest_local_ckpt_names = sorted(
-        list(local_ckpt_dict.keys()), reverse=True
-    )
-    mixed_ckpt_list = latest_remote_ckpt_names + latest_local_ckpt_names
+
+    mixed_ckpt_list = remote_ckpt_names + local_ckpt_names
     mixed_ckpt_list = sorted(list(set(mixed_ckpt_list)), reverse=True)
 
     if len(mixed_ckpt_list) == 0:
@@ -445,16 +467,14 @@ def create_hf_model_repo_and_download_maybe(
             hf_cache_dir=hf_cache_dir,
             hf_repo_path=hf_repo_path,
             ckpt_identifier=resume_from_checkpoint,
+            local_checkpoint_store_dir=checkpoint_store_dir,
         )
     elif resume:
         valid_model_downloaded = False
         idx = 0
 
-        print(
-            f"local ckpt dict: {local_ckpt_dict}, remote ckpt dict: {remote_ckpt_dict}"
-        )
         while not valid_model_downloaded:
-            if len(remote_ckpt_dict) < idx + 1:
+            if len(mixed_ckpt_list) < idx + 1:
                 logger.info("No valid checkpoint found. starting from scratch")
                 return None
 
@@ -477,13 +497,14 @@ def download_model_checkpoint_from_hub(
     hf_cache_dir: str,
     checkpoint_identifier: Optional[str] = None,
     get_latest: bool = False,
+    local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[Optional[pathlib.Path], str]:
     if get_latest and checkpoint_identifier is not None:
         raise ValueError(
             "Only one of `get_latest` and `checkpoint_identifier` can be set to True"
         )
 
-    hf_api = HfApi(token=os.environ["HF_TOKEN"])
+    hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])
     files = hf_api.list_repo_files(repo_id=hf_repo_path)
     ckpt_dict = get_checkpoint_dict(files)
 
@@ -496,6 +517,7 @@ def download_model_checkpoint_from_hub(
             hf_cache_dir=hf_cache_dir,
             hf_repo_path=hf_repo_path,
             ckpt_identifier=latest_ckpt,
+            local_checkpoint_store_dir=local_checkpoint_store_dir,
         )
 
     if checkpoint_identifier is not None:
@@ -503,6 +525,7 @@ def download_model_checkpoint_from_hub(
             hf_cache_dir=hf_cache_dir,
             hf_repo_path=hf_repo_path,
             ckpt_identifier=checkpoint_identifier,
+            local_checkpoint_store_dir=local_checkpoint_store_dir,
         )
 
     return None
@@ -517,74 +540,107 @@ def count_files_recursive(directory: str) -> int:
     return file_count
 
 
-import numpy as np
-import torch
-import torchvision.transforms as T
-import wandb
-
-
 def normalize_image(image: torch.Tensor) -> torch.Tensor:
     min_val = torch.min(image)
     max_val = torch.max(image)
     normalized_image = (image - min_val) / (max_val - min_val)
+
     return normalized_image
 
 
-def log_wandb_images(
-    experiment_tracker: Any,
-    images: torch.Tensor,
-    reconstructions: torch.Tensor,
-    global_step: int = 0,
-):
-    episode_list = []
-    for i in range(images.shape[0]):
-        image = images[i]
-        reconstruction = reconstructions[i]
-        normalized_image = normalize_image(image)
-        normalized_reconstruction = normalize_image(reconstruction)
-        ae_episode = torch.cat(
-            [normalized_image, normalized_reconstruction], dim=2
-        )
-        ae_episode = wandb.Image(ae_episode)
-        episode_list.append(ae_episode)
+def create_montage(arr: np.ndarray) -> np.ndarray:
+    """
+    Create a 2D montage from a 3D or 4D numpy array.
 
-    experiment_tracker.log(
-        {"autoencoder_episode": episode_list},
-        step=global_step,
+    Args:
+        arr (np.ndarray): Input array with shape (s, h, w) or (s, c, h, w).
+
+    Returns:
+        np.ndarray: 2D montage.
+    """
+
+    # Check the shape of the input array
+    assert len(arr.shape) in [
+        3,
+        4,
+    ], "Input array should be 3D in the shape of (s, h, w) or 4D in the shape of (s, c, h, w)"
+
+    # Get the shape of the input array
+    if len(arr.shape) == 3:
+        s, h, w = arr.shape
+        c = None
+    else:
+        s, c, h, w = arr.shape
+
+    # Compute the new height and width
+    h_new = w_new = math.ceil(math.sqrt(s))
+
+    # Create an empty array to hold the montage
+    montage = (
+        np.empty((h_new * h, w_new * w, c))
+        if c is not None
+        else np.empty((h_new * h, w_new * w))
     )
 
+    # Fill the montage with slices from the input array
+    for i in range(h_new):
+        for j in range(w_new):
+            idx = i * w_new + j
+            if idx < s:
+                if c is not None:
+                    if isinstance(arr, torch.Tensor):
+                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                            arr[idx].permute(1, 2, 0).numpy()
+                        )
+                    else:
+                        montage[
+                            i * h : (i + 1) * h, j * w : (j + 1) * w
+                        ] = arr[idx].transpose(1, 2, 0)
+                else:
+                    montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
+                        idx
+                    ]
+            else:
+                # Fill any extra entries with empty arrays
+                montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                    np.zeros((h, w, c)) if c is not None else np.zeros((h, w))
+                )
 
-def log_wandb_masks(
-    experiment_tracker: Any,
-    images: torch.Tensor,
-    logits: torch.Tensor,
-    labels: torch.Tensor,
-    label_idx_to_description: Dict[int, str],
-    global_step: int = 0,
-):
-    def wb_mask(bg_img, pred_mask, true_mask):
-        return wandb.Image(
-            bg_img,
-            masks={
-                "prediction": {
-                    "mask_data": pred_mask,
-                    "class_labels": label_idx_to_description,
-                },
-                "ground truth": {
-                    "mask_data": true_mask,
-                    "class_labels": label_idx_to_description,
-                },
-            },
-        )
+    return torch.tensor(montage)
 
-    mask_list = []
-    for i in range(len(images)):
-        bg_image = T.ToPILImage()(normalize_image(images[i]))
-        prediction_mask = logits[i].detach().cpu().numpy().astype(np.uint8)
-        true_mask = labels[i].detach().cpu().numpy().astype(np.uint8)
 
-        mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
+def visualize_volume(item, name):
+    input_volumes = item["image"]
+    input_volumes = input_volumes.float().unsqueeze(0).unsqueeze(0)
+    predicted_volumes = item["labels"].float().unsqueeze(0)
+    label_volumes = item["labels"].float().unsqueeze(0)
 
-    experiment_tracker.log(
-        {"segmentation_episode": mask_list}, step=global_step
+    print(
+        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
     )
+    print(
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+    )
+    print(
+        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+    )
+
+    # Start a Weights & Biases run
+    run = wandb.init(
+        project="gate-visualization", job_type="visualize_dataset"
+    )
+
+    # Visualize the data
+    log_wandb_3d_volumes_and_masks(
+        F.interpolate(
+            input_volumes.reshape(-1, input_volumes.shape[-3], 512, 512),
+            size=(256, 256),
+            mode="bicubic",
+        ).reshape(*input_volumes.shape[:-2] + (256, 256)),
+        predicted_volumes.long(),
+        label_volumes.long(),
+        prefix=name,
+    )
+
+    # Finish the run
+    run.finish()

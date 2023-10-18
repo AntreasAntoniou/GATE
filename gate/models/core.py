@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from rich import print
 
 from gate.boilerplate.utils import get_logger
 
@@ -47,7 +46,7 @@ class GATEModel(nn.Module):
         self,
         config: Any,
         model: nn.Module,
-        key_remapper_dict: Optional[Dict] = None,
+        meta_data: Optional[Dict] = None,
     ):
         """
         🏗️ Initialize the GATEModel with a configuration and a base model.
@@ -59,7 +58,7 @@ class GATEModel(nn.Module):
         super().__init__()
         self.model = model
         self.config = config
-        self.key_remapper_dict = key_remapper_dict
+        self._meta_data = meta_data
 
         self.supported_input_modalities = {}
         for (
@@ -87,6 +86,21 @@ class GATEModel(nn.Module):
                         (supported_modalities, target_modality_name)
                     ] = True
 
+    @property
+    def meta_data(self) -> Optional[dict]:
+        return self._meta_data
+
+    @meta_data.setter
+    def meta_data(self, meta_data: dict) -> None:
+        self._meta_data = meta_data
+
+        if meta_data is None:
+            return
+
+        for key, value in meta_data.items():
+            if hasattr(self.model, key):
+                setattr(self.model, key, value)
+
     def process_modalities(
         self,
         target_modality_name: str,
@@ -103,24 +117,10 @@ class GATEModel(nn.Module):
         :raises ValueError: If the given transformation is unsupported.
         """
         key = (tuple(input_modalities.keys()), target_modality_name)
-        # print(
-        #     f"pre pre model {list(input_modalities.keys())}"
-        # )  # 📋 Print the input modalities
+
         if key in self.supported_input_modalities:
-            # 🎛️ Define the transformation logic here
-            if self.key_remapper_dict is not None:
-                input_modalities: Dict = {
-                    self.key_remapper_dict[key]
-                    if key in self.key_remapper_dict
-                    else key: value
-                    for key, value in input_modalities.items()
-                }
-            # print(
-            #     f"pre model {list(input_modalities.keys())}"
-            # )  # 📋 Print the input modalities
             if extra_arg_items is not None:
                 input_modalities.update(extra_arg_items)
-            # print(input_modalities)
             return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported modality: {key}")
@@ -152,12 +152,6 @@ class GATEModel(nn.Module):
             if key not in self.supported_input_modalities
         }
 
-        # for key, value in input_dict.items():
-        #     if isinstance(value, torch.Tensor):
-        #         print(
-        #             f"{key}: {value.shape}, {value.float().max()}, {value.float().min()}"
-        #         )
-
         for (
             supported_modalities,
             target_modality_name,
@@ -169,7 +163,6 @@ class GATEModel(nn.Module):
 
             # 📞 Call the process_modalities method with the
             # target_modality_name and input_modalities
-            # print(f"{supported_modalities} -> {target_modality_name}")
             try:
                 output = self.process_modalities(
                     target_modality_name=target_modality_name,
@@ -298,25 +291,29 @@ class Ensemble(nn.Module):
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
 
+            if isinstance(model_outputs[0], torch.Tensor):
+                logits = model_outputs
+            else:
+                logits = [output["logits"] for output in model_outputs]
+
             if "labels" in kwargs:
                 labels = kwargs["labels"]
 
-            if "labels" in model_outputs[0]:
-                labels = model_outputs[0]["labels"]
+            if not isinstance(model_outputs[0], torch.Tensor):
+                if "labels" in model_outputs[0]:
+                    labels = model_outputs[0]["labels"]
 
             ensemble_pred = {}
 
-            if isinstance(model_outputs[0]["logits"], torch.Tensor):
+            if isinstance(logits[0], torch.Tensor):
                 ensemble_pred = torch.mean(
-                    torch.stack(
-                        [output["logits"] for output in model_outputs]
-                    ),
+                    torch.stack(logits),
                     dim=0,
                 )
             else:
-                for key in model_outputs[0]["logits"].keys():
+                for key in logits[0].keys():
                     ensemble_pred[key] = recursive_mean(
-                        [output["logits"][key] for output in model_outputs]
+                        [output[key] for output in logits]
                     )
 
             output_dict = {"logits": ensemble_pred}

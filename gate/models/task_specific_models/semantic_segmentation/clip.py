@@ -1,8 +1,7 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Union
 
 import torch
-import torch.nn as nn
+from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
@@ -13,7 +12,7 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import SegmentationViT
+from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -27,11 +26,13 @@ from gate.models.task_adapters.semantic_segmentation import SegmentationViT
 def build_model(
     model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
-    decoder_depth: int = 2,
+    decoder_num_blocks: int = 2,
     decoder_num_heads: int = 8,
-    mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -45,21 +46,23 @@ def build_model(
         model_name=model_name, pretrained=pretrained, image_size=image_size
     )
 
-    model = SegmentationViT(
+    model = SegmentationAdapter(
         encoder_model=backbone_model,
-        embed_dim=backbone_model.image_num_features,
         decoder_embed_dim=backbone_model.image_num_features,
-        decoder_depth=decoder_depth,
-        decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
         num_classes=num_classes,
-        num_patches=backbone_model.vision_model.embeddings.num_patches,
+        decoder_layer_type=decoder_layer_type,
+        decoder_num_blocks=decoder_num_blocks,
+        decoder_num_heads=decoder_num_heads,
+        ignore_index=ignore_index,
+        decoder_target_image_size=(64, 64),
+        background_loss_weight=background_loss_weight,
     )
+
     x = torch.randn(2, 3, image_size, image_size)
-    dummy_out = model.forward(x)
+    _ = model.forward(x)
 
     if not pretrained:
-        model.init_weights()
+        backbone_model.init_weights()
 
     transform_dict = backbone_model.get_transforms(image_size=image_size)
 
@@ -95,30 +98,33 @@ def build_gate_model(
     mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
+    task_name: str = "task01braintumour",
 ):
+    if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
+        num_classes = len(num_classes[task_name])
+
     model_and_transform = build_model(
         model_name=model_name,
         pretrained=pretrained,
-        decoder_depth=decoder_depth,
+        decoder_num_blocks=decoder_depth,
         decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
         image=[SourceModalityConfig(image=True)]
     )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "text",
-    }
-
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(

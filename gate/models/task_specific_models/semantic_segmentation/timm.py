@@ -1,20 +1,22 @@
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Union
 
 import torch
-import torch.nn as nn
+from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_IMAGE_SIZE, HYDRATED_NUM_CLASSES
+from gate.config.variables import (
+    HYDRATED_IMAGE_SIZE,
+    HYDRATED_NUM_CLASSES,
+    HYDRATED_TASK_NAME,
+)
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import SegmentationViT
+from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -29,11 +31,13 @@ def build_model(
     timm_model_name: str = "resnet50.a1_in1k",
     clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,
-    decoder_depth: int = 2,
+    decoder_num_blocks: int = 2,
     decoder_num_heads: int = 8,
-    mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.01,
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -49,25 +53,27 @@ def build_model(
         pretrained=pretrained,
         img_size=image_size,
     )
-    model = SegmentationViT(
+
+    model = SegmentationAdapter(
         encoder_model=backbone_model,
-        embed_dim=backbone_model.image_num_features,
-        decoder_embed_dim=256,
-        decoder_depth=decoder_depth,
-        decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
+        decoder_embed_dim=backbone_model.image_num_features,
         num_classes=num_classes,
-        num_patches=backbone_model.vision_model.num_patches,
+        decoder_layer_type=decoder_layer_type,
+        decoder_num_blocks=decoder_num_blocks,
+        decoder_num_heads=decoder_num_heads,
+        ignore_index=ignore_index,
+        decoder_target_image_size=(64, 64),
+        background_loss_weight=background_loss_weight,
     )
+
+    x = torch.randn(2, 3, image_size, image_size)
+    _ = model.forward(x)
 
     # forward features for conv nets, and get the patches for the transformer manually
     # do the same for all others? sounds like the most general way to do this
 
-    x = torch.randn(2, 3, image_size, image_size)
-    dummy_out = model.forward(x)
-
     if not pretrained:
-        model.init_weights()
+        backbone_model.init_weights()
 
     transform_dict = backbone_model.get_transforms()
 
@@ -90,9 +96,11 @@ def build_model(
 
 @configurable(
     group="model",
-    name="timm-segmentation-transformer",
+    name="timm-md-segmentation-transformer",
     defaults=dict(
-        num_classes=HYDRATED_NUM_CLASSES, image_size=HYDRATED_IMAGE_SIZE
+        num_classes=HYDRATED_NUM_CLASSES,
+        image_size=HYDRATED_IMAGE_SIZE,
+        task_name=HYDRATED_TASK_NAME,
     ),
 )
 def build_gate_model(
@@ -101,34 +109,83 @@ def build_gate_model(
     pretrained: bool = True,
     decoder_depth: int = 2,
     decoder_num_heads: int = 8,
-    mlp_ratio: float = 4.0,
     num_classes: int = 10,
     image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.01,
+    task_name: str = "task01braintumour",
 ):
+    if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
+        num_classes = len(num_classes[task_name])
+
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,
         pretrained=pretrained,
-        decoder_depth=decoder_depth,
+        decoder_num_blocks=decoder_depth,
         decoder_num_heads=decoder_num_heads,
-        mlp_ratio=mlp_ratio,
         num_classes=num_classes,
         image_size=image_size,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
         image=[SourceModalityConfig(image=True)]
     )
 
-    model_key_remapper_dict_config = {
-        "image": "image",
-        "text": "text",
-    }
+    gate_model = GATEModel(
+        config=model_modality_config_image_classification,
+        model=model_and_transform.model,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
+
+
+@configurable(
+    group="model",
+    name="timm-segmentation-transformer",
+    defaults=dict(
+        num_classes=HYDRATED_NUM_CLASSES,
+        image_size=HYDRATED_IMAGE_SIZE,
+    ),
+)
+def build_gate_model(
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    pretrained: bool = True,
+    decoder_depth: int = 2,
+    decoder_num_heads: int = 8,
+    num_classes: int = 10,
+    image_size: int = 512,
+    decoder_layer_type: str = "transformer",
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.1,
+):
+    model_and_transform = build_model(
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
+        pretrained=pretrained,
+        decoder_num_blocks=decoder_depth,
+        decoder_num_heads=decoder_num_heads,
+        num_classes=num_classes,
+        image_size=image_size,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
+    )
+
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
 
     gate_model = GATEModel(
         config=model_modality_config_image_classification,
         model=model_and_transform.model,
-        key_remapper_dict=model_key_remapper_dict_config,
     )
 
     return ModelAndTransform(
