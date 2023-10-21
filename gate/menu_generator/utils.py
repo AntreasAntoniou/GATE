@@ -35,7 +35,7 @@ def build_command(
         f"{accelerate_launch_command} {gate_run_command} "
         f"exp_name={exp_name} model={model_name} {model_args} dataset={dataset_name} optimizer.lr={lr} "
         f"trainer={trainer} evaluator={evaluator} num_workers=12 "
-        f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size}"
+        f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size} train_iters=450"
     )
     return command_template
 

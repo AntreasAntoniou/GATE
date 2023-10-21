@@ -75,7 +75,7 @@ def generate_commands(
 def run_experiments(
     prefix: str = "debug",
     experiment_type: str = "all",
-    accelerate_launch_path: str = "/disk/scratch_fast1/aantoni2/mambaforge/envs/main/bin/accelerate-launch",  # "/opt/conda/envs/main/bin/accelerate-launch",
+    accelerate_launch_path: str = "accelerate launch",  # "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "gate/run.py",
 ) -> None:
     """

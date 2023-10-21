@@ -31,7 +31,6 @@ def build_svhn_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         "cropped_digits",
         split="train",
         cache_dir=data_dir,
-        task="image-classification",
         num_proc=mp.cpu_count(),
     )
 
@@ -40,7 +39,6 @@ def build_svhn_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         "cropped_digits",
         split="test",
         cache_dir=data_dir,
-        task="image-classification",
         num_proc=mp.cpu_count(),
     )
 

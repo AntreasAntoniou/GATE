@@ -84,9 +84,13 @@ class TimmModel(nn.Module):
                 features_only=True,
             )
 
-        except Exception as e:
-            logger.info(f"Could not load model {model_identifier} because {e}")
-
+        except RuntimeError as e:
+            logger.info(
+                f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
+            )
+            print(
+                f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {img_size}"
+            )
             self.model = timm.create_model(
                 model_name=model_identifier,
                 img_size=img_size,

@@ -29,7 +29,6 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     data = load_dataset(
         "imagenet-1k",
         cache_dir=data_dir,
-        task="image-classification",
         num_proc=mp.cpu_count(),
     )
     train_val_data = data["train"]
@@ -69,6 +68,11 @@ class StandardAugmentations:
         return input_dict
 
 
+class KeyMapper:
+    def __call__(self, input_dict: Dict) -> Any:
+        return {"image": input_dict["image"], "labels": input_dict["label"]}
+
+
 logger = get_logger(name=__name__)
 
 
@@ -101,6 +105,7 @@ def build_gate_dataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[
+            KeyMapper(),
             train_augment,
             transforms,
         ],
@@ -110,6 +115,7 @@ def build_gate_dataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
+            KeyMapper(),
             transforms,
         ],
     )
@@ -118,6 +124,7 @@ def build_gate_dataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
+            KeyMapper(),
             transforms,
         ],
     )

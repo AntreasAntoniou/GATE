@@ -4,14 +4,17 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
+import torchvision.transforms as T
 from datasets import load_dataset
-from timm.data import rand_augment_transform
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.classification.imagenet1k import StandardAugmentations
+from gate.data.image.classification.imagenet1k import (
+    KeyMapper,
+    StandardAugmentations,
+)
 
 logger = get_logger(name=__name__, set_rich=True)
 
@@ -40,7 +43,6 @@ def build_food101_dataset(
         path="food101",
         split="train",
         cache_dir=data_dir,
-        task="image-classification",
         num_proc=mp.cpu_count(),
     )
 
@@ -48,7 +50,6 @@ def build_food101_dataset(
         path="food101",
         split="validation",
         cache_dir=data_dir,
-        task="image-classification",
         num_proc=mp.cpu_count(),
     )
 
@@ -69,22 +70,47 @@ def build_gate_dataset(
     transforms: Optional[Any] = None,
     num_classes=101,
 ) -> dict:
+    single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
+    augmentations = StandardAugmentations(image_key="image")
+
+    def train_augment(input_dict):
+        input_dict = augmentations(input_dict)
+
+        x = input_dict["image"]
+        x = T.ToTensor()(x)
+        if x.shape[0] == 1:
+            x = single_to_three_channel(x)
+        x = T.ToPILImage()(x)
+        input_dict["image"] = x
+
+        return input_dict
+
     train_set = GATEDataset(
         dataset=build_food101_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[StandardAugmentations(image_key="image"), transforms],
+        transforms=[
+            KeyMapper(),
+            train_augment,
+            transforms,
+        ],
     )
 
     val_set = GATEDataset(
         dataset=build_food101_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[
+            KeyMapper(),
+            transforms,
+        ],
     )
 
     test_set = GATEDataset(
         dataset=build_food101_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=transforms,
+        transforms=[
+            KeyMapper(),
+            transforms,
+        ],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
