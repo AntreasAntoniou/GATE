@@ -1,6 +1,5 @@
 from rich import print
 
-
 # accelerate launch --mixed_precision=bf16 gate/run.py exp_name=med-ham10k-clip-debug-2
 # model=clip-classification dataset=ham10k trainer=multi_class_classification
 # evaluator=multi_class_classification seed=2306 train_batch_size=128 eval_batch_size=128

@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from gate.models.backbones.clip import (  # replace 'your_module' with the module where you have defined CLIPAdapter
+from gate.models.backbones.clip import (
     CLIPAdapter,
-)
+)  # replace 'your_module' with the module where you have defined CLIPAdapter
 
 
 def test_CLIPAdapter():
