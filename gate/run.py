@@ -9,12 +9,12 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -46,7 +46,6 @@ config_store = collect_config_store()
 # Initializing logger
 logger = get_logger(name=__name__)
 
-accelerator = Accelerator()
 
 from rich import print
 from rich.console import Console
@@ -86,6 +85,8 @@ def run(cfg: Any) -> None:
     Args:
         cfg (Any): The configuration parameters
     """
+    accelerator = Accelerator()
+    print(accelerator.state)
     # Pretty print the configuration
     print(pretty_config(cfg, resolve=True))
 

@@ -1,0 +1,121 @@
+from rich import print
+
+from gate.menu_generator.core import (
+    DatasetName,
+    EvaluatorName,
+    LearningRateConfig,
+    ModelConfig,
+    ModelName,
+    ModelTypeNames,
+    TrainerName,
+)
+
+dataset_configs = [DatasetName.CHX, DatasetName.HAM10K, DatasetName.DR]
+dataset_configs = {
+    dataset_name: dataset_name.value for dataset_name in dataset_configs
+}
+
+
+lr_dict = {
+    "resnet50_a1_in1k": 1e-3,
+    "wide_resnet50_2_tv_in1k": 1e-3,
+    "resnext50_32x4d_a1_in1k": 1e-3,
+    "sam_vit_base16_224_in1k": 1e-5,
+    "augreg_vit_base16_224_in1k": 1e-5,
+    "dino_vit_base16_224": 1e-5,
+    "clip_vit_base16_224": 1e-5,
+    "laion_vit_base16_224": 1e-5,
+    "efficientnetv2_rw_s_ra2_in1k": 1e-5,
+    "deit3_base_patch16_224_fb_in1k": 1e-5,
+    "flexivit_base_1200ep_in1k": 1e-5,
+}
+
+model_configs = {
+    ModelName.RESNET50_A1_IN1K: ModelConfig(
+        name=ModelName.RESNET50_A1_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-3], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="resnet50.a1_in1k",
+    ),
+    ModelName.WIDE_RESNET50_2_TV_IN1K: ModelConfig(
+        name=ModelName.WIDE_RESNET50_2_TV_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-3], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="wide_resnet50_2.tv_in1k",
+    ),
+    ModelName.RESNEXT50_32X4D_A1_IN1K: ModelConfig(
+        name=ModelName.RESNEXT50_32X4D_A1_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-3], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="resnext50_32x4d.a1_in1k",
+    ),
+    ModelName.SAM_VIT_BASE16_224_IN1K: ModelConfig(
+        name=ModelName.SAM_VIT_BASE16_224_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="vit_base_patch16_224.sam_in1k",
+    ),
+    ModelName.AUGREG_VIT_BASE16_224_IN1K: ModelConfig(
+        name=ModelName.AUGREG_VIT_BASE16_224_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="vit_base_patch16_224.augreg_in1k",
+    ),
+    ModelName.DINO_VIT_BASE16_224: ModelConfig(
+        name=ModelName.DINO_VIT_BASE16_224,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="vit_base_patch16_224.dino",
+    ),
+    ModelName.CLIP_VIT_BASE16_224: ModelConfig(
+        name=ModelName.CLIP_VIT_BASE16_224,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="clip-protonet-few-shot-classification",
+    ),
+    ModelName.LAION_VIT_BASE16_224: ModelConfig(
+        name=ModelName.LAION_VIT_BASE16_224,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="vit_base_patch16_clip_224.laion2b",
+    ),
+    ModelName.EFFICIENTNETV2_RW_S_RA2_IN1K: ModelConfig(
+        name=ModelName.EFFICIENTNETV2_RW_S_RA2_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="efficientnetv2_rw_s.ra2_in1k",
+    ),
+    ModelName.DEIT3_BASE_PATCH16_224_FB_IN1K: ModelConfig(
+        name=ModelName.DEIT3_BASE_PATCH16_224_FB_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="deit3_base_patch16_224.fb_in1k",
+    ),
+    ModelName.FLEXIVIT_BASE_1200EP_IN1K: ModelConfig(
+        name=ModelName.FLEXIVIT_BASE_1200EP_IN1K,
+        learning_rate_config=LearningRateConfig(
+            default=[1e-5], dataset_specific={}
+        ),
+        model_type="timm-protonet-few-shot-classification",
+        timm_model_name="flexivit_base.1200ep_in1k",
+    ),
+}

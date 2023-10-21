@@ -130,7 +130,6 @@ class TimmModel(nn.Module):
                 x,
                 n=[i for i in range(len(self.model.blocks))],
                 reshape=False,
-                return_class_token=False,
                 norm=True,
             )
         else:

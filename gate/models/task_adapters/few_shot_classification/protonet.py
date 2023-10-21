@@ -8,10 +8,10 @@ from gate.models.task_adapters.few_shot_classification import (
     FewShotLearningClassificationEpisode,
 )
 from gate.models.task_adapters.few_shot_classification.utils import (
-    get_accuracy,
-    get_prototypes,
-    prototypical_logits,
-    prototypical_loss,
+    compute_prototypes,
+    compute_prototypical_accuracy,
+    compute_prototypical_logits,
+    compute_prototypical_loss,
 )
 
 
@@ -141,17 +141,17 @@ class PrototypicalNetwork(nn.Module):
             num_tasks, -1, query_set_features.shape[-1]
         )
 
-        prototypes = get_prototypes(
-            embeddings=support_set_embedding,
+        prototypes = compute_prototypes(
+            support=support_set_embedding,
             labels=support_set_labels,
-            num_classes=int(torch.max(support_set_labels)) + 1,
+            num_classes=torch.max(support_set_labels) + 1,
         )
 
         output_dict["prototypes"] = prototypes
         output_dict["support_set_embedding"] = support_set_embedding
         output_dict["query_set_embedding"] = query_set_embedding
-        output_dict["logits"] = prototypical_logits(
-            prototypes, query_set_embedding
+        output_dict["logits"] = compute_prototypical_logits(
+            prototypes=prototypes, queries=query_set_embedding
         )
         output_dict["labels"] = query_set_labels
 
@@ -166,8 +166,7 @@ class PrototypicalNetwork(nn.Module):
         return output_dict
 
     def compute_loss_and_metrics(self, logits, labels):
-        loss = prototypical_loss(logits, labels)
-        loss = torch.mean(loss)
+        loss = compute_prototypical_loss(logits=logits, labels=labels)
 
-        accuracy = get_accuracy(logits=logits, labels=labels)
+        accuracy = compute_prototypical_accuracy(logits=logits, labels=labels)
         return {"loss": loss, "accuracy_top_1": accuracy}

@@ -1,11 +1,140 @@
 import math
+from typing import Tuple
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from gate.boilerplate.utils import get_logger
 
 logger = get_logger(__name__)
+
+
+Tensor = torch.Tensor
+
+EPS = 1e-8
+
+
+def compute_prototypes(
+    support: torch.Tensor, labels: torch.Tensor, num_classes: int
+) -> torch.Tensor:
+    """Computes the class prototypes from the support set without using a for-loop.
+
+    Args:
+        embeddings (Tensor): The support set embeddings with shape [N, D], where N is
+                          the number of samples and D is the dimensionality.
+        labels (Tensor): The labels corresponding to the support set with shape [N].
+
+    Returns:
+        Tensor: Class prototypes with shape [C, D], where C is the number of unique
+                classes in the support set.
+    """
+    if len(support.shape) == 3:
+        support = support.view(-1, support.shape[-1])
+
+    if len(labels.shape) == 2:
+        labels = labels.view(-1)
+
+    unique_labels, class_counts = torch.unique(labels, return_counts=True)
+
+    # Initialize prototypes tensor
+    prototypes = torch.zeros(
+        num_classes,
+        *support.shape[1:],
+        device=support.device,
+        dtype=support.dtype,
+    )
+
+    # Scatter-add to sum embeddings belonging to the same class
+    prototypes.index_add_(0, labels, support)
+
+    # Divide by the class counts to get the mean, being careful about zero division
+    non_zero_counts = class_counts > 0
+    prototypes[unique_labels[non_zero_counts]] /= (
+        class_counts[non_zero_counts].view(-1, 1).float()
+    )
+
+    return prototypes
+
+
+def euclidean_distance(prototypes: Tensor, queries: Tensor) -> Tensor:
+    """Compute the loss (i.e. negative log-likelihood) for the prototypical
+    network, on the test/query points.
+
+    Parameters
+    ----------
+    prototypes : `torch.FloatTensor` instance
+        A tensor containing the prototypes for each class. This tensor has shape
+        `(batch_size, num_classes, embedding_size)`.
+
+    embeddings : `torch.FloatTensor` instance
+        A tensor containing the embeddings of the query points. This tensor has
+        shape `(batch_size, num_examples, embedding_size)`.
+
+    labels : `torch.LongTensor` instance
+        A tensor containing the labels of the query points. This tensor has
+        shape `(batch_size, num_examples)`.
+
+    Returns
+    -------
+    loss : `torch.FloatTensor` instance
+        The negative log-likelihood on the query points.
+    """
+    n = prototypes.size(0)
+    m = queries.size(0)
+    prototypes = prototypes.unsqueeze(0).expand(m, n, -1)
+    queries = queries.unsqueeze(1).expand(m, n, -1)
+    distance = (prototypes - queries).pow(2).sum(dim=2)
+    return distance
+
+
+def compute_prototypical_logits(prototypes: Tensor, queries: Tensor) -> Tensor:
+    """Computes the logits for queries based on prototypes.
+
+    Args:
+        prototypes (Tensor): Class prototypes with shape [C, D].
+        queries (Tensor): Query points with shape [N, D].
+
+    Returns:
+        Tensor: Logits matrix with shape [N, C].
+    """
+    if len(queries.shape) == 3:
+        queries = queries.view(-1, queries.shape[-1])
+
+    return -euclidean_distance(prototypes, queries)
+
+
+def compute_prototypical_loss(logits: Tensor, labels: Tensor) -> Tensor:
+    """Computes the cross-entropy loss between logits and targets.
+
+    Args:
+        logits (Tensor): Logits matrix with shape [N, C].
+        targets (Tensor): Ground truth labels with shape [N].
+
+    Returns:
+        Tensor: The cross-entropy loss as a scalar tensor.
+    """
+
+    logits = logits.view(-1, logits.shape[-1])
+    labels = labels.view(-1)
+
+    criterion = nn.CrossEntropyLoss()
+    loss = criterion(logits, labels)
+    return loss
+
+
+def compute_prototypical_accuracy(logits: Tensor, labels: Tensor) -> float:
+    """Computes the accuracy based on logits and targets.
+
+    Args:
+        logits (Tensor): Logits matrix with shape [N, C].
+        targets (Tensor): Ground truth labels with shape [N].
+
+    Returns:
+        float: The accuracy as a float in the range [0, 1].
+    """
+    acc = (logits.argmax(dim=1).long() == labels.long()).sum().float()
+    return acc / logits.size(0)
 
 
 def learning_scheduler_smart_autofill(
@@ -32,152 +161,6 @@ def learning_scheduler_smart_autofill(
         )
 
     return lr_scheduler_config
-
-
-def get_num_samples(labels, num_classes, dtype=None) -> torch.Tensor:
-    batch_size = labels.size(0)
-    with torch.no_grad():
-        # log.info(f"Batch size is {batch_size}")
-        ones = torch.ones_like(labels, dtype=dtype)
-        # log.info(f"Ones tensor is {ones.shape}")
-        num_samples = ones.new_zeros((batch_size, num_classes))
-        # log.info(f"Num samples tensor is {num_samples.shape}")
-        num_samples.scatter_add_(1, labels, ones)
-    return num_samples
-
-
-def get_prototypes(embeddings, labels, num_classes):
-    """Compute the prototypes (the mean vector of the embedded training/support
-    points belonging to its class) for each classes in the task.
-
-    Parameters
-    ----------
-    embeddings : `torch.FloatTensor` instance
-        A tensor containing the embeddings of the support points. This tensor
-        has shape `(batch_size, num_examples, embedding_size)`.
-
-    labels : `torch.LongTensor` instance
-        A tensor containing the labels of the support points. This tensor has
-        shape `(batch_size, num_examples)`.
-
-    num_classes : int
-        Number of classes in the task.
-
-    Returns
-    -------
-    prototypes : `torch.FloatTensor` instance
-        A tensor containing the prototypes for each class. This tensor has shape
-        `(batch_size, num_classes, embedding_size)`.
-    """
-    batch_size, embedding_size = embeddings.size(0), embeddings.size(-1)
-
-    num_samples = get_num_samples(labels, num_classes, dtype=embeddings.dtype)
-    num_samples.unsqueeze_(-1)
-    num_samples = torch.max(num_samples, torch.ones_like(num_samples))
-
-    prototypes = embeddings.new_zeros(
-        (batch_size, num_classes, embedding_size)
-    )
-    indices = labels.unsqueeze(-1).expand_as(embeddings)
-    prototypes.scatter_add_(1, indices, embeddings).div_(num_samples)
-
-    return prototypes
-
-
-def prototypical_loss(logits, labels) -> torch.Tensor:
-    """Compute the loss (i.e. negative log-likelihood) for the prototypical
-    network, on the test/query points.
-
-    Parameters
-    ----------
-    prototypes : `torch.FloatTensor` instance
-        A tensor containing the prototypes for each class. This tensor has shape
-        `(batch_size, num_classes, embedding_size)`.
-
-    embeddings : `torch.FloatTensor` instance
-        A tensor containing the embeddings of the query points. This tensor has
-        shape `(batch_size, num_examples, embedding_size)`.
-
-    labels : `torch.LongTensor` instance
-        A tensor containing the labels of the query points. This tensor has
-        shape `(batch_size, num_examples)`.
-
-    Returns
-    -------
-    loss : `torch.FloatTensor` instance
-        The negative log-likelihood on the query points.
-    """
-
-    # Compute log probabilities using softmax
-    # We negate the distances as we are dealing with similarity
-    log_prob = F.log_softmax(-logits, dim=2)
-
-    # Gather log probabilities using labels; shape will be (batch_size, num_examples)
-    relevant_log_prob = torch.gather(
-        log_prob, 2, labels.unsqueeze(2)
-    ).squeeze()
-
-    # Compute negative log-likelihood loss
-    loss = -relevant_log_prob.mean()
-
-    return loss
-
-
-def prototypical_logits(prototypes, embeddings):
-    """
-    Compute the loss (i.e. negative log-likelihood) for the prototypical
-    network, on the test/query points.
-
-    Parameters
-    ----------
-    prototypes : torch.FloatTensor
-        A tensor containing the prototypes for each class. This tensor has shape
-        (batch_size, num_classes, embedding_size).
-
-    embeddings : torch.FloatTensor
-        A tensor containing the embeddings of the query points. This tensor has
-        shape (batch_size, num_examples, embedding_size).
-
-    labels : torch.LongTensor
-        A tensor containing the labels of the query points. This tensor has
-        shape (batch_size, num_examples).
-
-    Returns
-    -------
-    loss : torch.FloatTensor
-        The negative log-likelihood on the query points.
-    """
-
-    # Compute pairwise squared Euclidean distances
-    # The resulting shape will be (batch_size, num_examples, num_classes)
-    pairwise_distances = torch.cdist(embeddings, prototypes, p=2) ** 2
-
-    return pairwise_distances
-
-
-def get_accuracy(logits, labels):
-    """Compute the accuracy of the prototypical network on the test/query points.
-
-    Parameters
-    ----------
-    prototypes : `torch.FloatTensor` instance
-        A tensor containing the prototypes for each class. This tensor has shape
-        `(meta_batch_size, num_classes, embedding_size)`.
-    embeddings : `torch.FloatTensor` instance
-        A tensor containing the embeddings of the query points. This tensor has
-        shape `(meta_batch_size, num_examples, embedding_size)`.
-    labels : `torch.LongTensor` instance
-        A tensor containing the labels of the query points. This tensor has
-        shape `(meta_batch_size, num_examples)`.
-
-    Returns
-    -------
-    accuracy : `torch.FloatTensor` instance
-        Mean accuracy on the query points.
-    """
-    _, predictions = torch.min(-logits, dim=-1)
-    accuracy = torch.mean(predictions.eq(labels).float())
-    return accuracy
 
 
 def get_cosine_distances(query_embeddings, support_embeddings):

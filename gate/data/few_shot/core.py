@@ -22,7 +22,7 @@ from gate.data.few_shot.utils import (
 logger = get_logger(
     __name__,
 )
-
+# logger.setLevel("DEBUG")
 from concurrent.futures import ThreadPoolExecutor
 
 from torch.utils.data import Dataset
@@ -219,7 +219,7 @@ class FewShotClassificationMetaDataset(Dataset):
         support_set_target_transform: Any = None,
         query_set_target_transform: Any = None,
         preprocess_transforms: Optional[Any] = None,
-        max_support_set_size: Optional[int] = 150,
+        max_support_set_size: Optional[int] = 250,
     ):
         super(FewShotClassificationMetaDataset, self).__init__()
 
@@ -429,18 +429,18 @@ class FewShotClassificationMetaDataset(Dataset):
             class_name: len(self.current_class_to_address_dict[class_name])
             for class_name in selected_classes_for_set
         }
-        # #logger.debug(
-        #     f"Class to num available samples: {class_to_num_available_samples}"
-        # )
+        logger.debug(
+            f"Class to num available samples: {class_to_num_available_samples}"
+        )
         return class_to_num_available_samples
 
     def _calculate_num_query_samples_per_class(
         self, class_to_num_available_samples
     ):
         """Calculate the number of query samples per class."""
-        # logger.debug(
-        #     f"Class to num available samples: {class_to_num_available_samples}"
-        # )
+        logger.debug(
+            f"Class to num available samples: {class_to_num_available_samples}"
+        )
         min_available_shots = min(
             [value for value in class_to_num_available_samples.values()]
         )
@@ -479,13 +479,13 @@ class FewShotClassificationMetaDataset(Dataset):
             else:
                 num_support_samples_per_class = self.num_samples_per_class
         except Exception as e:
-            # #logger.debug(
-            #     f"Exception: {e}, {class_name}, min_num_classes_per_set: {self.min_num_classes_per_set}, "
-            #     f"class_to_num_available_samples: {self.class_to_num_available_samples[class_name]}, "
-            #     f"available_support_set_size: {available_support_set_size}, "
-            #     f"max_per_class_support_set_size: {max_per_class_support_set_size}, "
-            #     f"num_query_samples_per_class: {num_query_samples_per_class}, "
-            # )
+            logger.debug(
+                f"Exception: {e}, {class_name}, min_num_classes_per_set: {self.min_num_classes_per_set}, "
+                f"class_to_num_available_samples: {self.class_to_num_available_samples[class_name]}, "
+                f"available_support_set_size: {available_support_set_size}, "
+                f"max_per_class_support_set_size: {max_per_class_support_set_size}, "
+                f"num_query_samples_per_class: {num_query_samples_per_class}, "
+            )
             return None, None
 
         selected_samples_addresses_idx = rng.choice(
@@ -620,12 +620,12 @@ class FewShotClassificationMetaDataset(Dataset):
         query_label_frequency_dict = Counter(
             [int(label) for label in query_set_labels]
         )
-        # #logger.debug(
-        #     f"Support set label frequency: {support_label_frequency_dict}"
-        # )
-        # #logger.debug(
-        #     f"Query set label frequency: {query_label_frequency_dict}"
-        # )
+        logger.debug(
+            f"Support set label frequency: {support_label_frequency_dict}"
+        )
+        logger.debug(
+            f"Query set label frequency: {query_label_frequency_dict}"
+        )
 
     def _format_input_and_label_data(
         self,
@@ -674,7 +674,8 @@ class FewShotClassificationMetaDataset(Dataset):
 
         # Determine the number of classes per set
         num_classes_per_set = self._calculate_num_classes_per_set(rng)
-        # logger.debug(f"Number of classes per set: {num_classes_per_set}")
+
+        logger.debug(f"Number of classes per set: {num_classes_per_set}")
 
         # Select the classes for the current set
         available_class_labels = list(
@@ -699,9 +700,9 @@ class FewShotClassificationMetaDataset(Dataset):
         self.class_to_num_available_samples = (
             self._prepare_for_sample_selection(selected_classes_for_set)
         )
-        # #logger.debug(
-        #     f"Class to number of available samples: {self.class_to_num_available_samples}"
-        # )
+        logger.debug(
+            f"Class to number of available samples: {self.class_to_num_available_samples}"
+        )
 
         # Determine the number of query samples per class
         num_query_samples_per_class = (
@@ -709,13 +710,13 @@ class FewShotClassificationMetaDataset(Dataset):
                 self.class_to_num_available_samples
             )
         )
-        # #logger.debug(
-        #     f"Number of query samples per class: {num_query_samples_per_class}"
-        # )
+        logger.debug(
+            f"Number of query samples per class: {num_query_samples_per_class}"
+        )
 
         # Generate support and query sets for each class
         for idx, class_name in enumerate(selected_classes_for_set):
-            # logger.debug(f"Generating set for class: {class_name}")
+            logger.debug(f"Generating set for class: {class_name}")
             (
                 num_support_samples_per_class,
                 selected_samples_addresses,
@@ -744,7 +745,7 @@ class FewShotClassificationMetaDataset(Dataset):
             data_inputs, data_labels = self._shuffle_data(
                 data_inputs, data_labels, rng
             )
-            # logger.debug(f"num query samples {num_query_samples_per_class}")
+            logger.debug(f"num query samples {num_query_samples_per_class}")
             # Assign data to support and query sets
             (
                 support_set_inputs,
@@ -786,10 +787,10 @@ class FewShotClassificationMetaDataset(Dataset):
         )
 
         # Log the sizes of the support and query sets
-        # #logger.debug(
-        #     f"Size of support set: {support_set_inputs.shape},"
-        #     f"Size of query set: {query_set_inputs.shape}"
-        # )
+        logger.debug(
+            f"Size of support set: {support_set_inputs.shape},"
+            f"Size of query set: {query_set_inputs.shape}"
+        )
 
         # Log the frequency of labels in the support and query sets
         self._log_label_frequency(support_set_labels, query_set_labels)

@@ -1,5 +1,15 @@
 from rich import print
 
+from gate.menu_generator.core import (
+    DatasetName,
+    EvaluatorName,
+    LearningRateConfig,
+    ModelConfig,
+    ModelName,
+    ModelTypeNames,
+    TrainerName,
+)
+
 
 def build_command(
     exp_name, model_name, dataset_name, model_args="", lr=1e-5, seed: int = 42
