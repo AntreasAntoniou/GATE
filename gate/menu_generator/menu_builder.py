@@ -80,6 +80,7 @@ def run_experiments(
     experiment_type: str = "all",
     accelerate_launch_path: str = "accelerate launch",  # "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "gate/run.py",
+    print_commands: bool = True,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -117,8 +118,12 @@ def run_experiments(
             print("Invalid experiment type selected.")
             return
 
+    if print_commands:
+        for experiment_name, experiment_command in experiment_dict.items():
+            print(f"{experiment_command} \n")
+
     for experiment_name, experiment_command in experiment_dict.items():
-        print(f"{experiment_command} \n")
+        yield experiment_command
 
 
 # Use Google Fire for command-line argument parsing
