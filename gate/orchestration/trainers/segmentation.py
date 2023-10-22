@@ -89,11 +89,14 @@ def sub_batch_generator(batch_dict, sub_batch_size):
 
     # Validate input and get original batch size
     for key, value in batch_dict.items():
+        print(
+            f"batch size: {value.shape[0] * value.shape[1]}, stored batch size: {batch_size}"
+        )
         if batch_size is None:
             batch_size = value.shape[0] * value.shape[1]
         elif batch_size != value.shape[0] * value.shape[1]:
             raise ValueError(
-                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}"
+                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}, batch_size: {batch_size}, value shape: {value.shape}"
             )
 
     # Generate and yield sub-batches

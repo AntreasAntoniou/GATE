@@ -12,6 +12,9 @@ from gate.menu_generator.configs.few_shot_learning import (
 from gate.menu_generator.configs.image_classification import (
     config as image_classification_config,
 )
+from gate.menu_generator.configs.medical_image_classification import (
+    config as medical_image_classification_config,
+)
 from gate.menu_generator.utils import build_command, get_commands
 
 # Logging configuration using Rich for better terminal output
@@ -87,6 +90,7 @@ def run_experiments(
     experiment_configs: Dict[str, Dict] = {
         "image-class": image_classification_config,
         "few-shot": few_shot_learning_config,
+        "med-class": medical_image_classification_config,
     }
 
     if experiment_type == "all":
@@ -114,7 +118,7 @@ def run_experiments(
             return
 
     for experiment_name, experiment_command in experiment_dict.items():
-        print(f"Command for {experiment_name}: {experiment_command} \n")
+        print(f"{experiment_command} \n")
 
 
 # Use Google Fire for command-line argument parsing

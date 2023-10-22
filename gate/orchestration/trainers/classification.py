@@ -251,6 +251,17 @@ class MultiClassClassificationTrainer(Trainer):
         return phase_metrics
 
     def compute_step_metrics(self, output_dict, batch, loss):
+        """
+        Compute step metrics for the given output, batch, and loss.
+
+        Args:
+            output_dict (dict): The output dictionary.
+            batch (dict): The batch data.
+            loss (torch.Tensor): The loss value.
+
+        Returns:
+            None
+        """
         # fallback to numbering classes if no class names are provided
         if self.label_idx_to_class_name is None:
             self.label_idx_to_class_name = [
