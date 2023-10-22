@@ -180,7 +180,7 @@ class MultiClassClassificationEvaluator(Evaluator):
                 phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
                     y_true=labels[:, c_idx], y_pred=logits[:, c_idx]
                 )
-            phase_metrics[f"{metric_name}-macro"] = torch.mean(
+            phase_metrics[f"{metric_name}-macro"] = np.mean(
                 [
                     phase_metrics[f"{class_name}-{metric_name}"]
                     for class_name in self.label_idx_to_class_name
