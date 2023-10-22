@@ -12,7 +12,7 @@ from gate.data.image.classification.imagenet1k import StandardAugmentations
 from gate.data.transforms.tiny_image_transforms import pad_image
 
 
-def build_svhn_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a SVHN dataset using the Hugging Face datasets library.
 
@@ -54,20 +54,31 @@ def build_svhn_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 def transform_wrapper(inputs: Dict, target_size=224):
     return {
         "image": pad_image(inputs["image"], target_size=target_size),
-        "labels": inputs["labels"],
+        "labels": inputs["label"],
     }
 
 
 @configurable(
     group="dataset", name="svhn", defaults=dict(data_dir=DATASET_DIR)
 )
-def build_gate_svhn_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=10,
 ) -> dict:
+    """
+    Builds and returns a gate dataset for the SVHN (Street View House Numbers) dataset.
+
+    Args:
+        data_dir (Optional[str]): The directory path where the SVHN dataset is stored. If None, defaults to the value of DATASET_DIR.
+        transforms (Optional[Any]): Any additional transforms to apply to the dataset.
+        num_classes (int): The number of classes in the dataset. Defaults to 10.
+
+    Returns:
+        dict: A dictionary containing the gate dataset for training, validation, and testing. The keys are "train", "val", and "test", and the values are the respective datasets.
+    """
     train_set = GATEDataset(
-        dataset=build_svhn_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[
             transform_wrapper,
@@ -77,13 +88,13 @@ def build_gate_svhn_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_svhn_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
-        dataset=build_svhn_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[transform_wrapper, transforms],
     )
