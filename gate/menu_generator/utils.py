@@ -106,7 +106,7 @@ def get_commands(
     gate_run_path: str = "/app/gate/run.py",
 ) -> Dict[str, str]:
     """
-    Generate and print commands. 🖨️
+    Generate a list of commands. 📚
     """
     command_dict = generate_commands(
         prefix=prefix,

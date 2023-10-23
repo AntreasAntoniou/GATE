@@ -303,7 +303,7 @@ class Learner(nn.Module):
         while self.background_threads:
             for thread in self.background_threads:
                 if not thread.done:
-                    if not thread.is_alive():
+                    if not thread.is_alive() and not thread.started:
                         print(f"Starting thread {thread}")
                         thread.start()
                         break
