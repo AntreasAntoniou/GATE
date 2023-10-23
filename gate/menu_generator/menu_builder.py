@@ -32,6 +32,7 @@ def generate_commands(
     prefix: str,
     seed_list: List[int],
     experiment_config: Dict,
+    num_workers: int = 12,
     accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "/app/gate/run.py",
 ) -> Dict[str, str]:
@@ -62,6 +63,7 @@ def generate_commands(
                         model_name=model_config.model_type,
                         dataset_name=dataset_value,
                         model_args=model_args,
+                        num_workers=num_workers,
                         lr=lr,
                         trainer=trainer,
                         evaluator=evaluator,
@@ -80,6 +82,7 @@ def run_experiments(
     experiment_type: str = "all",
     accelerate_launch_path: str = "accelerate launch",  # "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "gate/run.py",
+    num_workers: int = 12,
     print_commands: bool = True,
 ) -> None:
     """
@@ -101,6 +104,7 @@ def run_experiments(
                     prefix=prefix,
                     seed_list=seed_list,
                     experiment_config=config,
+                    num_workers=num_workers,
                     accelerate_launch_path=accelerate_launch_path,
                     gate_run_path=gate_run_path,
                 )
@@ -111,6 +115,7 @@ def run_experiments(
                 prefix=prefix,
                 seed_list=seed_list,
                 experiment_config=experiment_configs[experiment_type],
+                num_workers=num_workers,
                 accelerate_launch_path=accelerate_launch_path,
                 gate_run_path=gate_run_path,
             )
@@ -122,8 +127,7 @@ def run_experiments(
         for experiment_name, experiment_command in experiment_dict.items():
             print(f"{experiment_command} \n")
 
-    for experiment_name, experiment_command in experiment_dict.items():
-        yield experiment_command
+    return experiment_dict
 
 
 # Use Google Fire for command-line argument parsing

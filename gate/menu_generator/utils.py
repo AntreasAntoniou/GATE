@@ -4,11 +4,14 @@ from typing import Dict, List, Union
 
 from rich import print
 
+from gate.config.variables import NUM_WORKERS
+
 
 def build_command(
     exp_name: str,
     model_name: str,
     dataset_name: str,
+    num_workers: int = 12,
     gpu_ids: Union[str, None] = None,
     train_batch_size: int = 1,
     eval_batch_size: int = 1,
@@ -34,7 +37,7 @@ def build_command(
     command_template = (
         f"{accelerate_launch_command} {gate_run_command} "
         f"exp_name={exp_name} model={model_name} {model_args} dataset={dataset_name} optimizer.lr={lr} "
-        f"trainer={trainer} evaluator={evaluator} num_workers=12 "
+        f"trainer={trainer} evaluator={evaluator} num_workers={num_workers} "
         f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size} train_iters=450"
     )
     return command_template
@@ -46,6 +49,7 @@ def generate_commands(
     dataset_dict: Dict[str, str],
     model_dict: Dict[str, Dict[str, str]],
     lr_dict: Dict[str, float],
+    num_workers: int = 12,
     gpu_ids: Union[str, None] = None,
     train_batch_size: int = 1,
     eval_batch_size: int = 1,
@@ -74,6 +78,7 @@ def generate_commands(
                     exp_name=exp_name,
                     model_name=model_value["model_name"],
                     dataset_name=dataset_value,
+                    num_workers=num_workers,
                     model_args=model_args,
                     lr=lr_dict.get(model_key, 1e-5),
                     seed=seed,
@@ -93,6 +98,7 @@ def get_commands(
     dataset_dict: Dict[str, str],
     model_dict: Dict[str, Dict[str, str]],
     lr_dict: Dict[str, float],
+    num_workers: int = 12,
     gpu_ids: Union[str, None] = None,
     train_batch_size: int = 1,
     eval_batch_size: int = 1,
@@ -113,6 +119,7 @@ def get_commands(
         eval_batch_size=eval_batch_size,
         accelerate_launch_path=accelerate_launch_path,
         gate_run_path=gate_run_path,
+        num_workers=num_workers,
     )
 
     return command_dict
