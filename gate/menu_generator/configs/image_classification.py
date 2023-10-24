@@ -1,28 +1,20 @@
 from gate.menu_generator.core import (
+    AdapterTypeNames,
     DatasetName,
     EncoderNames,
     EvaluatorName,
     LearningRateConfig,
     ModelConfig,
-    ModelTypeNames,
     TrainerName,
 )
 
-dataset_configs = [
-    DatasetName.IN1K,
-    DatasetName.C100,
-    DatasetName.F101,
-    DatasetName.STL10,
-    DatasetName.SVHN,
-    DatasetName.P365,
-]
-
 dataset_configs = {
-    dataset_name: dataset_name.value for dataset_name in dataset_configs
+    dataset_name: dataset_name.value
+    for dataset_name in DatasetName.IMAGE_CLASSIFICATION
 }
 
 BATCH_SIZE = 64
-MODEL_TYPE = ModelTypeNames.TIMM_IMAGE_CLASSIFICATION.value
+MODEL_TYPE = AdapterTypeNames.TIMM_IMAGE_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.IMAGE_CLASSIFICATION.value

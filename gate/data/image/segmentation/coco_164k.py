@@ -81,17 +81,17 @@ def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=len(CLASSES),
-    image_size=512,
+    image_size=1024,
     target_image_size=256,
 ) -> dict:
     input_transforms = KeySelectorTransforms(
-        initial_size=1024, image_label="image", label_label="mask"
+        initial_size=2048, image_label="image", label_label="mask"
     )
 
     train_transforms = BaseDatasetTransforms(
         input_size=image_size,
         target_size=target_image_size,
-        crop_size=512,
+        crop_size=image_size,
         flip_probability=0.5,
         use_photo_metric_distortion=True,
     )

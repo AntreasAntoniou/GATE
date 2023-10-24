@@ -1,29 +1,21 @@
 from gate.menu_generator.core import (
+    AdapterTypeNames,
     DatasetName,
     EncoderNames,
     EvaluatorName,
     LearningRateConfig,
     ModelConfig,
-    ModelTypeNames,
     TrainerName,
 )
 
-dataset_configs = [
-    DatasetName.AIRFS,
-    DatasetName.FUNGIFS,
-    DatasetName.MINIINFS,
-    DatasetName.CUBFS,
-    DatasetName.DTEXTFS,
-    DatasetName.OMNIFS,
-    DatasetName.VGGFS,
-]
+dataset_configs = DatasetName.FEW_SHOT_PROTONET_CLASSIFICATION
 
 dataset_configs = {
     dataset_name: dataset_name.value for dataset_name in dataset_configs
 }
 
 BATCH_SIZE = 1
-MODEL_TYPE = ModelTypeNames.TIMM_FEW_SHOT_PROTONET.value
+MODEL_TYPE = AdapterTypeNames.TIMM_FEW_SHOT_PROTONET.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.IMAGE_CLASSIFICATION.value

@@ -8,17 +8,19 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
+dataset_configs = DatasetName.MEDICAL_ACDC_SEGMENTATION
+
+
 dataset_configs = {
-    dataset_name: dataset_name.value
-    for dataset_name in DatasetName.MEDICAL_SEGMENTATION
+    dataset_name: dataset_name.value for dataset_name in dataset_configs
 }
 
 BATCH_SIZE = 64
-MODEL_TYPE = AdapterTypeNames.TIMM_IMAGE_CLASSIFICATION.value
-RESNET_LR = 1e-3
-VIT_LR = 1e-5
-TRAINER_NAME = TrainerName.MULTI_CLASS_CLASSIFICATION.value
-EVALUATOR_NAME = EvaluatorName.MULTI_CLASS_CLASSIFICATION.value
+MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
+RESNET_LR = 6e-4
+VIT_LR = 6e-6
+TRAINER_NAME = TrainerName.MEDICAL_SEMANTIC_SEGMENTATION.value
+EVALUATOR_NAME = EvaluatorName.MEDICAL_SEMANTIC_SEGMENTATION.value
 model_configs = {
     EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
         model_type=MODEL_TYPE,

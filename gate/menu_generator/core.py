@@ -2,60 +2,49 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
+from gate.data import medical
+from gate.data.few_shot import DatasetName as few_shot_dataset_name
+from gate.data.image.classification import (
+    DatasetName as image_class_dataset_name,
+)
+from gate.data.image.segmentation import DatasetName as image_seg_dataset_name
+from gate.data.image_text.visual_relational_reasoning import (
+    DatasetName as image_rr_dataset_name,
+)
+from gate.data.image_text.zero_shot import (
+    DatasetName as image_text_dataset_name,
+)
+from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
+    DatasetName as acdc_dataset_name,
+)
+from gate.data.medical.segmentation.medical_decathlon import (
+    DatasetName as md_options,
+)
+from gate.data.video import DatasetName as video_dataset_name
+
 
 class DatasetName(Enum):
-    IN1K = "imagenet1k-classification"
-    C100 = "cifar100"
-    F101 = "food101"
-    STL10 = "stl10"
-    SVHN = "svhn"
-    P365 = "places365"
-    AIRFS = "aircraft-fs-classification"
-    CUBFS = "cubirds-fs-classification"
-    DTEXTFS = "dtextures-fs-classification"
-    FUNGIFS = "fungi-fs-classification"
-    MINIINFS = "mini-imagenet-fs-classification"
-    OMNIFS = "omniglot-fs-classification"
-    VGGFS = "vgg-flowers-fs-classification"
-    CHX = "chexpert-classification"
-    DR = "diabetic_retionopathy"
-    HAM10K = "ham10k"
-    CLEVR = "clevr"
-    CLEVR_MATH = "clevr_math"
-    WINOGR = "winoground"
-    FLICKR30K = "flickr30k"
-    NYCC = "newyorkercaptioncontest"
-    POKEMONBLIP = "pokemonblipcaptions"
-    ACDC = "acdc"
-    MEDICAL_DECATHLON = "medical_decathlon"
-    IWILDCAM_2022 = "iwildcam_2022"
-    HMDB51_GULPRGB = "hmdb51-gulprgb"
-    UCF_101_GULPRGB = "ucf-101-gulprgb"
-    EPIC_KITCHENS_100_GULPRGB = "epic-kitchens-100-gulprgb"
-    KINETICS_400 = "kinetics-400"
+    IMAGE_CLASSIFICATION = image_class_dataset_name
+    IMAGE_SEGMENTATION = image_seg_dataset_name
+    IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION = image_text_dataset_name
+    MEDICAL_DECATHLON_SEGMENTATION = md_options
+    MEDICAL_ACDC_SEGMENTATION = acdc_dataset_name
+    VISUAL_RELATIONAL_REASONING = image_rr_dataset_name
+    FEW_SHOT_PROTONET_CLASSIFICATION = few_shot_dataset_name
+    VIDEO_CLASSIFICATION = video_dataset_name
 
 
-@dataclass
-class MedicalTaskOptions:
-    BrainTumour: str = "Task01BrainTumour".lower()
-    Heart: str = "Task02Heart".lower()
-    Liver: str = "Task03Liver".lower()
-    Hippocampus: str = "Task04Hippocampus".lower()
-    Prostate: str = "Task05Prostate".lower()
-    Lung: str = "Task06Lung".lower()
-    Pancreas: str = "Task07Pancreas".lower()
-    HepaticVessel: str = "Task08HepaticVessel".lower()
-    Spleen: str = "Task09Spleen".lower()
-    Colon: str = "Task10Colon".lower()
-
-
-class ModelTypeNames(Enum):
+class AdapterTypeNames(Enum):
     TIMM_IMAGE_CLASSIFICATION = "timm-classification"
     TIMM_FEW_SHOT_PROTONET = "timm-protonet-few-shot-classification"
     TIMM_SEGMENTATION = "timm-segmentation-transformer"
     TIMM_MD_SEGMENTATION = "timm-md-segmentation-transformer"
     TIMM_TEMPORAL_CLASSIFICATION = "timm-temporal-classification"
     TIMM_RELATIONAL_REASONING = "timm-relational-reasoning"
+    TIMM_RELATIONAL_REASONING_MULTI_TASK = (
+        "timm-relational-reasoning-multi-task"
+    )
+
     TIMM_ZERO_SHOT_IMAGE_TEXT = "timm-zero-shot-classification"
 
 

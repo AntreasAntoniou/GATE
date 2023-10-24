@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
@@ -18,6 +19,7 @@ from gate.data.image.segmentation.classes import (
 from gate.data.transforms.segmentation_transforms import (
     DualImageRandomCrop,
     DualImageRandomFlip,
+    MedicalImageSegmentationTransforms,
     PhotoMetricDistortion,
     PhotometricParams,
 )
@@ -25,8 +27,7 @@ from gate.data.transforms.segmentation_transforms import (
 logger = get_logger(name=__name__)
 
 
-@dataclass
-class TaskOptions:
+class TaskOptions(Enum):
     BrainTumour: str = "Task01BrainTumour".lower()
     Heart: str = "Task02Heart".lower()
     Liver: str = "Task03Liver".lower()
@@ -37,6 +38,19 @@ class TaskOptions:
     HepaticVessel: str = "Task08HepaticVessel".lower()
     Spleen: str = "Task09Spleen".lower()
     Colon: str = "Task10Colon".lower()
+
+
+class DatasetName(Enum):
+    BrainTumour: str = "medical_decathlon_brain_tumour"
+    Heart: str = "medical_decathlon_heart"
+    Liver: str = "medical_decathlon_liver"
+    Hippocampus: str = "medical_decathlon_hippocampus"
+    Prostate: str = "medical_decathlon_prostate"
+    Lung: str = "medical_decathlon_lung"
+    Pancreas: str = "medical_decathlon_pancreas"
+    HepaticVessel: str = "medical_decathlon_hepatic_vessel"
+    Spleen: str = "medical_decathlon_spleen"
+    Colon: str = "medical_decathlon_colon"
 
 
 TASK_LIST = vars(TaskOptions()).values()
@@ -249,18 +263,13 @@ class DatasetTransforms:
         }
 
 
-@configurable(
-    group="dataset",
-    name="medical_decathlon",
-    defaults=dict(data_dir=DATASET_DIR),
-)
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    task_name: str = "task01braintumour",
-    num_classes=CLASSES,  # for build_model we must check if num_class is a Dict or an int. If it is a dict, we must use num_classes[task_name]
-    image_size=512,
-    target_image_size=256,
+    task_name: str = TaskOptions.BrainTumour.value,
+    num_classes: int = CLASSES,  # for build_model we must check if num_class is a Dict or an int. If it is a dict, we must use num_classes[task_name]
+    image_size: int = 512,
+    target_image_size: int = 256,
 ) -> dict:
     train_transforms = DatasetTransforms(
         512,
@@ -304,3 +313,223 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_brain_tumour",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_brain_tumour(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,  # for build_model we must check if num_class is a Dict or an int. If it is a dict, we must use num_classes[task_name]
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.BrainTumour.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_heart",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_brain_tumour(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,  # for build_model we must check if num_class is a Dict or an int. If it is a dict, we must use num_classes[task_name]
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Heart.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_liver",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_liver(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Liver.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_hippocampus",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_hippocampus(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Hippocampus.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_prostate",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_prostate(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Prostate.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_lung",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_lung(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Lung.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_pancreas",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_pancreas(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Pancreas.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_hepatic_vessel",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_hepatic_vessel(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.HepaticVessel.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_spleen",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_spleen(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Spleen.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )
+
+
+@configurable(
+    group="dataset",
+    name="medical_decathlon_colon",
+    defaults=dict(data_dir=DATASET_DIR),
+)
+def build_gate_md_colon(
+    data_dir: Optional[str] = None,
+    transforms: Optional[Any] = None,
+    num_classes: int = CLASSES,
+    image_size: int = 512,
+    target_image_size: int = 256,
+) -> dict:
+    return build_gate_dataset(
+        data_dir=data_dir,
+        transforms=transforms,
+        task_name=TaskOptions.Colon.value,
+        num_classes=num_classes,
+        image_size=image_size,
+        target_image_size=target_image_size,
+    )

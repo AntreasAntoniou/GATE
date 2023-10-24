@@ -1,4 +1,5 @@
 import multiprocessing as mp
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
@@ -20,6 +21,10 @@ from gate.data.transforms.segmentation_transforms import (
     PhotoMetricDistortion,
     PhotometricParams,
 )
+
+
+class DatasetName(Enum):
+    ACDC = "acdc"
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
