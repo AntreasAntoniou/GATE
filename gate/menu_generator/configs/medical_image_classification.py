@@ -10,7 +10,7 @@ from gate.menu_generator.core import (
 
 dataset_configs = {
     dataset_name: dataset_name.value
-    for dataset_name in DatasetName.MEDICAL_SEGMENTATION
+    for dataset_name in DatasetName.MEDICAL_CLASSIFICATION.value
 }
 
 BATCH_SIZE = 64

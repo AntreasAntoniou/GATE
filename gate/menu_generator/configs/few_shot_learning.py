@@ -8,7 +8,7 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = DatasetName.FEW_SHOT_PROTONET_CLASSIFICATION
+dataset_configs = DatasetName.FEW_SHOT_PROTONET_CLASSIFICATION.value
 
 dataset_configs = {
     dataset_name: dataset_name.value for dataset_name in dataset_configs

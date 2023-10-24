@@ -8,7 +8,7 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = DatasetName.IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION
+dataset_configs = DatasetName.IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION.value
 
 
 dataset_configs = {

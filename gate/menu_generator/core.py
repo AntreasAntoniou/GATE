@@ -14,6 +14,9 @@ from gate.data.image_text.visual_relational_reasoning import (
 from gate.data.image_text.zero_shot import (
     DatasetName as image_text_dataset_name,
 )
+from gate.data.medical.classification import (
+    DatasetName as med_classification_dataset_name,
+)
 from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
     DatasetName as acdc_dataset_name,
 )
@@ -29,6 +32,7 @@ class DatasetName(Enum):
     IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION = image_text_dataset_name
     MEDICAL_DECATHLON_SEGMENTATION = md_options
     MEDICAL_ACDC_SEGMENTATION = acdc_dataset_name
+    MEDICAL_CLASSIFICATION = med_classification_dataset_name
     VISUAL_RELATIONAL_REASONING = image_rr_dataset_name
     FEW_SHOT_PROTONET_CLASSIFICATION = few_shot_dataset_name
     VIDEO_CLASSIFICATION = video_dataset_name

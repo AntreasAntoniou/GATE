@@ -10,7 +10,7 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = [DatasetName.VISUAL_RELATIONAL_REASONING.CLEVR_MATH]
+dataset_configs = [DatasetName.VISUAL_RELATIONAL_REASONING.value.CLEVR_MATH]
 
 
 dataset_configs = {

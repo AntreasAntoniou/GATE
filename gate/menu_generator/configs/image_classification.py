@@ -10,7 +10,7 @@ from gate.menu_generator.core import (
 
 dataset_configs = {
     dataset_name: dataset_name.value
-    for dataset_name in DatasetName.IMAGE_CLASSIFICATION
+    for dataset_name in DatasetName.IMAGE_CLASSIFICATION.value
 }
 
 BATCH_SIZE = 64

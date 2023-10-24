@@ -1,7 +1,7 @@
 import logging
 import random
 import subprocess
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import fire
 from rich import print
@@ -55,6 +55,7 @@ def generate_commands(
     seed_list: List[int],
     experiment_config: Dict,
     num_workers: int = 12,
+    gpu_ids: Optional[Union[str, int]] = None,
     accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "/app/gate/run.py",
 ) -> Dict[str, str]:
@@ -97,6 +98,7 @@ def generate_commands(
                         dataset_name=dataset_value,
                         model_args=model_args,
                         num_workers=num_workers,
+                        gpu_ids=gpu_ids,
                         lr=lr,
                         trainer=trainer,
                         evaluator=evaluator,
@@ -116,8 +118,9 @@ def run_experiments(
     accelerate_launch_path: str = "accelerate launch",
     gate_run_path: str = "gate/run.py",
     num_workers: int = 12,
+    gpu_ids: Optional[Union[str, int]] = None,
     print_commands: bool = True,
-    run_commands: bool = True,
+    run_commands: bool = False,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -160,6 +163,7 @@ def run_experiments(
                     num_workers=num_workers,
                     accelerate_launch_path=accelerate_launch_path,
                     gate_run_path=gate_run_path,
+                    gpu_ids=gpu_ids,
                 )
             )
     else:
@@ -171,6 +175,7 @@ def run_experiments(
                 num_workers=num_workers,
                 accelerate_launch_path=accelerate_launch_path,
                 gate_run_path=gate_run_path,
+                gpu_ids=gpu_ids,
             )
         else:
             print("Invalid experiment type selected.")

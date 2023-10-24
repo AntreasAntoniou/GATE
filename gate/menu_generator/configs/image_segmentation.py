@@ -10,7 +10,7 @@ from gate.menu_generator.core import (
 
 dataset_configs = {
     dataset_name: dataset_name.value
-    for dataset_name in DatasetName.IMAGE_SEGMENTATION
+    for dataset_name in DatasetName.IMAGE_SEGMENTATION.value
 }
 
 BATCH_SIZE = 64

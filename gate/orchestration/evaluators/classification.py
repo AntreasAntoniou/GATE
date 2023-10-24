@@ -108,6 +108,50 @@ class ClassificationEvaluator(Evaluator):
         )
 
 
+@configurable(group="evaluator", name="video_classification")
+class VideoClassificationEvaluator(ClassificationEvaluator):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            experiment_tracker,
+            source_modality="video",
+            target_modality="video",
+            model_selection_metric_name="accuracy_top_1-epoch-mean",
+            model_selection_metric_higher_is_better=True,
+        )
+
+    def collect_video_episode(self, output_dict, global_step, batch):
+        if "logits" in output_dict:
+            if global_step % 100 == 0:
+                output_dict["video_episode"] = {
+                    "video": output_dict["video"],
+                    "logits": output_dict["logits"],
+                    "label": output_dict["labels"],
+                }
+
+            del output_dict["logits"]
+        return output_dict
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        output_dict = model.forward(batch)[self.target_modality][
+            self.source_modality
+        ]
+
+        loss = output_dict["loss"]
+
+        self.select_metrics_to_report(output_dict)
+        output_dict = self.collect_video_episode(
+            output_dict, global_step, batch
+        )
+
+        return StepOutput(
+            output_metrics_dict=output_dict,
+            loss=loss,
+        )
+
+
 @configurable(group="evaluator", name="image_classification")
 class ImageClassificationEvaluator(ClassificationEvaluator):
     def __init__(

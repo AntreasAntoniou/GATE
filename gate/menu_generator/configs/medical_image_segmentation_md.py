@@ -8,7 +8,7 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = DatasetName.MEDICAL_DECATHLON_SEGMENTATION
+dataset_configs = DatasetName.MEDICAL_DECATHLON_SEGMENTATION.value
 
 
 dataset_configs = {
