@@ -427,21 +427,21 @@ class BaseDatasetTransforms:
 
         if self.crop_size is not None:
             image, annotation = self.crop_transform(image, annotation)
-            logger.info(
-                f"annotation max: {torch.from_numpy(np.array(annotation)).max()}"
-            )
+            # logger.info(
+            #     f"annotation max: {torch.from_numpy(np.array(annotation)).max()}"
+            # )
 
         if self.flip_probability is not None:
             image, annotation = self.random_flip(image, annotation)
-            logger.info(
-                f"annotation max: {torch.from_numpy(np.array(annotation)).max()}"
-            )
+            # logger.info(
+            #     f"annotation max: {torch.from_numpy(np.array(annotation)).max()}"
+            # )
 
         if self.photo_metric_distortion is not None:
             image = self.photo_metric_distortion(image)
 
         annotation = torch.from_numpy(np.array(annotation))
-        logger.info(f"annotation max: {annotation.max()}")
+        # logger.info(f"annotation max: {annotation.max()}")
 
         if len(annotation.shape) == 2:
             annotation = annotation.unsqueeze(0)
