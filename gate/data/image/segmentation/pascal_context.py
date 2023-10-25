@@ -2,16 +2,18 @@
 import os
 import pathlib
 import tarfile
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import requests
+import scipy
 import torch
 import torchvision.transforms as T
 from PIL import Image
 from torch.utils.data import Dataset, random_split
 from torchvision import transforms
-from torchvision.datasets import VOCSegmentation
+from torchvision.datasets.utils import download_and_extract_archive
 from tqdm import tqdm
 
 from gate.boilerplate.decorators import configurable
@@ -23,11 +25,26 @@ from gate.data.image.segmentation.classes import (
 )
 from gate.data.transforms.segmentation_transforms import (
     BaseDatasetTransforms,
-    DualImageRandomCrop,
     KeySelectorTransforms,
 )
 
 logger = get_logger(name=__name__)
+
+
+def get_matching_ids(dir1, dir2):
+    # Get list of file names (without extensions) in each directory
+    print(f"dir1 {dir1}, dir2 {dir2}")
+    files_dir1 = [f.stem for f in Path(dir1).glob("*")]
+    files_dir2 = [f.stem for f in Path(dir2).glob("*")]
+
+    print(
+        f"len files_dir1 {len(files_dir1)}, len files_dir2 {len(files_dir2)}"
+    )
+
+    # Find common elements
+    matching_ids = list(set(files_dir1) & set(files_dir2))
+
+    return matching_ids
 
 
 class PascalContextDataset(Dataset):
@@ -37,65 +54,37 @@ class PascalContextDataset(Dataset):
         subset: str = "train",
         transform: Optional[List[Callable] | Callable] = None,
     ):
-        """
-        Initializes a PascalContextDataset object.
-
-        Args:
-            root_dir (str): Root directory of the dataset.
-            subset (str, optional): Dataset subset to use. Defaults to "train".
-            transform (callable, optional): Optional transform to be applied on a sample.
-
-        Returns:
-            None
-        """
         super().__init__()
-        self.root_dir = root_dir
-        self.subset = subset
+        self.root = root_dir
+        exists = os.path.isdir(root_dir)
+
+        if not exists:
+            os.makedirs(root_dir)
+            download_and_extract_archive(
+                "http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar",
+                download_root=root_dir,
+            )
+            download_and_extract_archive(
+                "https://cs.stanford.edu/~roozbeh/pascal-context/trainval.tar.gz",
+                download_root=root_dir,
+            )
+
+        # Images
+        self.image_dir = Path(self.root, "VOCdevkit", "VOC2010", "JPEGImages")
+
+        # Annotations
+        self.annotation_dir = Path(self.root, "trainval/")
+
+        self.ids = get_matching_ids(self.image_dir, self.annotation_dir)
+
+        print(f"len ids {len(self.ids)}")
+
+        # Define the classes you care about
+        self.selected_classes = CLASSES
+        self.selected_class_indices = [
+            i for i, class_name in enumerate(self.selected_classes)
+        ]
         self.transform = transform
-        self.download_dataset()
-        self.image_dir = os.path.join(
-            self.root_dir, "VOCdevkit/VOC2010/JPEGImages"
-        )
-        self.annotation_dir = os.path.join(
-            self.root_dir, "VOCdevkit/VOC2010/SegmentationClass"
-        )
-        self.split_file = os.path.join(
-            self.root_dir,
-            f"VOCdevkit/VOC2010/ImageSets/Segmentation/{self.subset}.txt",
-        )
-
-        with open(self.split_file, "r") as f:
-            self.ids = f.read().splitlines()
-
-    def download_dataset(self):
-        if not os.path.exists(self.root_dir):
-            os.makedirs(self.root_dir)
-
-        dataset_url = "http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar"
-        tar_path = os.path.join(self.root_dir, "VOCtrainval_03-May-2010.tar")
-
-        if not os.path.exists(tar_path):
-            logger.info("Downloading dataset...")
-
-            response = requests.get(dataset_url, stream=True)
-            total_size = int(response.headers.get("content-length", 0))
-            block_size = 1024  # 1 Kibibyte
-            progress_bar = tqdm(total=total_size, unit="iB", unit_scale=True)
-
-            with open(tar_path, "wb") as f:
-                for data in response.iter_content(block_size):
-                    progress_bar.update(len(data))
-                    f.write(data)
-            progress_bar.close()
-
-            if total_size != 0 and progress_bar.n != total_size:
-                logger.error("ERROR, something went wrong")
-
-            print("Extracting dataset...")
-            with tarfile.open(tar_path, "r") as tar_ref:
-                tar_ref.extractall(path=self.root_dir)
-
-        logger.info("Dataset is ready.")
 
     def __len__(self):
         return len(self.ids)
@@ -105,11 +94,28 @@ class PascalContextDataset(Dataset):
         img = Image.open(img_name).convert("RGB")
 
         annotation_name = os.path.join(
-            self.annotation_dir, f"{self.ids[idx]}.png"
+            self.annotation_dir, f"{self.ids[idx]}.mat"
         )
-        annotation = Image.open(annotation_name).convert("L")
+        annotation = scipy.io.loadmat(annotation_name)["LabelMap"]
 
-        sample = {"image": img, "labels": annotation}
+        # Convert to NumPy array to manipulate the labels
+        annotation_np = np.array(annotation)
+
+        # Create a new array filled with zeros (background class)
+        new_annotation_np = np.zeros_like(annotation_np)
+
+        # Loop through the selected classes and set the corresponding labels
+        for new_label, original_label in enumerate(
+            self.selected_class_indices
+        ):
+            new_annotation_np[annotation_np == original_label] = new_label
+
+        # Convert back to PIL Image
+        new_annotation = Image.fromarray(
+            new_annotation_np.astype("uint8"), "L"
+        )
+
+        sample = {"image": img, "labels": new_annotation}
 
         if self.transform:
             if isinstance(self.transform, list):

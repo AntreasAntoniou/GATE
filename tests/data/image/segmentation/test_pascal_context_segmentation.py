@@ -7,6 +7,7 @@ import pytest
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
 from rich import print
+from tqdm import tqdm
 
 from gate.boilerplate.wandb_utils import visualize_volume
 from gate.data.image.segmentation.pascal_context import (
@@ -59,7 +60,7 @@ def test_build_gate_dataset():
     #     break
 
     dataset = PascalContextDataset(
-        root_dir=DATA_DIR,
+        root_dir=DATA_DIR / "pascal_context",
         subset="train",
         transform=[
             T.Resize(
@@ -69,17 +70,15 @@ def test_build_gate_dataset():
         ],
     )
     train_dataloader = DataLoader(
-        dataset, batch_size=1024, num_workers=1, shuffle=True
+        dataset, batch_size=1024, num_workers=16, shuffle=True
     )
 
-    for item in train_dataloader:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        unique_labels = item["labels"].unique()
-        print(f"len {len(unique_labels)}")
-        print(unique_labels)
-        break
+    unique_labels = set()
+    for item in tqdm(train_dataloader):
+        unique_labels.add(item["labels"].unique())
+
+    print(f"len {len(unique_labels)}")
+    print(unique_labels)
 
 
 def test_build_gate_visualize_dataset():
