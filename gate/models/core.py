@@ -1,3 +1,4 @@
+import inspect
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -274,6 +275,11 @@ class Ensemble(nn.Module):
             self.compute_loss_and_metrics = models[0].compute_loss_and_metrics
         else:
             self.compute_loss_and_metrics = None
+
+        for name, method in inspect.getmembers(
+            models[0], predicate=inspect.ismethod
+        ):
+            setattr(self, name, method)
 
     def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
         """

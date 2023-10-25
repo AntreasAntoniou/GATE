@@ -5,6 +5,7 @@ import torch
 from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
 from gate.config.variables import (
     HYDRATED_IMAGE_SIZE,
     HYDRATED_NUM_CLASSES,
@@ -30,6 +31,8 @@ from gate.models.task_adapters.semantic_segmentation import (
 # modality_a_num_features: int,
 # modality_b_num_features: int,
 # projection_num_features: Optional[int] = None,
+
+logger = get_logger(__name__)
 
 
 def build_model(
@@ -73,7 +76,8 @@ def build_model(
         loss_type_id=loss_type_id,
     )
 
-    x = torch.randn(2, 3, image_size, image_size)
+    x = torch.randn(1, 3, image_size, image_size)
+    logger.info(f"x build shape: {x.shape}")
     _ = model.forward(x)
 
     # forward features for conv nets, and get the patches for the transformer manually
@@ -110,7 +114,7 @@ def build_model(
         task_name=HYDRATED_TASK_NAME,
     ),
 )
-def build_gate_model(
+def build_gate_md_model(
     timm_model_name: str = "resnet50.a1_in1k",
     clip_model_name: str = "openai/clip-vit-base-patch16",
     pretrained: bool = True,

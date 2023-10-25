@@ -1,14 +1,21 @@
 # pascal_context.py
+import os
 import pathlib
+import tarfile
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+import requests
 import torch
 import torchvision.transforms as T
-from torch.utils.data import random_split
+from PIL import Image
+from torch.utils.data import Dataset, random_split
+from torchvision import transforms
 from torchvision.datasets import VOCSegmentation
+from tqdm import tqdm
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
@@ -19,6 +26,91 @@ from gate.data.transforms.segmentation_transforms import (
     DualImageRandomCrop,
     KeySelectorTransforms,
 )
+
+logger = get_logger(name=__name__)
+
+
+class PascalContextDataset(Dataset):
+    def __init__(self, root_dir, subset="train", transform=None):
+        """
+        Initializes a PascalContextDataset object.
+
+        Args:
+            root_dir (str): Root directory of the dataset.
+            subset (str, optional): Dataset subset to use. Defaults to "train".
+            transform (callable, optional): Optional transform to be applied on a sample.
+
+        Returns:
+            None
+        """
+        super().__init__()
+        self.root_dir = root_dir
+        self.subset = subset
+        self.transform = transform
+        self.download_dataset()
+        self.image_dir = os.path.join(
+            self.root_dir, "VOCdevkit/VOC2010/JPEGImages"
+        )
+        self.annotation_dir = os.path.join(
+            self.root_dir, "VOCdevkit/VOC2010/SegmentationClass"
+        )
+        self.split_file = os.path.join(
+            self.root_dir,
+            f"VOCdevkit/VOC2010/ImageSets/Segmentation/{self.subset}.txt",
+        )
+
+        with open(self.split_file, "r") as f:
+            self.ids = f.read().splitlines()
+
+    def download_dataset(self):
+        if not os.path.exists(self.root_dir):
+            os.makedirs(self.root_dir)
+
+        dataset_url = "http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar"
+        tar_path = os.path.join(self.root_dir, "VOCtrainval_03-May-2010.tar")
+
+        if not os.path.exists(tar_path):
+            logger.info("Downloading dataset...")
+
+            response = requests.get(dataset_url, stream=True)
+            total_size = int(response.headers.get("content-length", 0))
+            block_size = 1024  # 1 Kibibyte
+            progress_bar = tqdm(total=total_size, unit="iB", unit_scale=True)
+
+            with open(tar_path, "wb") as f:
+                for data in response.iter_content(block_size):
+                    progress_bar.update(len(data))
+                    f.write(data)
+            progress_bar.close()
+
+            if total_size != 0 and progress_bar.n != total_size:
+                logger.error("ERROR, something went wrong")
+
+            print("Extracting dataset...")
+            with tarfile.open(tar_path, "r") as tar_ref:
+                tar_ref.extractall(path=self.root_dir)
+
+        logger.info("Dataset is ready.")
+
+    def __len__(self):
+        return len(self.ids)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.image_dir, f"{self.ids[idx]}.jpg")
+        img = Image.open(img_name).convert("RGB")
+
+        annotation_name = os.path.join(
+            self.annotation_dir, f"{self.ids[idx]}.png"
+        )
+        annotation = Image.open(annotation_name)
+
+        sample = {"image": img, "labels": annotation}
+
+        if self.transform:
+            sample["image"] = self.transform(sample["image"])
+            sample["labels"] = self.transform(sample["labels"])
+
+        return sample
 
 
 def build_dataset(
@@ -47,41 +139,17 @@ def build_dataset(
     # 🛠️ Create the Pascal Context dataset using the torchvision
     # VOCSegmentation class
     data_dir = pathlib.Path(data_dir) / "pascal_context"
-    try:
-        train_dataset = VOCSegmentation(
-            root=data_dir,
-            year="2012",
-            image_set="train",
-            download=False,
-        )
-
-        test_dataset = VOCSegmentation(
-            root=data_dir,
-            year="2012",
-            image_set="val",
-            download=False,
-        )
-    except RuntimeError:
-        train_dataset = VOCSegmentation(
-            root=data_dir,
-            year="2012",
-            image_set="train",
-            download=True,
-        )
-
-        test_dataset = VOCSegmentation(
-            root=data_dir,
-            year="2012",
-            image_set="val",
-            download=True,
-        )
-
-    if set_name == "test":
-        return test_dataset
 
     # Set the random seed for reproducibility
     torch.manual_seed(42)
-
+    train_dataset = PascalContextDataset(
+        root_dir=data_dir,
+        subset="train",
+    )
+    test_dataset = PascalContextDataset(
+        root_dir=data_dir,
+        subset="val",
+    )
     # 💥 Split the train set into training and validation sets
     train_len = int(0.9 * len(train_dataset))
     val_len = len(train_dataset) - train_len
@@ -94,6 +162,18 @@ def build_dataset(
         return train_dataset
     elif set_name == "val":
         return val_dataset
+    else:
+        return test_dataset
+
+
+def label_replacement(annotation):
+    annotation = torch.from_numpy(np.array(annotation))
+    annotation[annotation != 255] += 1
+    annotation[annotation == 255] = 0
+
+    annotation = T.ToPILImage()(annotation / 255)
+
+    return annotation
 
 
 @configurable(
@@ -107,7 +187,10 @@ def build_gate_dataset(
     target_image_size=256,
 ) -> dict:
     input_transforms = KeySelectorTransforms(
-        initial_size=2048, image_label="image", label_label="annotation"
+        initial_size=2048,
+        image_label="image",
+        label_label="labels",
+        # label_transforms=[label_replacement],
     )
 
     train_transforms = BaseDatasetTransforms(
@@ -130,7 +213,6 @@ def build_gate_dataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[
-            lambda x: {"image": x[0], "annotation": x[1]},
             input_transforms,
             train_transforms,
             transforms,
@@ -142,7 +224,6 @@ def build_gate_dataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
-            lambda x: {"image": x[0], "annotation": x[1]},
             input_transforms,
             eval_transforms,
             transforms,
@@ -154,7 +235,6 @@ def build_gate_dataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
-            lambda x: {"image": x[0], "annotation": x[1]},
             input_transforms,
             eval_transforms,
             transforms,
@@ -163,5 +243,4 @@ def build_gate_dataset(
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
-    return dataset_dict
     return dataset_dict

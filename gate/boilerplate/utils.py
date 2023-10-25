@@ -14,7 +14,6 @@ import numpy as np
 import orjson as json
 import torch
 import torch.nn.functional as F
-import wandb
 import yaml
 from matplotlib.pyplot import step
 from omegaconf import DictConfig, OmegaConf
@@ -25,6 +24,8 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+import wandb
+from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks
 from gate.config.variables import HF_OFFLINE_MODE
 
 int_or_str = Union[int, str]
@@ -538,109 +539,3 @@ def count_files_recursive(directory: str) -> int:
         file_count += len(files)
 
     return file_count
-
-
-def normalize_image(image: torch.Tensor) -> torch.Tensor:
-    min_val = torch.min(image)
-    max_val = torch.max(image)
-    normalized_image = (image - min_val) / (max_val - min_val)
-
-    return normalized_image
-
-
-def create_montage(arr: np.ndarray) -> np.ndarray:
-    """
-    Create a 2D montage from a 3D or 4D numpy array.
-
-    Args:
-        arr (np.ndarray): Input array with shape (s, h, w) or (s, c, h, w).
-
-    Returns:
-        np.ndarray: 2D montage.
-    """
-
-    # Check the shape of the input array
-    assert len(arr.shape) in [
-        3,
-        4,
-    ], "Input array should be 3D in the shape of (s, h, w) or 4D in the shape of (s, c, h, w)"
-
-    # Get the shape of the input array
-    if len(arr.shape) == 3:
-        s, h, w = arr.shape
-        c = None
-    else:
-        s, c, h, w = arr.shape
-
-    # Compute the new height and width
-    h_new = w_new = math.ceil(math.sqrt(s))
-
-    # Create an empty array to hold the montage
-    montage = (
-        np.empty((h_new * h, w_new * w, c))
-        if c is not None
-        else np.empty((h_new * h, w_new * w))
-    )
-
-    # Fill the montage with slices from the input array
-    for i in range(h_new):
-        for j in range(w_new):
-            idx = i * w_new + j
-            if idx < s:
-                if c is not None:
-                    if isinstance(arr, torch.Tensor):
-                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
-                            arr[idx].permute(1, 2, 0).numpy()
-                        )
-                    else:
-                        montage[
-                            i * h : (i + 1) * h, j * w : (j + 1) * w
-                        ] = arr[idx].transpose(1, 2, 0)
-                else:
-                    montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
-                        idx
-                    ]
-            else:
-                # Fill any extra entries with empty arrays
-                montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
-                    np.zeros((h, w, c)) if c is not None else np.zeros((h, w))
-                )
-
-    return torch.tensor(montage)
-
-
-def visualize_volume(item, name):
-    input_volumes = item["image"]
-    input_volumes = input_volumes.float().unsqueeze(0).unsqueeze(0)
-    predicted_volumes = item["labels"].float().unsqueeze(0)
-    label_volumes = item["labels"].float().unsqueeze(0)
-
-    print(
-        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
-    )
-    print(
-        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
-    )
-    print(
-        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
-    )
-
-    # Start a Weights & Biases run
-    run = wandb.init(
-        project="gate-visualization", job_type="visualize_dataset"
-    )
-
-    # Visualize the data
-    log_wandb_3d_volumes_and_masks(
-        F.interpolate(
-            input_volumes.reshape(-1, input_volumes.shape[-3], 512, 512),
-            size=(256, 256),
-            mode="bicubic",
-        ).reshape(*input_volumes.shape[:-2] + (256, 256)),
-        predicted_volumes.long(),
-        label_volumes.long(),
-        prefix=name,
-    )
-
-    # Finish the run
-    run.finish()

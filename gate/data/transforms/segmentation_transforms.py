@@ -2,7 +2,7 @@
 import io
 import random
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
@@ -10,6 +10,10 @@ import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 from PIL import Image
+
+from gate.boilerplate.utils import get_logger
+
+logger = get_logger(name=__name__)
 
 
 class DualImageRandomFlip:
@@ -247,6 +251,8 @@ class KeySelectorTransforms:
         initial_size: Union[int, List[int]] = 1024,
         image_label: str = "image",
         label_label: str = "annotation",
+        image_transforms: Optional[Callable] = None,
+        label_transforms: Optional[Callable] = None,
     ):
         self.initial_size = (
             initial_size
@@ -256,6 +262,8 @@ class KeySelectorTransforms:
         )
         self.image_label = image_label
         self.label_label = label_label
+        self.image_transforms = image_transforms
+        self.label_transforms = label_transforms
 
     def __call__(self, inputs: Dict):
         image = inputs[self.image_label]
@@ -286,6 +294,14 @@ class KeySelectorTransforms:
             interpolation=T.InterpolationMode.BICUBIC,
             antialias=True,
         )(annotation)
+
+        if self.image_transforms:
+            for transform in self.image_transforms:
+                image = transform(image)
+
+        if self.label_transforms:
+            for transform in self.label_transforms:
+                annotation = transform(annotation)
 
         return {
             "image": image,
@@ -411,15 +427,21 @@ class BaseDatasetTransforms:
 
         if self.crop_size is not None:
             image, annotation = self.crop_transform(image, annotation)
+            logger.info(
+                f"annotation max: {torch.from_numpy(np.array(annotation)).max()}"
+            )
 
         if self.flip_probability is not None:
             image, annotation = self.random_flip(image, annotation)
+            logger.info(
+                f"annotation max: {torch.from_numpy(np.array(annotation)).max()}"
+            )
 
         if self.photo_metric_distortion is not None:
             image = self.photo_metric_distortion(image)
 
-        annotation = np.array(annotation)
-        annotation = torch.from_numpy(annotation)
+        annotation = torch.from_numpy(np.array(annotation))
+        logger.info(f"annotation max: {annotation.max()}")
 
         if len(annotation.shape) == 2:
             annotation = annotation.unsqueeze(0)

@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from gate.boilerplate.utils import visualize_volume
+from gate.boilerplate.wandb_utils import visualize_volume
 from gate.data.image.segmentation.ade20k import (
     build_dataset,
     build_gate_dataset,

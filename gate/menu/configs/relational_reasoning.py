@@ -1,4 +1,6 @@
-from gate.menu_generator.core import (
+from xml.sax.handler import DTDHandler
+
+from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,
     EncoderNames,
@@ -8,7 +10,7 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = DatasetName.MEDICAL_ACDC_SEGMENTATION.value
+dataset_configs = [DatasetName.VISUAL_RELATIONAL_REASONING.value.CLEVR_MATH]
 
 
 dataset_configs = {
@@ -16,11 +18,11 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 64
-MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
-RESNET_LR = 6e-4
-VIT_LR = 6e-6
-TRAINER_NAME = TrainerName.MEDICAL_SEMANTIC_SEGMENTATION.value
-EVALUATOR_NAME = EvaluatorName.MEDICAL_SEMANTIC_SEGMENTATION.value
+MODEL_TYPE = AdapterTypeNames.TIMM_RELATIONAL_REASONING_MULTI_TASK.value
+RESNET_LR = 1e-3
+VIT_LR = 1e-5
+TRAINER_NAME = TrainerName.VISUAL_RELATIONAL_REASONING.value
+EVALUATOR_NAME = EvaluatorName.VISUAL_RELATIONAL_REASONING.value
 model_configs = {
     EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
         model_type=MODEL_TYPE,

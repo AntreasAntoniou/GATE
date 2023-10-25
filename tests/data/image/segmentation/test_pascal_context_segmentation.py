@@ -1,9 +1,10 @@
+# test_food101_dataset.py
 import os
 import pathlib
 
 import pytest
 
-from gate.boilerplate.utils import visualize_volume
+from gate.boilerplate.wandb_utils import visualize_volume
 from gate.data.image.segmentation.pascal_context import (
     build_dataset,
     build_gate_dataset,
@@ -36,7 +37,6 @@ def test_build_gate_dataset():
     assert gate_dataset["train"] is not None, "Train set should not be None"
     assert gate_dataset["val"] is not None, "Validation set should not be None"
     assert gate_dataset["test"] is not None, "Test set should not be None"
-
     print(gate_dataset["train"][0])
 
 
@@ -47,22 +47,21 @@ def test_build_gate_visualize_dataset():
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
     for item in gate_dataset["train"]:
-        print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item, name="training-pascal-context")
+        visualize_volume(item, name="training-nyu-depth-v2")
         break
 
     for item in gate_dataset["val"]:
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item, name="validation-pascal-context")
+        visualize_volume(item, name="validation-nyu-depth-v2")
         break
 
     for item in gate_dataset["test"]:
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["labels"] is not None, "Label should not be None"
-        visualize_volume(item, name="test-pascal-context")
+        visualize_volume(item, name="test-nyu-depth-v2")
         break

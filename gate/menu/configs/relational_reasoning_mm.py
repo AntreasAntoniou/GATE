@@ -1,4 +1,4 @@
-from gate.menu_generator.core import (
+from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,
     EncoderNames,
@@ -8,7 +8,7 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = DatasetName.IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION.value
+dataset_configs = [DatasetName.VISUAL_RELATIONAL_REASONING.value.CLEVR]
 
 
 dataset_configs = {
@@ -16,11 +16,11 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 64
-MODEL_TYPE = AdapterTypeNames.TIMM_ZERO_SHOT_IMAGE_TEXT.value
+MODEL_TYPE = AdapterTypeNames.TIMM_RELATIONAL_REASONING.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
-TRAINER_NAME = TrainerName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
-EVALUATOR_NAME = EvaluatorName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
+TRAINER_NAME = TrainerName.VISUAL_RELATIONAL_REASONING.value
+EVALUATOR_NAME = EvaluatorName.VISUAL_RELATIONAL_REASONING.value
 model_configs = {
     EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
         model_type=MODEL_TYPE,

@@ -7,37 +7,31 @@ import fire
 from rich import print
 from rich.logging import RichHandler
 
-from gate.menu_generator.configs.few_shot_learning import (
+from gate.menu.configs.few_shot_learning import (
     config as few_shot_learning_config,
 )
-from gate.menu_generator.configs.image_classification import (
+from gate.menu.configs.image_classification import (
     config as image_classification_config,
 )
-from gate.menu_generator.configs.image_segmentation import (
+from gate.menu.configs.image_segmentation import (
     config as image_segmentation_config,
 )
-from gate.menu_generator.configs.image_text_zero_shot_classification import (
+from gate.menu.configs.image_text_zero_shot_classification import (
     config as image_text_zero_shot_classification_config,
 )
-from gate.menu_generator.configs.medical_image_classification import (
+from gate.menu.configs.medical_image_classification import (
     config as medical_image_classification_config,
 )
-from gate.menu_generator.configs.medical_image_segmentation_acdc import (
+from gate.menu.configs.medical_image_segmentation_acdc import (
     config as acdc_config,
 )
-from gate.menu_generator.configs.medical_image_segmentation_md import (
-    config as md_config,
-)
-from gate.menu_generator.configs.relational_reasoning import (
-    config as rr_config,
-)
-from gate.menu_generator.configs.relational_reasoning_mm import (
-    config as rr_mm_config,
-)
-from gate.menu_generator.configs.video_classification import (
+from gate.menu.configs.medical_image_segmentation_md import config as md_config
+from gate.menu.configs.relational_reasoning import config as rr_config
+from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
+from gate.menu.configs.video_classification import (
     config as video_classification_config,
 )
-from gate.menu_generator.utils import build_command, get_commands
+from gate.menu.utils import build_command, get_commands
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)

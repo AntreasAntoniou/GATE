@@ -1,6 +1,4 @@
-from xml.sax.handler import DTDHandler
-
-from gate.menu_generator.core import (
+from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,
     EncoderNames,
@@ -10,38 +8,36 @@ from gate.menu_generator.core import (
     TrainerName,
 )
 
-dataset_configs = [DatasetName.VISUAL_RELATIONAL_REASONING.value.CLEVR_MATH]
-
-
 dataset_configs = {
-    dataset_name: dataset_name.value for dataset_name in dataset_configs
+    dataset_name: dataset_name.value
+    for dataset_name in DatasetName.IMAGE_SEGMENTATION.value
 }
 
 BATCH_SIZE = 64
-MODEL_TYPE = AdapterTypeNames.TIMM_RELATIONAL_REASONING_MULTI_TASK.value
+MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
-TRAINER_NAME = TrainerName.VISUAL_RELATIONAL_REASONING.value
-EVALUATOR_NAME = EvaluatorName.VISUAL_RELATIONAL_REASONING.value
+TRAINER_NAME = TrainerName.IMAGE_SEMANTIC_SEGMENTATION.value
+EVALUATOR_NAME = EvaluatorName.IMAGE_SEMANTIC_SEGMENTATION.value
 model_configs = {
-    EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
-        model_type=MODEL_TYPE,
-        encoder_config=EncoderNames.CLIPViTBase16_224,
-        learning_rate_config=LearningRateConfig(
-            default=[VIT_LR], dataset_specific={}
-        ),
-        train_batch_size=BATCH_SIZE,
-        eval_batch_size=BATCH_SIZE,
-    ),
-    # EncoderNames.LaionViTBase16_224.value.pretty_name: ModelConfig(
+    # EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
     #     model_type=MODEL_TYPE,
-    #     encoder_config=EncoderNames.LaionViTBase16_224,
+    #     encoder_config=EncoderNames.CLIPViTBase16_224,
     #     learning_rate_config=LearningRateConfig(
     #         default=[VIT_LR], dataset_specific={}
     #     ),
     #     train_batch_size=BATCH_SIZE,
     #     eval_batch_size=BATCH_SIZE,
     # ),
+    EncoderNames.LaionViTBase16_224.value.pretty_name: ModelConfig(
+        model_type=MODEL_TYPE,
+        encoder_config=EncoderNames.LaionViTBase16_224,
+        learning_rate_config=LearningRateConfig(
+            default=[VIT_LR], dataset_specific={}
+        ),
+        train_batch_size=BATCH_SIZE,
+        eval_batch_size=BATCH_SIZE,
+    ),
     EncoderNames.ResNet50A1.value.pretty_name: ModelConfig(
         model_type=MODEL_TYPE,
         encoder_config=EncoderNames.ResNet50A1,
@@ -114,15 +110,24 @@ model_configs = {
     #     train_batch_size=BATCH_SIZE,
     #     eval_batch_size=BATCH_SIZE,
     # ),
-    # EncoderNames.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
+    # EncoderNames.IJEPAViTGiganticPatch16_224.value.pretty_name: ModelConfig(
     #     model_type=MODEL_TYPE,
-    #     encoder_config=EncoderNames.IJEPAViTHugePatch14_224,
+    #     encoder_config=EncoderNames.IJEPAViTGiganticPatch16_224,
     #     learning_rate_config=LearningRateConfig(
     #         default=[VIT_LR], dataset_specific={}
     #     ),
     #     train_batch_size=BATCH_SIZE,
     #     eval_batch_size=BATCH_SIZE,
     # ),
+    EncoderNames.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
+        model_type=MODEL_TYPE,
+        encoder_config=EncoderNames.IJEPAViTHugePatch14_224,
+        learning_rate_config=LearningRateConfig(
+            default=[VIT_LR], dataset_specific={}
+        ),
+        train_batch_size=BATCH_SIZE,
+        eval_batch_size=BATCH_SIZE,
+    ),
 }
 
 
