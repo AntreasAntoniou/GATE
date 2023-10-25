@@ -134,15 +134,16 @@ class VideoClassificationTrainer(ClassificationTrainer):
         if "logits" in output_dict:
             if global_step % 100 == 0:
                 output_dict["video_episode"] = {
-                    "video": output_dict["video"],
+                    "video": batch["video"],
                     "logits": output_dict["logits"],
-                    "label": output_dict["labels"],
+                    "label": batch["labels"],
                 }
 
             del output_dict["logits"]
         return output_dict
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        batch["return_loss_and_metrics"] = True
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]

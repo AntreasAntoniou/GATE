@@ -1,8 +1,9 @@
 import math
 import time
 from collections import OrderedDict
+from enum import Enum
 from functools import partial
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import torch
 import torch.nn as nn
@@ -27,7 +28,7 @@ from gate.models.blocks.segmentation import (
 logger = get_logger(__name__)
 
 
-def optimization_loss(
+def default_optimization_loss(
     logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.01
 ):
     """
@@ -75,6 +76,72 @@ def optimization_loss(
     }
 
 
+def md_optimization_loss(
+    logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.01
+):
+    """
+    📝 MD Optimization Loss
+    Args:
+        logits: (B, C, H, W)
+        labels: (B, 1, H, W)
+    """
+    dice_loss_fn = DiceLoss(ignore_index=ignore_index)
+
+    dice_loss = dice_loss_fn.forward(logits, labels)
+
+    focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+
+    focal_loss = focal_loss_fn.forward(logits, labels)
+
+    ce_loss_fn = CrossEntropyLoss(ignore_index=ignore_index)
+
+    ce_loss = ce_loss_fn.forward(logits, labels)
+
+    background_dice_loss_fn = DiceLoss(ignore_index=-1)
+
+    background_dice_loss = background_dice_loss_fn.forward(logits, labels)
+
+    background_focal_loss_fn = FocalLoss(ignore_index=-1)
+
+    background_focal_loss = background_focal_loss_fn.forward(logits, labels)
+
+    background_ce_loss_fn = CrossEntropyLoss(ignore_index=-1)
+
+    background_ce_loss = background_ce_loss_fn.forward(logits, labels)
+
+    loss = dice_loss
+    background_loss = background_dice_loss
+
+    return {
+        "loss": loss + 0.1 * background_loss,
+        "ce_loss": ce_loss,
+        "dice_loss": dice_loss,
+        "focal_loss": focal_loss,
+        "background_loss": background_loss,
+        "background_dice_loss": background_dice_loss,
+        "background_focal_loss": background_focal_loss,
+        "background_ce_loss": background_ce_loss,
+    }
+
+
+class SegmentationAdapterOptions(Enum):
+    """
+    📝 Segmentation Adapter Options
+    """
+
+    TRANSFORMER = "transformer"
+    SIMPLE = "simple"
+
+
+class SegmentationLossOptions(Enum):
+    """
+    📝 Segmentation Loss Options
+    """
+
+    DEFAULT = "default"
+    MD = "md"
+
+
 class SegmentationAdapter(nn.Module):
     def __init__(
         self,
@@ -90,7 +157,8 @@ class SegmentationAdapter(nn.Module):
         decoder_num_heads: int = 8,
         decoder_dropout_rate: float = 0.5,
         decoder_pre_output_dropout_rate: float = 0.3,
-        decoder_layer_type: str = "simple",
+        decoder_layer_type: str = SegmentationAdapterOptions.TRANSFORMER.value,
+        loss_type_id: str = SegmentationLossOptions.DEFAULT.value,
     ):
         super().__init__()
 
@@ -104,6 +172,11 @@ class SegmentationAdapter(nn.Module):
         self.ignore_index = ignore_index
         self.decoder_embedding_dimension = decoder_embed_dim
         self.output_target_image_size = output_target_image_size
+
+        if loss_type_id == SegmentationLossOptions.DEFAULT.value:
+            self.loss_fn = default_optimization_loss
+        elif loss_type_id == SegmentationLossOptions.MD.value:
+            self.loss_fn = md_optimization_loss
 
         # Assuming decoder_layer_mapping and other related classes and functions are defined elsewhere in the code
 
@@ -119,7 +192,7 @@ class SegmentationAdapter(nn.Module):
             ),
             "simple": ChannelMixerDecoder(
                 num_classes=num_classes,
-                target_image_size=decoder_target_image_size[0],
+                target_image_size=decoder_target_image_size,
                 hidden_size=decoder_embed_dim,
                 decoder_num_blocks=decoder_num_blocks,
                 pre_output_dropout_rate=decoder_pre_output_dropout_rate,
@@ -166,7 +239,7 @@ class SegmentationAdapter(nn.Module):
         return output
 
     def compute_loss_and_metrics(self, logits, labels):
-        loss_and_metrics = optimization_loss(
+        loss_and_metrics = self.loss_fn(
             logits,
             labels,
             ignore_index=self.ignore_index,

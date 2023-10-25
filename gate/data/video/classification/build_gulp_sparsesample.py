@@ -250,6 +250,10 @@ def build_dataset(
     )
 
 
+def key_selector(input_dict):
+    return {"video": input_dict["video"], "labels": input_dict["labels"]}
+
+
 def build_gate_dataset(
     dataset_name: str,
     data_dir: Union[str, Path],
@@ -274,21 +278,21 @@ def build_gate_dataset(
         dataset_dict["train"] = GATEDataset(
             dataset=datasets["train"],
             infinite_sampling=True,
-            transforms=[TrainVideoTransform(), transforms],
+            transforms=[key_selector, TrainVideoTransform(), transforms],
         )
 
     if "val" in datasets:
         dataset_dict["val"] = GATEDataset(
             dataset=datasets["val"],
             infinite_sampling=False,
-            transforms=[BaseVideoTransform(), transforms],
+            transforms=[key_selector, BaseVideoTransform(), transforms],
         )
 
     if "test" in datasets:
         dataset_dict["test"] = GATEDataset(
             dataset=datasets["test"],
             infinite_sampling=False,
-            transforms=[BaseVideoTransform(), transforms],
+            transforms=[key_selector, BaseVideoTransform(), transforms],
         )
 
     return dataset_dict

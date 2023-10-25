@@ -1,7 +1,7 @@
 import math
 import time
 from collections import OrderedDict
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
@@ -476,18 +476,26 @@ class TransformerSegmentationDecoder(nn.Module):
         decoder_num_blocks: int = 4,
     ):
         """
-        TransformerSegmentationDecoderHead class for segmentation tasks.
+        Initialize the TransformerSegmentationDecoder class for segmentation tasks.
 
-        :param input_feature_maps: List of integers representing the number of feature maps of each input tensor.
-        :param num_classes: Integer representing the number of classes to predict for segmentation.
-        :param target_size: Tuple containing the height and width for the target output size.
-        :param hidden_size: Integer representing the hidden size for pixel-wise MLP layers, default=64.
+        :param num_classes: An integer representing the number of classes to predict for segmentation.
+        :param target_image_size: An optional integer or tuple representing the height and width for the target output size. Default is (64, 64).
+        :param hidden_size: An optional integer representing the hidden size for pixel-wise MLP layers. Default is 256.
+        :param pre_output_dropout_rate: An optional float representing the dropout rate before the final output. Default is 0.3.
+        :param dropout_rate: An optional float representing the dropout rate for the transformer layers. Default is 0.5.
+        :param decoder_num_heads: An optional integer representing the number of attention heads in the transformer layers. Default is 8.
+        :param decoder_num_blocks: An optional integer representing the number of transformer blocks in the decoder. Default is 4.
         """
         super().__init__()
 
         self.hidden_size = hidden_size
         self.num_classes = num_classes
-        self.target_image_size = target_image_size
+        self.target_image_size = (
+            target_image_size
+            if isinstance(target_image_size, Tuple)
+            or isinstance(target_image_size, List)
+            else (target_image_size, target_image_size)
+        )
         self.dropout_rate = dropout_rate
         self.pre_output_dropout_rate = pre_output_dropout_rate
         self.decoder_num_heads = decoder_num_heads
@@ -495,13 +503,13 @@ class TransformerSegmentationDecoder(nn.Module):
         self.built = False
 
     def build(self, input_list):
-        target_image_size = self.target_image_size
         hidden_size = self.hidden_size
         num_classes = self.num_classes
         pre_output_dropout_rate = self.pre_output_dropout_rate
         dropout_rate = self.dropout_rate
         num_transformer_blocks = self.decoder_num_blocks
         num_heads = self.decoder_num_heads
+        target_image_size = self.target_image_size
 
         self.pixel_wise_mlps = nn.ModuleList()
         self.upsample = nn.Upsample(
@@ -522,14 +530,14 @@ class TransformerSegmentationDecoder(nn.Module):
         elif len(input_list[0].shape) == 3:
             self.rescale_conv = nn.Conv1d(
                 input_list[0].shape[1],
-                target_image_size * target_image_size,
+                target_image_size[0] * target_image_size[1],
                 kernel_size=1,
                 stride=1,
             )
 
             input_list = [
                 self.rescale_conv(x).permute([0, 2, 1])
-                if x.shape[1] != target_image_size * target_image_size
+                if x.shape[1] != target_image_size[0] * target_image_size[1]
                 else x.permute(
                     [0, 2, 1]
                 )  # (b, sequence, features) -> (b, features, sequence)
@@ -630,7 +638,7 @@ class TransformerSegmentationDecoder(nn.Module):
         if len(input_list[0].shape) == 4:
             input_list = [
                 self.upsample(x)
-                if x.shape[-1] != self.target_image_size
+                if x.shape[-1] != self.target_image_size[0]
                 else x
                 for x in input_list
             ]
@@ -640,7 +648,7 @@ class TransformerSegmentationDecoder(nn.Module):
             input_list = [
                 self.rescale_conv(x).permute([0, 2, 1])
                 if x.shape[1]
-                != self.target_image_size * self.target_image_size
+                != self.target_image_size[0] * self.target_image_size[1]
                 else x.permute(
                     [0, 2, 1]
                 )  # (b, sequence, features) -> (b, features, sequence)

@@ -37,6 +37,12 @@ class StepOutput:
 
 
 class ClassificationEvaluator(Evaluator):
+    def select_metrics_to_report(self, output_dict):
+        for key, value in output_dict.items():
+            if "loss" in key or "iou" in key or "accuracy" in key:
+                if isinstance(value, torch.Tensor):
+                    self.current_epoch_dict[key].append(value.detach().cpu())
+
     def step(self, model, batch, global_step, accelerator: Accelerator):
         output_dict = model.forward(batch)
         output_dict = output_dict[self.target_modality][self.source_modality]
@@ -126,28 +132,34 @@ class VideoClassificationEvaluator(ClassificationEvaluator):
         if "logits" in output_dict:
             if global_step % 100 == 0:
                 output_dict["video_episode"] = {
-                    "video": output_dict["video"],
+                    "video": batch["video"],
                     "logits": output_dict["logits"],
-                    "label": output_dict["labels"],
+                    "label": batch["labels"],
                 }
 
             del output_dict["logits"]
         return output_dict
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        batch["return_loss_and_metrics"] = True
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
 
         loss = output_dict["loss"]
 
-        self.select_metrics_to_report(output_dict)
+        for key, value in output_dict.items():
+            if isinstance(value, torch.Tensor):
+                self.current_epoch_dict[key].append(
+                    value.detach().float().mean().cpu()
+                )
+
         output_dict = self.collect_video_episode(
             output_dict, global_step, batch
         )
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            metrics=output_dict,
             loss=loss,
         )
 

@@ -1,3 +1,4 @@
+from re import S
 from typing import Any, Dict, Union
 
 import torch
@@ -16,7 +17,11 @@ from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
 )
-from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
+from gate.models.task_adapters.semantic_segmentation import (
+    SegmentationAdapter,
+    SegmentationAdapterOptions,
+    SegmentationLossOptions,
+)
 
 # modality_a_model: nn.Module,
 # modality_b_model: nn.Module,
@@ -38,6 +43,7 @@ def build_model(
     decoder_layer_type: str = "transformer",
     ignore_index: int = 0,
     background_loss_weight: float = 0.01,
+    loss_type_id: str = "default",
 ) -> ModelAndTransform:
     """
     🏗️ Build the model using the Hugging Face transformers library.
@@ -64,6 +70,7 @@ def build_model(
         ignore_index=ignore_index,
         decoder_target_image_size=(64, 64),
         background_loss_weight=background_loss_weight,
+        loss_type_id=loss_type_id,
     )
 
     x = torch.randn(2, 3, image_size, image_size)
@@ -111,7 +118,7 @@ def build_gate_model(
     decoder_num_heads: int = 8,
     num_classes: int = 10,
     image_size: int = 512,
-    decoder_layer_type: str = "transformer",
+    decoder_layer_type: str = SegmentationAdapterOptions.TRANSFORMER.value,
     ignore_index: int = 0,
     background_loss_weight: float = 0.01,
     task_name: str = "task01braintumour",
@@ -130,6 +137,7 @@ def build_gate_model(
         decoder_layer_type=decoder_layer_type,
         ignore_index=ignore_index,
         background_loss_weight=background_loss_weight,
+        loss_type_id=SegmentationLossOptions.MD.value,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(
@@ -162,7 +170,7 @@ def build_gate_model(
     decoder_num_heads: int = 8,
     num_classes: int = 10,
     image_size: int = 512,
-    decoder_layer_type: str = "transformer",
+    decoder_layer_type: str = SegmentationAdapterOptions.TRANSFORMER.value,
     ignore_index: int = 0,
     background_loss_weight: float = 0.1,
 ):
@@ -177,6 +185,7 @@ def build_gate_model(
         decoder_layer_type=decoder_layer_type,
         ignore_index=ignore_index,
         background_loss_weight=background_loss_weight,
+        loss_type_id=SegmentationLossOptions.DEFAULT.value,
     )
 
     model_modality_config_image_classification = TargetModalityConfig(

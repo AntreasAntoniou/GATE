@@ -94,10 +94,15 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
 
     @collect_metrics
     def testing_step(
-        self, model, batch, global_step, accelerator: Accelerator
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        prefix: Optional[str] = None,
     ):
         output: EvaluatorOutput = super().testing_step(
-            model, batch, global_step, accelerator
+            model, batch, global_step, accelerator, prefix=prefix
         )
         if "seg_episode" in output.metrics:
             seg_episode = output.metrics["seg_episode"]
@@ -120,8 +125,10 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
 
     @collect_metrics
-    def end_testing(self, global_step):
-        evaluator_output: EvaluatorOutput = super().end_testing(global_step)
+    def end_testing(self, global_step, prefix: Optional[str] = None):
+        evaluator_output: EvaluatorOutput = super().end_testing(
+            global_step, prefix=prefix
+        )
         iou_metrics = self.model.model.compute_across_set_iou()
 
         return EvaluatorOutput(
@@ -229,10 +236,15 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
 
     @collect_metrics
     def testing_step(
-        self, model, batch, global_step, accelerator: Accelerator
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        prefix: Optional[str] = None,
     ):
         output: EvaluatorOutput = super().testing_step(
-            model, batch, global_step, accelerator
+            model, batch, global_step, accelerator, prefix=prefix
         )
         if "med_episode" in output.metrics:
             med_episode = output.metrics["med_episode"]
@@ -254,8 +266,10 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
 
     @collect_metrics
-    def end_testing(self, global_step):
-        evaluator_output: EvaluatorOutput = super().end_testing(global_step)
+    def end_testing(self, global_step, prefix: Optional[str] = None):
+        evaluator_output: EvaluatorOutput = super().end_testing(
+            global_step, prefix=prefix
+        )
         iou_metrics = self.model.model.compute_across_set_iou()
 
         return EvaluatorOutput(

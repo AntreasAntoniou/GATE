@@ -8,13 +8,15 @@ os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 
 
+import logging
+
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
 from rich.traceback import install
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -45,6 +47,8 @@ config_store = collect_config_store()
 
 # Initializing logger
 logger = get_logger(name=__name__)
+
+logging.getLogger("gate").setLevel(logging.DEBUG)
 
 
 from rich import print
