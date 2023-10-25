@@ -147,7 +147,7 @@ class DatasetTransforms:
 
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
+            interpolation=T.InterpolationMode.NEAREST_EXACT,
             antialias=True,
         )(annotation)
 
@@ -178,7 +178,7 @@ class DatasetTransforms:
 
             annotation_item = T.Resize(
                 (self.label_size[0], self.label_size[1]),
-                interpolation=T.InterpolationMode.BICUBIC,
+                interpolation=T.InterpolationMode.NEAREST_EXACT,
                 antialias=True,
             )(annotation_item)
 

@@ -2,7 +2,7 @@
 import os
 import pathlib
 import tarfile
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import requests
@@ -31,7 +31,12 @@ logger = get_logger(name=__name__)
 
 
 class PascalContextDataset(Dataset):
-    def __init__(self, root_dir, subset="train", transform=None):
+    def __init__(
+        self,
+        root_dir: str | pathlib.Path,
+        subset: str = "train",
+        transform: Optional[List[Callable] | Callable] = None,
+    ):
         """
         Initializes a PascalContextDataset object.
 
@@ -102,13 +107,18 @@ class PascalContextDataset(Dataset):
         annotation_name = os.path.join(
             self.annotation_dir, f"{self.ids[idx]}.png"
         )
-        annotation = Image.open(annotation_name)
+        annotation = Image.open(annotation_name).convert("L")
 
         sample = {"image": img, "labels": annotation}
 
         if self.transform:
-            sample["image"] = self.transform(sample["image"])
-            sample["labels"] = self.transform(sample["labels"])
+            if isinstance(self.transform, list):
+                for transform in self.transform:
+                    sample["image"] = transform(sample["image"])
+                    sample["labels"] = transform(sample["labels"])
+            else:
+                sample["image"] = self.transform(sample["image"])
+                sample["labels"] = self.transform(sample["labels"])
 
         return sample
 

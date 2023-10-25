@@ -164,7 +164,9 @@ class CLIPAdapter(nn.Module):
     def get_transforms(self, image_size: int = 224):
         def image_transforms(x):
             return self.preprocessor(
-                images=T.Resize(size=(image_size, image_size))(x),
+                images=T.Resize(size=(image_size, image_size), antialias=True)(
+                    x
+                ),
                 do_resize=False,
                 do_center_crop=False,
                 return_tensors="pt",

@@ -291,7 +291,7 @@ class KeySelectorTransforms:
 
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
+            interpolation=T.InterpolationMode.NEAREST_EXACT,
             antialias=True,
         )(annotation)
 
@@ -463,7 +463,7 @@ class BaseDatasetTransforms:
 
         annotation = T.Resize(
             (self.target_size[0], self.target_size[1]),
-            interpolation=T.InterpolationMode.BICUBIC,
+            interpolation=T.InterpolationMode.NEAREST_EXACT,
             antialias=True,
         )(annotation)
 
