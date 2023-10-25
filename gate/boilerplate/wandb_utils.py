@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional
 import numpy as np
 import torch
 import torchvision.transforms as T
-
 import wandb
+
 from gate.boilerplate.utils import create_montage, get_logger, normalize_image
 
 logger = get_logger(__name__)
