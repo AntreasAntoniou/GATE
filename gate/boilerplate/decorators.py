@@ -7,12 +7,12 @@ from time import sleep
 from typing import Any, Callable, Dict, Optional
 
 import torch
+import wandb
 from cv2 import exp
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 from regex import P
 
-import wandb
 from gate.boilerplate.wandb_utils import (
     log_wandb_3d_volumes_and_masks,
     log_wandb_images,
