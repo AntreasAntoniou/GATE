@@ -23,10 +23,6 @@ from gate.data.transforms.segmentation_transforms import (
 )
 
 
-class DatasetName(Enum):
-    ACDC = "acdc"
-
-
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
     """
     Build an ACDC dataset.

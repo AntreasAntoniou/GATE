@@ -16,12 +16,8 @@ from gate.data.image_text.zero_shot import (
 from gate.data.medical.classification import (
     DatasetName as med_classification_dataset_name,
 )
-from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
-    DatasetName as acdc_dataset_name,
-)
-from gate.data.medical.segmentation.medical_decathlon import (
-    DatasetName as md_options,
-)
+from gate.data.medical.segmentation import ACDCDatasetName as acdc_dataset_name
+from gate.data.medical.segmentation import MD_DatasetName as md_options
 from gate.data.video import DatasetName as video_dataset_name
 
 
