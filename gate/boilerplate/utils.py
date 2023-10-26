@@ -10,13 +10,9 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 import accelerate
 import huggingface_hub
-import numpy as np
 import orjson as json
 import torch
-import torch.nn.functional as F
-import wandb
 import yaml
-from matplotlib.pyplot import step
 from omegaconf import DictConfig, OmegaConf
 from rich import print as rprint
 from rich.logging import RichHandler
@@ -25,7 +21,6 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
-from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks
 from gate.config.variables import HF_OFFLINE_MODE
 
 int_or_str = Union[int, str]

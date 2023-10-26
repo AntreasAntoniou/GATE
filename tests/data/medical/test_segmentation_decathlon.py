@@ -1,8 +1,8 @@
 import os
 
 import torch.nn.functional as F
-import wandb
 
+import wandb
 from gate.boilerplate.utils import log_wandb_3d_volumes_and_masks
 from gate.data.medical.segmentation.medical_decathlon import (
     TASK_LIST,
