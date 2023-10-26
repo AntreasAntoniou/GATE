@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from gate.models.backbones.timm import (
+from gate.models.backbones.timm import (  # replace 'your_module' with the module where you have defined CLIPAdapter
     TimmCLIPAdapter,
-)  # replace 'your_module' with the module where you have defined CLIPAdapter
+)
 
 
 def test_TimmCLIPAdapter_resnet():
