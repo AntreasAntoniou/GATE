@@ -1,6 +1,6 @@
 import torch
-
 import wandb
+
 from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks
 
 
