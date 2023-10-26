@@ -1,12 +1,11 @@
 from typing import Any, Optional
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.orchestration.evaluators.classification import (
     ClassificationEvaluator,
 )
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @configurable(group="evaluator", name="image_to_text_zero_shot_classification")

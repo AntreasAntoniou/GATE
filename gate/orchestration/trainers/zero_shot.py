@@ -3,10 +3,9 @@ from typing import Any, Optional
 import torch
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.orchestration.trainers.classification import ClassificationTrainer
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @configurable(group="trainer", name="image_to_text_zero_shot_classification")

@@ -1,3 +1,4 @@
+import logging
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
@@ -9,13 +10,13 @@ from torch.utils.data import random_split
 from torch.utils.data.dataset import Dataset
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
 from gate.data.image.classification.imagenet1k import StandardAugmentations
 
-logger = get_logger(name=__name__, set_rich=True)
+logger = logging.getLogger(__name__)
+
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 20035
 

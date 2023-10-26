@@ -1,7 +1,7 @@
 import pathlib
 from typing import Optional
 
-from gate.boilerplate.utils import count_files_recursive, get_logger
+from gate.boilerplate.utils import count_files_recursive
 
 logger = logging.getLogger(__name__)
 

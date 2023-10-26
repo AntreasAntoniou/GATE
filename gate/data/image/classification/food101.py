@@ -1,4 +1,5 @@
 # food101.py
+import logging
 import multiprocessing as mp
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -8,7 +9,6 @@ import torchvision.transforms as T
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.classification.imagenet1k import (
@@ -16,7 +16,7 @@ from gate.data.image.classification.imagenet1k import (
     StandardAugmentations,
 )
 
-logger = get_logger(name=__name__, set_rich=True)
+logger = logging.getLogger(__name__)
 
 
 def build_food101_dataset(

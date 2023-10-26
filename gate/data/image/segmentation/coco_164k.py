@@ -1,3 +1,4 @@
+import logging
 import multiprocessing as mp
 from typing import Any, Dict, List, Optional, Union
 
@@ -7,7 +8,6 @@ import torchvision.transforms as T
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
@@ -19,7 +19,7 @@ from gate.data.transforms.segmentation_transforms import (
     KeySelectorTransforms,
 )
 
-logger = get_logger(__name__, set_rich=True)
+logger = logging.getLogger(__name__)
 
 
 def build_dataset(

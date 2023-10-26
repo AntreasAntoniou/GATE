@@ -7,11 +7,10 @@ from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
-from gate.boilerplate.utils import get_logger
 from gate.models.backbones import Modality, apply_preprocessing_transforms
 from gate.models.core import reinit
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def forward_dict(self, x):

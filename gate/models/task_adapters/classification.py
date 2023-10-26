@@ -4,11 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from gate.boilerplate.utils import get_logger
 from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class BackboneWithLinear(BaseModule):

@@ -6,9 +6,7 @@ import torch.nn as nn
 import torch.nn.functional
 import torch.nn.functional as F
 
-from gate.boilerplate.utils import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def contrastive_accuracy(logits, is_irregular_shape: bool = False):

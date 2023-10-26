@@ -8,7 +8,6 @@ from datasets import load_dataset
 from timm.data import rand_augment_transform
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 

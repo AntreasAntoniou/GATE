@@ -4,15 +4,14 @@ from typing import Any, Dict, Optional
 import torch
 import torch.nn as nn
 import transformers
-import wandb
 from hydra_zen import instantiate
 from torch.utils.data import Subset
 
-from gate.boilerplate.utils import get_logger
+import wandb
 from gate.data.core import GATEDataset
 from gate.models.core import GATEModel
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def setup(ckpt_path: Optional[str], cfg: Any) -> tuple:

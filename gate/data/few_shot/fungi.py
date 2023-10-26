@@ -1,3 +1,4 @@
+import logging
 import multiprocessing as mp
 import pathlib
 from dataclasses import dataclass
@@ -9,7 +10,6 @@ import torch
 from torchvision import transforms as T
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.few_shot.core import (
@@ -17,9 +17,7 @@ from gate.data.few_shot.core import (
     key_mapper,
 )
 
-logger = get_logger(
-    __name__,
-)
+logger = logging.getLogger(__name__)
 
 
 class FungiFewShotClassificationDataset(FewShotClassificationMetaDataset):

@@ -6,13 +6,12 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.orchestration.trainers.classification import (
     ClassificationTrainer,
     StepOutput,
 )
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @configurable(group="trainer", name="image_semantic_segmentation")

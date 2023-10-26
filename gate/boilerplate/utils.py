@@ -141,7 +141,7 @@ def timeout(timeout_secs: int):
 
 
 def demo_logger():
-    logger = get_logger(__name__)
+    logger = logging.getLogger(__name__)
 
     logger.info("Hello World")
     # logger.debug("Debugging")

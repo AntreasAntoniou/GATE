@@ -5,7 +5,6 @@ import torch
 from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import (
     HYDRATED_IMAGE_SIZE,
     HYDRATED_NUM_CLASSES,
@@ -32,7 +31,7 @@ from gate.models.task_adapters.semantic_segmentation import (
 # modality_b_num_features: int,
 # projection_num_features: Optional[int] = None,
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def build_model(

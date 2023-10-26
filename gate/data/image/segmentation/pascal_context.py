@@ -17,7 +17,6 @@ from torchvision.datasets.utils import download_and_extract_archive
 from tqdm import tqdm
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (

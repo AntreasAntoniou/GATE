@@ -13,7 +13,6 @@ from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
-from gate.boilerplate.utils import get_logger
 from gate.models.backbones import Modality, image_dim_reshape
 from gate.models.backbones.clip import TextProcessor
 from gate.models.core import reinit
@@ -65,7 +64,7 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     return x
 
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class TimmModel(nn.Module):

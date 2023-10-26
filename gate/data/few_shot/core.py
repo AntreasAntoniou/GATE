@@ -1,3 +1,4 @@
+import logging
 import multiprocessing as mp
 import pathlib
 from collections import defaultdict
@@ -13,15 +14,13 @@ from omegaconf import DictConfig
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
 
-from gate.boilerplate.utils import get_logger
 from gate.data.few_shot.utils import (
     FewShotSuperSplitSetOptions,
     get_class_to_idx_dict,
 )
 
-logger = get_logger(
-    __name__,
-)
+logger = logging.getLogger(__name__)
+
 # logger.setLevel("DEBUG")
 from concurrent.futures import ThreadPoolExecutor
 

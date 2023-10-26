@@ -13,10 +13,9 @@ import numpy as np
 import requests
 from tqdm import tqdm
 
-from gate.boilerplate.utils import get_logger
 from gate.data.video.classes import kinetics_400_classes as CLASSES
 
-logger = get_logger(name=__name__, set_rich=True, logging_level=logging.INFO)
+logger = logging.getLogger(__name__)
 # KINETICS-400
 """     videos      csv         replace
 test:   38685       39805       0

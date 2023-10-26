@@ -31,7 +31,6 @@ from gate.boilerplate.convenience import (
 from gate.boilerplate.core import Learner
 from gate.boilerplate.utils import (
     create_hf_model_repo_and_download_maybe,
-    get_logger,
     pretty_config,
     set_seed,
 )

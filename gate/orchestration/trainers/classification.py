@@ -8,7 +8,6 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics, configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.multi_class_classification import (
     average_precision_score,
@@ -17,7 +16,7 @@ from gate.metrics.multi_class_classification import (
 )
 from gate.orchestration.trainers import Trainer, TrainerOutput
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_dict_shapes(x):

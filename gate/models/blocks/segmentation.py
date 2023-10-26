@@ -33,8 +33,6 @@ def upsample_tensor(input_tensor):
     )
 
 
-from gate.boilerplate.utils import get_logger
-
 logger = logging.getLogger(__name__)
 
 

@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics, configurable
-from gate.boilerplate.utils import get_logger
 from gate.orchestration.evaluators import EvaluatorOutput
 from gate.orchestration.evaluators.classification import (
     ClassificationEvaluator,
@@ -16,7 +15,7 @@ from gate.orchestration.trainers.segmentation import (
     sub_batch_generator,
 )
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @configurable(group="evaluator", name="image_semantic_segmentation")

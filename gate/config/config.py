@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -10,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.decorators import register_configurables
-from gate.boilerplate.utils import get_hydra_config, get_logger, pretty_config
+from gate.boilerplate.utils import get_hydra_config, pretty_config
 from gate.config.variables import (
     CODE_DIR,
     DATASET_DIR,
@@ -31,7 +32,7 @@ from gate.config.variables import (
 )
 from gate.data.core import collate_fn_with_token_pad
 
-hydra_logger = get_logger("hydra")
+hydra_logger = logging.getLogger("hydra")
 
 
 @dataclass

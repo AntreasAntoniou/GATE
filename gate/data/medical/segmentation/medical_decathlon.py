@@ -10,7 +10,6 @@ import torchvision.transforms as T
 from datasets import concatenate_datasets
 
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import get_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (

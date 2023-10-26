@@ -14,12 +14,10 @@ from numpy import False_
 from torch.utils.data import DataLoader
 from transformers import logging
 
-from gate.boilerplate.utils import get_logger
-
 logging.disable_progress_bar()
 
-logger = get_logger(__name__)
-hf_logger = get_logger("huggingface_hub", logging_level=logging.CRITICAL)
+logger = logging.getLogger(__name__)
+hf_logger = logging.getLogger("huggingface_hub").setLevel(logging.CRITICAL)
 
 import contextlib
 import time

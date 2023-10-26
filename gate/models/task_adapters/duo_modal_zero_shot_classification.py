@@ -6,14 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm.auto import tqdm
 
-from gate.boilerplate.utils import get_logger
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import (
     compute_zero_shot_loss_and_metrics,
     get_similarities,
 )
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class DuoModalZeroShotModel(BaseModule):

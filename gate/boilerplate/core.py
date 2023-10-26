@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
-from gate.boilerplate.utils import download_model_with_name, get_logger
+from gate.boilerplate.utils import download_model_with_name
 from gate.config.variables import (
     DUMMY_BATCH_MODE,
     HYDRATED_CURRENT_EXPERIMENT_DIR,
@@ -26,7 +26,7 @@ from gate.models.core import Ensemble, GATEModel
 from gate.orchestration.evaluators.classification import Evaluator
 from gate.orchestration.trainers.classification import Trainer
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 from pathlib import Path
 from typing import Union

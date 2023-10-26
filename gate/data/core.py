@@ -6,8 +6,6 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
 
-from gate.boilerplate.utils import get_logger
-
 logger = logging.getLogger(__name__)
 
 

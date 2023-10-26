@@ -11,8 +11,6 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 from PIL import Image
 
-from gate.boilerplate.utils import get_logger
-
 logger = logging.getLogger(__name__)
 
 

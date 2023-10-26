@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from datasets.table import pa
 
-from gate.boilerplate.utils import get_logger
 from gate.metrics.segmentation import (
     CrossEntropyLoss,
     DiceLoss,
@@ -25,7 +24,7 @@ from gate.models.blocks.segmentation import (
 # from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
 
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def default_optimization_loss(
