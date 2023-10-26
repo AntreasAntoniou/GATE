@@ -3,7 +3,7 @@ from typing import Optional
 
 from gate.boilerplate.utils import count_files_recursive, get_logger
 
-logger = get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 def download_kaggle_dataset(

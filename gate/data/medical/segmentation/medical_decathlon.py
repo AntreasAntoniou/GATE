@@ -22,7 +22,7 @@ from gate.data.transforms.segmentation_transforms import (
     PhotometricParams,
 )
 
-logger = get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 class TaskOptions(Enum):

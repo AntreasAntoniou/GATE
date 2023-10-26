@@ -8,7 +8,7 @@ from torch.utils.data.dataloader import default_collate
 
 from gate.boilerplate.utils import get_logger
 
-logger = get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 class CustomConcatDataset(Dataset):

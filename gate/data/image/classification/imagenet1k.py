@@ -73,7 +73,7 @@ class KeyMapper:
         return {"image": input_dict["image"], "labels": input_dict["label"]}
 
 
-logger = get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 @configurable(

@@ -14,7 +14,6 @@ import numpy as np
 import orjson as json
 import torch
 import torch.nn.functional as F
-import wandb
 import yaml
 from matplotlib.pyplot import step
 from omegaconf import DictConfig, OmegaConf
@@ -25,6 +24,7 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+import wandb
 from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks
 from gate.config.variables import HF_OFFLINE_MODE
 
@@ -241,7 +241,7 @@ def load_json(filepath: Union[str, pathlib.Path]):
     return dict_to_load
 
 
-logger = get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 def download_model_with_name(

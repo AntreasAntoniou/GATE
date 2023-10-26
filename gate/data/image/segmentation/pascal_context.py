@@ -28,7 +28,7 @@ from gate.data.transforms.segmentation_transforms import (
     KeySelectorTransforms,
 )
 
-logger = get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_matching_ids(dir1, dir2):
