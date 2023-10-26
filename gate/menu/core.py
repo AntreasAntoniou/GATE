@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
-from gate.data import medical
 from gate.data.few_shot import DatasetName as few_shot_dataset_name
 from gate.data.image.classification import (
     DatasetName as image_class_dataset_name,

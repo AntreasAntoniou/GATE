@@ -135,17 +135,6 @@ def timeout(timeout_secs: int):
     return wrapper
 
 
-def demo_logger():
-    logger = logging.getLogger(__name__)
-
-    logger.info("Hello World")
-    # logger.debug("Debugging")
-    logger.warning("Warning")
-    logger.error("Error")
-    logger.critical("Critical")
-    logger.exception("Exception")
-
-
 def set_seed(seed: int):
     accelerate.utils.set_seed(seed)
 
@@ -235,6 +224,8 @@ def load_json(filepath: Union[str, pathlib.Path]):
 
     return dict_to_load
 
+
+import logging
 
 logger = logging.getLogger(__name__)
 

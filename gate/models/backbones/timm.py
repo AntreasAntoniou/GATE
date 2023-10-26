@@ -64,6 +64,8 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     return x
 
 
+import logging
+
 logger = logging.getLogger(__name__)
 
 

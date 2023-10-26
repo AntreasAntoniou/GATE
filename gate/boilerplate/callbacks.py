@@ -16,6 +16,8 @@ from transformers import logging
 
 logging.disable_progress_bar()
 
+import logging
+
 logger = logging.getLogger(__name__)
 hf_logger = logging.getLogger("huggingface_hub").setLevel(logging.CRITICAL)
 

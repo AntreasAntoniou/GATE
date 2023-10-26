@@ -72,6 +72,8 @@ class KeyMapper:
         return {"image": input_dict["image"], "labels": input_dict["label"]}
 
 
+import logging
+
 logger = logging.getLogger(__name__)
 
 
