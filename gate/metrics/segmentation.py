@@ -233,15 +233,9 @@ class DiceLoss(nn.Module):
         logits = F.softmax(logits, dim=1)
         labels = labels.squeeze(1)
 
-        logger.info(f"max label one hot: {np.array(labels.cpu()).max()}")
-
         labels_one_hot = torch.zeros_like(logits)
 
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
-
-        logger.info(
-            f"labels_one_hot: {labels_one_hot.shape}, logits: {logits.shape}"
-        )
 
         if self.ignore_index is not None:
             ignore_mask = (labels != self.ignore_index).unsqueeze(1)

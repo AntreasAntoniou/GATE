@@ -29,7 +29,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             experiment_tracker,
             source_modality="image",
             target_modality="image",
-            model_selection_metric_name="mean_iou-epoch-mean",
+            model_selection_metric_name="mIoU",
             model_selection_metric_higher_is_better=True,
         )
         self.model = None
@@ -117,6 +117,11 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         evaluator_output: EvaluatorOutput = super().end_validation(global_step)
         iou_metrics = self.model.model.compute_across_set_iou()
 
+        for key, value in iou_metrics.items():
+            if isinstance(value, torch.Tensor):
+                iou_metrics[key] = value.mean()
+                self.current_epoch_dict[key].append(value.mean().cpu())
+
         return EvaluatorOutput(
             global_step=global_step,
             phase_name="validation",
@@ -130,6 +135,11 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             global_step, prefix=prefix
         )
         iou_metrics = self.model.model.compute_across_set_iou()
+
+        for key, value in iou_metrics.items():
+            if isinstance(value, torch.Tensor):
+                iou_metrics[key] = value.mean()
+                self.current_epoch_dict[key].append(value.mean().cpu())
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -151,7 +161,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             source_modality="image",
             target_modality="image",
             model_selection_metric_name="dice_loss-epoch-mean",
-            model_selection_metric_higher_is_better=True,
+            model_selection_metric_higher_is_better=False,
         )
         self.model = None
         self.sub_batch_size = sub_batch_size

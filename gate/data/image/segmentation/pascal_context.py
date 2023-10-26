@@ -129,6 +129,9 @@ class PascalContextDataset(Dataset):
         return sample
 
 
+from torch.utils.data import random_split
+
+
 def build_dataset(
     set_name: str, data_dir: Optional[str] = None, download: bool = False
 ):
@@ -158,20 +161,17 @@ def build_dataset(
 
     # Set the random seed for reproducibility
     torch.manual_seed(42)
-    train_dataset = PascalContextDataset(
+    dataset = PascalContextDataset(
         root_dir=data_dir,
-        subset="train",
     )
-    test_dataset = PascalContextDataset(
-        root_dir=data_dir,
-        subset="val",
-    )
-    # 💥 Split the train set into training and validation sets
-    train_len = int(0.9 * len(train_dataset))
-    val_len = len(train_dataset) - train_len
 
-    train_dataset, val_dataset = random_split(
-        train_dataset, [train_len, val_len]
+    # 💥 Split the dataset into training, validation, and test sets
+    train_len = int(0.8 * len(dataset))
+    val_len = int(0.1 * len(dataset))
+    test_len = len(dataset) - train_len - val_len
+
+    train_dataset, val_dataset, test_dataset = random_split(
+        dataset, [train_len, val_len, test_len]
     )
 
     if set_name == "train":

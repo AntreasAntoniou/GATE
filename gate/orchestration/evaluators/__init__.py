@@ -62,7 +62,7 @@ class Evaluator(ABC):
         if isinstance(metrics, List):
             if len(metrics) == 0:
                 raise ValueError(
-                    f"No epoch values found for {metric_name}, "
+                    f"No epoch values found for {metric_name}, {metrics}"
                     f"the available metrics are: {self.per_epoch_metrics.keys()}"
                 )
             metrics = [torch.tensor(metric) for metric in metrics]
