@@ -31,8 +31,8 @@ jobs:
 
     - name: Apply formatting
       run: |
-        isort -l 79 .
-        black -l 79 .
+        isort --multi-line=3 --trailing-comma --force-grid-wrap=0 --use-parentheses --line-width=79 .
+        black --line-length 79 .
 
     - name: Commit changes
       run: |
