@@ -2,8 +2,6 @@ import logging
 import pathlib
 from typing import Optional
 
-from gate.boilerplate.utils import count_files_recursive
-
 logger = logging.getLogger(__name__)
 
 
@@ -15,6 +13,8 @@ def download_kaggle_dataset(
 ):
     # Initialize the Kaggle API client
     from kaggle import KaggleApi
+
+    from gate.boilerplate.utils import count_files_recursive
 
     dataset_download_path = pathlib.Path(target_dir_path) / dataset_name
     if (
