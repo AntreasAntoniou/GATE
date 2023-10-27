@@ -519,7 +519,7 @@ class TransformerSegmentationDecoder(nn.Module):
         self.spatial_mixer = None
         self.closest_square_root = None
         self.num_blocks = len(input_list)
-
+        print(f"target image size: {target_image_size}")
         if len(input_list[0].shape) == 4:
             input_list = [
                 self.upsample(x) if x.shape[-1] != target_image_size[0] else x
