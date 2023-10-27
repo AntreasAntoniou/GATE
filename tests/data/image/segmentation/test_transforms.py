@@ -3,10 +3,7 @@ import pytest
 import torch
 from PIL import Image
 
-from gate.data.transforms.segmentation import (
-    grayscale_to_rgb,
-    is_grayscale,
-)
+from gate.data.transforms.segmentation import grayscale_to_rgb, is_grayscale
 
 
 def test_is_grayscale():
