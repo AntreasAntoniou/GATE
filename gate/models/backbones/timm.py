@@ -48,9 +48,11 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
             else:
                 x = T.ToPILImage()(x)
 
-        if isinstance(x, List):
+        if isinstance(x, List) and Modality.image == modality:
             x = [transforms(item) for item in x]
             x = torch.stack(x)
+        elif isinstance(x, List) and Modality.text == modality:
+            x = transforms(x)
         else:
             x = transforms(x)
 

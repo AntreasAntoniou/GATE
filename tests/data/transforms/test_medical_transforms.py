@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from gate.data.transforms.segmentation_transforms import (
+from gate.data.transforms.segmentation import (
     MedicalImageSegmentationTransforms,
 )
 

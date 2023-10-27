@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from gate.data.core import GATEDataset
 from gate.data.image.classification.cifar100 import build_dataset
-from gate.data.transforms.tiny_image_transforms import pad_image
+from gate.data.transforms.image import pad_image
 from gate.models.task_specific_models.classification.clip import build_model
 
 

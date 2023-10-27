@@ -9,10 +9,7 @@ from huggingface_hub import snapshot_download
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.transforms.video_transforms import (
-    BaseVideoTransform,
-    TrainVideoTransform,
-)
+from gate.data.transforms.video import BaseVideoTransform, TrainVideoTransform
 from gate.data.video.classification.build_gulp_sparsesample import DatasetNames
 from gate.data.video.classification.kinetics_400 import prepare_kinetics_400
 from gate.data.video.utils.loader.decord_sparsesample_dataset import (

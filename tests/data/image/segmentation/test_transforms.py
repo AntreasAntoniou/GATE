@@ -3,7 +3,7 @@ import pytest
 import torch
 from PIL import Image
 
-from gate.data.transforms.segmentation_transforms import (
+from gate.data.transforms.segmentation import (
     grayscale_to_rgb,
     is_grayscale,
 )

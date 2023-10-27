@@ -1,7 +1,7 @@
 import torch
 from torchvision.transforms import functional as F
 
-from gate.data.transforms.video_transforms import (
+from gate.data.transforms.video import (
     BaseVideoTransform,
     TemporalBrightnessContrast,
     TemporalCrop,

@@ -4,7 +4,7 @@ import pytest
 import torch
 from PIL import Image
 
-from gate.data.transforms.segmentation_transforms import DualImageRandomFlip
+from gate.data.transforms.segmentation import DualImageRandomFlip
 
 
 def test_flip_tensor():

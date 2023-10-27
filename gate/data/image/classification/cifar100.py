@@ -11,7 +11,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.classification.imagenet1k import StandardAugmentations
-from gate.data.transforms.tiny_image_transforms import pad_image
+from gate.data.transforms.image import pad_image
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:

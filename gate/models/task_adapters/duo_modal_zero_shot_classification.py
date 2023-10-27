@@ -116,26 +116,6 @@ class DuoModalZeroShotModel(BaseModule):
                     self.modality_b_identifier
                 ][self.head_identifier]
 
-        if audio is not None:
-            if self.modality_a_identifier == "audio":
-                modality_a_features = self.modality_a_model(audio=audio)[
-                    self.modality_a_identifier
-                ][self.head_identifier]
-            elif self.modality_b_identifier == "audio":
-                modality_b_features = self.modality_b_model(audio=audio)[
-                    self.modality_b_identifier
-                ][self.head_identifier]
-
-        if video is not None:
-            if self.modality_a_identifier == "video":
-                modality_a_features = self.modality_a_model(video=video)[
-                    self.modality_a_identifier
-                ][self.head_identifier]
-            elif self.modality_b_identifier == "video":
-                modality_b_features = self.modality_b_model(video=video)[
-                    self.modality_b_identifier
-                ][self.head_identifier]
-
         if self.projection_num_features is not None:
             modality_a_features = self.modality_a_linear(modality_a_features)
             modality_b_features = self.modality_b_linear(modality_b_features)

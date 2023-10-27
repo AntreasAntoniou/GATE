@@ -12,7 +12,7 @@ from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
     cocostuff_10K_classes as CLASSES,
 )
-from gate.data.transforms.segmentation_transforms import (
+from gate.data.transforms.segmentation import (
     BaseDatasetTransforms,
     DualImageRandomCrop,
     KeySelectorTransforms,

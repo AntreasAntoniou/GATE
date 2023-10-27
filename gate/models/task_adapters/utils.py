@@ -123,8 +123,8 @@ def get_similarities(
 ) -> torch.Tensor:
     """
     Args:
-        tensor_modality_a: Tensor, shape [seq_len, embedding_dim]
-        tensor_modality_b: Tensor, shape [seq_len, embedding_dim]
+        tensor_modality_a: Tensor, shape [seq_len, embedding_dim] or [batch_size, seq_len, embedding_dim]
+        tensor_modality_b: Tensor, shape [seq_len, embedding_dim] or [batch_size, seq_len, embedding_dim]
     """
 
     modality_a_features = modality_a_features / modality_a_features.norm(
@@ -134,16 +134,30 @@ def get_similarities(
         p=2, dim=-1, keepdim=True
     )
 
+    # if len(modality_a_features.shape) == 3:
+    #     similarity = torch.bmm(
+    #         modality_a_features, modality_b_features.transpose(1, 2)
+    #     )
+    #     similarities = {
+    #         f"{modality_a_name}_to_{modality_b_name}_similarities": similarity
+    #         * torch.clamp(temperature_parameter.exp(), max=100),
+    #         f"{modality_b_name}_to_{modality_a_name}_similarities": similarity.transpose(
+    #             1, 2
+    #         ),
+    #     }
+
+    # else:
+    similarity = F.linear(
+        modality_a_features, modality_b_features
+    ) * torch.clamp(temperature_parameter.exp(), max=100)
+
     similarities = {
-        f"{modality_a_name}_to_{modality_b_name}_similarities": F.linear(
-            modality_a_features, modality_b_features
-        )
-        * torch.clamp(temperature_parameter.exp(), max=100)
+        f"{modality_a_name}_to_{modality_b_name}_similarities": similarity
     }
 
     similarities[
         f"{modality_b_name}_to_{modality_a_name}_similarities"
-    ] = similarities[f"{modality_a_name}_to_{modality_b_name}_similarities"].T
+    ] = similarity.T
 
     return similarities
 
@@ -155,18 +169,15 @@ def compute_zero_shot_loss_and_metrics(
     if isinstance(is_irregular_shape, List):
         is_irregular_shape = is_irregular_shape[0]
 
-    start_time = time.time()
     contrastive_losses_dict = {
         f"{key.replace('_similarities', '_loss')}": contrastive_loss(
             value, is_irregular_shape=is_irregular_shape
         )
         for key, value in similarities.items()
     }
-    logger.debug(f"Contrastive loss took {time.time() - start_time} seconds")
 
     loss = torch.mean(torch.stack(list(contrastive_losses_dict.values())))
 
-    start_time = time.time()
     contrastive_accuracy_dict = {
         f"{key.replace('_similarities', '_accuracy')}": contrastive_accuracy(
             value, is_irregular_shape=is_irregular_shape
@@ -174,18 +185,12 @@ def compute_zero_shot_loss_and_metrics(
         for key, value in similarities.items()
     }
 
-    logger.debug(
-        f"Contrastive accuracy took {time.time() - start_time} seconds"
-    )
-
-    start_time = time.time()
     contrastive_accuracy_top_5_dict = {
         f"{key.replace('_similarities', '_accuracy_top_5')}": contrastive_accuracy_top_k(
             value, k=5, is_irregular_shape=is_irregular_shape
         )
         for key, value in similarities.items()
     }
-    logger.debug(f"Top 5 accuracy took {time.time() - start_time} seconds")
 
     return (
         similarities

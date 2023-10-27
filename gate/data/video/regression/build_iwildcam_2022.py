@@ -7,10 +7,7 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.transforms.video_transforms import (
-    BaseVideoTransform,
-    TrainVideoTransform,
-)
+from gate.data.transforms.video import BaseVideoTransform, TrainVideoTransform
 from gate.data.video.regression.iwildcam_2022 import prepare_iwildcam_2022
 from gate.data.video.utils.loader.iwildcam2022_dataset import (
     IWildCam2022Dataset,

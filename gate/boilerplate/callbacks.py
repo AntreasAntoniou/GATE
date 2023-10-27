@@ -382,7 +382,7 @@ class UploadCheckpointToHuggingFaceBackground(threading.Thread):
         self.started = True
 
         # Suppress logging
-        transformers_logger = logging.get_logger("transformers")
+        transformers_logger = logging.getLogger("transformers")
         original_level = transformers_logger.level
         transformers_logger.setLevel(logging.CRITICAL)
 

@@ -16,7 +16,7 @@ from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
     medical_decathlon_labels as CLASSES_DICT,
 )
-from gate.data.transforms.segmentation_transforms import (
+from gate.data.transforms.segmentation import (
     DualImageRandomCrop,
     MedicalImageSegmentationTransforms,
     PhotometricParams,

@@ -14,7 +14,7 @@ from gate.data.image.segmentation.classes import acdc_labels as CLASSES
 from gate.data.medical.segmentation.medical_decathlon import (
     patient_normalization,
 )
-from gate.data.transforms.segmentation_transforms import (
+from gate.data.transforms.segmentation import (
     DualImageRandomCrop,
     DualImageRandomFlip,
     MedicalImageSegmentationTransforms,

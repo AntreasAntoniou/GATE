@@ -4,7 +4,7 @@ import pytest
 import torch
 from PIL import Image
 
-from gate.data.transforms.segmentation_transforms import PhotoMetricDistortion
+from gate.data.transforms.segmentation import PhotoMetricDistortion
 
 
 # Function for generating test image data

@@ -15,10 +15,7 @@ from torch.utils.data import Dataset, random_split
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.transforms.video_transforms import (
-    BaseVideoTransform,
-    TrainVideoTransform,
-)
+from gate.data.transforms.video import BaseVideoTransform, TrainVideoTransform
 from gate.data.video.classification import DatasetNames
 from gate.data.video.utils.loader.gulp_sparsesample_dataset import (
     GulpSparsesampleDataset,

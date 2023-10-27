@@ -3,7 +3,7 @@ import pytest
 import torch
 from PIL import Image
 
-from gate.data.transforms.segmentation_transforms import DualImageRandomCrop
+from gate.data.transforms.segmentation import DualImageRandomCrop
 
 
 def test_same_random_crop():

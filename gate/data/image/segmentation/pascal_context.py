@@ -23,7 +23,7 @@ from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
     pascal_context_classes as CLASSES,
 )
-from gate.data.transforms.segmentation_transforms import (
+from gate.data.transforms.segmentation import (
     BaseDatasetTransforms,
     KeySelectorTransforms,
 )

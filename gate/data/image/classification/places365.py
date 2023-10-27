@@ -5,7 +5,6 @@ from typing import Any, Optional
 
 import torch
 import torchvision
-from timm.data import rand_augment_transform
 from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
