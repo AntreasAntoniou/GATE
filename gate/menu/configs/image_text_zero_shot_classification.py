@@ -119,15 +119,15 @@ model_configs = {
     #     train_batch_size=BATCH_SIZE,
     #     eval_batch_size=BATCH_SIZE,
     # ),
-    EncoderNames.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
-        model_type=MODEL_TYPE,
-        encoder_config=EncoderNames.IJEPAViTHugePatch14_224,
-        learning_rate_config=LearningRateConfig(
-            default=[VIT_LR], dataset_specific={}
-        ),
-        train_batch_size=BATCH_SIZE,
-        eval_batch_size=BATCH_SIZE,
-    ),
+    # EncoderNames.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
+    #     model_type=MODEL_TYPE,
+    #     encoder_config=EncoderNames.IJEPAViTHugePatch14_224,
+    #     learning_rate_config=LearningRateConfig(
+    #         default=[VIT_LR], dataset_specific={}
+    #     ),
+    #     train_batch_size=BATCH_SIZE,
+    #     eval_batch_size=BATCH_SIZE,
+    # ),
 }
 
 
