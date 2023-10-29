@@ -254,6 +254,14 @@ def print_dict_structure(d, indent=0):
             print_dict_structure(value, indent + 2)
 
 
+def is_desired_method(member):
+    return inspect.ismethod(member) or inspect.isfunction(member)
+
+
+def is_desired_variable(name, member):
+    return "metric" in name.lower() and not callable(member)
+
+
 class Ensemble(nn.Module):
     """
     This class represents an ensemble of PyTorch models. It can compute ensemble predictions,
@@ -270,15 +278,17 @@ class Ensemble(nn.Module):
         """
         super(Ensemble, self).__init__()
         self.models = nn.ModuleList(models)
-        if hasattr(models[0], "compute_loss_and_metrics"):
-            self.compute_loss_and_metrics = models[0].compute_loss_and_metrics
-        else:
-            self.compute_loss_and_metrics = None
 
-        for name, method in inspect.getmembers(
-            models[0], predicate=inspect.ismethod
-        ):
-            setattr(self, name, method)
+        for model in self.models:
+            model.eval()
+
+        for name in dir(self.models[0]):
+            if name != "forward":
+                member = getattr(self.models[0], name)
+                if is_desired_method(member) or is_desired_variable(
+                    name, member
+                ):
+                    setattr(self, name, member)
 
     def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
         """

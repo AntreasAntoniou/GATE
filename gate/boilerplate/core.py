@@ -199,6 +199,7 @@ class Learner(nn.Module):
         return self.__repr__()
 
     def training_step(self, model, batch):
+        model = model.train()
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_training_step_start(model, batch)
         output_list = []
@@ -217,6 +218,7 @@ class Learner(nn.Module):
         return output_list
 
     def validation_step(self, model, batch):
+        model = model.eval()
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_validation_step_start(model, batch)
 
@@ -231,6 +233,7 @@ class Learner(nn.Module):
         self.callback_handler.on_validation_step_end(model, batch)
 
     def testing_step(self, model, batch, prefix):
+        model = model.eval()
         self.callback_handler.on_batch_start(model, batch)
         self.callback_handler.on_testing_step_start(model, batch)
 
@@ -265,15 +268,11 @@ class Learner(nn.Module):
 
         self.trainer.end_training(global_step=self.global_step)
 
-        for background_thread in self.background_threads:
-            if background_thread.is_alive() and not background_thread.done:
-                background_thread.join()
-
         logger.debug("Training finished 🎉")
 
     def check_manage_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
-        TIME_LIMIT = 60 * 60  # 60 minutes
+        TIME_LIMIT = 3 * 60  # 60 minutes
         STOP_THREAD_FLAG = "_stop_thread"
 
         for thread in self.background_threads:
@@ -298,7 +297,7 @@ class Learner(nn.Module):
 
     def complete_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
-        TIME_LIMIT = 600  # 10 minutes
+        TIME_LIMIT = 180  # 10 minutes
         STOP_THREAD_FLAG = "_stop_thread"
 
         while self.background_threads:
@@ -482,6 +481,8 @@ class Learner(nn.Module):
         if model is None:
             model = self.model
 
+        model = model.eval()
+
         if val_dataloader is not None:
             self.start_validation()
 
@@ -515,6 +516,7 @@ class Learner(nn.Module):
 
         if model is None:
             model = self.model
+        model = model.eval()
 
         if test_dataloader is not None:
             self.start_testing(prefix=prefix)

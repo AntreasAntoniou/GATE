@@ -177,7 +177,7 @@ def run_experiments(
 
     if print_commands:
         for experiment_name, experiment_command in experiment_dict.items():
-            print(f"Running: {experiment_command}")
+            print(f"{experiment_command}")
 
             if run_commands:
                 # Execute the command and capture stdout and stderr

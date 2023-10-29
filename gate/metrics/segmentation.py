@@ -232,6 +232,11 @@ class DiceLoss(nn.Module):
         logits = F.softmax(logits, dim=1)
         labels = labels.squeeze(1)
 
+        unique_labels = torch.unique(labels)
+        print(
+            f"Unique labels: {unique_labels}, length: {len(unique_labels)}, shape: {logits.shape}"
+        )
+
         labels_one_hot = torch.zeros_like(logits)
 
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)

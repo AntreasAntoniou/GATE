@@ -1,5 +1,7 @@
+import functools
 import json
 import logging
+import warnings
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
 
@@ -174,6 +176,18 @@ def collate_fn_with_token_pad(data):
     return batch
 
 
+def retry_on_exception(func):
+    @functools.wraps(func)
+    def wrapper(self, index):
+        try:
+            return func(self, index)
+        except Exception as e:
+            logger.warn(f"Error at index {index}: {e}")
+            print(f"Error at index {index}: {e}")
+
+    return wrapper
+
+
 class GATEDataset(Dataset):
     """
     The GATEDataset class is a wrapper around another dataset, allowing for key
@@ -225,6 +239,7 @@ class GATEDataset(Dataset):
                 item = self.transforms(item)
         return item
 
+    @retry_on_exception
     def __getitem__(self, index) -> Any:
         if self.infinite_sampling:
             index = index % len(self.dataset)

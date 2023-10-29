@@ -86,7 +86,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
 
         if "seg_episode" in output.metrics:
             seg_episode = output.metrics["seg_episode"]
-            # ae_episode = output.metrics["ae_episode"]
+
             output.metrics = {"seg_episode": seg_episode}
         else:
             output.metrics = {}
@@ -106,7 +106,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
         if "seg_episode" in output.metrics:
             seg_episode = output.metrics["seg_episode"]
-            # ae_episode = output.metrics["ae_episode"]
+
             output.metrics = {"seg_episode": seg_episode}
         else:
             output.metrics = {}
@@ -115,12 +115,11 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
     @collect_metrics
     def end_validation(self, global_step):
         evaluator_output: EvaluatorOutput = super().end_validation(global_step)
-        iou_metrics = self.model.model.compute_across_set_iou()
+        iou_metrics = self.model.model.compute_across_set_metrics()
 
         for key, value in iou_metrics.items():
-            if isinstance(value, torch.Tensor):
-                iou_metrics[key] = value.mean()
-                self.current_epoch_dict[key].append(value.mean().cpu())
+            self.current_epoch_dict[key].append(value)
+            self.per_epoch_metrics[key].append(value)
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -134,16 +133,15 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         evaluator_output: EvaluatorOutput = super().end_testing(
             global_step, prefix=prefix
         )
-        iou_metrics = self.model.model.compute_across_set_iou()
+        iou_metrics = self.model.model.compute_across_set_metrics()
 
         for key, value in iou_metrics.items():
-            if isinstance(value, torch.Tensor):
-                iou_metrics[key] = value.mean()
-                self.current_epoch_dict[key].append(value.mean().cpu())
+            self.current_epoch_dict[key].append(value)
+            self.per_epoch_metrics[key].append(value)
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=evaluator_output.metrics | iou_metrics,
             experiment_tracker=self.experiment_tracker,
         )
@@ -266,7 +264,11 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
     @collect_metrics
     def end_validation(self, global_step):
         evaluator_output: EvaluatorOutput = super().end_validation(global_step)
-        iou_metrics = self.model.model.compute_across_set_iou()
+        iou_metrics = self.model.model.compute_across_set_metrics()
+
+        for key, value in iou_metrics.items():
+            self.current_epoch_dict[key].append(value)
+            self.per_epoch_metrics[key].append(value)
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -280,11 +282,15 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         evaluator_output: EvaluatorOutput = super().end_testing(
             global_step, prefix=prefix
         )
-        iou_metrics = self.model.model.compute_across_set_iou()
+        iou_metrics = self.model.model.compute_across_set_metrics()
+
+        for key, value in iou_metrics.items():
+            self.current_epoch_dict[key].append(value)
+            self.per_epoch_metrics[key].append(value)
 
         return EvaluatorOutput(
             global_step=global_step,
-            phase_name="testing",
+            phase_name=f"testing/{prefix}" if prefix else "testing",
             metrics=evaluator_output.metrics | iou_metrics,
             experiment_tracker=self.experiment_tracker,
         )

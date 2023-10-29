@@ -2,6 +2,8 @@
 import os
 
 import pytest
+import torch
+from tqdm import tqdm
 
 from gate.boilerplate.wandb_utils import visualize_volume
 from gate.data.image.segmentation.coco_164k import (
@@ -66,3 +68,24 @@ def test_build_gate_visualize_dataset():
         assert item["labels"] is not None, "Label should not be None"
         visualize_volume(item, name="test-visualization/coco_164k")
         break
+
+    import multiprocessing as mp
+
+    from torch.utils.data import DataLoader
+
+    mixed_dataset = torch.utils.data.ConcatDataset(
+        [gate_dataset["train"], gate_dataset["val"], gate_dataset["test"]]
+    )
+
+    mixed_dataloader = DataLoader(
+        mixed_dataset, batch_size=256, num_workers=32, shuffle=True
+    )
+
+    unique_labels = set()
+    for item in tqdm(mixed_dataloader):
+        unique_labels.update(
+            item["labels"].unique().tolist()
+        )  # Convert tensor to list and update the set
+
+    print(f"len {len(unique_labels)}")
+    print(unique_labels)

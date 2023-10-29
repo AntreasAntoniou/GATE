@@ -210,7 +210,7 @@ class SegmentationAdapter(nn.Module):
 
         self.background_loss_weight = background_loss_weight
 
-    def compute_across_set_iou(self):
+    def compute_across_set_metrics(self):
         metrics = self.iou_metric.compute_metrics()
         self.iou_metric.pretty_print(metrics=metrics)
         self.iou_metric.reset()  # Resetting the metrics after computation

@@ -9,9 +9,7 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.segmentation.classes import (
-    cocostuff_10K_classes as CLASSES,
-)
+from gate.data.image.segmentation.classes import cocostuff_10k_dict as CLASSES
 from gate.data.transforms.segmentation import (
     BaseDatasetTransforms,
     DualImageRandomCrop,
@@ -65,6 +63,25 @@ def build_dataset(
     return data_dict[split]
 
 
+def label_remapper(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    labels_tensor = input_dict["labels"]
+    remapped_labels = torch.empty_like(labels_tensor)
+
+    # Create a tensor for the class remapping
+    max_label = max(CLASSES.keys())
+    remap_tensor = torch.arange(
+        max_label + 1, dtype=labels_tensor.dtype, device=labels_tensor.device
+    )
+    for old_label, new_label in CLASSES.items():
+        remap_tensor[old_label] = new_label
+
+    # Apply remapping to the entire tensor in one operation
+    remapped_labels = remap_tensor[labels_tensor]
+
+    input_dict["labels"] = remapped_labels
+    return input_dict
+
+
 @configurable(
     group="dataset", name="coco_10k", defaults=dict(data_dir=DATASET_DIR)
 )
@@ -97,22 +114,37 @@ def build_gate_dataset(
 
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
-        infinite_sampling=True,
-        transforms=[input_transforms, train_transforms, transforms],
+        infinite_sampling=False,
+        transforms=[
+            input_transforms,
+            train_transforms,
+            transforms,
+            label_remapper,
+        ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[input_transforms, eval_transforms, transforms],
+        transforms=[
+            input_transforms,
+            eval_transforms,
+            transforms,
+            label_remapper,
+        ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[input_transforms, eval_transforms, transforms],
+        transforms=[
+            input_transforms,
+            eval_transforms,
+            transforms,
+            label_remapper,
+        ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 

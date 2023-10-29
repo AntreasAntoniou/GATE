@@ -184,12 +184,14 @@ def build_dataset(
 
 def label_replacement(annotation):
     annotation = torch.from_numpy(np.array(annotation))
-    annotation[annotation != 255] += 1
-    annotation[annotation == 255] = 0
+    remapped_labels = annotation.clone()
 
-    annotation = T.ToPILImage()(annotation / 255)
+    remapped_labels[annotation != 255] += 1
+    remapped_labels[annotation == 255] = 0
 
-    return annotation
+    remapped_labels = T.ToPILImage()(remapped_labels / 255)
+
+    return remapped_labels
 
 
 @configurable(

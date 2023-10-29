@@ -13,10 +13,10 @@ dataset_configs = {
     for dataset_name in DatasetName.IMAGE_SEGMENTATION.value
 }
 
-BATCH_SIZE = 64
+BATCH_SIZE = 16
 MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
-RESNET_LR = 1e-3
-VIT_LR = 1e-5
+RESNET_LR = 6e-4
+VIT_LR = 6e-6
 TRAINER_NAME = TrainerName.IMAGE_SEMANTIC_SEGMENTATION.value
 EVALUATOR_NAME = EvaluatorName.IMAGE_SEMANTIC_SEGMENTATION.value
 model_configs = {

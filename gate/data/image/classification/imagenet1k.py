@@ -5,11 +5,13 @@ from typing import Any, Dict, Optional
 
 import torchvision.transforms as T
 from datasets import load_dataset
+from PIL import Image
 from timm.data import rand_augment_transform
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
+from gate.data.transforms.image import convert_to_rgb
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -55,6 +57,9 @@ class StandardAugmentations:
             x = input_dict
         else:
             x = input_dict[self.image_key]
+
+        if isinstance(x, Image.Image):
+            x = convert_to_rgb(x)
 
         try:
             if self.image_key is None:
