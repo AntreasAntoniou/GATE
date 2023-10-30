@@ -19,6 +19,9 @@ from gate.data.medical.classification import (
 from gate.data.medical.segmentation import ACDCDatasetName as acdc_dataset_name
 from gate.data.medical.segmentation import MD_DatasetName as md_options
 from gate.data.video import DatasetName as video_dataset_name
+from gate.data.video import (
+    RegressionDatasetName as video_regression_dataset_name,
+)
 
 
 class DatasetName(Enum):
@@ -31,6 +34,7 @@ class DatasetName(Enum):
     VISUAL_RELATIONAL_REASONING = image_rr_dataset_name
     FEW_SHOT_PROTONET_CLASSIFICATION = few_shot_dataset_name
     VIDEO_CLASSIFICATION = video_dataset_name
+    VIDEO_REGRESSION = video_regression_dataset_name
 
 
 class AdapterTypeNames(Enum):
@@ -39,6 +43,7 @@ class AdapterTypeNames(Enum):
     TIMM_SEGMENTATION = "timm-segmentation-transformer"
     TIMM_MD_SEGMENTATION = "timm-md-segmentation-transformer"
     TIMM_TEMPORAL_CLASSIFICATION = "timm-temporal-classification"
+    TIMM_TEMPORAL_REGRESSION = "timm-temporal-regression"
     TIMM_RELATIONAL_REASONING = "timm-relational-reasoning"
     TIMM_RELATIONAL_REASONING_MULTI_TASK = (
         "timm-relational-reasoning-multi-task"
@@ -52,6 +57,7 @@ class TrainerName(Enum):
     MULTI_CLASS_CLASSIFICATION = "multi_class_classification"
     VISUAL_RELATIONAL_REASONING = "visual_relational_reasoning"
     VIDEO_CLASSIFICATION = "video_classification"
+    VIDEO_REGRESSION = "video_regression"
     IMAGE_SEMANTIC_SEGMENTATION = "image_semantic_segmentation"
     MEDICAL_SEMANTIC_SEGMENTATION = "medical_semantic_segmentation"
     IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION = (
@@ -64,6 +70,7 @@ class EvaluatorName(Enum):
     MULTI_CLASS_CLASSIFICATION = "multi_class_classification"
     VISUAL_RELATIONAL_REASONING = "visual_relational_reasoning"
     VIDEO_CLASSIFICATION = "video_classification"
+    VIDEO_REGRESSION = "video_regression"
     IMAGE_SEMANTIC_SEGMENTATION = "image_semantic_segmentation"
     MEDICAL_SEMANTIC_SEGMENTATION = "medical_semantic_segmentation"
     IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION = (
