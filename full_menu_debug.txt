@@ -247,50 +247,50 @@ dataset=places365 optimizer.lr=0.001 trainer=image_classification evaluator=imag
 # model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_lung optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
 # num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-pancreas-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
-dataset=medical_decathlon_pancreas optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
-eval_batch_size=8 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-pancreas-R50A1-7 model=timm-md-segmentation-transformer 
-model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_pancreas optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
-num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-pancreas-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
+# dataset=medical_decathlon_pancreas optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
+# eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-pancreas-R50A1-7 model=timm-md-segmentation-transformer 
+# model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_pancreas optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
+# num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-hepatic-vessel-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
-dataset=medical_decathlon_hepatic_vessel optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
-eval_batch_size=8 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-hepatic-vessel-R50A1-7 model=timm-md-segmentation-transformer 
-model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_hepatic_vessel optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
-num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-hepatic-vessel-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
+# dataset=medical_decathlon_hepatic_vessel optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
+# eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-hepatic-vessel-R50A1-7 model=timm-md-segmentation-transformer 
+# model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_hepatic_vessel optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
+# num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-spleen-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
-dataset=medical_decathlon_spleen optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
-eval_batch_size=8 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-spleen-R50A1-7 model=timm-md-segmentation-transformer 
-model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_spleen optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
-num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-spleen-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
+# dataset=medical_decathlon_spleen optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
+# eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-spleen-R50A1-7 model=timm-md-segmentation-transformer 
+# model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_spleen optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
+# num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-colon-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
-dataset=medical_decathlon_colon optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
-eval_batch_size=8 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-colon-R50A1-7 model=timm-md-segmentation-transformer 
-model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_colon optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
-num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-colon-CLIP-B16-224-7 model=timm-md-segmentation-transformer  
+# dataset=medical_decathlon_colon optimizer.lr=6e-06 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation num_workers=16 seed=7 train_batch_size=8 
+# eval_batch_size=8 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-medical-decathlon-colon-R50A1-7 model=timm-md-segmentation-transformer 
+# model.timm_model_name=resnet50.a1_in1k dataset=medical_decathlon_colon optimizer.lr=0.0006 trainer=medical_semantic_segmentation evaluator=medical_semantic_segmentation 
+# num_workers=16 seed=7 train_batch_size=8 eval_batch_size=8 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-math-CLIP-B16-224-7 model=timm-relational-reasoning-multi-task  dataset=clevr_math 
-optimizer.lr=1e-05 trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 train_batch_size=64 eval_batch_size=64 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-math-R50A1-7 model=timm-relational-reasoning-multi-task 
-model.timm_model_name=resnet50.a1_in1k dataset=clevr_math optimizer.lr=0.001 trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 
-train_batch_size=64 eval_batch_size=64 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-math-CLIP-B16-224-7 model=timm-relational-reasoning-multi-task  dataset=clevr_math 
+# optimizer.lr=1e-05 trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 train_batch_size=64 eval_batch_size=64 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-math-R50A1-7 model=timm-relational-reasoning-multi-task 
+# model.timm_model_name=resnet50.a1_in1k dataset=clevr_math optimizer.lr=0.001 trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 
+# train_batch_size=64 eval_batch_size=64 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-CLIP-B16-224-7 model=timm-relational-reasoning  dataset=clevr optimizer.lr=1e-05 
-trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 train_batch_size=64 eval_batch_size=64 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-R50A1-7 model=timm-relational-reasoning model.timm_model_name=resnet50.a1_in1k dataset=clevr 
-optimizer.lr=0.001 trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 train_batch_size=64 eval_batch_size=64 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-CLIP-B16-224-7 model=timm-relational-reasoning  dataset=clevr optimizer.lr=1e-05 
+# trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 train_batch_size=64 eval_batch_size=64 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-clevr-R50A1-7 model=timm-relational-reasoning model.timm_model_name=resnet50.a1_in1k dataset=clevr 
+# optimizer.lr=0.001 trainer=visual_relational_reasoning evaluator=visual_relational_reasoning num_workers=16 seed=7 train_batch_size=64 eval_batch_size=64 train_iters=450
 
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-iwildcam-2022-Laion-B16-224-7 model=timm-temporal-classification 
-model.timm_model_name=vit_base_patch16_clip_224.laion2b dataset=iwildcam_2022 optimizer.lr=1e-05 trainer=video_classification evaluator=video_classification num_workers=16 seed=7 
-train_batch_size=32 eval_batch_size=32 train_iters=450
-accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-iwildcam-2022-R50A1-7 model=timm-temporal-classification model.timm_model_name=resnet50.a1_in1k 
-dataset=iwildcam_2022 optimizer.lr=0.001 trainer=video_classification evaluator=video_classification num_workers=16 seed=7 train_batch_size=32 eval_batch_size=32 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-iwildcam-2022-Laion-B16-224-7 model=timm-temporal-classification 
+# model.timm_model_name=vit_base_patch16_clip_224.laion2b dataset=iwildcam_2022 optimizer.lr=1e-05 trainer=video_classification evaluator=video_classification num_workers=16 seed=7 
+# train_batch_size=32 eval_batch_size=32 train_iters=450
+# accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-iwildcam-2022-R50A1-7 model=timm-temporal-classification model.timm_model_name=resnet50.a1_in1k 
+# dataset=iwildcam_2022 optimizer.lr=0.001 trainer=video_classification evaluator=video_classification num_workers=16 seed=7 train_batch_size=32 eval_batch_size=32 train_iters=450
 
 accelerate launch --mixed_precision=bf16 --gpu_ids=1 gate/run.py exp_name=debug-hmdb51-gulprgb-Laion-B16-224-7 model=timm-temporal-classification 
 model.timm_model_name=vit_base_patch16_clip_224.laion2b dataset=hmdb51-gulprgb optimizer.lr=1e-05 trainer=video_classification evaluator=video_classification num_workers=16 seed=7
