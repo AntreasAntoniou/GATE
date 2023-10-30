@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
@@ -11,11 +11,13 @@ from gate.models.core import (
 )
 from gate.models.task_adapters.temporal_image_classification import (
     BackboneWithTemporalTransformerAndLinear,
-    get_classification_metrics_fn_dict,
+    ClassificationMetrics,
+    RegressionMetrics,
 )
 
 
 def build_model(
+    metric_fn_dict: Callable,
     clip_model_name: str = "openai/clip-vit-base-patch16",
     timm_model_name: str = "resnet50.a1_in1k",
     pretrained: bool = True,
@@ -39,9 +41,7 @@ def build_model(
         model=backbone_model,
         num_backbone_features=backbone_model.image_num_features,
         num_classes=num_classes,
-        metric_fn_dict=get_classification_metrics_fn_dict(
-            num_classes=num_classes
-        ),
+        metric_fn=metric_fn_dict,
     )
 
     if not pretrained:
@@ -70,17 +70,53 @@ def build_model(
     name="timm-temporal-classification",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-def build_gate_model(
+def build_gate_classification_model(
     clip_model_name: str = "openai/clip-vit-base-patch16",
     timm_model_name: str = "resnet50.a1_in1k",
     pretrained: bool = True,
     num_classes: int = 512,
 ):
+    classification_metrics = ClassificationMetrics(
+        num_classes=num_classes,
+    )
     model_and_transform = build_model(
+        metric_fn_dict=classification_metrics,
         clip_model_name=clip_model_name,
         timm_model_name=timm_model_name,
         pretrained=pretrained,
         num_classes=num_classes,
+    )
+
+    model_modality_config_video_classification = TargetModalityConfig(
+        video=[SourceModalityConfig(video=True)]
+    )
+
+    gate_model = GATEModel(
+        config=model_modality_config_video_classification,
+        model=model_and_transform.model,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
+
+
+@configurable(
+    group="model",
+    name="timm-temporal-regression",
+)
+def build_gate_regression_model(
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    timm_model_name: str = "resnet50.a1_in1k",
+    pretrained: bool = True,
+):
+    regression_metrics = RegressionMetrics()
+    model_and_transform = build_model(
+        metric_fn_dict=regression_metrics,
+        clip_model_name=clip_model_name,
+        timm_model_name=timm_model_name,
+        pretrained=pretrained,
+        num_classes=1,
     )
 
     model_modality_config_video_classification = TargetModalityConfig(

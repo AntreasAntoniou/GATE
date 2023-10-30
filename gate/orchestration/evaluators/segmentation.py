@@ -80,6 +80,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
+        model = model.eval()
         output: EvaluatorOutput = super().validation_step(
             model, batch, global_step, accelerator
         )
@@ -101,6 +102,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         accelerator: Accelerator,
         prefix: Optional[str] = None,
     ):
+        model = model.eval()
         output: EvaluatorOutput = super().testing_step(
             model, batch, global_step, accelerator, prefix=prefix
         )
@@ -231,6 +233,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
+        model = model.eval()
         output: EvaluatorOutput = super().validation_step(
             model, batch, global_step, accelerator
         )
@@ -251,6 +254,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         accelerator: Accelerator,
         prefix: Optional[str] = None,
     ):
+        model = model.eval()
         output: EvaluatorOutput = super().testing_step(
             model, batch, global_step, accelerator, prefix=prefix
         )

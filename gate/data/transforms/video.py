@@ -85,7 +85,7 @@ class TemporalBrightnessContrast:
 class TemporalScale:
     def __init__(self, scale_factor):
         self.scale_factor = scale_factor
-        self.resizer = Resize(scale_factor)
+        self.resizer = Resize(scale_factor, antialias=True)
 
     def __call__(self, input_dict):
         video = input_dict["video"]

@@ -88,7 +88,16 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
         for frame_idx, image_annotaion in enumerate(per_image_annotations):
             """
             Example of image_annotaion:
-                {'seq_num_frames': 9, 'location': 218, 'datetime': '2013-05-25 17:05:41.000', 'id': '97b37728-21bc-11ea-a13a-137349068a90', 'seq_id': '3019fa50-7d42-11eb-8fb5-0242ac1c0002', 'width': 1920, 'height': 1080, 'file_name': '97b37728-21bc-11ea-a13a-137349068a90.jpg', 'sub_location': 0, 'seq_frame_num': 8, 'category_id': 372, 'gps_location': {'latitude': 17.492381819738956, 'longitude': -89.21560449646441}, 'gps_sub_location': {'latitude': -2.6262412503467187, 'longitude': 29.35055652840072}, 'detection': {'file': 'train/97b37728-21bc-11ea-a13a-137349068a90.jpg', 'max_detection_conf': 0.999, 'detections': [{'category': '1', 'conf': 0.999, 'bbox': [0.153, 0.366, 0.186, 0.535]}, {'category': '1', 'conf': 0.999, 'bbox': [0.355, 0.451, 0.288, 0.518]}, {'category': '1', 'conf': 0.971, 'bbox': [0, 0.338, 0.056, 0.343]}, {'category': '1', 'conf': 0.715, 'bbox': [0.978, 0.649, 0.021, 0.078]}, {'category': '1', 'conf': 0.353, 'bbox': [0.002, 0.272, 0.055, 0.177]}, {'category': '2', 'conf': 0.251, 'bbox': [0.003, 0.27, 0.051, 0.172]}, {'category': '1', 'conf': 0.169, 'bbox': [0.002, 0.281, 0.057, 0.282]}]}})]}
+                {'seq_num_frames': 9, 'location': 218, 'datetime': '2013-05-25 17:05:41.000',
+                'id': '97b37728-21bc-11ea-a13a-137349068a90', 'seq_id': '3019fa50-7d42-11eb-8fb5-0242ac1c0002',
+                'width': 1920, 'height': 1080, 'file_name': '97b37728-21bc-11ea-a13a-137349068a90.jpg',
+                'sub_location': 0, 'seq_frame_num': 8, 'category_id': 372, 'gps_location': {'latitude': 17.492381819738956,
+                'longitude': -89.21560449646441}, 'gps_sub_location': {'latitude': -2.6262412503467187,
+                'longitude': 29.35055652840072}, 'detection': {'file': 'train/97b37728-21bc-11ea-a13a-137349068a90.jpg',
+                'max_detection_conf': 0.999, 'detections': [{'category': '1', 'conf': 0.999, 'bbox': [0.153, 0.366, 0.186, 0.535]},
+                {'category': '1', 'conf': 0.999, 'bbox': [0.355, 0.451, 0.288, 0.518]}, {'category': '1', 'conf': 0.971, 'bbox': [0, 0.338, 0.056, 0.343]},
+                {'category': '1', 'conf': 0.715, 'bbox': [0.978, 0.649, 0.021, 0.078]}, {'category': '1', 'conf': 0.353, 'bbox': [0.002, 0.272, 0.055, 0.177]},
+                {'category': '2', 'conf': 0.251, 'bbox': [0.003, 0.27, 0.051, 0.172]}, {'category': '1', 'conf': 0.169, 'bbox': [0.002, 0.281, 0.057, 0.282]}]}})]}
             """
 
             file_name = image_annotaion["file_name"]
@@ -108,9 +117,9 @@ class IWildCam2022Dataset(torch.utils.data.Dataset):
 
         video = video / 255.0
         return {
-            "index": index,
-            "labels": counts,
-            "num_frames": num_frames,
+            "index": int(index),
+            "labels": int(counts),
+            "num_frames": int(num_frames),
             "video": video,
         }
 

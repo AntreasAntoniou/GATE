@@ -119,13 +119,15 @@ class VideoClassificationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
         experiment_tracker: Optional[Any] = None,
+        model_selection_metric_name: str = "accuracy_top_1-epoch-mean",
+        model_selection_metric_higher_is_better: bool = True,
     ):
         super().__init__(
             experiment_tracker,
             source_modality="video",
             target_modality="video",
-            model_selection_metric_name="accuracy_top_1-epoch-mean",
-            model_selection_metric_higher_is_better=True,
+            model_selection_metric_name=model_selection_metric_name,
+            model_selection_metric_higher_is_better=model_selection_metric_higher_is_better,
         )
 
     def collect_video_episode(self, output_dict, global_step, batch):
@@ -161,6 +163,19 @@ class VideoClassificationEvaluator(ClassificationEvaluator):
         return StepOutput(
             metrics=output_dict,
             loss=loss,
+        )
+
+
+@configurable(group="evaluator", name="video_regression")
+class VideoRegressionEvaluator(VideoClassificationEvaluator):
+    def __init__(
+        self,
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            experiment_tracker,
+            model_selection_metric_name="mae_loss-epoch-mean",
+            model_selection_metric_higher_is_better=False,
         )
 
 

@@ -163,6 +163,23 @@ class VideoClassificationTrainer(ClassificationTrainer):
         )
 
 
+@configurable(group="trainer", name="video_regression")
+class VideoRegressionTrainer(VideoClassificationTrainer):
+    def __init__(
+        self,
+        optimizer: torch.optim.Optimizer,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+        scheduler_interval: str = "step",
+        experiment_tracker: Optional[Any] = None,
+    ):
+        super().__init__(
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scheduler_interval=scheduler_interval,
+            experiment_tracker=experiment_tracker,
+        )
+
+
 @configurable(group="trainer", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationTrainer):
     def __init__(
@@ -327,7 +344,7 @@ class MultiClassClassificationTrainer(Trainer):
         global_step,
         accelerator: Accelerator,
     ) -> TrainerOutput:
-        model.train()
+        model = model.train()
 
         self.optimizer.zero_grad()
 

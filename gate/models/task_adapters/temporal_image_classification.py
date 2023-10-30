@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 import torch
 import torch.nn as nn
@@ -99,30 +99,123 @@ class VariableSequenceTransformerEncoder(BaseModule):
         return {"features": features, "raw_features": raw_features}
 
 
-def get_classification_metrics_fn_dict(num_classes: int):
-    accuracy_top_1 = lambda logits, labels: accuracy_top_k(logits, labels, k=1)
-    accuracy_top_5 = lambda logits, labels: accuracy_top_k(
-        logits, labels, k=min(5, num_classes)
-    )
+class ClassificationMetrics:
+    """
+    A class for computing classification metrics such as accuracy and loss.
 
-    loss = lambda logits, labels: F.cross_entropy(logits, labels)
+    Args:
+        num_classes (int): The number of classes in the classification task.
+    """
 
-    return {
-        "accuracy_top_1": accuracy_top_1,
-        "accuracy_top_5": accuracy_top_5,
-        "loss": loss,
-    }
+    def __init__(self, num_classes: int):
+        self.num_classes = num_classes
+
+    def accuracy_top_1(self, logits, labels):
+        """
+        Computes the top-1 accuracy given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            float: The top-1 accuracy.
+        """
+        return accuracy_top_k(logits, labels, k=1)
+
+    def accuracy_top_5(self, logits, labels):
+        """
+        Computes the top-5 accuracy given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            float: The top-5 accuracy.
+        """
+        return accuracy_top_k(logits, labels, k=min(5, self.num_classes))
+
+    def loss(self, logits, labels):
+        """
+        Computes the cross-entropy loss given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            torch.Tensor: The cross-entropy loss.
+        """
+        return F.cross_entropy(logits, labels)
+
+    def __call__(self, logits, labels):
+        """
+        Computes the classification metrics given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            dict: A dictionary containing the computed metrics.
+        """
+        return {
+            "accuracy_top_1": self.accuracy_top_1(logits, labels),
+            "accuracy_top_5": self.accuracy_top_5(logits, labels),
+            "loss": self.loss(logits, labels),
+        }
 
 
-def get_regression_metrics_fn_dict():
-    mse_loss = lambda logits, labels: F.mse_loss(logits, labels)
-    mae_loss = lambda logits, labels: F.l1_loss(logits, labels)
+class RegressionMetrics:
+    """
+    A class for computing regression metrics such as mean squared error (MSE) and mean absolute error (MAE).
+    """
 
-    return {
-        "mse_loss": mse_loss,
-        "mae_loss": mae_loss,
-        "loss": mae_loss,
-    }
+    def mse_loss(self, logits, labels):
+        """
+        Computes the mean squared error (MSE) loss between the predicted logits and the true labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            torch.Tensor: The MSE loss.
+        """
+        return F.mse_loss(logits.view(-1), labels.view(-1))
+
+    def mae_loss(self, logits, labels):
+        """
+        Computes the mean absolute error (MAE) loss between the predicted logits and the true labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            torch.Tensor: The MAE loss.
+        """
+        return F.l1_loss(logits.view(-1), labels.view(-1))
+
+    def __call__(self, logits, labels):
+        """
+        Computes the MSE and MAE losses between the predicted logits and the true labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            dict: A dictionary containing the MSE loss, MAE loss, and total loss.
+        """
+        return {
+            "mse_loss": self.mse_loss(logits, labels).detach(),
+            "mae_loss": self.mae_loss(logits, labels).detach(),
+            "loss": self.mae_loss(
+                logits, labels
+            ),  # Assuming you want the 'loss' key to map to mae_loss
+        }
 
 
 class BackboneWithTemporalTransformerAndLinear(BaseModule):
@@ -131,7 +224,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         model: nn.Module,
         num_backbone_features: int,
         num_classes: int,
-        metric_fn_dict: Optional[Dict] = None,
+        metric_fn: Optional[Callable] = None,
     ):
         """Initialize the BackboneWithTemporalTransformerAndLinear module.
 
@@ -152,7 +245,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         )
         self.linear = nn.Linear(num_backbone_features, num_classes)
         self.num_classes = num_classes
-        self.metric_fn_dict = metric_fn_dict or {}
+        self.metric_fn_dict = metric_fn or {}
 
     def init_weights(self):
         """Initialize the weights of the model."""
@@ -171,12 +264,11 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         Returns:
             Dict: Dictionary containing computed metrics.
         """
+
         if not isinstance(labels, torch.Tensor):
             labels = torch.tensor(labels).to(logits.device)
 
-        output_metric_dict = {
-            key: fn(logits, labels) for key, fn in self.metric_fn_dict.items()
-        }
+        output_metric_dict = self.metric_fn_dict(logits, labels)
         return output_metric_dict
 
     def forward(
