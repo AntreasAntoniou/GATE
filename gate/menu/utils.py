@@ -22,6 +22,8 @@ def build_command(
     seed: int = 42,
     accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "/app/gate/run.py",
+    train_iters: int = 10000,
+    evaluate_every_n_steps: int = 250,
 ) -> str:
     """
     Build a command for running an experiment. 🛠️
@@ -38,7 +40,8 @@ def build_command(
         f"{accelerate_launch_command} {gate_run_command} "
         f"exp_name={exp_name} model={model_name} {model_args} dataset={dataset_name} optimizer.lr={lr} "
         f"trainer={trainer} evaluator={evaluator} num_workers={num_workers} "
-        f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size} train_iters=450"
+        f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size} "
+        f"train_iters={train_iters} learner.evaluate_every_n_steps={evaluate_every_n_steps}"
     )
     return command_template
 

@@ -4,6 +4,7 @@ import subprocess
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import fire
+from mim import train
 from rich import print
 from rich.logging import RichHandler
 
@@ -50,6 +51,8 @@ def generate_commands(
     experiment_config: Dict,
     num_workers: int = 12,
     gpu_ids: Optional[Union[str, int]] = None,
+    train_iters: int = 10000,
+    evaluate_every_n_steps: int = 250,
     accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "/app/gate/run.py",
 ) -> Dict[str, str]:
@@ -101,6 +104,8 @@ def generate_commands(
                         eval_batch_size=model_config.eval_batch_size,
                         accelerate_launch_path=accelerate_launch_path,
                         gate_run_path=gate_run_path,
+                        train_iters=train_iters,
+                        evaluate_every_n_steps=evaluate_every_n_steps,
                     )
                     command_dict[exp_name] = command
     return command_dict
@@ -115,6 +120,8 @@ def run_experiments(
     gpu_ids: Optional[Union[str, int]] = None,
     print_commands: bool = True,
     run_commands: bool = False,
+    train_iters: int = 10000,
+    evaluate_every_n_steps: int = 250,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -158,6 +165,8 @@ def run_experiments(
                     accelerate_launch_path=accelerate_launch_path,
                     gate_run_path=gate_run_path,
                     gpu_ids=gpu_ids,
+                    train_iters=train_iters,
+                    evaluate_every_n_steps=evaluate_every_n_steps,
                 )
             )
     else:
@@ -170,6 +179,8 @@ def run_experiments(
                 accelerate_launch_path=accelerate_launch_path,
                 gate_run_path=gate_run_path,
                 gpu_ids=gpu_ids,
+                train_iters=train_iters,
+                evaluate_every_n_steps=evaluate_every_n_steps,
             )
         else:
             print("Invalid experiment type selected.")
