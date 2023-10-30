@@ -233,7 +233,7 @@ class DiceLoss(nn.Module):
         labels = labels.squeeze(1)
 
         unique_labels = torch.unique(labels)
-        print(
+        logger.debug(
             f"Unique labels: {unique_labels}, length: {len(unique_labels)}, shape: {logits.shape}"
         )
 

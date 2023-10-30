@@ -336,7 +336,7 @@ def build_gate_md_brain_tumour(
     name=DatasetName.Heart.value,
     defaults=dict(data_dir=DATASET_DIR),
 )
-def build_gate_md_brain_tumour(
+def build_gate_md_heart(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     image_size: int = 512,

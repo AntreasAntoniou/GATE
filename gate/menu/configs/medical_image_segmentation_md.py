@@ -15,7 +15,7 @@ dataset_configs = {
     dataset_name: dataset_name.value for dataset_name in dataset_configs
 }
 
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 MODEL_TYPE = AdapterTypeNames.TIMM_MD_SEGMENTATION.value
 RESNET_LR = 6e-4
 VIT_LR = 6e-6
