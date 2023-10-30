@@ -4,7 +4,6 @@ import subprocess
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import fire
-from mim import train
 from rich import print
 from rich.logging import RichHandler
 
