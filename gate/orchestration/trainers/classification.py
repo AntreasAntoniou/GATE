@@ -46,18 +46,23 @@ class ClassificationTrainer(Trainer):
                     self.current_epoch_dict[key].append(value.detach().cpu())
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
+        start_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        fprop_time = time.time() - start_time
 
         loss = output_dict["loss"]
 
+        start_time = time.time()
         accelerator.backward(loss)
+        bprop_time = time.time() - start_time
 
         self.select_metrics_to_report(output_dict)
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            output_metrics_dict=output_dict
+            | {"fprop_time": fprop_time, "bprop_time": bprop_time},
             loss=loss,
         )
 
@@ -144,13 +149,17 @@ class VideoClassificationTrainer(ClassificationTrainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         batch["return_loss_and_metrics"] = True
+        start_time = time.time()
         output_dict = model.forward(batch)[self.target_modality][
             self.source_modality
         ]
+        fprop_time = time.time() - start_time
 
         loss = output_dict["loss"]
 
+        start_time = time.time()
         accelerator.backward(loss)
+        bprop_time = time.time() - start_time
 
         self.select_metrics_to_report(output_dict)
         output_dict = self.collect_video_episode(
@@ -158,7 +167,11 @@ class VideoClassificationTrainer(ClassificationTrainer):
         )
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            output_metrics_dict=output_dict
+            | {
+                "fprop_time": fprop_time,
+                "bprop_time": bprop_time,
+            },
             loss=loss,
         )
 
@@ -310,7 +323,9 @@ class MultiClassClassificationTrainer(Trainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         batch["return_loss_and_metrics"] = False
+        start_time = time.time()
         output_dict = model.forward(batch)
+        fprop_time = time.time() - start_time
         logits = output_dict[self.target_modality][self.source_modality][
             "logits"
         ]
@@ -328,11 +343,13 @@ class MultiClassClassificationTrainer(Trainer):
             }
         else:
             loss = output_dict["loss"]
-
+        start_time = time.time()
         accelerator.backward(loss)
+        bprop_time = time.time() - start_time
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            output_metrics_dict=output_dict
+            | {"fprop_time": fprop_time, "bprop_time": bprop_time},
             loss=loss,
         )
 

@@ -39,12 +39,14 @@ class ImageSemanticSegmentationTrainer(ClassificationTrainer):
             self.source_modality
         ]
         logger.debug(f"Forward time {time.time() - start_time}")
+        fprop_time = time.time() - start_time
 
         loss = output_dict["loss"]
 
         start_time = time.time()
         accelerator.backward(loss)
         logger.debug(f"Backward time {time.time() - start_time}")
+        bprop_time = time.time() - start_time
 
         if "logits" in output_dict:
             if global_step % 100 == 0:
@@ -69,7 +71,8 @@ class ImageSemanticSegmentationTrainer(ClassificationTrainer):
                     self.current_epoch_dict[key].append(value.detach().cpu())
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            output_metrics_dict=output_dict
+            | {"fprop_time": fprop_time, "bprop_time": bprop_time},
             loss=loss,
         )
 
@@ -194,14 +197,21 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
         output_list = []
+        fprop_time = None
+        bprop_time = None
+
         for sub_batch in sub_batch_generator(batch, self.sub_batch_size):
+            start_time = time.time()
             output_dict = model.forward(sub_batch)[self.target_modality][
                 self.source_modality
             ]
+            fprop_time = time.time() - start_time
 
             loss = output_dict["loss"]
 
+            start_time = time.time()
             accelerator.backward(loss)
+            bprop_time = time.time() - start_time
 
             for key, value in output_dict.items():
                 if "loss" in key or "iou" in key or "accuracy" in key:
@@ -225,6 +235,7 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
                 output_dict[key] = value.mean()
 
         return StepOutput(
-            output_metrics_dict=output_dict,
+            output_metrics_dict=output_dict
+            | {"fprop_time": fprop_time, "bprop_time": bprop_time},
             loss=loss,
         )
