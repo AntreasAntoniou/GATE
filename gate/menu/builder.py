@@ -214,7 +214,7 @@ def run_experiments(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
 
-    return experiment_dict
+    return list(experiment_dict.values())
 
 
 # Use Google Fire for command-line argument parsing
