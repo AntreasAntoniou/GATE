@@ -301,8 +301,11 @@ class Ensemble(nn.Module):
         Returns:
             dict[str, torch.Tensor]: A dictionary containing the ensemble predictions, weighted ensemble predictions, and model soup predictions.
         """
+
         with torch.inference_mode():
             # # Get the outputs from each model
+            model_devices = [model.device for model in self.models]
+            print(f"Device for models {model_devices}")
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
 

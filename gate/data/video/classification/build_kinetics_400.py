@@ -84,6 +84,10 @@ def build_dataset(
     return dataset
 
 
+def key_selector(input_dict):
+    return {"video": input_dict["video"], "labels": input_dict["labels"]}
+
+
 @configurable(
     group="dataset",
     name=DatasetNames.KINETICS_400.value,
@@ -112,6 +116,7 @@ def build_gate_dataset(
             dataset=datasets["train"],
             infinite_sampling=True,
             transforms=[
+                key_selector,
                 TrainVideoTransform(
                     scale_factor=scale_factor,
                     crop_size=crop_size,
@@ -130,6 +135,7 @@ def build_gate_dataset(
             dataset=datasets["val"],
             infinite_sampling=False,
             transforms=[
+                key_selector,
                 BaseVideoTransform(scale_factor=crop_size),
                 transforms,
             ],
@@ -140,6 +146,7 @@ def build_gate_dataset(
             dataset=datasets["test"],
             infinite_sampling=False,
             transforms=[
+                key_selector,
                 BaseVideoTransform(scale_factor=crop_size),
                 transforms,
             ],

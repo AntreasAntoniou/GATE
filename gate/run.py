@@ -11,7 +11,6 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 import logging
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
@@ -22,6 +21,7 @@ from rich.text import Text
 from rich.traceback import install
 from torch import nn
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -52,7 +52,7 @@ config_store = collect_config_store()
 # Initializing logger
 logger = logging.getLogger(__name__)
 
-logging.getLogger("gate").setLevel(logging.DEBUG)
+# logging.getLogger("gate").setLevel(logging.DEBUG)
 
 
 def pretty_print_parameters(model: nn.Module):
