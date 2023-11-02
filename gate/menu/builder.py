@@ -125,6 +125,7 @@ def run_experiments(
     train_iters: int = 10000,
     evaluate_every_n_steps: int = 250,
     return_json: bool = False,
+    shuffle: bool = False,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -218,6 +219,9 @@ def run_experiments(
                     print(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
+
+    if shuffle:
+        random.shuffle(experiment_dict)
 
     if return_json:
         return json.dumps(experiment_dict)
