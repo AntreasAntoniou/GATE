@@ -114,8 +114,10 @@ def generate_commands(
 def run_experiments(
     prefix: str = "debug",
     experiment_type: str = "all",
-    accelerate_launch_path: str = "accelerate launch",
-    gate_run_path: str = "gate/run.py",
+    accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
+    gate_run_path: str = "/app/gate/run.py",
+    # accelerate_launch_path: str = "accelerate launch",
+    # gate_run_path: str = "gate/run.py",
     num_workers: int = 12,
     gpu_ids: Optional[Union[str, int]] = None,
     print_commands: bool = True,
