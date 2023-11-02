@@ -96,7 +96,7 @@ def key_selector(input_dict):
 def build_gate_dataset(
     data_dir: str | Path,
     transforms: Any | None = None,
-    num_classes: int = 101,
+    num_classes: int = 400,
     scale_factor=(448, 448),
     crop_size=(224, 224),
     flip_prob=0.5,

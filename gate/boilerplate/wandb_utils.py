@@ -6,13 +6,15 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
+
 import wandb
 
 logger = logging.getLogger(name=__name__)
 
 
 def visualize_video_with_labels(video, logits, labels, name):
-    video_data = video.cpu() - video.min()
+    video = video.cpu()
+    video_data = video - video.min()
     video_data = video_data / video_data.max()
     video_data = video_data * 255
 
