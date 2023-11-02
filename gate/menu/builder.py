@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 import subprocess
@@ -121,6 +122,7 @@ def run_experiments(
     run_commands: bool = False,
     train_iters: int = 10000,
     evaluate_every_n_steps: int = 250,
+    return_json: bool = False,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -133,6 +135,7 @@ def run_experiments(
         num_workers (int): Number of workers to use for running experiments.
         print_commands (bool): Whether to print the experiment commands.
         run_commands (bool): Whether to run the experiment commands.
+        return_json (bool): Whether to return the experiment commands as a JSON string instead of a list of command strings.
 
     Returns:
         experiment_dict (dict): A dictionary containing the experiment names as keys and the corresponding experiment commands as values.
@@ -213,6 +216,9 @@ def run_experiments(
                     print(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
+
+    if return_json:
+        return json.dumps(experiment_dict)
 
     return list(experiment_dict.values())
 
