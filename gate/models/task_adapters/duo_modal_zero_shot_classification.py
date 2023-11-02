@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm.auto import tqdm
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import (
     compute_zero_shot_loss_and_metrics,
@@ -58,6 +59,7 @@ class DuoModalZeroShotModel(BaseModule):
                 bias=False,
             )
 
+    @ensemble_marker
     def compute_loss_and_metrics(self, logits, **kwargs):
         return compute_zero_shot_loss_and_metrics(
             similarities=logits["similarities"],

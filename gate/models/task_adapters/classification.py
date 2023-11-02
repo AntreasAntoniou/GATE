@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule
 
@@ -30,6 +31,7 @@ class BackboneWithLinear(BaseModule):
             allow_on_model_metric_computation
         )
 
+    @ensemble_marker
     def compute_loss_and_metrics(self, logits, labels):
         if not self.allow_on_model_metric_computation:
             return {}

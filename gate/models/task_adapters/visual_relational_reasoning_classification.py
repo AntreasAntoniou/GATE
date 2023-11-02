@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from omegaconf import DictConfig
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.core import accuracy_top_k
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.temporal_image_classification import (
@@ -103,6 +104,7 @@ class DuoModalFusionModel(BaseModule):
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
 
+    @ensemble_marker
     def compute_loss_and_metrics_multi_class(self, logits_dict, labels):
         output_dict = {}
         overall_loss = []
@@ -124,6 +126,7 @@ class DuoModalFusionModel(BaseModule):
         )
         return output_dict
 
+    @ensemble_marker
     def compute_loss_and_metrics_single_class(self, logits, labels):
         if not isinstance(labels, torch.Tensor):
             labels = torch.tensor(labels).to(logits.device)
@@ -141,6 +144,7 @@ class DuoModalFusionModel(BaseModule):
             "accuracy_top_5": accuracy_top_5,
         }
 
+    @ensemble_marker
     def compute_loss_and_metrics(self, logits, labels):
         if isinstance(logits, dict):
             return self.compute_loss_and_metrics_multi_class(logits, labels)

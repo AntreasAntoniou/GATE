@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.models.task_adapters import BaseModule
 
 
@@ -21,6 +22,7 @@ class MultiClassBackboneWithLinear(BaseModule):
         self.linear = nn.Linear(num_clip_features, num_classes)
         self.classes = [f"class{idx}" for idx in range(num_classes)]
 
+    @ensemble_marker
     def compute_multi_class_loss(self, logits, targets):
         opt_loss = F.binary_cross_entropy_with_logits(logits, targets)
 

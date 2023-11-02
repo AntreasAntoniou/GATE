@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
+from zmq import has
 
 logger = logging.getLogger(__name__)
 
@@ -283,11 +284,9 @@ class Ensemble(nn.Module):
             model.eval()
 
         for name in dir(self.models[0]):
-            if name != "forward":
-                member = getattr(self.models[0], name)
-                if is_desired_method(member) or is_desired_variable(
-                    name, member
-                ):
+            member = getattr(self.models[0], name)
+            if is_desired_method(member) or is_desired_variable(name, member):
+                if hasattr(member, "__used_in_ensemble__"):
                     setattr(self, name, member)
 
     def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
@@ -304,8 +303,7 @@ class Ensemble(nn.Module):
 
         with torch.inference_mode():
             # # Get the outputs from each model
-            model_devices = [model.device for model in self.models]
-            print(f"Device for models {model_devices}")
+            print(f"Ensemble: {len(self.models)}")
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
 

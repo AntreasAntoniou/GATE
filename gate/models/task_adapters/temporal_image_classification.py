@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional
 import torch.nn.functional as F
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.core import accuracy_top_k
 from gate.models.core import reinit
 from gate.models.task_adapters import BaseModule
@@ -252,6 +253,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         # Assuming `reinit` is a function that initializes the weights
         reinit(self)
 
+    @ensemble_marker
     def compute_loss_and_metrics(
         self, logits: torch.Tensor, labels: torch.Tensor
     ) -> Dict:

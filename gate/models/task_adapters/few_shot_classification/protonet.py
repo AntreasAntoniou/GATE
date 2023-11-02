@@ -3,6 +3,7 @@ from typing import Dict, Optional, Union
 import torch
 import torch.nn as nn
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.models.core import reinit
 from gate.models.task_adapters.few_shot_classification import (
     FewShotLearningClassificationEpisode,
@@ -165,6 +166,7 @@ class PrototypicalNetwork(nn.Module):
 
         return output_dict
 
+    @ensemble_marker
     def compute_loss_and_metrics(self, logits, labels):
         loss = compute_prototypical_loss(logits=logits, labels=labels)
 

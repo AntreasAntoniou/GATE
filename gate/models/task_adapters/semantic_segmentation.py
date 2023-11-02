@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from datasets.table import pa
 
+from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.segmentation import (
     CrossEntropyLoss,
     DiceLoss,
@@ -210,6 +211,7 @@ class SegmentationAdapter(nn.Module):
 
         self.background_loss_weight = background_loss_weight
 
+    @ensemble_marker
     def compute_across_set_metrics(self):
         metrics = self.iou_metric.compute_metrics()
         self.iou_metric.pretty_print(metrics=metrics)
@@ -238,6 +240,7 @@ class SegmentationAdapter(nn.Module):
 
         return output
 
+    @ensemble_marker
     def compute_loss_and_metrics(self, logits, labels):
         loss_and_metrics = self.loss_fn(
             logits,

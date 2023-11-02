@@ -7,10 +7,10 @@ import threading
 from typing import Any, Callable, Dict, Optional
 
 import torch
-import wandb
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 
+import wandb
 from gate.boilerplate.wandb_utils import (
     log_wandb_3d_volumes_and_masks,
     log_wandb_images,
@@ -156,6 +156,19 @@ def register_configurables(package_name: str) -> ConfigStore:
                 )
 
     return config_store
+
+
+def ensemble_marker(func):
+    """
+    Decorator to mark a function or method with an attribute '__used_in_ensemble__'.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    setattr(wrapper, "__used_in_ensemble__", True)  # Set attribute here
+    return wrapper
 
 
 def collect_metrics(func: Callable) -> Callable:

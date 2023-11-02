@@ -392,26 +392,39 @@ class Learner(nn.Module):
         self._validation_loop(val_dataloader=self.val_dataloader, model=model)
 
     def test(
-        self, test_dataloader: List[DataLoader] = None, model: nn.Module = None
+        self,
+        test_dataloader: List[DataLoader] = None,
+        model: nn.Module = None,
+        prefix: Optional[str] = None,
     ):
         if test_dataloader is not None:
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
+        base_model = copy.deepcopy(self.model)
 
-        for kth in [1, 3]:
-            if model is None:
+        if model is None:
+            for kth in [3, 1]:
                 if self.evaluator.model_selection_metric_name is not None:
-                    self.load_best_model(
+                    model = self.load_best_model(
                         metric_name=self.evaluator.model_selection_metric_name,
                         higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
                         kth_best=kth,
+                        base_model=base_model,
                     )
-                model = self.accelerator.prepare(self.model)
+                model = self.accelerator.prepare(model)
+
+                self._testing_loop(
+                    test_dataloader=self.test_dataloader,
+                    model=model,
+                    prefix=f"ensemble_{kth}",
+                )
+        else:
+            model = self.accelerator.prepare(model)
 
             self._testing_loop(
                 test_dataloader=self.test_dataloader,
                 model=model,
-                prefix=f"ensemble_{kth}",
+                prefix=prefix,
             )
 
     def _training_loop(self, train_dataloader: DataLoader = None):
@@ -632,7 +645,11 @@ class Learner(nn.Module):
         )
 
     def load_best_model(
-        self, metric_name: str, higher_is_better: bool, kth_best: int
+        self,
+        metric_name: str,
+        higher_is_better: bool,
+        kth_best: int,
+        base_model: nn.Module,
     ):
         (
             best_global_step,
@@ -646,6 +663,7 @@ class Learner(nn.Module):
         print(
             f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
+
         download_dict_list = []
         for global_step in best_global_step:
             download_dict = download_model_with_name(
@@ -664,7 +682,7 @@ class Learner(nn.Module):
 
         for download_dict in download_dict_list:
             # Create a new instance of the model architecture
-            model = copy.deepcopy(self.model)
+            model = copy.deepcopy(base_model)
 
             # Load the state dictionary
             state_dict = torch.load(
@@ -676,10 +694,10 @@ class Learner(nn.Module):
 
             models.append(model.model)
 
-        self.model = GATEModel(
-            config=self.model.config,
+        model = GATEModel(
+            config=base_model.config,
             model=Ensemble(models=models),
         )
-        self.model = self.accelerator.prepare(self.model)
+        model = self.accelerator.prepare(model)
 
-        return self.model
+        return model
