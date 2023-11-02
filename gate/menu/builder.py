@@ -221,7 +221,13 @@ def run_experiments(
                     )
 
     if shuffle:
-        random.shuffle(experiment_dict)
+        # shuffle a copy of the dictionary
+        experiment_dict = {
+            k: v
+            for k, v in random.sample(
+                experiment_dict.items(), len(experiment_dict)
+            )
+        }
 
     if return_json:
         return json.dumps(experiment_dict)
