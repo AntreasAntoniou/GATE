@@ -139,13 +139,13 @@ class EncoderNames(Enum):
         pretty_name="Flex_B_1200EP",
         timm_model_name="flexivit_base.1200ep_in1k",
     )
-    IJEPAViTGiganticPatch16_224 = EncoderConfig(
-        pretty_name="IJEPA_Gig_P16_224",
-        timm_model_name="vit_gigantic_patch16_224_ijepa",
-    )
     IJEPAViTHugePatch14_224 = EncoderConfig(
         pretty_name="IJEPA_Huge_P14_224",
-        timm_model_name="vit_huge_patch14_224_ijepa",
+        timm_model_name="vit_huge_patch14_gap_224.in22k_ijepa",
+    )
+    SIGLIPPathch16_224 = EncoderConfig(
+        pretty_name="SIGLIP_P16_224",
+        timm_model_name="vit_base_patch16_siglip_224",
     )
 
 
