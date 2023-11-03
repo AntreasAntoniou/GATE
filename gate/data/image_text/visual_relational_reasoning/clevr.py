@@ -243,7 +243,6 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    torch.manual_seed(42)
 
     if set_name not in ["train", "val", "test"]:
         raise KeyError(f"Invalid set name: {set_name}")

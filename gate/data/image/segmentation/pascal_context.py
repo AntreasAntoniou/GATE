@@ -160,7 +160,7 @@ def build_dataset(
     data_dir = pathlib.Path(data_dir) / "pascal_context"
 
     # Set the random seed for reproducibility
-    torch.manual_seed(42)
+
     dataset = PascalContextDataset(
         root_dir=data_dir,
     )

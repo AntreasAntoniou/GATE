@@ -109,7 +109,6 @@ def build_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    torch.manual_seed(42)
 
     logger.info(
         f"Loading HAM10 dataset, will download to {data_dir} if necessary."

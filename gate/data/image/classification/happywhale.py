@@ -137,7 +137,6 @@ def build_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    torch.manual_seed(42)
 
     logger.info(
         f"Loading Happy Whale and Dolphin dataset, will download to {data_dir} if necessary."
