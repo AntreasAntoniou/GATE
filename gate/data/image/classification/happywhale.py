@@ -172,7 +172,7 @@ def dataset_format_transform(sample: Dict) -> Dict:
 
 @configurable(
     group="dataset",
-    name="diabetic_retionopathy",
+    name="happy_whale_dolphin_classification",
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
