@@ -159,7 +159,28 @@ def run_experiments(
         "video-class": video_classification_config,
     }
 
-    if experiment_type == "all":
+    if "+" in experiment_type:
+        experiment_types = experiment_type.split("+")
+        for experiment_type in experiment_types:
+            if experiment_type in experiment_configs:
+                experiment_dict.update(
+                    generate_commands(
+                        prefix=prefix,
+                        seed_list=seed_list,
+                        experiment_config=experiment_configs[experiment_type],
+                        num_workers=num_workers,
+                        accelerate_launch_path=accelerate_launch_path,
+                        gate_run_path=gate_run_path,
+                        gpu_ids=gpu_ids,
+                        train_iters=train_iters,
+                        evaluate_every_n_steps=evaluate_every_n_steps,
+                    )
+                )
+            else:
+                print("Invalid experiment type selected.")
+                return
+
+    elif experiment_type == "all":
         for config in experiment_configs.values():
             experiment_dict.update(
                 generate_commands(

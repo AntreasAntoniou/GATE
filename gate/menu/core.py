@@ -127,9 +127,17 @@ class EncoderNames(Enum):
         pretty_name="Laion_B16_224",
         timm_model_name="vit_base_patch16_clip_224.laion2b",
     )
+    EfficientFormer_s0 = EncoderConfig(
+        pretty_name="EffFormer_s0",
+        timm_model_name="efficientformerv2_s0",
+    )
     EffNetV2_RW_S_RA2 = EncoderConfig(
         pretty_name="EffV2_RW_S",
         timm_model_name="efficientnetv2_rw_s.ra2_in1k",
+    )
+    ConvNextV2_Base = EncoderConfig(
+        pretty_name="ConvNextV2_Base",
+        timm_model_name="convnextv2_base",
     )
     DeiT3BasePatch16_224 = EncoderConfig(
         pretty_name="DeiT3_B16_224",
@@ -139,13 +147,13 @@ class EncoderNames(Enum):
         pretty_name="Flex_B_1200EP",
         timm_model_name="flexivit_base.1200ep_in1k",
     )
-    IJEPAViTGiganticPatch16_224 = EncoderConfig(
-        pretty_name="IJEPA_Gig_P16_224",
-        timm_model_name="vit_gigantic_patch16_224_ijepa",
-    )
     IJEPAViTHugePatch14_224 = EncoderConfig(
         pretty_name="IJEPA_Huge_P14_224",
-        timm_model_name="vit_huge_patch14_224_ijepa",
+        timm_model_name="vit_huge_patch14_gap_224.in22k_ijepa",
+    )
+    SIGLIPPathch16_224 = EncoderConfig(
+        pretty_name="SIGLIP_P16_224",
+        timm_model_name="vit_base_patch16_siglip_224",
     )
 
 
@@ -156,3 +164,134 @@ class ModelConfig:
     encoder_config: EncoderConfig
     eval_batch_size: int = 128
     train_batch_size: int = 128
+
+
+def get_model_selection(model_type, batch_size, resnet_lr, vit_lr):
+    return {
+        EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.CLIPViTBase16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.LaionViTBase16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.LaionViTBase16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.SamViTBase16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.SamViTBase16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.AugRegViTBase16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.DiNoViTBase16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.DiNoViTBase16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.DeiT3BasePatch16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.DeiT3BasePatch16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.FlexViTBase_1200EP.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.FlexViTBase_1200EP,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.IJEPAViTHugePatch14_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.SIGLIPPathch16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.EfficientFormer_s0.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.EfficientFormer_s0,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.ResNet50A1.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.ResNet50A1,
+            learning_rate_config=LearningRateConfig(
+                default=[resnet_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.EffNetV2_RW_S_RA2.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.EffNetV2_RW_S_RA2,
+            learning_rate_config=LearningRateConfig(
+                default=[resnet_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.ResNeXt50_32x4dA1.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.ResNeXt50_32x4dA1,
+            learning_rate_config=LearningRateConfig(
+                default=[resnet_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.ConvNextV2_Base.value.pretty_name: ModelConfig(
+            model_type=model_type,
+            encoder_config=EncoderNames.ConvNextV2_Base,
+            learning_rate_config=LearningRateConfig(
+                default=[resnet_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+    }
