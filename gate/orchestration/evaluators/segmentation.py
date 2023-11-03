@@ -154,7 +154,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
     def __init__(
         self,
         experiment_tracker: Optional[Any] = None,
-        sub_batch_size: int = 40,
+        sub_batch_size: int = 20,
     ):
         super().__init__(
             experiment_tracker,

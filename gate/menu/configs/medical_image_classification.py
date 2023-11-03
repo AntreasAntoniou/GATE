@@ -14,7 +14,7 @@ dataset_configs = {
     for dataset_name in DatasetName.MEDICAL_CLASSIFICATION.value
 }
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 MODEL_TYPE = AdapterTypeNames.TIMM_IMAGE_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5

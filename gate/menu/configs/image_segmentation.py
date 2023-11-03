@@ -14,7 +14,7 @@ dataset_configs = {
     for dataset_name in DatasetName.IMAGE_SEGMENTATION.value
 }
 
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
 RESNET_LR = 6e-4
 VIT_LR = 6e-6
