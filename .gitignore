@@ -147,3 +147,7 @@ datasets--*
 models--*
 wandb/*
 checkpoints/*
+
+# Experiment logs
+*.stderr
+*.stdout
