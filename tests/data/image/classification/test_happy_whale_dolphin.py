@@ -25,7 +25,9 @@ def test_build_gate_dataset():
         print(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert (
-            item["individual_labels"] is not None
+            item["labels"]["individual"] is not None
         ), "Label should not be None"
-        assert item["species_labels"] is not None, "Label should not be None"
+        assert (
+            item["labels"]["species"] is not None
+        ), "Label should not be None"
         break

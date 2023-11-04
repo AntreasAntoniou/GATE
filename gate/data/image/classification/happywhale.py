@@ -116,8 +116,10 @@ class HappyWhaleDolphinClassification(Dataset):
         # Return a dictionary containing the image and the labels
         return {
             "image": image,
-            "species_label": species_label,
-            "individual_label": individual_label,
+            "labels": {
+                "species": species_label,
+                "individual": individual_label,
+            },
         }
 
 
@@ -157,17 +159,11 @@ def build_dataset(
     return dataset_dict
 
 
-def dataset_format_transform(sample: Dict) -> Dict:
-    # Example of sample:
-    # {'image': <PIL.JpegImagePlugin.JpegImageFile image mode=RGB size=1024x768 at 0x7FD8EDD55C60>, 'label': 0}
-    #
-
-    input_dict = {}
-    input_dict["image"] = sample["image"]
-    input_dict["individual_labels"] = sample["individual_label"]
-    input_dict["species_labels"] = sample["species_label"]
-
-    return input_dict
+def get_label_dict(dataset):
+    return {
+        "species": list(dataset.species_to_idx.keys()),
+        "individual": list(dataset.individual_to_idx.keys()),
+    }
 
 
 @configurable(
@@ -178,7 +174,7 @@ def dataset_format_transform(sample: Dict) -> Dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=5,
+    num_classes={"species": 30, "individual": 15587},
     label_idx_to_class_name=None,
 ) -> dict:
     dataset_dict = build_dataset(data_dir=data_dir)
@@ -186,7 +182,6 @@ def build_gate_dataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
         transforms=[
-            dataset_format_transform,
             StandardAugmentations(image_key="image"),
             transforms,
         ],
@@ -195,14 +190,17 @@ def build_gate_dataset(
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        transforms=[dataset_format_transform, transforms],
+        transforms=[transforms],
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        transforms=[dataset_format_transform, transforms],
+        transforms=[transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
+
+    # some logic that sets num_classes = get_label_dict(dataset_dict["train"])
+
     return dataset_dict
