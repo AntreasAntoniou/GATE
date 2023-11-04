@@ -196,15 +196,15 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
     def collect_image_classification_episode(
         self, output_dict, global_step, batch
     ):
-        if "logits" in output_dict:
-            if global_step % 25 == 0:
-                output_dict["image_class_episode"] = {
-                    "image": batch["image"],
-                    "logits": output_dict["logits"],
-                    "label": batch["labels"],
-                }
+        # if "logits" in output_dict:
+        #     if global_step % 25 == 0:
+        #         output_dict["image_class_episode"] = {
+        #             "image": batch["image"],
+        #             "logits": output_dict["logits"],
+        #             "label": batch["labels"],
+        #         }
 
-            del output_dict["logits"]
+        #     del output_dict["logits"]
         return output_dict
 
     def step(self, model, batch, global_step, accelerator: Accelerator):

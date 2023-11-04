@@ -7,10 +7,10 @@ import threading
 from typing import Any, Callable, Dict, Optional
 
 import torch
-import wandb
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 
+import wandb
 from gate.boilerplate.wandb_utils import (
     log_wandb_3d_volumes_and_masks,
     log_wandb_image_classification,
@@ -54,14 +54,14 @@ class BackgroundLogging(threading.Thread):
                     "global_step": global_step,
                 }
 
-                if "image_class_episode" in metric_key:
-                    image_dict = log_wandb_image_classification(
-                        images=value["image"],
-                        logits=value["logits"],
-                        labels=value["label"],
-                        prefix=phase_name,
-                    )
-                    log_dict.update(image_dict)
+                # if "image_class_episode" in metric_key:
+                #     image_dict = log_wandb_image_classification(
+                #         images=value["image"],
+                #         logits=value["logits"],
+                #         labels=value["label"],
+                #         prefix=phase_name,
+                #     )
+                #     log_dict.update(image_dict)
 
                 if "seg_episode" in metric_key:
                     mask_dict = log_wandb_masks(
