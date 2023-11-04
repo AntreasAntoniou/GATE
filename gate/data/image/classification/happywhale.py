@@ -4,10 +4,12 @@ import pathlib
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Union
 
+import numpy as np
 import pandas as pd
 import torch
 import torchvision.transforms as T
 from PIL import Image
+from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, random_split
 from torch.utils.data.dataset import Dataset
 
@@ -110,6 +112,7 @@ class HappyWhaleDolphinClassification(Dataset):
         ]
 
         # Apply the transform function if available
+
         if self.transform:
             image = self.transform(image)
 
@@ -150,9 +153,48 @@ def build_dataset(
     val_length = int(len(dataset) * val_ratio)
     test_length = len(dataset) - train_length - val_length
 
-    train_set, val_set, test_set = random_split(
-        dataset, [train_length, val_length, test_length]
+    labels = dataset.labels_frame.individual_id.values
+    labels = np.array([dataset.individual_to_idx[label] for label in labels])
+
+    class_to_num_instances = np.bincount(
+        labels
+    )  # Generating the frequency count of each class
+    single_instance_classes = np.where(class_to_num_instances < 2)[
+        0
+    ]  # Identifying classes with less than 3 instances
+
+    exclude_mask = np.isin(
+        labels, single_instance_classes
+    )  # Mask for instances belonging to single-instance classes
+
+    # Separate single instance rows, to be added to training later
+    exclude_indices = np.where(exclude_mask)[0]
+    include_indices = np.where(~exclude_mask)[0]
+
+    # Including only the labels that have more than 2 instances for stratified split
+    train_idx, temp_idx = train_test_split(
+        include_indices,
+        test_size=(1 - train_ratio),
+        shuffle=True,
+        stratify=labels[
+            include_indices
+        ],  # Using stratify argument only with labels having more than 2 instances
     )
+
+    # Concatenating the indices of single-instance classes to training set indices
+    train_idx = np.concatenate([train_idx, exclude_indices])
+
+    # Splitting the remaining dataset into validation and test sets
+    val_idx, test_idx = train_test_split(
+        temp_idx,
+        test_size=test_length / (val_length + test_length),
+        shuffle=True,
+    )
+
+    # to Pytorch data.Subset
+    train_set = torch.utils.data.Subset(dataset, train_idx)
+    val_set = torch.utils.data.Subset(dataset, val_idx)
+    test_set = torch.utils.data.Subset(dataset, test_idx)
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
@@ -164,6 +206,13 @@ def get_label_dict(dataset):
         "species": list(dataset.species_to_idx.keys()),
         "individual": list(dataset.individual_to_idx.keys()),
     }
+
+
+def initial_resize(input_dict):
+    input_dict["image"] = T.Resize(
+        (224, 224), interpolation=T.InterpolationMode.BICUBIC, antialias=True
+    )(input_dict["image"])
+    return input_dict
 
 
 @configurable(
@@ -182,6 +231,7 @@ def build_gate_dataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,
         transforms=[
+            initial_resize,
             StandardAugmentations(image_key="image"),
             transforms,
         ],
@@ -190,13 +240,13 @@ def build_gate_dataset(
     val_set = GATEDataset(
         dataset=dataset_dict["val"],
         infinite_sampling=False,
-        transforms=[transforms],
+        transforms=[initial_resize, transforms],
     )
 
     test_set = GATEDataset(
         dataset=dataset_dict["test"],
         infinite_sampling=False,
-        transforms=[transforms],
+        transforms=[initial_resize, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

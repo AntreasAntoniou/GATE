@@ -114,7 +114,7 @@ def build_gate_dataset(
 
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
-        infinite_sampling=False,
+        infinite_sampling=True,
         transforms=[
             input_transforms,
             train_transforms,

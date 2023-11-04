@@ -193,6 +193,43 @@ class ImageClassificationEvaluator(ClassificationEvaluator):
             model_selection_metric_higher_is_better=True,
         )
 
+    def collect_image_classification_episode(
+        self, output_dict, global_step, batch
+    ):
+        if "logits" in output_dict:
+            if global_step % 25 == 0:
+                output_dict["image_class_episode"] = {
+                    "image": batch["image"],
+                    "logits": output_dict["logits"],
+                    "label": batch["labels"],
+                }
+
+            del output_dict["logits"]
+        return output_dict
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        # batch["return_loss_and_metrics"] = True
+        output_dict = model.forward(batch)[self.target_modality][
+            self.source_modality
+        ]
+
+        loss = output_dict["loss"]
+
+        for key, value in output_dict.items():
+            if isinstance(value, torch.Tensor):
+                self.current_epoch_dict[key].append(
+                    value.detach().float().mean().cpu()
+                )
+
+        output_dict = self.collect_image_classification_episode(
+            output_dict, global_step, batch
+        )
+
+        return StepOutput(
+            metrics=output_dict,
+            loss=loss,
+        )
+
 
 @configurable(group="evaluator", name="visual_relational_reasoning")
 class VisualRelationalClassificationTrainer(ClassificationEvaluator):

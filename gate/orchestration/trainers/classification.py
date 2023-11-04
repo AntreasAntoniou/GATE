@@ -116,6 +116,46 @@ class ImageClassificationTrainer(ClassificationTrainer):
             target_modality="image",
         )
 
+    def collect_image_episode(self, output_dict, global_step, batch):
+        if "logits" in output_dict:
+            if global_step % 25 == 0:
+                output_dict["image_class_episode"] = {
+                    "image": batch["image"],
+                    "logits": output_dict["logits"],
+                    "label": batch["labels"],
+                }
+
+            del output_dict["logits"]
+        return output_dict
+
+    def step(self, model, batch, global_step, accelerator: Accelerator):
+        # batch["return_loss_and_metrics"] = True
+        start_time = time.time()
+        output_dict = model.forward(batch)[self.target_modality][
+            self.source_modality
+        ]
+        fprop_time = time.time() - start_time
+
+        loss = output_dict["loss"]
+
+        start_time = time.time()
+        accelerator.backward(loss)
+        bprop_time = time.time() - start_time
+
+        self.select_metrics_to_report(output_dict)
+        output_dict = self.collect_image_episode(
+            output_dict, global_step, batch
+        )
+
+        return StepOutput(
+            output_metrics_dict=output_dict
+            | {
+                "fprop_time": fprop_time,
+                "bprop_time": bprop_time,
+            },
+            loss=loss,
+        )
+
 
 @configurable(group="trainer", name="video_classification")
 class VideoClassificationTrainer(ClassificationTrainer):

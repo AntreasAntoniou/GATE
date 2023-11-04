@@ -31,20 +31,20 @@ class BackboneWithLinear(BaseModule):
             allow_on_model_metric_computation
         )
         if isinstance(num_classes, int):
-            self.classifier = nn.Linear(num_in_features, num_classes)
+            self.linear = nn.Linear(num_in_features, num_classes)
         elif isinstance(num_classes, list):
-            self.classifier = nn.ModuleList(
+            self.linear = nn.ModuleList(
                 [nn.Linear(num_in_features, n) for n in num_classes]
             )
         elif isinstance(num_classes, dict):
-            self.classifier = nn.ModuleDict(
+            self.linear = nn.ModuleDict(
                 {
                     key: nn.Linear(num_in_features, n)
                     for key, n in num_classes.items()
                 }
             )
         elif isinstance(num_classes, DictConfig):
-            self.classifier = nn.ModuleDict(
+            self.linear = nn.ModuleDict(
                 {
                     key: nn.Linear(num_in_features, n)
                     for key, n in num_classes.items()
@@ -60,15 +60,16 @@ class BackboneWithLinear(BaseModule):
         output_dict = {}
         overall_loss = []
         overall_accuracy_top_1 = []
-        for answer in logits_dict.keys():
-            temp_logits = logits_dict[answer]
-            temp_labels = labels[answer]
-            loss = F.cross_entropy(temp_logits, temp_labels, reduction="none")
+        for class_type in logits_dict.keys():
+            temp_logits = logits_dict[class_type]
+            temp_labels = labels[class_type]
+            temp_labels = torch.tensor(temp_labels).to(temp_logits.device)
+            loss = F.cross_entropy(temp_logits, temp_labels)
             accuracy_top_1 = accuracy_top_k(temp_logits, temp_labels, k=1)
 
-            output_dict[f"loss_{answer}"] = torch.mean(loss)
-            output_dict[f"accuracy_top_1_{answer}"] = accuracy_top_1
-            overall_loss.extend(loss)
+            output_dict[f"loss_{class_type}"] = loss
+            output_dict[f"accuracy_top_1_{class_type}"] = accuracy_top_1
+            overall_loss.append(loss)
             overall_accuracy_top_1.append(accuracy_top_1)
 
         output_dict["loss"] = torch.mean(torch.stack(overall_loss))
@@ -128,18 +129,18 @@ class BackboneWithLinear(BaseModule):
         if video is not None:
             x = self.model(video=video)["video"]["features"]
 
-        if isinstance(self.classifier, nn.ModuleDict):
+        if isinstance(self.linear, nn.ModuleDict):
             logits_dict = {}
             labels_dict = {}
-            for class_type in self.classifier.keys():
+            for class_type in self.linear.keys():
                 temp_labels = labels[class_type]
 
-                logits_dict[class_type] = self.classifier[class_type](x)
+                logits_dict[class_type] = self.linear[class_type](x)
                 labels_dict[class_type] = temp_labels
             output_dict = {"logits": logits_dict, "labels": labels_dict}
         else:
             output_dict = {
-                "logits": self.classifier(x),
+                "logits": self.linear(x),
                 "labels": labels,
             }
 

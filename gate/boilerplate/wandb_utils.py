@@ -1,11 +1,15 @@
 import logging
 import math
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
+import pandas as pd
+import PIL
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
+from PIL import Image
+
 import wandb
 
 logger = logging.getLogger(name=__name__)
@@ -179,6 +183,79 @@ def log_wandb_images(
         episode_list.append(ae_episode)
 
     return {f"{prefix}/autoencoder_episode": episode_list}
+
+
+import json
+from typing import Dict, List, Union
+
+import torch
+import torchvision.transforms as T
+from PIL import Image
+
+import wandb
+
+
+def log_wandb_image_classification(
+    images: torch.Tensor,
+    labels: Union[List[int], torch.Tensor, Dict[str, int]],
+    logits: Union[torch.Tensor, Dict[str, torch.Tensor]],
+    prefix: str = "general",
+):
+    """
+    Log image classification information to Weights and Biases (WandB).
+
+    Args:
+        images (torch.Tensor): Input images for classification.
+        labels (Union[List[int], torch.Tensor, Dict[str, int]]): Ground truth labels.
+        logits (Union[torch.Tensor, Dict[str, torch.Tensor]]): Model output logits.
+        prefix (str, optional): Prefix to differentiate between different logs. Default is "general".
+    """
+
+    # Determine column names based on whether labels and logits are dictionaries
+    columns = ["image"]
+    if isinstance(labels, dict):
+        columns.extend([f"{k}_label" for k in labels.keys()])
+    else:
+        columns.append("label")
+
+    if isinstance(logits, dict):
+        columns.extend([f"{k}_logits" for k in logits.keys()])
+    else:
+        columns.append("logit")
+
+    predictions_table = wandb.Table(columns=columns)
+
+    for i in range(len(images)):
+        # Convert images to tensor if they are PIL Images
+        image = (
+            T.ToTensor()(images[i]).cpu()
+            if isinstance(images[i], Image.Image)
+            else images[i].cpu()
+        )
+
+        # Prepare the label and prediction data
+        row_data = [wandb.Image(image)]
+
+        if isinstance(labels, dict):
+            row_data.extend(labels[k][i] for k in labels.keys())
+        else:
+            row_data.append(labels[i])
+
+        if isinstance(logits, dict):
+            row_data.extend(
+                logits[k][i].detach().cpu().argmax() for k in logits.keys()
+            )
+        else:
+            row_data.append(logits[i].detach().cpu().argmax())
+
+        # Add the row to the table
+        predictions_table.add_data(*row_data)
+
+    # Log the predictions table
+    return {f"{prefix}_predictions": predictions_table}
+
+
+# Ensure to call this within a context where wandb.run is active.
 
 
 def normalize_image(image: torch.Tensor) -> torch.Tensor:
