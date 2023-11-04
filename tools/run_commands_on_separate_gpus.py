@@ -52,14 +52,16 @@ def run_command_on_gpu(command, gpu_id, exp_name):
 def run_commands(command_dict: Dict, memory_threshold=5, util_threshold=10):
     gpu_processes = get_gpu_processes(memory_threshold, util_threshold)
 
-    with tqdm(total=len(command_dict)) as pbar:
+    with tqdm(total=len(command_dict), smoothing=0.0) as pbar:
         while command_dict:
             for gpu_id, process in gpu_processes.items():
                 # If the GPU is available or the process using it has completed
                 if process is None or process.poll() is not None:
                     if command_dict:
                         command_name, command = command_dict.popitem()
-                        print(f"Running command on GPU {gpu_id}: {command}")
+                        pbar.set_description(
+                            f"Running command on GPU {gpu_id}: {command}"
+                        )
                         gpu_processes[gpu_id] = run_command_on_gpu(
                             command=command,
                             gpu_id=gpu_id,
@@ -70,7 +72,7 @@ def run_commands(command_dict: Dict, memory_threshold=5, util_threshold=10):
                         break  # No more commands to run
 
             # Sleep for a bit before checking GPU availability again
-            print("Waiting for GPUs to become available... 🎣")
+            pbar.set_description("Waiting for GPUs to become available... 🎣")
             time.sleep(1)
 
     # Wait for all processes to complete
