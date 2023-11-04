@@ -1,7 +1,9 @@
+import json
 import os
 import subprocess
 import sys
 import time
+from typing import Any, Dict, Optional
 
 import fire
 from pynvml import (
@@ -12,6 +14,8 @@ from pynvml import (
     nvmlInit,
     nvmlShutdown,
 )
+from rich import print
+from tqdm.auto import tqdm
 
 
 def is_gpu_available(handle, memory_threshold=5, util_threshold=10):
@@ -36,28 +40,38 @@ def get_gpu_processes(memory_threshold=5, util_threshold=10):
     return gpu_processes
 
 
-def run_command_on_gpu(command, gpu_id):
+def run_command_on_gpu(command, gpu_id, exp_name):
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
-    return subprocess.Popen(command, shell=True)  # Return the process handle
+    stdout_file = open(f"{exp_name}.stdout", "a")
+    stderr_file = open(f"{exp_name}.stderr", "a")
+    return subprocess.Popen(
+        command, shell=True, stdout=stdout_file, stderr=stderr_file
+    )  # Return the process handle
 
 
-def run_commands(commands, memory_threshold=5, util_threshold=10):
+def run_commands(command_dict: Dict, memory_threshold=5, util_threshold=10):
     gpu_processes = get_gpu_processes(memory_threshold, util_threshold)
 
-    while commands:
-        for gpu_id, process in gpu_processes.items():
-            # If the GPU is available or the process using it has completed
-            if process is None or process.poll() is not None:
-                if commands:
-                    command = commands.pop(0)
-                    print(f"Running command on GPU {gpu_id}: {command}")
-                    gpu_processes[gpu_id] = run_command_on_gpu(command, gpu_id)
-                else:
-                    break  # No more commands to run
+    with tqdm(total=len(command_dict)) as pbar:
+        while command_dict:
+            for gpu_id, process in gpu_processes.items():
+                # If the GPU is available or the process using it has completed
+                if process is None or process.poll() is not None:
+                    if command_dict:
+                        command_name, command = command_dict.popitem()
+                        print(f"Running command on GPU {gpu_id}: {command}")
+                        gpu_processes[gpu_id] = run_command_on_gpu(
+                            command=command,
+                            gpu_id=gpu_id,
+                            exp_name=command_name,
+                        )
+                        pbar.update(1)
+                    else:
+                        break  # No more commands to run
 
-        # Sleep for a bit before checking GPU availability again
-        print("Waiting for GPUs to become available...")
-        time.sleep(1)
+            # Sleep for a bit before checking GPU availability again
+            print("Waiting for GPUs to become available... 🎣")
+            time.sleep(1)
 
     # Wait for all processes to complete
     for gpu_id, process in gpu_processes.items():
@@ -65,15 +79,33 @@ def run_commands(commands, memory_threshold=5, util_threshold=10):
             process.wait()
 
 
+def parse_commands_input(input_data: str) -> Dict[str, Any]:
+    try:
+        # Attempt to parse the input as JSON
+        data = json.loads(input_data)
+        if isinstance(data, dict):
+            # If it's a dictionary, use it as-is
+            return data
+        elif isinstance(data, list):
+            # If it's a list, generate a dictionary with auto-generated names
+            return {f"exp-{i+1:03d}": cmd for i, cmd in enumerate(data)}
+    except json.JSONDecodeError:
+        # If JSON parsing fails, treat the input as a newline-separated list of commands
+        return {
+            f"exp-{i+1:03d}": cmd
+            for i, cmd in enumerate(input_data.strip().split("\n"))
+        }
+
+
 def main(memory_threshold=5, util_threshold=10):
-    commands = []
+    command_dict = {}
     if not sys.stdin.isatty():
         # If data is being piped to this script, read stdin
-        commands.extend(line.strip() for line in sys.stdin)
+        command_dict = parse_commands_input(sys.stdin.read())
 
     # Now, you can pass the list of commands and other arguments to your function
     run_commands(
-        commands,
+        command_dict,
         memory_threshold=memory_threshold,
         util_threshold=util_threshold,
     )
