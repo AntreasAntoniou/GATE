@@ -159,7 +159,7 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
         scheduler: torch.optim.lr_scheduler._LRScheduler = None,
         scheduler_interval: str = "step",
         experiment_tracker: Optional[Any] = None,
-        sub_batch_size: int = 40,
+        sub_batch_size: int = 20,
     ):
         super().__init__(
             optimizer,

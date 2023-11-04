@@ -31,7 +31,8 @@ cython
 evaluate
 huggingface_hub
 einops
-timm
+# timm
+git+https://github.com/huggingface/pytorch-image-models.git
 fire
 moviepy
 imageio
