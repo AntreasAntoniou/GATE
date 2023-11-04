@@ -8,9 +8,8 @@ import PIL
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
-from PIL import Image
-
 import wandb
+from PIL import Image
 
 logger = logging.getLogger(name=__name__)
 
@@ -190,9 +189,8 @@ from typing import Dict, List, Union
 
 import torch
 import torchvision.transforms as T
-from PIL import Image
-
 import wandb
+from PIL import Image
 
 
 def log_wandb_image_classification(
