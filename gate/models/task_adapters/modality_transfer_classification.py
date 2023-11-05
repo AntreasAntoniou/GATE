@@ -194,7 +194,6 @@ class VisionRootReplacedBackbone(BaseModule):
         input_dict: Optional[Dict] = None,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
-        video: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
             x = self.root_layer(**input_dict)
@@ -207,9 +206,5 @@ class VisionRootReplacedBackbone(BaseModule):
         if text is not None:
             x = self.root_layer(text=text)
             x = self.model(text=x)
-
-        if video is not None:
-            x = self.root_layer(video=video)
-            x = self.model(video=x)
 
         return x

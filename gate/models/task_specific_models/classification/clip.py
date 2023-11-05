@@ -3,7 +3,10 @@ from typing import Any, Dict, Union
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip_image import CLIPModelPaths, CLIPVisionAdapter
+from gate.models.backbones.clip_image import (
+    CLIPModelPaths,
+    VisionTextGATEAdapter,
+)
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -27,7 +30,7 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPVisionAdapter(
+    backbone_model = VisionTextGATEAdapter(
         model_name=model_name, pretrained=pretrained
     )
     if modality in ["image", "text"]:

@@ -28,7 +28,7 @@ class DuoModalZeroShotModel(BaseModule):
         modality_b_num_features: int,
         projection_num_features: Optional[int] = None,
         temperature_parameter: Optional[float] = 1.0 / 0.07,
-        head_identifier: Optional[str] = "projection_output",
+        head_identifier: Optional[str] = "classifier",
     ):
         super().__init__()
         self.modality_a_model = modality_a_model
@@ -166,7 +166,7 @@ class DuoModalZeroShotModelWithPresetClasses(BaseModule):
         class_prompts: Dict[str, List[str]] = None,
         projection_num_features: Optional[int] = None,
         temperature_parameter: Optional[float] = 1.0,
-        backbone_output_key: str = "projection_output",
+        backbone_output_key: str = "classifier",
     ):
         super().__init__()
         self.image_modality_model = image_modality_model

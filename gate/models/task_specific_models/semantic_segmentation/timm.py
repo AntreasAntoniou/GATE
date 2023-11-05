@@ -60,7 +60,7 @@ def build_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,
         pretrained=pretrained,
-        img_size=image_size,
+        image_size=image_size,
     )
 
     model = SegmentationAdapter(

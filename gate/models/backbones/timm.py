@@ -190,7 +190,7 @@ class TimmCLIPAdapter(nn.Module):
         timm_model_name: str,
         clip_model_name: str,
         pretrained: bool = True,
-        img_size: Optional[List[int]] = None,
+        image_size: Optional[List[int]] = None,
     ):
         super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
@@ -203,7 +203,7 @@ class TimmCLIPAdapter(nn.Module):
         self.vision_model = TimmModel(
             model_identifier=timm_model_name,
             pretrained=pretrained,
-            img_size=img_size,
+            img_size=image_size,
         )
         self.text_model = self.clip.text_model
 
@@ -252,6 +252,8 @@ class TimmCLIPAdapter(nn.Module):
                 )
                 for k, v in output_dict["video"].items():
                     if v is not None:
+                        if isinstance(v, list) or isinstance(v, tuple):
+                            v = torch.stack(v, dim=2)
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
                 output_dict["video"] = self.vision_model.forward(video)

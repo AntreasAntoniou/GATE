@@ -7,7 +7,7 @@ from gate.data.image_text.zero_shot.imagenet1k import (
     generate_per_class_prompts,
 )
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip_image import CLIPVisionAdapter
+from gate.models.backbones.clip_image import VisionTextGATEAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -42,7 +42,7 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPVisionAdapter(
+    backbone_model = VisionTextGATEAdapter(
         model_name=model_name, pretrained=pretrained
     )
     num_feature_dict = {
@@ -143,7 +143,7 @@ def build_model_with_presets(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPVisionAdapter(
+    backbone_model = VisionTextGATEAdapter(
         model_name=model_name, pretrained=pretrained
     )
     num_feature_dict = {
