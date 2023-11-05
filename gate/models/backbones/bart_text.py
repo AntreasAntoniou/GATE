@@ -1,15 +1,31 @@
 import logging
+import math
 from collections import defaultdict
-from typing import List, Optional, Union
+from json import encoder
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 from torchvision import transforms as T
-from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
+from transformers import (
+    BartConfig,
+    BartModel,
+    BartPretrainedModel,
+    BartTokenizer,
+    CLIPModel,
+    CLIPProcessor,
+)
+from transformers.models.bart.modeling_bart import (
+    BartEncoder,
+    BartEncoderLayer,
+    BartLearnedPositionalEmbedding,
+)
 
 from gate.models.backbones import Modality, apply_preprocessing_transforms
 from gate.models.core import reinit
+from gate.models.task_adapters.modality_transfer_classification import (
+    VisionRootReplacedBackbone,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,61 +64,102 @@ class TextProcessor:
         return transformed_text
 
 
+class ModifiedBartModel(BartPretrainedModel):
+    def __init__(self, config: BartConfig):
+        super().__init__(config)
+
+        padding_idx, vocab_size = config.pad_token_id, config.vocab_size
+        self.shared = nn.Embedding(vocab_size, config.d_model, padding_idx)
+        self.encoder = BartEncoder(config, self.shared)
+
+        # Initialize weights and apply final processing
+        self.post_init()
+
+    def forward(
+        self,
+        image: Optional[torch.Tensor],
+    ) -> Dict[str, torch.Tensor]:
+        # different to other models, Bart automatically creates decoder_input_ids from
+        # input_ids if no decoder_input_ids are provided
+        encoder_outputs = self.encoder(
+            input_ids=None,
+            attention_mask=None,
+            head_mask=None,
+            inputs_embeds=image,
+            output_attentions=None,
+            output_hidden_states=None,
+            return_dict=True,
+        )
+
+        return {
+            "features": encoder_outputs.last_hidden_state[-1],
+            "raw_features": encoder_outputs.last_hidden_state,
+            "per_layer_raw_features": encoder_outputs.hidden_states,
+        }
+
+
 class CLIPModelPaths:
     laion_b_16: str = "laion/CLIP-ViT-B-16-laion2B-s34B-b88K"
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
-class CLIPAdapter(nn.Module):
+class BartModelPaths:
+    base_uncased: str = "facebook/bart-base"
+
+
+class BartAdapter(nn.Module):
     def __init__(
         self,
-        model_name: str,
+        clip_model_name: str = CLIPModelPaths.openai_b_16,
+        bart_model_name: str = BartModelPaths.base_uncased,
         pretrained: bool = True,
         image_size: Optional[int] = None,
     ):
         super().__init__()
-        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
-            model_name
+
+        self.vision_preprocessor: CLIPProcessor = (
+            CLIPProcessor.from_pretrained(clip_model_name)
         )
-        self.clip = CLIPModel.from_pretrained(model_name)
-        self.text_transforms = TextProcessor(self.preprocessor)
+        self.text_preprocessor: BartTokenizer = BartTokenizer.from_pretrained(
+            bart_model_name
+        )
+        self.clip = CLIPModel.from_pretrained(clip_model_name)
+        self.text_transforms = TextProcessor(self.text_preprocessor)
 
         if not pretrained:
             self.clip.init_weights()
 
-        self.vision_model = self.clip.vision_model
-        self.visual_projection = self.clip.visual_projection
+        vision_embedding = ModifiedBartModel.from_pretrained(bart_model_name)
+
+        self.vision_model = VisionRootReplacedBackbone(
+            model=vision_embedding,
+            num_root_features=vision_embedding.config.hidden_size,
+            backbone_root_layers_to_remove=["embeddings"],
+            image_size=image_size,
+            num_channels=3,
+            patch_size=16,
+            source_modality=Modality.image,
+            target_modality=Modality.image,
+        )
+        self.visual_projection = nn.Linear(
+            vision_embedding.config.hidden_size,
+            self.clip.text_embed_dim,
+            bias=False,
+        )
         self.text_model = self.clip.text_model
         self.text_projection = self.clip.text_projection
 
         # setattr signature: setattr(object, name, value)
 
-        setattr(self.vision_model, "legacy_forward", self.vision_model.forward)
+        setattr(self.vision_model, "legacy_forward", self.text_model.forward)
         setattr(self.text_model, "legacy_forward", self.text_model.forward)
 
-        setattr(
-            self.vision_model,
-            "forward",
-            forward_dict.__get__(self.vision_model),
-        )
         setattr(
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        if image_size is not None:
-            self.modify_expected_image_size(image_size)
-
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
-
-    def modify_expected_image_size(self, image_size: int):
-        config = self.vision_model.config
-        config.image_size = image_size
-        updated_embeddings = CLIPVisionEmbeddings(config)
-        logger.info(
-            f"updating vision transformer embedding config to: {config}"
-        )
-        self.vision_model.embeddings = updated_embeddings
 
     def init_weights(self):
         reinit(self)
@@ -132,8 +189,9 @@ class CLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
-            output_dict["image"] = self.vision_model(x=image)
-            output_dict["image"]["projection_output"] = self.visual_projection(
+            output_dict["image"] = self.vision_model(image=image)
+
+            output_dict["image"]["classifier"] = self.visual_projection(
                 output_dict["image"]["features"]
             )
 
@@ -145,6 +203,9 @@ class CLIPAdapter(nn.Module):
                 )
                 for k, v in output_dict["video"].items():
                     if v is not None:
+                        if isinstance(v, list):
+                            v = torch.stack(v, dim=2)
+
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
                 output_dict["video"] = self.vision_model.forward(video)
@@ -163,7 +224,7 @@ class CLIPAdapter(nn.Module):
 
     def get_transforms(self, image_size: int = 224):
         def image_transforms(x):
-            return self.preprocessor(
+            return self.vision_preprocessor(
                 images=T.Resize(size=(image_size, image_size), antialias=True)(
                     x
                 ),

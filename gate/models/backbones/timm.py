@@ -14,7 +14,7 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.models.backbones import Modality, image_dim_reshape
-from gate.models.backbones.clip import TextProcessor
+from gate.models.backbones.clip_image import TextProcessor
 from gate.models.core import reinit
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))

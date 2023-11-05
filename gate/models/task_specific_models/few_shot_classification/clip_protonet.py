@@ -4,7 +4,7 @@ import torch
 
 from gate.boilerplate.decorators import configurable
 from gate.models import ModelAndTransform
-from gate.models.backbones.clip import CLIPAdapter
+from gate.models.backbones.clip_image import CLIPVisionAdapter
 from gate.models.core import (
     GATEModel,
     SourceModalityConfig,
@@ -29,7 +29,9 @@ def build_model(
     :param num_classes: The number of classes for the linear layer.
     :return: A ModelAndTransform instance containing the model and transform function.
     """
-    backbone_model = CLIPAdapter(model_name=model_name, pretrained=pretrained)
+    backbone_model = CLIPVisionAdapter(
+        model_name=model_name, pretrained=pretrained
+    )
     if modality in ["image", "text"]:
         model = PrototypicalNetwork(
             model=backbone_model,

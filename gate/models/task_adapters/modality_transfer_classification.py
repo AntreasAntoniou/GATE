@@ -149,15 +149,30 @@ MODALITY_ROOT_LAYERS = {
 }
 
 
-class RootReplacedBackboneWithLinearExitLayer(BaseModule):
+class InputAgnosticIdentity(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, *args, **kwargs):
+        # return the first args or kwargs that is not None
+        for arg in args:
+            if arg is not None:
+                return arg.float()
+
+        for k, v in kwargs.items():
+            if v is not None:
+                return v.float()
+
+
+class VisionRootReplacedBackbone(BaseModule):
     def __init__(
         self,
         model: nn.Module,
         num_root_features: int,
-        num_backbone_features: int,
-        num_classes: int,
+        image_size: int,
+        num_channels: int,
+        patch_size: int,
         backbone_root_layers_to_remove: List[str],
-        root_layer_kwargs: Dict,
         source_modality: str,
         target_modality: str,
     ):
@@ -165,47 +180,36 @@ class RootReplacedBackboneWithLinearExitLayer(BaseModule):
         self.model = model
 
         for layer in backbone_root_layers_to_remove:
-            setattr(self.model, layer, nn.Identity())
+            setattr(self.model, layer, InputAgnosticIdentity())
 
         self.source_modality = source_modality
         self.target_modality = target_modality
         self.num_root_features = num_root_features
-        self.root_layer = MODALITY_ROOT_LAYERS[target_modality](
-            embed_dim=num_root_features, **root_layer_kwargs
+        self.root_layer = BaseVisionRootLayer(
+            num_root_features, image_size, num_channels, patch_size
         )
-        self.linear = nn.Linear(num_backbone_features, num_classes)
 
     def forward(
         self,
         input_dict: Optional[Dict] = None,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
-        audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         if input_dict is not None:
-            x = self.model(self.root_layer(**input_dict))[
-                self.target_modality
-            ]["features"]
+            x = self.root_layer(**input_dict)
+            x = self.model(x)[self.target_modality]
 
         if image is not None:
-            x = self.model(image=self.root_layer(image=image))["image"][
-                "features"
-            ]
+            x = self.root_layer(image=image)
+            x = self.model(image=x)
 
         if text is not None:
-            x = self.model(text=self.root_layer(text=text))["text"]["features"]
-
-        if audio is not None:
-            x = self.model(audio=self.root_layer(audio=audio))["audio"][
-                "features"
-            ]
+            x = self.root_layer(text=text)
+            x = self.model(text=x)
 
         if video is not None:
-            x = self.model(video=self.root_layer(video=video))["video"][
-                "features"
-            ]
-
-        x = self.linear(x)
+            x = self.root_layer(video=video)
+            x = self.model(video=x)
 
         return x
