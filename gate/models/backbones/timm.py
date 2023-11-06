@@ -145,21 +145,30 @@ class TimmModel(nn.Module):
         else:
             per_layer_raw_features = [output for output in self.model(x)]
 
-        raw_features = per_layer_raw_features[-1]
-        if len(raw_features.shape) == 4:
-            feature_shape = raw_features.shape
-            if (
-                len(feature_shape) == 4
-            ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
-                raw_features_as_sequence = raw_features.permute(
-                    [0, 2, 3, 1]
-                ).reshape(
-                    feature_shape[0], -1, feature_shape[1]
-                )  # output should have shape (batch_size, num_patches, num_features)
-        else:
-            raw_features_as_sequence = raw_features
+        if len(per_layer_raw_features) == 0:
+            return None
 
-        features = raw_features_as_sequence.mean(dim=1)
+        raw_features_as_sequence = None
+        if per_layer_raw_features:
+            raw_features = per_layer_raw_features[-1]
+            if len(raw_features.shape) == 4:
+                feature_shape = raw_features.shape
+                if (
+                    len(feature_shape) == 4
+                ):  # this is a 2D CNN, must move channels and h*w around to match b, s, f format
+                    raw_features_as_sequence = raw_features.permute(
+                        [0, 2, 3, 1]
+                    ).reshape(
+                        feature_shape[0], -1, feature_shape[1]
+                    )  # output should have shape (batch_size, num_patches, num_features)
+            else:
+                raw_features_as_sequence = raw_features
+
+        features = (
+            raw_features_as_sequence.mean(dim=1)
+            if raw_features_as_sequence is not None
+            else None
+        )
 
         return {
             "classifier": features,

@@ -9,7 +9,13 @@ from transformers.models.mpnet.modeling_mpnet import (
     MPNetPreTrainedModel,
 )
 
-from gate.models.backbones import Modality, VisionTextGATEAdapter, forward_dict
+from gate.models.backbones import (
+    GATEncoder,
+    Modality,
+    VisionTextGATEAdapter,
+    forward_dict,
+)
+from gate.models.core import reinit
 from gate.models.task_adapters.modality_transfer_classification import (
     VisionRootReplacedBackbone,
 )
@@ -80,7 +86,7 @@ class MPNetModelPaths:
     base: str = "sentence-transformers/all-mpnet-base-v2"
 
 
-class MPNetAdapter(VisionTextGATEAdapter, nn.Module):
+class MPNetAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
@@ -91,14 +97,12 @@ class MPNetAdapter(VisionTextGATEAdapter, nn.Module):
         nn.Module.__init__(self)
         VisionTextGATEAdapter.__init__(self)
 
-        self.vision_preprocessor: CLIPProcessor = (
-            CLIPProcessor.from_pretrained(clip_model_name)
-        )
-        self.text_preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
+        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
+
         self.clip = CLIPModel.from_pretrained(clip_model_name)
-        self.text_transforms = TextProcessor(self.text_preprocessor)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         if not pretrained:
             self.clip.init_weights()
@@ -117,7 +121,7 @@ class MPNetAdapter(VisionTextGATEAdapter, nn.Module):
         )
         self.visual_projection = nn.Linear(
             vision_embedding.config.hidden_size,
-            self.clip.text_embed_dim,
+            self.clip.vision_embed_dim,
             bias=False,
         )
         self.text_model = self.clip.text_model
@@ -134,3 +138,24 @@ class MPNetAdapter(VisionTextGATEAdapter, nn.Module):
 
         self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
+
+    def init_weights(self):
+        reinit(self)
+
+    @property
+    def num_in_features_image(self):
+        return self.image_num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_num_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError("BART does not have a video backbone")
+
+    def init_weights(self):
+        return super().init_weights()
+
+    def get_transforms(self, image_size: int = 224):
+        return super().get_transforms(image_size=image_size)

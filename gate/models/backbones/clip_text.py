@@ -146,7 +146,7 @@ class CLIPTextAdapter(
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        self.image_num_features = self.vision_model.model.config.hidden_size
+        self.image_num_features = self.clip.vision_embed_dim
         self.text_num_features = self.clip.text_embed_dim
 
     @property

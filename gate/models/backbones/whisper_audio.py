@@ -12,6 +12,7 @@ from transformers.models.whisper.modeling_whisper import (
 )
 
 from gate.models.backbones import (
+    GATEncoder,
     Modality,
     TextProcessor,
     VisionTextGATEAdapter,
@@ -88,7 +89,7 @@ class WhisperModelPaths:
     base: str = "openai/whisper-base"
 
 
-class WhisperAdapter(VisionTextGATEAdapter, nn.Module):
+class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
@@ -99,14 +100,12 @@ class WhisperAdapter(VisionTextGATEAdapter, nn.Module):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
 
-        self.vision_preprocessor: CLIPProcessor = (
-            CLIPProcessor.from_pretrained(clip_model_name)
-        )
-        self.text_preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
+        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
+
         self.clip = CLIPModel.from_pretrained(clip_model_name)
-        self.text_transforms = TextProcessor(self.text_preprocessor)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         if not pretrained:
             self.clip.init_weights()
@@ -127,7 +126,7 @@ class WhisperAdapter(VisionTextGATEAdapter, nn.Module):
         )
         self.visual_projection = nn.Linear(
             vision_embedding.config.hidden_size,
-            self.clip.text_embed_dim,
+            self.clip.vision_embed_dim,
             bias=False,
         )
         self.text_model = self.clip.text_model
@@ -147,3 +146,21 @@ class WhisperAdapter(VisionTextGATEAdapter, nn.Module):
 
     def init_weights(self):
         reinit(self)
+
+    @property
+    def num_in_features_image(self):
+        return self.image_num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_num_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError("BART does not have a video backbone")
+
+    def init_weights(self):
+        return super().init_weights()
+
+    def get_transforms(self, image_size: int = 224):
+        return super().get_transforms(image_size=image_size)

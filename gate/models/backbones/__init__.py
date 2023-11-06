@@ -127,9 +127,10 @@ def interpolate_position_encoding(
 
     # Add the class position embedding back if it was present
     if class_token_idx is not None:
-        return torch.cat(
-            (class_pos_embed.unsqueeze(1), patch_pos_embed), dim=1
-        )
+        if class_pos_embed is not None:
+            return torch.cat(
+                (class_pos_embed.unsqueeze(1), patch_pos_embed), dim=1
+            )
 
     return patch_pos_embed
 
@@ -247,6 +248,11 @@ def forward_dict(
         x = image
     elif text is not None:
         x = text
+    else:
+        raise ValueError(
+            f"Must provide at least one input modality"
+            f"to {self.__class__.__name__}"
+        )
 
     output = self.legacy_forward(
         x, return_dict=False, output_hidden_states=True

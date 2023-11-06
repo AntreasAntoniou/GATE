@@ -10,7 +10,10 @@ from transformers.models.bert.modeling_bert import (
     BertPreTrainedModel,
 )
 
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import (
+    GATEncoder,
     Modality,
     TextProcessor,
     VisionTextGATEAdapter,
@@ -93,7 +96,12 @@ class BertModelPaths:
     base_uncased: str = "bert-base-uncased"
 
 
-class BertAdapter(VisionTextGATEAdapter, nn.Module):
+@configurable(
+    group="encoder",
+    name="bert",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+)
+class BertAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
@@ -104,14 +112,12 @@ class BertAdapter(VisionTextGATEAdapter, nn.Module):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
 
-        self.vision_preprocessor: CLIPProcessor = (
-            CLIPProcessor.from_pretrained(clip_model_name)
-        )
-        self.text_preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
+        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
+
         self.clip = CLIPModel.from_pretrained(clip_model_name)
-        self.text_transforms = TextProcessor(self.text_preprocessor)
+        self.text_transforms = TextProcessor(self.preprocessor)
 
         if not pretrained:
             self.clip.init_weights()
@@ -130,7 +136,7 @@ class BertAdapter(VisionTextGATEAdapter, nn.Module):
         )
         self.visual_projection = nn.Linear(
             vision_embedding.config.hidden_size,
-            self.clip.text_embed_dim,
+            self.clip.vision_embed_dim,
             bias=False,
         )
         self.text_model = self.clip.text_model
@@ -150,3 +156,21 @@ class BertAdapter(VisionTextGATEAdapter, nn.Module):
 
     def init_weights(self):
         reinit(self)
+
+    @property
+    def num_in_features_image(self):
+        return self.image_num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_num_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError("BERT does not have a video backbone")
+
+    def init_weights(self):
+        return super().init_weights()
+
+    def get_transforms(self, image_size: int = 224):
+        return super().get_transforms(image_size=image_size)

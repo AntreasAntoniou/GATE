@@ -1,11 +1,23 @@
 import pytest
 import torch
 import torch.nn as nn
+from numpy import imag
 
 from gate.menu.core import EncoderNames
+from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
+from gate.models.backbones.bert_text import BertAdapter, BertModelPaths
 from gate.models.backbones.clip_image import CLIPVisionAdapter
 from gate.models.backbones.clip_text import CLIPTextAdapter
+from gate.models.backbones.mpnet_text import MPNetAdapter, MPNetModelPaths
 from gate.models.backbones.timm import CLIPModelPaths, TimmCLIPAdapter
+from gate.models.backbones.wave2vec_audio import (
+    Wav2Vec2ModelPaths,
+    Wav2VecV2Adapter,
+)
+from gate.models.backbones.whisper_audio import (
+    WhisperAdapter,
+    WhisperModelPaths,
+)
 from gate.models.core import GATEModel
 from gate.models.task_adapters.classification import BackboneWithLinear
 
@@ -16,7 +28,7 @@ data = [
             timm_model_name=EncoderNames.EffNetV2_RW_S_RA2.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
         ),
-    ),  # In this example, Class1 takes two arguments, a and b.
+    ),
     (
         CLIPVisionAdapter,
         dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
@@ -24,6 +36,30 @@ data = [
     (
         CLIPTextAdapter,
         dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
+    ),
+    (
+        BertAdapter,
+        dict(
+            clip_model_name=CLIPModelPaths.openai_b_16,
+            bert_model_name=BertModelPaths.base_uncased,
+            image_size=224,
+        ),
+    ),
+    (
+        MPNetAdapter,
+        dict(
+            clip_model_name=CLIPModelPaths.openai_b_16,
+            mpnet_model_name=MPNetModelPaths.base,
+            image_size=224,
+        ),
+    ),
+    (
+        BartAdapter,
+        dict(
+            clip_model_name=CLIPModelPaths.openai_b_16,
+            bart_model_name=BartModelPaths.base_uncased,
+            image_size=224,
+        ),
     ),
 ]
 
