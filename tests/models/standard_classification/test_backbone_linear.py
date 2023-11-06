@@ -30,6 +30,13 @@ data = [
         ),
     ),
     (
+        TimmCLIPAdapter,
+        dict(
+            timm_model_name=EncoderNames.AugRegViTBase16_224.value.timm_model_name,
+            clip_model_name=CLIPModelPaths.openai_b_16,
+        ),
+    ),
+    (
         CLIPVisionAdapter,
         dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
     ),
@@ -58,6 +65,22 @@ data = [
         dict(
             clip_model_name=CLIPModelPaths.openai_b_16,
             bart_model_name=BartModelPaths.base_uncased,
+            image_size=224,
+        ),
+    ),
+    (
+        WhisperAdapter,
+        dict(
+            clip_model_name=CLIPModelPaths.openai_b_16,
+            whisper_model_name=WhisperModelPaths.base,
+            image_size=224,
+        ),
+    ),
+    (
+        Wav2VecV2Adapter,
+        dict(
+            clip_model_name=CLIPModelPaths.openai_b_16,
+            wav2vec2_model_name=Wav2Vec2ModelPaths.base,
             image_size=224,
         ),
     ),

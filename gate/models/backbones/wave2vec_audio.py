@@ -144,7 +144,7 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        self.image_num_features = self.clip.vision_embed_dim
+        self.image_num_features = vision_embedding.config.hidden_size
         self.text_num_features = self.clip.text_embed_dim
 
     def init_weights(self):
