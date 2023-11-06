@@ -1,7 +1,6 @@
 import logging
 import os
 import pathlib
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
@@ -10,7 +9,7 @@ import torch
 import torchvision.transforms as T
 from PIL import Image
 from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset, random_split
+from torch.utils.data import Dataset
 from torch.utils.data.dataset import Dataset
 
 from gate.boilerplate.decorators import configurable

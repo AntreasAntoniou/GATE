@@ -2,7 +2,6 @@
 import functools
 import logging
 import os
-import random
 from pathlib import Path
 from typing import Any, Callable
 
@@ -12,7 +11,6 @@ import torch
 import torch.utils.data
 from decord import VideoReader
 
-from . import transform as transform
 from . import utils as utils
 
 logger = logging.getLogger(__name__)

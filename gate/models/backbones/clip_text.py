@@ -1,18 +1,14 @@
 import logging
-from collections import defaultdict
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 from transformers.models.clip.configuration_clip import CLIPTextConfig
 from transformers.models.clip.modeling_clip import (
     CLIPEncoder,
     CLIPTextEmbeddings,
-    CLIPVisionEmbeddings,
-    _expand_mask,
     _make_causal_mask,
 )
 
@@ -20,7 +16,6 @@ from gate.models.backbones import (
     Modality,
     TextProcessor,
     VisionTextGATEAdapter,
-    apply_preprocessing_transforms,
     forward_dict,
 )
 from gate.models.core import reinit

@@ -5,9 +5,6 @@ import torch.nn as nn
 
 from gate.boilerplate.decorators import ensemble_marker
 from gate.models.core import reinit
-from gate.models.task_adapters.few_shot_classification import (
-    FewShotLearningClassificationEpisode,
-)
 from gate.models.task_adapters.few_shot_classification.utils import (
     compute_prototypes,
     compute_prototypical_accuracy,

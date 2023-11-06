@@ -1,5 +1,4 @@
 import torch
-from torchvision.transforms import functional as F
 
 from gate.data.transforms.video import (
     BaseVideoTransform,
@@ -26,20 +25,20 @@ def test_TemporalCrop():
 def test_TemporalFlip():
     transform = TemporalFlip()
     input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
-    output_dict = transform(input_dict)
+    transform(input_dict)
 
 
 def test_TemporalRotation():
     transform = TemporalRotation()
     input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
-    output_dict = transform(input_dict)
+    transform(input_dict)
     # Add assertions to check if the video has been rotated correctly
 
 
 def test_TemporalBrightnessContrast():
     transform = TemporalBrightnessContrast()
     input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
-    output_dict = transform(input_dict)
+    transform(input_dict)
     # Add assertions to check if the brightness and contrast have been modified correctly
 
 
@@ -56,7 +55,7 @@ def test_TemporalScale():
 def test_TemporalJitter():
     transform = TemporalJitter(0.1)
     input_dict = {"video": torch.rand(2, 8, 3, 224, 224)}
-    output_dict = transform(input_dict)
+    transform(input_dict)
     # Add assertions to check if the video has been jittered correctly
 
 

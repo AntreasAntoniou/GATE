@@ -1,15 +1,10 @@
 import logging
-import math
-import time
-from collections import OrderedDict
 from enum import Enum
-from functools import partial
-from typing import Callable, Dict, List, Optional
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets.table import pa
 
 from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.segmentation import (

@@ -146,10 +146,8 @@ class GulpSparsesampleSqueezedDataset(torch.utils.data.Dataset):
 
                 if len(label_all_heads) == 1:
                     # single head. Just use the element than the array.
-                    multi_head = False
                     label = label_all_heads[0]
                 else:
-                    multi_head = True
                     label = np.array(label_all_heads)
 
                 for idx in range(self._num_clips):

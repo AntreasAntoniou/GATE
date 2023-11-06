@@ -1,6 +1,6 @@
 # ade20k.py
 import multiprocessing as mp
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 from datasets import load_dataset
 

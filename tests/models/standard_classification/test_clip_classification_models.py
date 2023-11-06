@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 
 from gate.models.task_specific_models.classification.clip import (
     ModelAndTransform,

@@ -1,12 +1,8 @@
-from xml.sax.handler import DTDHandler
 
 from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,
-    EncoderNames,
     EvaluatorName,
-    LearningRateConfig,
-    ModelConfig,
     TrainerName,
     get_model_selection,
 )

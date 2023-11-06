@@ -1,5 +1,4 @@
 import multiprocessing as mp
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
@@ -16,9 +15,7 @@ from gate.data.medical.segmentation.medical_decathlon import (
 )
 from gate.data.transforms.segmentation import (
     DualImageRandomCrop,
-    DualImageRandomFlip,
     MedicalImageSegmentationTransforms,
-    PhotoMetricDistortion,
     PhotometricParams,
 )
 

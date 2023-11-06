@@ -1,27 +1,19 @@
 import logging
-import math
-from collections import defaultdict
-from json import encoder
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
-from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.mpnet.modeling_mpnet import (
     MPNetEncoder,
-    MPNetModel,
     MPNetPreTrainedModel,
 )
-from transformers.models.mpnet.tokenization_mpnet import MPNetTokenizer
 
 from gate.models.backbones import (
     Modality,
     VisionTextGATEAdapter,
-    apply_preprocessing_transforms,
     forward_dict,
 )
-from gate.models.core import reinit
 from gate.models.task_adapters.modality_transfer_classification import (
     VisionRootReplacedBackbone,
 )
@@ -106,8 +98,8 @@ class MPNetAdapter(VisionTextGATEAdapter, nn.Module):
         self.vision_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
         )
-        self.text_preprocessor: MPNetTokenizer = (
-            MPNetTokenizer.from_pretrained(mpnet_model_name)
+        self.text_preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
+            clip_model_name
         )
         self.clip = CLIPModel.from_pretrained(clip_model_name)
         self.text_transforms = TextProcessor(self.text_preprocessor)

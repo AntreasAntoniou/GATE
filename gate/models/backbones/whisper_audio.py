@@ -3,14 +3,15 @@ from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from transformers import (
-    BartConfig,
-    BartPretrainedModel,
     CLIPModel,
     CLIPProcessor,
 )
-from transformers.models.bart.modeling_bart import (
-    BartEncoder,
+from transformers.models.whisper.modeling_whisper import (
+    WhisperConfig,
+    WhisperEncoder,
+    WhisperPreTrainedModel,
 )
 
 from gate.models.backbones import (
@@ -27,13 +28,11 @@ from gate.models.task_adapters.modality_transfer_classification import (
 logger = logging.getLogger(__name__)
 
 
-class ModifiedBartModel(BartPretrainedModel):
-    def __init__(self, config: BartConfig):
+class ModifiedWhisperModel(WhisperPreTrainedModel):
+    def __init__(self, config: WhisperConfig):
         super().__init__(config)
 
-        padding_idx, vocab_size = config.pad_token_id, config.vocab_size
-        self.shared = nn.Embedding(vocab_size, config.d_model, padding_idx)
-        self.encoder = BartEncoder(config, self.shared)
+        self.encoder = WhisperEncoder(config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -42,16 +41,38 @@ class ModifiedBartModel(BartPretrainedModel):
         self,
         image: Optional[torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
-        # different to other models, Bart automatically creates decoder_input_ids from
-        # input_ids if no decoder_input_ids are provided
+        r"""
+        Returns:
+
+        Example:
+         ```python
+         >>> import torch
+         >>> from transformers import AutoFeatureExtractor, WhisperModel
+         >>> from datasets import load_dataset
+
+         >>> model = WhisperModel.from_pretrained("openai/whisper-base")
+         >>> feature_extractor = AutoFeatureExtractor.from_pretrained("openai/whisper-base")
+         >>> ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+         >>> inputs = feature_extractor(ds[0]["audio"]["array"], return_tensors="pt")
+         >>> input_features = inputs.input_features
+         >>> decoder_input_ids = torch.tensor([[1, 1]]) * model.config.decoder_start_token_id
+         >>> last_hidden_state = model(input_features, decoder_input_ids=decoder_input_ids).last_hidden_state
+         >>> list(last_hidden_state.shape)
+         [1, 2, 512]
+         ```"""
+        output_attentions = self.config.output_attentions
+        output_hidden_states = self.config.output_hidden_states
+
+        self.config.use_cache
+        return_dict = self.config.use_return_dict
+        image = image.permute(0, 2, 1)
+        image = F.adaptive_avg_pool1d(image, 3000)
         encoder_outputs = self.encoder(
-            input_ids=None,
-            attention_mask=None,
+            image,
             head_mask=None,
-            inputs_embeds=image,
-            output_attentions=None,
-            output_hidden_states=None,
-            return_dict=True,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
         )
 
         return {
@@ -66,15 +87,15 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
-class BartModelPaths:
-    base_uncased: str = "facebook/bart-base"
+class WhisperModelPaths:
+    base: str = "openai/whisper-base"
 
 
-class BartAdapter(VisionTextGATEAdapter, nn.Module):
+class WhisperAdapter(VisionTextGATEAdapter, nn.Module):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
-        bart_model_name: str = BartModelPaths.base_uncased,
+        whisper_model_name: str = WhisperModelPaths.base,
         pretrained: bool = True,
         image_size: Optional[int] = None,
     ):
@@ -93,15 +114,17 @@ class BartAdapter(VisionTextGATEAdapter, nn.Module):
         if not pretrained:
             self.clip.init_weights()
 
-        vision_embedding = ModifiedBartModel.from_pretrained(bart_model_name)
+        vision_embedding = ModifiedWhisperModel.from_pretrained(
+            whisper_model_name
+        )
 
         self.vision_model = VisionRootReplacedBackbone(
             model=vision_embedding,
-            num_root_features=vision_embedding.config.hidden_size,
+            num_root_features=80,
             backbone_root_layers_to_remove=["embeddings"],
             image_size=image_size,
             num_channels=3,
-            patch_size=16,
+            patch_size=4,
             source_modality=Modality.image,
             target_modality=Modality.image,
         )

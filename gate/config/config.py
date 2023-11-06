@@ -269,7 +269,7 @@ def collect_config_store():
 def main():
     from rich import print
 
-    config = collect_config_store()
+    collect_config_store()
 
     @hydra.main(config_path=None, config_name="config", version_base=None)
     def test(cfg: Any):

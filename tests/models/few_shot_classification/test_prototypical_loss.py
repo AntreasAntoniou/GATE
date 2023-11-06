@@ -1,6 +1,5 @@
 # Importing the necessary libraries
 import torch
-import torch.nn.functional as F
 
 from gate.models.task_adapters.few_shot_classification.utils import (
     prototypical_logits,

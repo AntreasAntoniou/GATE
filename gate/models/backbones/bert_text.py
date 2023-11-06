@@ -1,11 +1,8 @@
 import logging
-from collections import defaultdict
-from json import encoder
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
-from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.bert.modeling_bert import (
     BertEncoder,
@@ -17,7 +14,6 @@ from gate.models.backbones import (
     Modality,
     TextProcessor,
     VisionTextGATEAdapter,
-    apply_preprocessing_transforms,
     forward_dict,
 )
 from gate.models.core import reinit
@@ -108,13 +104,12 @@ class BertAdapter(VisionTextGATEAdapter, nn.Module):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
 
-        from transformers import BertModel, BertTokenizer
 
         self.vision_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
         )
-        self.text_preprocessor: BertTokenizer = BertTokenizer.from_pretrained(
-            bert_model_name
+        self.text_preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
+            clip_model_name
         )
         self.clip = CLIPModel.from_pretrained(clip_model_name)
         self.text_transforms = TextProcessor(self.text_preprocessor)

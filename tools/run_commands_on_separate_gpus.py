@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import fire
 from pynvml import (
@@ -14,7 +14,6 @@ from pynvml import (
     nvmlInit,
     nvmlShutdown,
 )
-from rich import print
 from tqdm.auto import tqdm
 
 

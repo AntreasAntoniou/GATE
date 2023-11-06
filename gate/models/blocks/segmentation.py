@@ -1,5 +1,4 @@
 import math
-import time
 from collections import OrderedDict
 from typing import List, Tuple, Union
 
@@ -456,7 +455,7 @@ def upsample_tensor(input_tensor):
     b, c, s = input_tensor.shape
     new_size = math.ceil(math.sqrt(s)) ** 2
     sq_root = int(math.sqrt(new_size))
-    new_shape = (b, c, new_size)
+    (b, c, new_size)
     output_tensor = F.upsample(
         input_tensor,
         size=(sq_root * sq_root),

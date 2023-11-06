@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Union
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import HYDRATED_NUM_CLASSES

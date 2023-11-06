@@ -3,8 +3,6 @@ import math
 from typing import Dict, List, Optional, Union
 
 import numpy as np
-import pandas as pd
-import PIL
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -184,7 +182,6 @@ def log_wandb_images(
     return {f"{prefix}/autoencoder_episode": episode_list}
 
 
-import json
 from typing import Dict, List, Union
 
 import torch

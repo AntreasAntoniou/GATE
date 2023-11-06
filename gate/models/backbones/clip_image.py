@@ -1,12 +1,7 @@
 import logging
-from abc import ABC, abstractmethod
-from collections import defaultdict
-from typing import List, Optional, Union
+from typing import Optional
 
-import torch
 import torch.nn as nn
-from torch.nn import Module
-from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 

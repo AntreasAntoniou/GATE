@@ -4,13 +4,12 @@
 import multiprocessing as mp
 import os
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, Optional, Union
 
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
-from torch.utils.data import Dataset, random_split
+from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
