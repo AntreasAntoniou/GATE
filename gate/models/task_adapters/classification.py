@@ -1,30 +1,40 @@
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from omegaconf import DictConfig
 
-from gate.boilerplate.decorators import ensemble_marker
+from gate.boilerplate.decorators import configurable, ensemble_marker
+from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
 
 logger = logging.getLogger(__name__)
 
 
+@configurable(
+    group="adapter",
+    name="backbone-with-linear",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+)
 class BackboneWithLinear(BaseModule):
     def __init__(
         self,
-        model: nn.Module,
-        num_in_features,
+        encoder: nn.Module,
         num_classes: int,
-        modality: str,
         allow_on_model_metric_computation: bool = True,
+        pretrained: bool = True,
     ):
         super().__init__()
-        self.model = model
-        self.modality = modality
+        self.encoder = encoder
+
+        if not pretrained:
+            self.encoder.init_weights()
+
+        num_in_features = self.encoder.num_in_features_image
         logger.info(f"Building linear layer with {num_in_features} features.")
         self.num_classes = num_classes
         self.allow_on_model_metric_computation = (
@@ -54,6 +64,14 @@ class BackboneWithLinear(BaseModule):
             raise ValueError(
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
+
+    @property
+    def encoder_transforms(self):
+        return self.encoder.get_transforms()
+
+    @property
+    def modality_config(self):
+        return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
 
     @ensemble_marker
     def compute_loss_and_metrics_multi_class(self, logits_dict, labels):
@@ -106,7 +124,6 @@ class BackboneWithLinear(BaseModule):
 
     def forward(
         self,
-        input_dict: Optional[Dict] = None,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
         audio: Optional[torch.Tensor] = None,
@@ -114,20 +131,17 @@ class BackboneWithLinear(BaseModule):
         labels: Optional[torch.Tensor] = None,
         return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
-        if input_dict is not None:
-            x = self.model(**input_dict)[self.modality]["features"]
-
         if image is not None:
-            x = self.model(image=image)["image"]["features"]
+            x = self.encoder(image=image)["image"]["features"]
 
         if text is not None:
-            x = self.model(text=text)["text"]["features"]
+            x = self.encoder(text=text)["text"]["features"]
 
         if audio is not None:
-            x = self.model(audio=audio)["audio"]["features"]
+            x = self.encoder(audio=audio)["audio"]["features"]
 
         if video is not None:
-            x = self.model(video=video)["video"]["features"]
+            x = self.encoder(video=video)["video"]["features"]
 
         if isinstance(self.linear, nn.ModuleDict):
             logits_dict = {}
@@ -152,5 +166,23 @@ class BackboneWithLinear(BaseModule):
             output_dict |= self.compute_loss_and_metrics(
                 logits=output_dict["logits"], labels=output_dict["labels"]
             )
+
+        return output_dict
+
+    def adapter_transforms(self, inputs: Union[Dict, Any]):
+        output_dict = {}
+
+        if "image" in inputs:
+            output_dict["image"] = self.encoder_transforms["image"](
+                inputs["image"]
+            )
+
+        if "text" in inputs:
+            output_dict["text"] = self.encoder_transforms["text"](
+                inputs["text"]
+            )
+
+        if "labels" in inputs:
+            output_dict["labels"] = inputs["labels"]
 
         return output_dict

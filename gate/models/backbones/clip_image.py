@@ -5,7 +5,10 @@ import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import (
+    GATEncoder,
     TextProcessor,
     VisionTextGATEAdapter,
     forward_dict,
@@ -19,7 +22,12 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
-class CLIPVisionAdapter(VisionTextGATEAdapter, nn.Module):
+@configurable(
+    group="encoder",
+    name="clip",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+)
+class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         model_name: str,
@@ -71,3 +79,21 @@ class CLIPVisionAdapter(VisionTextGATEAdapter, nn.Module):
             f"updating vision transformer embedding config to: {config}"
         )
         self.vision_model.embeddings = updated_embeddings
+
+    @property
+    def num_in_features_image(self):
+        return self.image_num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_num_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError("CLIP does not have a video backbone")
+
+    def init_weights(self):
+        return super().init_weights()
+
+    def get_transforms(self, image_size: int = 224):
+        return super().get_transforms(image_size=image_size)

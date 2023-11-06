@@ -146,8 +146,23 @@ class CLIPTextAdapter(
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        self.image_num_features = self.clip.vision_embed_dim
+        self.image_num_features = self.vision_model.model.config.hidden_size
         self.text_num_features = self.clip.text_embed_dim
 
+    @property
+    def num_in_features_image(self):
+        return self.image_num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_num_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError("CLIP does not have a video backbone")
+
     def init_weights(self):
-        reinit(self)
+        return super().init_weights()
+
+    def get_transforms(self, image_size: int = 224):
+        return super().get_transforms(image_size=image_size)

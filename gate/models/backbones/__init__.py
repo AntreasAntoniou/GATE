@@ -279,3 +279,35 @@ class TextProcessor:
             text = [text]
         transformed_text = self.text_transforms(text)
         return transformed_text
+
+
+class GATEncoder(ABC, nn.Module):
+    @abstractmethod
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    @property
+    @abstractmethod
+    def num_in_features_image(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_in_features_text(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_in_features_video(self):
+        pass
+
+    @abstractmethod
+    def init_weights(self):
+        pass
+
+    @abstractmethod
+    def forward(self, *args, **kwargs):
+        pass
+
+    def get_transforms(self):
+        pass

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import List, Optional
 from urllib.request import urlopen
@@ -13,7 +14,9 @@ from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
-from gate.models.backbones import Modality, image_dim_reshape
+from gate.boilerplate.decorators import configurable
+from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.models.backbones import GATEncoder, Modality, image_dim_reshape
 from gate.models.backbones.clip_image import TextProcessor
 from gate.models.core import reinit
 
@@ -184,7 +187,17 @@ class TimmModel(nn.Module):
         return shape_dict
 
 
-class TimmCLIPAdapter(nn.Module):
+class CLIPModelPaths:
+    laion_b_16: str = "laion/CLIP-ViT-B-16-laion2B-s34B-b88K"
+    openai_b_16: str = "openai/clip-vit-base-patch16"
+
+
+@configurable(
+    group="encoder",
+    name="timm",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+)
+class TimmCLIPAdapter(GATEncoder):
     def __init__(
         self,
         timm_model_name: str,
@@ -212,6 +225,18 @@ class TimmCLIPAdapter(nn.Module):
         ]
         self.image_num_features = self.vision_model_output_shape[2]
         self.text_num_features = self.clip.text_embed_dim
+
+    @property
+    def num_in_features_image(self):
+        return self.image_num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_num_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError(f"TimmCLIP does not have a video backbone")
 
     def init_weights(self):
         reinit(self)
