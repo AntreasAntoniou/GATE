@@ -9,11 +9,7 @@ from transformers.models.mpnet.modeling_mpnet import (
     MPNetPreTrainedModel,
 )
 
-from gate.models.backbones import (
-    Modality,
-    VisionTextGATEAdapter,
-    forward_dict,
-)
+from gate.models.backbones import Modality, VisionTextGATEAdapter, forward_dict
 from gate.models.task_adapters.modality_transfer_classification import (
     VisionRootReplacedBackbone,
 )
