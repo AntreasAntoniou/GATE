@@ -1,4 +1,3 @@
-
 from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,

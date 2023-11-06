@@ -4,10 +4,7 @@ from typing import Dict, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import (
-    CLIPModel,
-    CLIPProcessor,
-)
+from transformers import CLIPModel, CLIPProcessor
 from transformers.models.whisper.modeling_whisper import (
     WhisperConfig,
     WhisperEncoder,

@@ -9,9 +9,7 @@ from transformers import (
     CLIPModel,
     CLIPProcessor,
 )
-from transformers.models.bart.modeling_bart import (
-    BartEncoder,
-)
+from transformers.models.bart.modeling_bart import BartEncoder
 
 from gate.models.backbones import (
     Modality,

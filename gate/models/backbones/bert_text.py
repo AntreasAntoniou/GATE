@@ -104,7 +104,6 @@ class BertAdapter(VisionTextGATEAdapter, nn.Module):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
 
-
         self.vision_preprocessor: CLIPProcessor = (
             CLIPProcessor.from_pretrained(clip_model_name)
         )

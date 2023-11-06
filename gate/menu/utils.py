@@ -3,8 +3,6 @@
 from typing import Dict, List, Union
 
 
-
-
 def build_command(
     exp_name: str,
     model_name: str,
