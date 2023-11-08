@@ -100,9 +100,11 @@ def compute_prototypical_logits(prototypes: Tensor, queries: Tensor) -> Tensor:
         in_shape = queries.shape
         queries = queries.view(-1, queries.shape[-1])
 
-    return -euclidean_distance(prototypes, queries).view(
-        in_shape[0], in_shape[1], -1
-    )
+        return -euclidean_distance(prototypes, queries).view(
+            in_shape[0], in_shape[1], -1
+        )
+    else:
+        return -euclidean_distance(prototypes, queries)
 
 
 def compute_prototypical_loss(logits: Tensor, labels: Tensor) -> Tensor:

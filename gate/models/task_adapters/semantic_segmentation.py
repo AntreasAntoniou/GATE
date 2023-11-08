@@ -194,7 +194,7 @@ class SegmentationAdapter(nn.Module):
             ),
             "simple": ChannelMixerDecoder(
                 num_classes=num_classes,
-                target_image_size=decoder_target_image_size,
+                target_image_size=decoder_target_image_size[0],
                 hidden_size=self.decoder_embedding_dimension,
                 decoder_num_blocks=decoder_num_blocks,
                 pre_output_dropout_rate=decoder_pre_output_dropout_rate,

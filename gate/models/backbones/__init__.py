@@ -2,7 +2,7 @@ import math
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Iterable, List, Optional, Union
 
 import PIL
 import torch
@@ -173,7 +173,7 @@ class VisionTextGATEAdapter(ABC):
                 )
                 for k, v in output_dict["video"].items():
                     if v is not None:
-                        if isinstance(v, list):
+                        if isinstance(v, list) or isinstance(v, tuple):
                             v = torch.stack(v, dim=2)
 
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])

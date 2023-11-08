@@ -33,8 +33,8 @@ def test_forward_pass(model_type):
 
     # Validate that the model is built
     assert (
-        model.is_built == True
-    ), "Expected model.is_built to be True, but got False"
+        model.built == True
+    ), "Expected model.built to be True, but got False"
 
 
 def test_upsample_tensor():

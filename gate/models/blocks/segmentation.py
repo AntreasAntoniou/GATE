@@ -236,7 +236,7 @@ class ChannelMixerDecoder(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        target_image_size: Union[int, tuple] = (64, 64),
+        target_image_size: int = 64,
         hidden_size: int = 256,
         decoder_num_blocks: int = 2,
         pre_output_dropout_rate: float = 0.3,
@@ -272,7 +272,7 @@ class ChannelMixerDecoder(nn.Module):
 
         if len(input_list[0].shape) == 4:
             input_list = [
-                self.upsample(x) if x.shape[-1] != target_image_size[0] else x
+                self.upsample(x) if x.shape[-1] != target_image_size else x
                 for x in input_list
             ]
             input_list = torch.cat(input_list, dim=1)
@@ -388,7 +388,7 @@ class ChannelMixerDecoder(nn.Module):
             else:
                 self.closest_square_root = int(np.sqrt(sequence_length))
 
-            self.built = True
+        self.built = True
 
     def forward(self, input_list: list):
         """
