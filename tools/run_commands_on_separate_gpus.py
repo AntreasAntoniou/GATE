@@ -1,9 +1,10 @@
 import json
 import os
+import pathlib
 import subprocess
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import fire
 from pynvml import (
@@ -42,8 +43,8 @@ def get_gpu_processes(memory_threshold=5, util_threshold=10):
 
 def run_command_on_gpu(command, gpu_id, exp_name):
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
-    stdout_file = open(f"{exp_name}.stdout", "a")
-    stderr_file = open(f"{exp_name}.stderr", "a")
+    stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout", "a")
+    stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr", "a")
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )  # Return the process handle
@@ -99,7 +100,20 @@ def parse_commands_input(input_data: str) -> Dict[str, Any]:
         }
 
 
-def main(memory_threshold=5, util_threshold=10):
+def main(
+    memory_threshold: int = 5,
+    util_threshold: int = 10,
+    log_dir: Optional[Union[str, pathlib.Path]] = pathlib.Path("logs/"),
+):
+    if not isinstance(log_dir, pathlib.Path):
+        log_dir = pathlib.Path(log_dir)
+
+    if not log_dir.exists():
+        log_dir.mkdir(parents=True)
+
+    os.environ["LOG_DIR"] = (
+        log_dir.as_posix() if isinstance(log_dir, pathlib.Path) else log_dir
+    )
     command_dict = {}
     if not sys.stdin.isatty():
         # If data is being piped to this script, read stdin
