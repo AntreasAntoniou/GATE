@@ -70,7 +70,7 @@ class ModifiedWav2Vec2Model(Wav2Vec2PreTrainedModel):
             hidden_states,
             attention_mask=None,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=True,
             return_dict=return_dict,
         )
 

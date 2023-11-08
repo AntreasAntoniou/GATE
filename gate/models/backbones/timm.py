@@ -94,7 +94,7 @@ class TimmModel(nn.Module):
             logger.info(
                 f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
             )
-            print(
+            logger.info(
                 f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {img_size}"
             )
             self.model = timm.create_model(

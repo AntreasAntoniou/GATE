@@ -97,9 +97,12 @@ def compute_prototypical_logits(prototypes: Tensor, queries: Tensor) -> Tensor:
         Tensor: Logits matrix with shape [N, C].
     """
     if len(queries.shape) == 3:
+        in_shape = queries.shape
         queries = queries.view(-1, queries.shape[-1])
 
-    return -euclidean_distance(prototypes, queries)
+    return -euclidean_distance(prototypes, queries).view(
+        in_shape[0], in_shape[1], -1
+    )
 
 
 def compute_prototypical_loss(logits: Tensor, labels: Tensor) -> Tensor:
@@ -131,6 +134,8 @@ def compute_prototypical_accuracy(logits: Tensor, labels: Tensor) -> float:
     Returns:
         float: The accuracy as a float in the range [0, 1].
     """
+    labels = labels.view(-1)
+    logits = logits.view(-1, logits.shape[-1])
     acc = (logits.argmax(dim=1).long() == labels.long()).sum().float()
     return acc / logits.size(0)
 

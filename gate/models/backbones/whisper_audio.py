@@ -69,7 +69,7 @@ class ModifiedWhisperModel(WhisperPreTrainedModel):
             image,
             head_mask=None,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=True,
             return_dict=return_dict,
         )
 

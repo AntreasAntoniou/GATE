@@ -8,7 +8,8 @@ import torch.nn as nn
 import torch.nn.functional
 import torch.nn.functional as F
 
-from gate.boilerplate.decorators import ensemble_marker
+from gate.boilerplate.decorators import configurable, ensemble_marker
+from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
@@ -237,6 +238,11 @@ class Metrics:
     get_metric_fn = get_metric_fn
 
 
+@configurable(
+    group="adapter",
+    name="temporal-classification",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+)
 class BackboneWithTemporalTransformerAndLinear(BaseModule):
     def __init__(
         self,

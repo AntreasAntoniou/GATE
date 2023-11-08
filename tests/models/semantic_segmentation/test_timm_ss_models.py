@@ -3,11 +3,7 @@ from itertools import product
 import pytest
 import torch
 
-from gate.models.task_specific_models.semantic_segmentation.timm import (
-    ModelAndTransform,
-    build_gate_model,
-    build_model,
-)
+from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
 
 pretrained_parameters = [(True), (False)]
 decoder_type_parameters = ["transformer", "simple"]

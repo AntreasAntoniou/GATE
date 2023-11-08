@@ -47,7 +47,7 @@ def build_model(
     )
 
     model = SegmentationAdapter(
-        encoder_model=backbone_model,
+        encoder=backbone_model,
         decoder_embed_dim=backbone_model.image_num_features,
         num_classes=num_classes,
         decoder_layer_type=decoder_layer_type,

@@ -1,10 +1,13 @@
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
 
-from gate.boilerplate.decorators import ensemble_marker
-from gate.models.core import reinit
+from gate.boilerplate.decorators import configurable, ensemble_marker
+from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.models.backbones import GATEncoder
+from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
+from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.few_shot_classification.utils import (
     compute_prototypes,
     compute_prototypical_accuracy,
@@ -13,7 +16,8 @@ from gate.models.task_adapters.few_shot_classification.utils import (
 )
 
 
-class PrototypicalNetwork(nn.Module):
+@configurable(group="adapter", name="fs-protonet")
+class PrototypicalNetwork(BaseModule):
     """
     This is the Prototypical Network class.
 
@@ -32,23 +36,22 @@ class PrototypicalNetwork(nn.Module):
 
     def __init__(
         self,
-        model: nn.Module,
-        num_clip_features: int,
-        modality: str,
+        encoder: GATEncoder,
         num_output_features: Optional[int] = None,
     ) -> None:
         super().__init__()
 
-        self.model = model
-        self.modality = modality
+        self.encoder = encoder
 
         # If num_output_features is not provided, use num_clip_features and set linear layer to identity.
         if num_output_features is None:
-            self.num_output_features = num_clip_features
+            self.num_output_features = self.encoder.num_in_features_image
             self.linear = nn.Identity()
         else:
             self.num_output_features = num_output_features
-            self.linear = nn.Linear(num_clip_features, num_output_features)
+            self.linear = nn.Linear(
+                self.encoder.num_in_features_image, num_output_features
+            )
 
     def init_weights(self):
         reinit(self)
@@ -81,9 +84,9 @@ class PrototypicalNetwork(nn.Module):
         x = None
 
         if input_dict is not None:
-            x = self.model(**input_dict)[self.modality]["features"]
+            x = self.encoder(**input_dict)["image"]["features"]
         if image is not None:
-            x = self.model(image=image)[self.modality]["features"]
+            x = self.encoder(image=image)["image"]["features"]
 
         assert x is not None, "At least one input must be provided."
 
@@ -119,7 +122,7 @@ class PrototypicalNetwork(nn.Module):
         num_tasks, num_examples = support_set_inputs.shape[:2]
         support_set_features = self.forward_features(
             **{
-                self.modality: support_set_inputs.view(
+                "image": support_set_inputs.view(
                     -1, *support_set_inputs.shape[2:]
                 )
             }
@@ -129,11 +132,7 @@ class PrototypicalNetwork(nn.Module):
         )
 
         query_set_features = self.forward_features(
-            **{
-                self.modality: query_set_inputs.view(
-                    -1, *query_set_inputs.shape[2:]
-                )
-            }
+            **{"image": query_set_inputs.view(-1, *query_set_inputs.shape[2:])}
         )
         query_set_embedding = query_set_features.view(
             num_tasks, -1, query_set_features.shape[-1]
@@ -169,3 +168,28 @@ class PrototypicalNetwork(nn.Module):
 
         accuracy = compute_prototypical_accuracy(logits=logits, labels=labels)
         return {"loss": loss, "accuracy_top_1": accuracy}
+
+    @property
+    def modality_config(self):
+        return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
+
+    def adapter_transforms(self, inputs: Union[Dict, Any]):
+        inputs["image"]["support_set"] = torch.stack(
+            [
+                self.encoder_transforms["image"](item)
+                for item in inputs["image"]["support_set"]
+            ]
+        )
+
+        inputs["image"]["query_set"] = torch.stack(
+            [
+                self.encoder_transforms["image"](item)
+                for item in inputs["image"]["query_set"]
+            ]
+        )
+
+        return inputs
+
+    @property
+    def encoder_transforms(self):
+        return self.encoder.get_transforms()

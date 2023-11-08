@@ -6,17 +6,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from gate.boilerplate.decorators import ensemble_marker
+from gate.boilerplate.decorators import configurable, ensemble_marker
+from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.segmentation import (
     CrossEntropyLoss,
     DiceLoss,
     FocalLoss,
     IoUMetric,
 )
+from gate.models.backbones import GATEncoder
 from gate.models.blocks.segmentation import (
     ChannelMixerDecoder,
     TransformerSegmentationDecoder,
 )
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
+from gate.models.task_adapters.utils import reinit
 
 # from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
 
@@ -138,17 +142,21 @@ class SegmentationLossOptions(Enum):
     MD = "md"
 
 
+@configurable(
+    group="adapter",
+    name="segmentation-adapter",
+    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+)
 class SegmentationAdapter(nn.Module):
     def __init__(
         self,
-        encoder_model: nn.Module,
+        encoder: GATEncoder,
         num_classes: int = 100,
         background_loss_weight: float = 0.01,
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
         output_target_image_size: int = 256,
         decoder_target_image_size: tuple = (64, 64),
-        decoder_embed_dim: int = 512,
         decoder_num_blocks: int = 2,
         decoder_num_heads: int = 8,
         decoder_dropout_rate: float = 0.5,
@@ -158,7 +166,7 @@ class SegmentationAdapter(nn.Module):
     ):
         super().__init__()
 
-        self.encoder = encoder_model
+        self.encoder = encoder
         self.num_classes = num_classes
         self.class_names = (
             class_names
@@ -166,7 +174,7 @@ class SegmentationAdapter(nn.Module):
             else [str(i) for i in range(num_classes)]
         )
         self.ignore_index = ignore_index
-        self.decoder_embedding_dimension = decoder_embed_dim
+        self.decoder_embedding_dimension = self.encoder.num_in_features_image
         self.output_target_image_size = output_target_image_size
 
         if loss_type_id == SegmentationLossOptions.DEFAULT.value:
@@ -174,13 +182,11 @@ class SegmentationAdapter(nn.Module):
         elif loss_type_id == SegmentationLossOptions.MD.value:
             self.loss_fn = md_optimization_loss
 
-        # Assuming decoder_layer_mapping and other related classes and functions are defined elsewhere in the code
-
         decoder_layer_mapping = {
             "transformer": TransformerSegmentationDecoder(
                 num_classes=num_classes,
-                target_image_size=64,
-                hidden_size=768,
+                target_image_size=decoder_target_image_size[0],
+                hidden_size=self.decoder_embedding_dimension,
                 pre_output_dropout_rate=0.0,
                 dropout_rate=0.0,
                 decoder_num_blocks=4,
@@ -189,7 +195,7 @@ class SegmentationAdapter(nn.Module):
             "simple": ChannelMixerDecoder(
                 num_classes=num_classes,
                 target_image_size=decoder_target_image_size,
-                hidden_size=decoder_embed_dim,
+                hidden_size=self.decoder_embedding_dimension,
                 decoder_num_blocks=decoder_num_blocks,
                 pre_output_dropout_rate=decoder_pre_output_dropout_rate,
                 dropout_rate=decoder_dropout_rate,
@@ -250,3 +256,34 @@ class SegmentationAdapter(nn.Module):
             self.iou_metric.update(preds, labels)
 
         return loss_and_metrics
+
+    @property
+    def modality_config(self):
+        return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
+
+    @property
+    def encoder_transforms(self):
+        return self.encoder.get_transforms()
+
+    def init_weights(self):
+        """Initialize the weights of the model."""
+        # Assuming `reinit` is a function that initializes the weights
+        reinit(self)
+
+    def adapter_transforms(self, inputs: dict):
+        output_dict = {}
+
+        if "image" in inputs:
+            output_dict["image"] = self.encoder_transforms["image"](
+                inputs["image"]
+            )
+
+        if "text" in inputs:
+            output_dict["text"] = self.encoder_transforms["text"](
+                inputs["text"]
+            )
+
+        if "labels" in inputs:
+            output_dict["labels"] = inputs["labels"]
+
+        return output_dict

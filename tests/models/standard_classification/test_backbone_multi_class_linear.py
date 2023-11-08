@@ -1,7 +1,7 @@
 import pytest
 import torch
 import torch.nn as nn
-from numpy import imag
+import torch.nn.functional as F
 
 from gate.menu.core import EncoderNames
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
@@ -21,6 +21,9 @@ from gate.models.backbones.whisper_audio import (
 from gate.models.core import GATEModel
 from gate.models.task_adapters.classification import (
     BackboneWithLinearClassification,
+)
+from gate.models.task_adapters.multi_class_classification import (
+    MultiClassBackboneWithLinear,
 )
 
 data = [
@@ -95,16 +98,17 @@ data = [
 @pytest.mark.parametrize("encoder_class,arg_dict", data)
 def test_with_linear_forward_loss(encoder_class, arg_dict):
     x_dummy = torch.rand(2, 3, 224, 224)
-    y_dummy = torch.randint(0, 100, (2,))
+    y_dummy = F.sigmoid(torch.rand((2, 100)))
 
     encoder = encoder_class(**arg_dict)
-    model = BackboneWithLinearClassification(encoder=encoder, num_classes=100)
+    model = MultiClassBackboneWithLinear(encoder=encoder, num_classes=100)
     transform = model.adapter_transforms
     model = GATEModel(config=model.modality_config, model=model)
     input_dict = transform({"image": x_dummy, "labels": y_dummy})
+    input_dict["return_loss"] = True
 
     output = model.forward(input_dict)
-    assert output["image"]["image"]["logits"].shape == (2, 100)
+    assert output["image"]["image"]["predictions"].shape == (2, 100)
 
     loss = output["image"]["image"]["loss"]
 

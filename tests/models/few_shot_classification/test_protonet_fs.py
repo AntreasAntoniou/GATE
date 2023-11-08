@@ -19,8 +19,8 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.classification import (
-    BackboneWithLinearClassification,
+from gate.models.task_adapters.few_shot_classification.protonet import (
+    PrototypicalNetwork,
 )
 
 data = [
@@ -94,20 +94,34 @@ data = [
 # create an instance of the class with the provided arguments.
 @pytest.mark.parametrize("encoder_class,arg_dict", data)
 def test_with_linear_forward_loss(encoder_class, arg_dict):
-    x_dummy = torch.rand(2, 3, 224, 224)
-    y_dummy = torch.randint(0, 100, (2,))
+    support_set_inputs = torch.rand(2, 2, 3, 224, 224)
+    query_set_inputs = torch.rand(2, 2, 3, 224, 224)
+    support_set_labels = torch.randint(0, 2, (2, 2))
+    query_set_labels: torch.Tensor = torch.randint(0, 2, (2, 2))
 
     encoder = encoder_class(**arg_dict)
-    model = BackboneWithLinearClassification(encoder=encoder, num_classes=100)
+    model = PrototypicalNetwork(encoder=encoder, num_output_features=512)
     transform = model.adapter_transforms
     model = GATEModel(config=model.modality_config, model=model)
-    input_dict = transform({"image": x_dummy, "labels": y_dummy})
+    input_dict = {
+        "image": {
+            "support_set": support_set_inputs,
+            "query_set": query_set_inputs,
+        },
+        "labels": {
+            "support_set": support_set_labels,
+            "query_set": query_set_labels,
+        },
+    }
+
+    input_dict = transform(input_dict)
 
     output = model.forward(input_dict)
-    assert output["image"]["image"]["logits"].shape == (2, 100)
+
+    assert output["image"]["image"]["logits"].shape == (2, 2, 2)
+
+    assert output["image"]["image"]["loss"].item() > 0
 
     loss = output["image"]["image"]["loss"]
-
-    assert loss.item() > 0
 
     loss.backward()

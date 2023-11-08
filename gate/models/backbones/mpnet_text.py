@@ -66,7 +66,7 @@ class ModifiedMPNetModel(MPNetPreTrainedModel):
             head_mask=head_mask,
             inputs_embeds=None,
             output_attentions=None,
-            output_hidden_states=None,
+            output_hidden_states=True,
             return_dict=True,
         )
 

@@ -74,7 +74,7 @@ class ModifiedBertEncoder(BertPreTrainedModel):
             past_key_values=None,
             use_cache=use_cache,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=True,
             return_dict=return_dict,
         )
         sequence_output = encoder_outputs[0]

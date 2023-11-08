@@ -51,7 +51,7 @@ class ModifiedBartModel(BartPretrainedModel):
             head_mask=None,
             inputs_embeds=image,
             output_attentions=None,
-            output_hidden_states=None,
+            output_hidden_states=True,
             return_dict=True,
         )
 
