@@ -114,10 +114,8 @@ def contrastive_loss(logits, is_irregular_shape: bool = False):
 
 
 def get_similarities(
-    modality_a_name: str,
-    modality_b_name: str,
-    modality_a_features: torch.Tensor,
-    modality_b_features: torch.Tensor,
+    image_features: torch.Tensor,
+    text_features: torch.Tensor,
     temperature_parameter: torch.Tensor,
 ) -> torch.Tensor:
     """
@@ -126,37 +124,20 @@ def get_similarities(
         tensor_modality_b: Tensor, shape [seq_len, embedding_dim] or [batch_size, seq_len, embedding_dim]
     """
 
-    modality_a_features = modality_a_features / modality_a_features.norm(
+    image_features = image_features / image_features.norm(
         p=2, dim=-1, keepdim=True
     )
-    modality_b_features = modality_b_features / modality_b_features.norm(
+    text_features = text_features / text_features.norm(
         p=2, dim=-1, keepdim=True
     )
 
-    # if len(modality_a_features.shape) == 3:
-    #     similarity = torch.bmm(
-    #         modality_a_features, modality_b_features.transpose(1, 2)
-    #     )
-    #     similarities = {
-    #         f"{modality_a_name}_to_{modality_b_name}_similarities": similarity
-    #         * torch.clamp(temperature_parameter.exp(), max=100),
-    #         f"{modality_b_name}_to_{modality_a_name}_similarities": similarity.transpose(
-    #             1, 2
-    #         ),
-    #     }
+    similarity = F.linear(image_features, text_features) * torch.clamp(
+        temperature_parameter.exp(), max=100
+    )
 
-    # else:
-    similarity = F.linear(
-        modality_a_features, modality_b_features
-    ) * torch.clamp(temperature_parameter.exp(), max=100)
+    similarities = {f"image_to_text_similarities": similarity}
 
-    similarities = {
-        f"{modality_a_name}_to_{modality_b_name}_similarities": similarity
-    }
-
-    similarities[
-        f"{modality_b_name}_to_{modality_a_name}_similarities"
-    ] = similarity.T
+    similarities[f"text_to_image_similarities"] = similarity.T
 
     return similarities
 

@@ -1,6 +1,7 @@
 import logging
 import math
-from typing import Callable, Dict, Optional
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -9,7 +10,8 @@ import torch.nn.functional as F
 
 from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.core import accuracy_top_k
-from gate.models.core import reinit
+from gate.models.backbones import GATEncoder
+from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
 from gate.models.task_adapters import BaseModule
 
 logger = logging.getLogger(__name__)
@@ -219,13 +221,32 @@ class RegressionMetrics:
         }
 
 
+def get_metric_fn(metric_type, num_classes):
+    metrics = {
+        Metrics.classification: ClassificationMetrics(num_classes=num_classes),
+        Metrics.regression: RegressionMetrics(),
+    }
+
+    return metrics[metric_type]
+
+
+@dataclass
+class Metrics:
+    classification = "classification"
+    regression = "regression"
+    get_metric_fn = get_metric_fn
+
+
 class BackboneWithTemporalTransformerAndLinear(BaseModule):
     def __init__(
         self,
-        model: nn.Module,
-        num_backbone_features: int,
+        encoder: GATEncoder,
         num_classes: int,
-        metric_fn: Optional[Callable] = None,
+        metric_type: str = Metrics.classification,
+        temporal_transformer_nhead: int = 8,
+        temporal_transformer_dim_feedforward: int = 2048,
+        temporal_transformer_dropout: float = 0.0,
+        temporal_transformer_num_layers: int = 6,
     ):
         """Initialize the BackboneWithTemporalTransformerAndLinear module.
 
@@ -236,17 +257,29 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
             metric_fn_dict (Optional[Dict], optional): Dictionary of metric functions. Defaults to None.
         """
         super().__init__()
-        self.model = model
+        self.encoder = encoder
         self.temporal_encoder = VariableSequenceTransformerEncoder(
-            d_model=num_backbone_features,
-            nhead=8,
-            dim_feedforward=2048,
-            dropout=0.0,
-            num_layers=6,
+            d_model=encoder.num_in_features_image,
+            nhead=temporal_transformer_nhead,
+            dim_feedforward=temporal_transformer_dim_feedforward,
+            dropout=temporal_transformer_dropout,
+            num_layers=temporal_transformer_num_layers,
         )
-        self.linear = nn.Linear(num_backbone_features, num_classes)
+        self.linear = nn.Linear(
+            in_features=encoder.num_in_features_image, out_features=num_classes
+        )
         self.num_classes = num_classes
-        self.metric_fn_dict = metric_fn or {}
+        self.metric_fn_dict = Metrics.get_metric_fn(
+            metric_type, num_classes=num_classes
+        )
+
+    @property
+    def modality_config(self):
+        return TargetModalityConfig(video=[SourceModalityConfig(video=True)])
+
+    @property
+    def encoder_transforms(self):
+        return self.encoder.get_transforms()
 
     def init_weights(self):
         """Initialize the weights of the model."""
@@ -337,7 +370,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         if len(input_shape) == 5:
             x = x.view(-1, *input_shape[-3:])
 
-        x = self.model(video=x)["video"]
+        x = self.encoder(video=x)["video"]
         return x["features"]
 
     def _process_through_temporal_encoder(
@@ -352,3 +385,16 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
             torch.Tensor: Processed data.
         """
         return self.temporal_encoder(x)["features"]
+
+    def adapter_transforms(self, inputs: Union[Dict, Any]):
+        if isinstance(inputs, dict):
+            output_dict = {
+                "video": self.encoder_transforms["video"](inputs["video"]),
+            }
+        else:
+            output_dict = {"video": self.encoder_transforms["video"](inputs)}
+
+        inputs.update(output_dict)
+        output_dict = inputs
+
+        return output_dict

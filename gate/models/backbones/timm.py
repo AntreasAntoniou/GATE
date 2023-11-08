@@ -337,3 +337,9 @@ class TimmCLIPAdapter(GATEncoder):
             "text": lambda x: text_transforms_process_multi_type(x),
             "video": lambda x: video_transforms_process_multi_type(x),
         }
+
+    def get_image_encoder(self):
+        return self.vision_model
+
+    def get_text_encoder(self):
+        return self.text_model

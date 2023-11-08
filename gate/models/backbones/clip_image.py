@@ -97,3 +97,9 @@ class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
 
     def get_transforms(self, image_size: int = 224):
         return super().get_transforms(image_size=image_size)
+
+    def get_image_encoder(self):
+        return self.vision_model
+
+    def get_text_encoder(self):
+        return self.text_model

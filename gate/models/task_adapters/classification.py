@@ -9,6 +9,7 @@ from omegaconf import DictConfig
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
+from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
 
@@ -17,22 +18,18 @@ logger = logging.getLogger(__name__)
 
 @configurable(
     group="adapter",
-    name="backbone-with-linear",
+    name="backbone-with-linear-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-class BackboneWithLinear(BaseModule):
+class BackboneWithLinearClassification(BaseModule):
     def __init__(
         self,
-        encoder: nn.Module,
+        encoder: GATEncoder,
         num_classes: int,
         allow_on_model_metric_computation: bool = True,
-        pretrained: bool = True,
     ):
         super().__init__()
         self.encoder = encoder
-
-        if not pretrained:
-            self.encoder.init_weights()
 
         num_in_features = self.encoder.num_in_features_image
         logger.info(f"Building linear layer with {num_in_features} features.")

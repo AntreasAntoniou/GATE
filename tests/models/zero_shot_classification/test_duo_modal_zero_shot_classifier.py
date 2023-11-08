@@ -1,7 +1,5 @@
 import pytest
 import torch
-import torch.nn as nn
-from numpy import imag
 
 from gate.menu.core import EncoderNames
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
@@ -19,8 +17,8 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.classification import (
-    BackboneWithLinearClassification,
+from gate.models.task_adapters.duo_modal_zero_shot_classification import (
+    DuoModalZeroShotModel,
 )
 
 data = [
@@ -94,19 +92,51 @@ data = [
 # create an instance of the class with the provided arguments.
 @pytest.mark.parametrize("encoder_class,arg_dict", data)
 def test_with_linear_forward_loss(encoder_class, arg_dict):
-    x_dummy = torch.rand(2, 3, 224, 224)
-    y_dummy = torch.randint(0, 100, (2,))
+    image = torch.rand(20, 3, 224, 224)
+    text = ["Let's go for a walk"] * 20
 
     encoder = encoder_class(**arg_dict)
-    model = BackboneWithLinearClassification(
-        encoder=encoder, pretrained=False, num_classes=100
-    )
+    model = DuoModalZeroShotModel(encoder=encoder, projection_num_features=512)
     transform = model.adapter_transforms
+
     model = GATEModel(config=model.modality_config, model=model)
-    input_dict = transform({"image": x_dummy, "labels": y_dummy})
+
+    input_dict = transform({"image": image, "text": text})
+
+    input_dict["return_loss"] = True
 
     output = model.forward(input_dict)
-    assert output["image"]["image"]["logits"].shape == (2, 100)
+
+    assert output["image"]["image"]["logits"]["similarities"][
+        "image_to_text_similarities"
+    ].shape == (20, 20)
+
+    loss = output["image"]["image"]["loss"]
+
+    assert loss.item() > 0
+
+    loss.backward()
+
+
+@pytest.mark.parametrize("encoder_class,arg_dict", data)
+def test_with_linear_forward_loss_5D(encoder_class, arg_dict):
+    image = torch.rand(10, 2, 3, 224, 224)
+    text = [["Let's go for a walk"] * 2] * 10
+
+    encoder = encoder_class(**arg_dict)
+    model = DuoModalZeroShotModel(encoder=encoder, projection_num_features=512)
+    transform = model.adapter_transforms
+
+    model = GATEModel(config=model.modality_config, model=model)
+
+    input_dict = transform({"image": image, "text": text})
+
+    input_dict["return_loss"] = True
+
+    output = model.forward(input_dict)
+    assert output["image"]["image"]["logits"]["similarities"][
+        "image_to_text_similarities"
+    ].shape == (20, 20)
 
     loss = output["image"]["image"]["loss"]
 
