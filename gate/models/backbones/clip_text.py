@@ -12,6 +12,7 @@ from transformers.models.clip.modeling_clip import (
     _make_causal_mask,
 )
 
+from gate.boilerplate.decorators import configurable
 from gate.models.backbones import (
     Modality,
     TextProcessor,
@@ -98,6 +99,10 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
+@configurable(
+    group="encoder",
+    name="clip-text",
+)
 class CLIPTextAdapter(
     VisionTextGATEAdapter,
     nn.Module,

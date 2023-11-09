@@ -74,7 +74,6 @@ class BartModelPaths:
 @configurable(
     group="encoder",
     name="bart",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class BartAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(

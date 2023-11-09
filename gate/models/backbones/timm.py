@@ -204,7 +204,6 @@ class CLIPModelPaths:
 @configurable(
     group="encoder",
     name="timm",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class TimmCLIPAdapter(GATEncoder):
     def __init__(

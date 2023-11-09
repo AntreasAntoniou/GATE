@@ -11,6 +11,7 @@ from transformers.models.whisper.modeling_whisper import (
     WhisperPreTrainedModel,
 )
 
+from gate.boilerplate.decorators import configurable
 from gate.models.backbones import (
     GATEncoder,
     Modality,
@@ -89,6 +90,10 @@ class WhisperModelPaths:
     base: str = "openai/whisper-base"
 
 
+@configurable(
+    group="encoder",
+    name="whisper",
+)
 class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,

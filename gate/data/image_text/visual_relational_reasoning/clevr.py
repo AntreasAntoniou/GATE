@@ -59,16 +59,14 @@ yes_no_dict = {"no": 0, "yes": 1}
 
 material_dict = {"metal": 0, "rubber": 1}
 
-num_classes: Dict = (
-    {
-        "colour": len(colour_dict),
-        "shape": len(shape_dict),
-        "count": len(count_dict),
-        "size": len(size_dict),
-        "yes_no": len(yes_no_dict),
-        "material": len(material_dict),
-    },
-)
+num_classes: Dict = {
+    "colour": len(colour_dict),
+    "shape": len(shape_dict),
+    "count": len(count_dict),
+    "size": len(size_dict),
+    "yes_no": len(yes_no_dict),
+    "material": len(material_dict),
+}
 
 
 class CLEVRClassificationDataset(Dataset):

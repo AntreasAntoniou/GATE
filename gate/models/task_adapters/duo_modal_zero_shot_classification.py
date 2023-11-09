@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 @configurable(
     group="adapter",
     name="duo-modal-zero-shot-classifier",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class DuoModalZeroShotModel(BaseModule):
     def __init__(

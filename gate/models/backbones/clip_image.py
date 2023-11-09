@@ -24,8 +24,7 @@ class CLIPModelPaths:
 
 @configurable(
     group="encoder",
-    name="clip",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+    name="clip-image",
 )
 class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(

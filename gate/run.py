@@ -11,7 +11,6 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 import logging
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
@@ -22,6 +21,7 @@ from rich.text import Text
 from rich.traceback import install
 from torch import nn
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -114,11 +114,13 @@ def run(cfg: Any) -> None:
     global_step = setup(ckpt_path, cfg)
 
     encoder = instantiate(cfg.encoder)
-    model = instantiate(cfg.adapter, encoder=encoder)
+    task_adapted_model = instantiate(cfg.adapter, encoder=encoder)
+    transform: Optional[Callable] = task_adapted_model.adapter_transforms
 
-    model: GATEModel = encoder.model
+    model: GATEModel = GATEModel(
+        config=task_adapted_model.modality_config, model=task_adapted_model
+    )
     model = accelerator.prepare(model)
-    transform: Optional[Callable] = model.adapter_transforms
 
     pretty_print_parameters(model)
 

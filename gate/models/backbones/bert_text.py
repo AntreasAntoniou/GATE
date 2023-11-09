@@ -99,7 +99,6 @@ class BertModelPaths:
 @configurable(
     group="encoder",
     name="bert",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class BertAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(

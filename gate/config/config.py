@@ -49,7 +49,8 @@ class Config:
     # Defaults for these are provided in the collect_config_store method,
     # but will be often overridden at command line
 
-    model: Any = MISSING
+    encoder: Any = MISSING
+    adapter: Any = MISSING
     dataset: Any = MISSING
     trainer: Any = MISSING
     evaluator: Any = MISSING
@@ -252,7 +253,8 @@ def collect_config_store():
             dict(learner="default"),
             dict(optimizer="adamw"),
             dict(scheduler="plateu"),
-            dict(model="clip-classification"),
+            dict(encoder="clip-image"),
+            dict(adapter="backbone-with-linear-classifier"),
             dict(dataset="cifar100"),
             dict(trainer="image_classification"),
             dict(evaluator="image_classification"),

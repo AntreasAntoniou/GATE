@@ -9,6 +9,7 @@ from transformers.models.mpnet.modeling_mpnet import (
     MPNetPreTrainedModel,
 )
 
+from gate.boilerplate.decorators import configurable
 from gate.models.backbones import (
     GATEncoder,
     Modality,
@@ -86,6 +87,10 @@ class MPNetModelPaths:
     base: str = "sentence-transformers/all-mpnet-base-v2"
 
 
+@configurable(
+    group="encoder",
+    name="mpnet",
+)
 class MPNetAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,

@@ -13,6 +13,7 @@ from transformers.models.wav2vec2.modeling_wav2vec2 import (
     Wav2Vec2PreTrainedModel,
 )
 
+from gate.boilerplate.decorators import configurable
 from gate.models.backbones import (
     GATEncoder,
     Modality,
@@ -92,6 +93,10 @@ class Wav2Vec2ModelPaths:
     base: str = "jonatasgrosman/wav2vec2-large-xlsr-53-english"
 
 
+@configurable(
+    group="encoder",
+    name="wav2vecv2",
+)
 class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
