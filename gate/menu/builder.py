@@ -97,6 +97,7 @@ def generate_commands(
                         num_workers=num_workers,
                         gpu_ids=gpu_ids,
                         lr=lr,
+                        weight_decay=model_config.weight_decay,
                         trainer=trainer,
                         evaluator=evaluator,
                         seed=seed,

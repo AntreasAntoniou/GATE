@@ -1,5 +1,6 @@
 # Complete Python code with the requested adjustments to make 'accelerate_launch_path' and 'gate_run_path' accessible at the 'get_commands' level.
 
+import os
 from typing import Dict, List, Union
 
 from rich import print
@@ -19,6 +20,7 @@ def build_command(
     evaluator="image_classification",
     model_args: str = "",
     lr: float = 1e-5,
+    weight_decay: float = 0.01,
     seed: int = 42,
     accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "/app/gate/run.py",
@@ -28,9 +30,7 @@ def build_command(
     """
     Build a command for running an experiment. 🛠️
     """
-    accelerate_launch_command = (
-        f"{accelerate_launch_path} --mixed_precision=bf16"
-    )
+    accelerate_launch_command = f"{accelerate_launch_path} --mixed_precision={os.environ.get('MIXED_PRECISION', 'bf16')}"
     if gpu_ids:
         accelerate_launch_command += f" --gpu_ids={gpu_ids}"
 
@@ -38,7 +38,7 @@ def build_command(
 
     command_template = (
         f"{accelerate_launch_command} {gate_run_command} "
-        f"exp_name={exp_name} model={model_name} {model_args} dataset={dataset_name} optimizer.lr={lr} optimizer.weight_decay=0.01 "
+        f"exp_name={exp_name} model={model_name} {model_args} dataset={dataset_name} optimizer.lr={lr} optimizer.weight_decay={weight_decay} "
         f"trainer={trainer} evaluator={evaluator} num_workers={num_workers} "
         f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size} "
         f"train_iters={train_iters} learner.evaluate_every_n_steps={evaluate_every_n_steps}"
@@ -52,6 +52,7 @@ def generate_commands(
     dataset_dict: Dict[str, str],
     model_dict: Dict[str, Dict[str, str]],
     lr_dict: Dict[str, float],
+    weight_decay: float = 0.01,
     num_workers: int = 12,
     gpu_ids: Union[str, None] = None,
     train_batch_size: int = 1,
@@ -84,6 +85,7 @@ def generate_commands(
                     num_workers=num_workers,
                     model_args=model_args,
                     lr=lr_dict.get(model_key, 1e-5),
+                    weight_decay=weight_decay,
                     seed=seed,
                     gpu_ids=gpu_ids,
                     train_batch_size=train_batch_size,
@@ -101,6 +103,7 @@ def get_commands(
     dataset_dict: Dict[str, str],
     model_dict: Dict[str, Dict[str, str]],
     lr_dict: Dict[str, float],
+    weight_decay: float = 0.01,
     num_workers: int = 12,
     gpu_ids: Union[str, None] = None,
     train_batch_size: int = 1,
@@ -117,6 +120,7 @@ def get_commands(
         dataset_dict=dataset_dict,
         model_dict=model_dict,
         lr_dict=lr_dict,
+        weight_decay=weight_decay,
         gpu_ids=gpu_ids,
         train_batch_size=train_batch_size,
         eval_batch_size=eval_batch_size,

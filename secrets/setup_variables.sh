@@ -7,7 +7,7 @@ export KAGGLE_USERNAME="antreasantoniou"
 export KAGGLE_KEY="d14aab63e71334cfa118bd5251bf85da"
 
 export DATASET_DIR="/disk/scratch_fast1/data/"
-export PROJECT_DIR="/disk/scratch_fast1/aantoni2/experiments/"
+export PROJECT_DIR="/disk/scratch_fast2/aantoni2/experiments/"
 
 export EXPERIMENT_NAME=gate-dev-0-8-12
 export HF_USERNAME="Antreas"

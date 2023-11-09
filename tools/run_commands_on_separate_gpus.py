@@ -119,6 +119,11 @@ def main(
         # If data is being piped to this script, read stdin
         command_dict = parse_commands_input(sys.stdin.read())
 
+    # save the commands in a txt file
+    with open(f"{os.environ['LOG_DIR']}/commands.txt", "w") as f:
+        for command_name, command in command_dict.items():
+            f.write(f"{command_name}: {command}\n")
+
     # Now, you can pass the list of commands and other arguments to your function
     run_commands(
         command_dict,
