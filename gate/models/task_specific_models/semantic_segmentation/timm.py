@@ -7,6 +7,7 @@ from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import (
+    HYDRATED_DATASET_INGORE_INDEX,
     HYDRATED_IMAGE_SIZE,
     HYDRATED_NUM_CLASSES,
     HYDRATED_TASK_NAME,
@@ -45,7 +46,7 @@ def build_model(
     num_classes: int = 10,
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
-    ignore_index: int = HYDRA_DATASET_IGNORE_INDEX,
+    ignore_index: int = HYDRATED_DATASET_INGORE_INDEX,
     background_loss_weight: float = 0.01,
     loss_type_id: str = "default",
 ) -> ModelAndTransform:

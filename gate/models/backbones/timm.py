@@ -212,7 +212,7 @@ class TimmCLIPAdapter(nn.Module):
         ]
         self.image_num_features = self.vision_model_output_shape[2]
         self.text_num_features = self.clip.text_embed_dim
-        self.image_instance_norm = None
+        # self.image_instance_norm = None
 
     def init_weights(self):
         reinit(self)
@@ -243,11 +243,11 @@ class TimmCLIPAdapter(nn.Module):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
-            if self.image_instance_norm is None:
-                self.image_instance_norm = nn.InstanceNorm2d(
-                    image.shape[1], affine=True
-                )
-            image = self.image_instance_norm(image)
+            # if self.image_instance_norm is None:
+            #     self.image_instance_norm = nn.InstanceNorm2d(
+            #         image.shape[1], affine=True
+            #     )
+            # image = self.image_instance_norm(image)
             output_dict["image"] = self.vision_model.forward(image)
 
         if video is not None:
