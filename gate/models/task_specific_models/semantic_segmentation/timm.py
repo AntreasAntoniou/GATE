@@ -64,7 +64,7 @@ def build_model(
         img_size=image_size,
     )
 
-    model = VolumeSegmentationAdapter(
+    model = SegmentationAdapter(
         encoder_model=backbone_model,
         decoder_embed_dim=backbone_model.image_num_features,
         num_classes=num_classes,
