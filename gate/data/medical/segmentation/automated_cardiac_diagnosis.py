@@ -215,6 +215,7 @@ def build_gate_dataset(
     num_classes=len(CLASSES),
     image_size=512,
     target_image_size=256,
+    ignore_index=-1,
 ) -> dict:
     train_transforms = DatasetTransforms(
         512, target_image_size, initial_size=1024, crop_size=image_size

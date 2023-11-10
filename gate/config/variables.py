@@ -39,6 +39,7 @@ WANDB_OFFLINE_MODE = get_env_var("WANDB_OFFLINE_MODE", False)
 HYDRATED_EXPERIMENT_NAME = "${exp_name}"
 HYDRATED_MODEL_CONFIG = "${model}"
 HYDRATED_DATASET_CONFIG = "${dataset}"
+HYDRATED_DATASET_INGORE_INDEX = "${dataset.ignore_index}"
 HYDRATED_LABEL_IDX_TO_CLASS_NAME = "${dataset.label_idx_to_class_name}"
 HYDRATED_NUM_CLASSES = "${dataset.num_classes}"
 HYDRATED_TASK_NAME = "${dataset.task_name}"

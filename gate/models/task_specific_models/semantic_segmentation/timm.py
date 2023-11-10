@@ -45,7 +45,7 @@ def build_model(
     num_classes: int = 10,
     image_size: int = 512,
     decoder_layer_type: str = "transformer",
-    ignore_index: int = 0,
+    ignore_index: int = HYDRA_DATASET_IGNORE_INDEX,
     background_loss_weight: float = 0.01,
     loss_type_id: str = "default",
 ) -> ModelAndTransform:

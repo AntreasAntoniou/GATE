@@ -263,6 +263,7 @@ def build_gate_dataset(
     task_name: str = "task01braintumour",
     image_size: int = 512,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     train_transforms = DatasetTransforms(
         512,
@@ -320,6 +321,7 @@ def build_gate_md_brain_tumour(
     num_classes: int = len(CLASSES_DICT[TaskOptions.BrainTumour.value]),
     task_name=TaskOptions.BrainTumour.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -342,6 +344,7 @@ def build_gate_md_heart(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Heart.value]),
     task_name=TaskOptions.Heart.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -364,6 +367,7 @@ def build_gate_md_liver(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Liver.value]),
     task_name=TaskOptions.Liver.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -386,6 +390,7 @@ def build_gate_md_hippocampus(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Hippocampus.value]),
     task_name=TaskOptions.Hippocampus.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -408,6 +413,7 @@ def build_gate_md_prostate(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Prostate.value]),
     task_name=TaskOptions.Prostate.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -430,6 +436,7 @@ def build_gate_md_lung(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Lung.value]),
     task_name=TaskOptions.Lung.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -452,6 +459,7 @@ def build_gate_md_pancreas(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Pancreas.value]),
     task_name=TaskOptions.Pancreas.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -474,6 +482,7 @@ def build_gate_md_hepatic_vessel(
     num_classes: int = len(CLASSES_DICT[TaskOptions.HepaticVessel.value]),
     task_name=TaskOptions.HepaticVessel.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -496,6 +505,7 @@ def build_gate_md_spleen(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Spleen.value]),
     task_name=TaskOptions.Spleen.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -518,6 +528,7 @@ def build_gate_md_colon(
     num_classes: int = len(CLASSES_DICT[TaskOptions.Colon.value]),
     task_name=TaskOptions.Colon.value,
     target_image_size: int = 256,
+    ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,

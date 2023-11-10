@@ -203,6 +203,7 @@ def build_gate_dataset(
     num_classes=len(CLASSES),
     image_size=1024,
     target_image_size=256,
+    ignore_index=0,
 ) -> dict:
     input_transforms = KeySelectorTransforms(
         initial_size=2048,
