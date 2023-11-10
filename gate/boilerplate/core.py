@@ -438,7 +438,7 @@ class Learner(nn.Module):
                 self.train_iters = len(train_dataloader)
 
             with tqdm(
-                initial=self.step_idx, total=self.train_iters
+                initial=self.step_idx, total=self.train_iters, smoothing=0.0
             ) as pbar_steps:
                 while self.step_idx < self.train_iters:
                     if self.limit_train_iters is not None:
@@ -499,7 +499,9 @@ class Learner(nn.Module):
         if val_dataloader is not None:
             self.start_validation()
 
-            with tqdm(total=len(val_dataloader)) as pbar_dataloaders:
+            with tqdm(
+                total=len(val_dataloader), smoothing=0.0
+            ) as pbar_dataloaders:
                 pre_batch_time = time.time()
                 for batch_idx, batch in enumerate(val_dataloader):
                     if self.limit_val_iters is not None:
@@ -534,7 +536,9 @@ class Learner(nn.Module):
         if test_dataloader is not None:
             self.start_testing(prefix=prefix)
 
-            with tqdm(total=len(test_dataloader)) as pbar_dataloaders:
+            with tqdm(
+                total=len(test_dataloader), smoothing=0.0
+            ) as pbar_dataloaders:
                 for batch_idx, batch in enumerate(test_dataloader):
                     self.testing_step(
                         model=model,

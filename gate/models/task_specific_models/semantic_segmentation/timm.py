@@ -22,6 +22,7 @@ from gate.models.task_adapters.semantic_segmentation import (
     SegmentationAdapter,
     SegmentationAdapterOptions,
     SegmentationLossOptions,
+    VolumeSegmentationAdapter,
 )
 
 # modality_a_model: nn.Module,
@@ -63,7 +64,7 @@ def build_model(
         img_size=image_size,
     )
 
-    model = SegmentationAdapter(
+    model = VolumeSegmentationAdapter(
         encoder_model=backbone_model,
         decoder_embed_dim=backbone_model.image_num_features,
         num_classes=num_classes,

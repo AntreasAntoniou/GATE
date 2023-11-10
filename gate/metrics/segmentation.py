@@ -32,7 +32,7 @@ class IoUMetric:
     def __init__(
         self,
         num_classes: int,
-        ignore_index: int = 255,
+        ignore_index: Optional[int] = None,
         class_idx_to_name: Optional[dict] = None,
     ):
         self.num_classes = num_classes
@@ -44,16 +44,37 @@ class IoUMetric:
         self.total_area_union = torch.zeros(num_classes)
         self.total_area_pred = torch.zeros(num_classes)
         self.total_area_label = torch.zeros(num_classes)
+        print(self)
+
+    def __repr__(self):
+        return (
+            f"IoUMetric(num_classes={self.num_classes}, "
+            f"ignore_index={self.ignore_index}, "
+            f"class_idx_to_name={self.class_idx_to_name})"
+        )
 
     def update(self, pred: torch.Tensor, label: torch.Tensor):
+        pred = pred.clone()
+        label = label.clone()
         if len(label.shape) == 2:
             label = label.unsqueeze(0)
-        mask = label != self.ignore_index
-        logger.debug(
-            f"mask: {mask.shape}, pred: {pred.shape}, label: {label.shape}"
-        )
-        pred = pred[mask].cpu()
-        label = label[mask].cpu()
+
+        if self.ignore_index:
+            mask = label != self.ignore_index
+            pred = pred[mask].cpu()
+            label = label[mask].cpu()
+            # print(
+            #     f"Ignore mask: {mask.shape}, pred: {pred.shape}, label: {label.shape}"
+            # )
+
+        #     logger.debug(
+        #         f"mask: {mask.shape}, pred: {pred.shape}, label: {label.shape}"
+        #     )
+        # print("len(pred) : ", len(pred), "len label : ", len(label))
+        # print(
+        #     f"min pred : {torch.min(pred.view(-1), dim=0)}, max pred : {torch.max(pred.view(-1), dim=0)}, min label : {torch.min(label.view(-1), dim=0)}, max label : {torch.max(label.view(-1), dim=0)}"
+        # )
+
         # unique_preds = torch.unique(pred)
         # unique_labels = torch.unique(label)
 
@@ -75,7 +96,6 @@ class IoUMetric:
         self.total_area_union += area_union.float()
         self.total_area_label += area_label.float()
         self.total_updates += 1
-        # print(f"total_updates: {self.total_updates}")
 
     def reset(self):
         self.total_area_intersect = torch.zeros(self.num_classes)
