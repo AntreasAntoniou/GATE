@@ -213,7 +213,7 @@ class SegmentationAdapter(nn.Module):
 
         self.iou_metric_complete = IoUMetric(
             num_classes=num_classes,
-            ignore_index=None,
+            ignore_index=False,
             class_idx_to_name={
                 i: name for i, name in enumerate(self.class_names)
             },

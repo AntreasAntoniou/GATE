@@ -6,28 +6,11 @@ from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
 from gate.metrics.segmentation import IoUMetric
 
 # Creating dummy data for testing
-num_classes = 21
-ignore_index = 255
-preds = torch.randint(0, num_classes, (8, 512, 512))
-labels = torch.randint(0, num_classes, (8, 512, 512))
+num_classes = 255
+ignore_index = 0
+preds = torch.randint(1, num_classes, (8, 512, 512))
+labels = torch.randint(1, num_classes, (8, 512, 512))
 labels[:, :100, :100] = ignore_index  # Adding some ignore_index for testing
-
-
-# Example usage
-# Initialize with random predictions and labels
-pred = torch.randint(0, 20, (100, 100))
-label = torch.randint(0, 20, (100, 100))
-
-class_idx_to_name = {
-    i: f"class_{i}" for i in range(20)
-}  # Example class index to name mapping
-iou_metric = IoUMetric(num_classes=20, class_idx_to_name=class_idx_to_name)
-iou_metric.update(pred, label)  # Update with predictions and labels
-metrics = (
-    iou_metric.compute_metrics()
-)  # Get the computed metrics with class names
-
-print(metrics)
 
 
 # Helper function to compute metrics using mmseg's IoUMetric
@@ -51,11 +34,11 @@ def compute_metrics_with_mmseg(preds, labels, num_classes, ignore_index):
     return metrics["mIoU"]
 
 
-@pytest.mark.parametrize("preds, labels", [(preds, labels)])
-def test_iou_metrics(preds, labels):
-    num_classes = 21
-    ignore_index = 255
-
+@pytest.mark.parametrize(
+    "preds, labels, ignore_index",
+    [(preds, labels, ignore_index), (preds, labels, None)],
+)
+def test_iou_metrics(preds, labels, ignore_index):
     mmseg_iou = compute_metrics_with_mmseg(
         preds, labels, num_classes, ignore_index
     )
@@ -73,25 +56,11 @@ def test_iou_metrics(preds, labels):
     your_metric.pretty_print()
     your_iou = metrics["mIoU"]
 
+    # two decimal places rounding of your_iou
+    your_iou = round(your_iou, 2)
+
     print(f"metrics = {metrics}")
 
     assert np.isclose(
         mmseg_iou, your_iou, rtol=1e-2
     ), f"mmseg: {mmseg_iou}, yours: {your_iou}"
-
-
-# Creating dummy data for testing
-if __name__ == "__main__":
-    num_classes = 21
-    ignore_index = 255
-
-    # Creating multiple batches of dummy data
-    preds = [torch.randint(0, num_classes, (1, 512, 512)) for _ in range(5)]
-    labels = [torch.randint(0, num_classes, (1, 512, 512)) for _ in range(5)]
-
-    for label in labels:
-        label[
-            0, :100, :100
-        ] = ignore_index  # Adding some ignore_index for testing
-
-    pytest.main([__file__])

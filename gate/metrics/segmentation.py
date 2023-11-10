@@ -37,6 +37,7 @@ class IoUMetric:
     ):
         self.num_classes = num_classes
         self.ignore_index = ignore_index
+
         self.class_idx_to_name = class_idx_to_name
         self.total_updates = 0
 
@@ -54,42 +55,23 @@ class IoUMetric:
         )
 
     def update(self, pred: torch.Tensor, label: torch.Tensor):
-        pred = pred.clone()
-        label = label.clone()
-        if len(label.shape) == 2:
-            label = label.unsqueeze(0)
+        pred = pred.clone().cpu().view(-1)
+        label = label.clone().cpu().view(-1)
 
-        if self.ignore_index:
+        if self.ignore_index is not None:
             mask = label != self.ignore_index
-            pred = pred[mask].cpu()
-            label = label[mask].cpu()
-            # print(
-            #     f"Ignore mask: {mask.shape}, pred: {pred.shape}, label: {label.shape}"
-            # )
-
-        #     logger.debug(
-        #         f"mask: {mask.shape}, pred: {pred.shape}, label: {label.shape}"
-        #     )
-        # print("len(pred) : ", len(pred), "len label : ", len(label))
-        # print(
-        #     f"min pred : {torch.min(pred.view(-1), dim=0)}, max pred : {torch.max(pred.view(-1), dim=0)}, min label : {torch.min(label.view(-1), dim=0)}, max label : {torch.max(label.view(-1), dim=0)}"
-        # )
-
-        # unique_preds = torch.unique(pred)
-        # unique_labels = torch.unique(label)
-
-        # print(f"unique_preds: {unique_preds}, unique_labels: {unique_labels}")
-        # print(
-        #     f"total unique_preds: {len(unique_preds)}, total unique_labels: {len(unique_labels)}"
-        # )
+            pred = pred[mask]
+            label = label[mask]
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
+
         area_union = (
             torch.bincount(pred, minlength=self.num_classes)
             + torch.bincount(label, minlength=self.num_classes)
             - area_intersect
         )
+
         area_label = torch.bincount(label, minlength=self.num_classes)
 
         self.total_area_intersect += area_intersect.float()
