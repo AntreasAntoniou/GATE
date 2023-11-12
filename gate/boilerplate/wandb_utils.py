@@ -8,8 +8,9 @@ import PIL
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
-import wandb
 from PIL import Image
+
+import wandb
 
 logger = logging.getLogger(name=__name__)
 
@@ -67,36 +68,20 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = normalize_image(volumes.float()).cpu()
-    predicted_volumes_np = logits.long().cpu()
-    label_volumes_np = labels.long().cpu()
-
-    if len(input_volumes_np.shape) == 4:
-        input_volumes_np = input_volumes_np.unsqueeze(0)
-    if len(predicted_volumes_np.shape) == 3:
-        predicted_volumes_np = predicted_volumes_np.unsqueeze(0)
-    if len(label_volumes_np.shape) == 3:
-        label_volumes_np = label_volumes_np.unsqueeze(0)
-
-    for data, name in zip(
-        [input_volumes_np, predicted_volumes_np, label_volumes_np],
-        ["Input", "Predicted", "Label"],
-    ):
-        if data is input_volumes_np:
-            assert (
-                len(data.shape) == 5
-            ), f"{name} volumes should be 5D in the shape of (b, s, c, h, w)"
-        else:
-            assert (
-                len(data.shape) == 4
-            ), f"{name} volumes should be 4D in the shape of (b, s, h, w)"
+    input_volumes = normalize_image(volumes.float()).cpu()
+    predicted_volumes = logits.long().cpu()
+    label_volumes = labels.long().cpu()
 
     # If no label description is provided, use a default mapping of indices to themselves
     if label_idx_to_description is None:
-        unique_labels = np.unique(label_volumes_np)
+        unique_labels = np.unique(label_volumes)
         label_idx_to_description = {
             label: str(label) for label in unique_labels
         }
+
+    print(
+        f"unique labels: {torch.unique(label_volumes)}, frequency: {torch.bincount(label_volumes.flatten())}"
+    )
 
     # Define a helper function to create a wandb.Image with masks
     def wb_mask(bg_img, pred_mask, true_mask):
@@ -114,21 +99,21 @@ def log_wandb_3d_volumes_and_masks(
             },
         )
 
-    image_mask_list = []
     # Log volumes to wandb
-    for i in range(input_volumes_np.shape[0]):
-        bg_image = (
-            create_montage(input_volumes_np[i]).permute([2, 0, 1]).float()
-        )
-        prediction_mask = create_montage(predicted_volumes_np[i]).long()
-        true_mask = create_montage(label_volumes_np[i]).long()
 
-        bg_image = T.ToPILImage()(bg_image)
-        prediction_mask = prediction_mask.numpy()
-        true_mask = true_mask.numpy()
-        image_mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
+    bg_image = create_montage(input_volumes).permute([2, 0, 1]).float()
+    prediction_mask = create_montage(predicted_volumes).long().squeeze()
+    true_mask = create_montage(label_volumes).long().squeeze()
 
-    return {f"{prefix}/medical_segmentation_episode": image_mask_list}
+    bg_image = T.ToPILImage()(bg_image)
+    prediction_mask = prediction_mask.cpu().numpy()
+    true_mask = true_mask.cpu().numpy()
+
+    return {
+        f"{prefix}/medical_segmentation_episode": [
+            wb_mask(bg_image, prediction_mask, true_mask)
+        ]
+    }
 
 
 def log_wandb_masks(
@@ -189,8 +174,9 @@ from typing import Dict, List, Union
 
 import torch
 import torchvision.transforms as T
-import wandb
 from PIL import Image
+
+import wandb
 
 
 def log_wandb_image_classification(
@@ -293,9 +279,9 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
 
     # Create an empty array to hold the montage
     montage = (
-        np.empty((h_new * h, w_new * w, c))
+        torch.empty((h_new * h, w_new * w, c))
         if c is not None
-        else np.empty((h_new * h, w_new * w))
+        else torch.empty((h_new * h, w_new * w))
     )
 
     # Fill the montage with slices from the input array
@@ -305,9 +291,9 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             if idx < s:
                 if c is not None:
                     if isinstance(arr, torch.Tensor):
-                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
-                            arr[idx].permute(1, 2, 0).numpy()
-                        )
+                        montage[
+                            i * h : (i + 1) * h, j * w : (j + 1) * w
+                        ] = arr[idx].permute(1, 2, 0)
                     else:
                         montage[
                             i * h : (i + 1) * h, j * w : (j + 1) * w
@@ -319,7 +305,9 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             else:
                 # Fill any extra entries with empty arrays
                 montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
-                    np.zeros((h, w, c)) if c is not None else np.zeros((h, w))
+                    torch.zeros((h, w, c))
+                    if c is not None
+                    else torch.zeros((h, w))
                 )
 
     return torch.tensor(montage)

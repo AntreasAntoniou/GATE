@@ -1,6 +1,7 @@
 import functools
 import json
 import logging
+import traceback
 import warnings
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
@@ -182,8 +183,11 @@ def retry_on_exception(func):
         try:
             return func(self, index)
         except Exception as e:
-            logger.warn(f"Error at index {index}: {e}")
-            print(f"Error at index {index}: {e}")
+            tb = (
+                traceback.format_exc()
+            )  # This gets the full traceback as a string
+            logger.warning(f"Error at index {index}: {e}\n{tb}")
+            print(f"Error at index {index}: {e}\n{tb}")
 
     return wrapper
 

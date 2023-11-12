@@ -5,11 +5,14 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
+import monai
 import numpy as np
 import torch
 import torchvision.transforms as T
 from datasets import concatenate_datasets
+from torch.utils.data import Dataset, random_split
 
+from gate import data
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
@@ -23,19 +26,20 @@ from gate.data.transforms.segmentation import (
 )
 
 logger = logging.getLogger(__name__)
+logging.getLogger("monai").setLevel(logging.CRITICAL)
 
 
 class TaskOptions(Enum):
-    BrainTumour: str = "Task01BrainTumour".lower()
-    Heart: str = "Task02Heart".lower()
-    Liver: str = "Task03Liver".lower()
-    Hippocampus: str = "Task04Hippocampus".lower()
-    Prostate: str = "Task05Prostate".lower()
-    Lung: str = "Task06Lung".lower()
-    Pancreas: str = "Task07Pancreas".lower()
-    HepaticVessel: str = "Task08HepaticVessel".lower()
-    Spleen: str = "Task09Spleen".lower()
-    Colon: str = "Task10Colon".lower()
+    BrainTumour: str = "Task01_BrainTumour"
+    Heart: str = "Task02_Heart"
+    Liver: str = "Task03_Liver"
+    Hippocampus: str = "Task04_Hippocampus"
+    Prostate: str = "Task05_Prostate"
+    Lung: str = "Task06_Lung"
+    Pancreas: str = "Task07_Pancreas"
+    HepaticVessel: str = "Task08_HepaticVessel"
+    Spleen: str = "Task09_Spleen"
+    Colon: str = "Task10_Colon"
 
 
 class DatasetName(Enum):
@@ -87,25 +91,37 @@ def build_dataset(
         f"Loading Medical Decathlon {task_name} dataset, will download to {data_dir} if necessary."
     )
 
-    dataset = datasets.load_dataset(
-        "GATE-engine/medical_decathlon",
-        split=f"training.{task_name}",
-        cache_dir=data_dir,
-        num_proc=mp.cpu_count(),
-        keep_in_memory=False,
+    dataset = monai.apps.DecathlonDataset(
+        root_dir=data_dir,
+        task=task_name,
+        section="training",
+        download=True,
+        seed=0,
+        val_frac=0.0,
+        num_workers=mp.cpu_count(),
+        progress=True,
+        cache_num=0,
+        cache_rate=0.0,
+        copy_cache=False,
+        as_contiguous=True,
+        runtime_cache=False,
     )
+
     # create a random 90-10 train-val split
 
-    val_split = 0.1  # Fraction for the validation set (e.g., 10%)
-    test_split = 0.1  # Fraction for the test set (e.g., 10%)
+    dataset_length = len(dataset)
+    val_split = 0.2  # Fraction for the validation set (e.g., 10%)
 
-    train_val_test_data = dataset.train_test_split(
-        test_size=val_split + test_split
+    # Calculate the number of samples for train and validation sets
+    val_test_length = int(dataset_length * val_split)
+    val_length = val_test_length // 2
+    test_length = val_test_length - val_length
+    train_length = dataset_length - val_test_length
+
+    # Split the dataset into train and validation sets using the generator
+    train_data, val_data, test_data = random_split(
+        dataset, [train_length, val_length, test_length]
     )
-    train_data = train_val_test_data["train"]
-    val_test_data = train_val_test_data["test"].train_test_split(0.5)
-    val_data = val_test_data["train"]
-    test_data = val_test_data["test"]
 
     dataset_dict = {
         "train": train_data,
@@ -128,7 +144,6 @@ class DatasetTransforms:
     def __init__(
         self,
         input_size: Union[int, List[int]],
-        target_size: Union[int, List[int]],
         initial_size: Union[int, List[int]] = 1024,
         label_size: Union[int, List[int]] = 256,
         crop_size: Optional[Union[int, List[int]]] = None,
@@ -140,15 +155,11 @@ class DatasetTransforms:
             or isinstance(initial_size, list)
             else (initial_size, initial_size)
         )
+
         self.input_size = (
             input_size
             if isinstance(input_size, tuple) or isinstance(input_size, list)
             else (input_size, input_size)
-        )
-        self.target_size = (
-            target_size
-            if isinstance(target_size, tuple) or isinstance(target_size, list)
-            else (target_size, target_size)
         )
 
         self.label_size = (
@@ -185,8 +196,15 @@ class DatasetTransforms:
             if isinstance(item["label"], list)
             else item["label"]
         )
-        image = image.permute(3, 0, 1, 2)[:, :3]
-        annotation = annotation.permute(0, 3, 1, 2)[0]
+
+        if len(image.shape) == 4:
+            image = image.permute(2, 3, 0, 1)
+            annotation = annotation.permute(2, 0, 1)
+        elif len(image.shape) == 3:
+            image = image.permute(2, 0, 1).unsqueeze(1)
+            annotation = annotation.permute(2, 0, 1)
+
+        print(f"input shapes {image.shape}, {annotation.shape}")
 
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
@@ -197,59 +215,45 @@ class DatasetTransforms:
         annotation = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
             interpolation=T.InterpolationMode.NEAREST_EXACT,
-            antialias=True,
+            antialias=False,
         )(annotation)
 
-        image_list = []
-        annotation_list = []
-        image = image.reshape(-1, image.shape[-2], image.shape[-1])
-        annotation = annotation.reshape(
-            -1, annotation.shape[-2], annotation.shape[-1]
-        )
+        annotation = annotation.unsqueeze(1)
 
-        for image_item, annotation_item in zip(image, annotation):
-            image_item = image_item.unsqueeze(0)
-            annotation_item = annotation_item.unsqueeze(0)
+        print(f"pre crop shapes {image.shape}, {annotation.shape}")
 
-            if self.crop_size is not None:
-                image_item, annotation_item = self.crop_transform(
-                    image_item, annotation_item
-                )
+        # if self.crop_size is not None:
+        #     image, annotation = self.crop_transform(image, annotation)
 
-            if self.med_transforms is not None:
-                image_item = self.med_transforms(image_item, annotation_item)
+        print(f"post crop shapes {image.shape}, {annotation.shape}")
 
-            image_item = T.Resize(
-                (self.input_size[0], self.input_size[1]),
-                interpolation=T.InterpolationMode.BICUBIC,
-                antialias=True,
-            )(image_item)
+        # if self.med_transforms is not None:
+        #     image, annotation = self.med_transforms(image, annotation)
 
-            annotation_item = T.Resize(
-                (self.label_size[0], self.label_size[1]),
-                interpolation=T.InterpolationMode.NEAREST_EXACT,
-                antialias=True,
-            )(annotation_item)
+        print(f"post med shapes {image.shape}, {annotation.shape}")
 
-            image_list.append(image_item)
-            annotation_list.append(annotation_item)
+        image = T.Resize(
+            (self.input_size[0], self.input_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
+        )(image)
 
-        image = torch.stack(image_list)
-        annotation = torch.stack(annotation_list)
+        annotation = T.Resize(
+            (self.label_size[0], self.label_size[1]),
+            interpolation=T.InterpolationMode.NEAREST_EXACT,
+            antialias=False,
+        )(annotation)
 
-        image = patient_normalization(image).unsqueeze(2)
+        print(f"post resize shapes {image.shape}, {annotation.shape}")
+
+        image = patient_normalization(image)
         annotation = annotation.long()
-        # by this point the shapes are num_scan, slices, channels, height, width, and each patient has about two scans
-        # we choose to consider the two scans as one image, so we concatenate them along the slices dimension
-        image = image.reshape(
-            -1, image.shape[2], image.shape[3], image.shape[4]
-        )
-        annotation = annotation.reshape(
-            -1, annotation.shape[2], annotation.shape[3]
+
+        print(
+            f"unique annotation values {torch.unique(annotation)}, frequency {torch.bincount(annotation.flatten())}",
         )
 
-        # convert 1 channel to 3 channels
-        image = torch.cat((image, image, image), dim=1)
+        print(f"post norm shapes {image.shape}, {annotation.shape}")
 
         return {
             "image": image,
@@ -262,18 +266,23 @@ def build_gate_dataset(
     transforms: Optional[Any] = None,
     task_name: str = "task01braintumour",
     image_size: int = 512,
-    target_image_size: int = 256,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     train_transforms = DatasetTransforms(
-        512,
-        target_image_size,
-        initial_size=1024,
+        input_size=image_size,
+        label_size=label_image_size,
+        initial_size=train_initial_size,
         crop_size=image_size,
-        photometric_config=None,
+        photometric_config=PhotometricParams(),
     )
     eval_transforms = DatasetTransforms(
-        512, target_image_size, initial_size=512, crop_size=image_size
+        input_size=image_size,
+        label_size=label_image_size,
+        initial_size=eval_initial_size,
+        crop_size=image_size,
     )
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, task_name=task_name),
@@ -317,18 +326,22 @@ def build_gate_dataset(
 def build_gate_md_brain_tumour(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.BrainTumour.value]),
     task_name=TaskOptions.BrainTumour.value,
-    target_image_size: int = 256,
+    image_size: int = 256,
+    label_image_size: int = 256,
+    train_initial_size: int = 384,
+    eval_initial_size: int = 256,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.BrainTumour.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -340,18 +353,22 @@ def build_gate_md_brain_tumour(
 def build_gate_md_heart(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Heart.value]),
     task_name=TaskOptions.Heart.value,
-    target_image_size: int = 256,
+    image_size: int = 320,
+    label_image_size: int = 256,
+    train_initial_size: int = 512,
+    eval_initial_size: int = 320,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Heart.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -363,18 +380,22 @@ def build_gate_md_heart(
 def build_gate_md_liver(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Liver.value]),
     task_name=TaskOptions.Liver.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Liver.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -386,18 +407,22 @@ def build_gate_md_liver(
 def build_gate_md_hippocampus(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Hippocampus.value]),
     task_name=TaskOptions.Hippocampus.value,
-    target_image_size: int = 256,
+    image_size: int = 256,
+    label_image_size: int = 256,
+    train_initial_size: int = 512,
+    eval_initial_size: int = 256,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Hippocampus.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -409,18 +434,22 @@ def build_gate_md_hippocampus(
 def build_gate_md_prostate(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Prostate.value]),
     task_name=TaskOptions.Prostate.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Prostate.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -432,18 +461,22 @@ def build_gate_md_prostate(
 def build_gate_md_lung(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Lung.value]),
     task_name=TaskOptions.Lung.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Lung.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -455,18 +488,22 @@ def build_gate_md_lung(
 def build_gate_md_pancreas(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Pancreas.value]),
     task_name=TaskOptions.Pancreas.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Pancreas.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -478,18 +515,22 @@ def build_gate_md_pancreas(
 def build_gate_md_hepatic_vessel(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.HepaticVessel.value]),
     task_name=TaskOptions.HepaticVessel.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.HepaticVessel.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -501,18 +542,22 @@ def build_gate_md_hepatic_vessel(
 def build_gate_md_spleen(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Spleen.value]),
     task_name=TaskOptions.Spleen.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Spleen.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
 
 
@@ -524,16 +569,20 @@ def build_gate_md_spleen(
 def build_gate_md_colon(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    image_size: int = 512,
     num_classes: int = len(CLASSES_DICT[TaskOptions.Colon.value]),
     task_name=TaskOptions.Colon.value,
-    target_image_size: int = 256,
+    image_size: int = 512,
+    label_image_size: int = 256,
+    train_initial_size: int = 1024,
+    eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
         transforms=transforms,
-        task_name=TaskOptions.Colon.value,
+        task_name=task_name,
         image_size=image_size,
-        target_image_size=target_image_size,
+        label_image_size=label_image_size,
+        train_initial_size=train_initial_size,
+        eval_initial_size=eval_initial_size,
     )
