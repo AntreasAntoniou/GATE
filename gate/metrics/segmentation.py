@@ -59,9 +59,11 @@ class IoUMetric:
         label = label.clone().cpu().view(-1)
 
         if self.ignore_index is not None:
-            mask = label != self.ignore_index
-            pred = pred[mask]
-            label = label[mask]
+            ignore_mask = label != self.ignore_index
+
+            ignore_mask = ignore_mask.to(pred.device)
+            pred = pred[ignore_mask]
+            label = label[ignore_mask]
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
@@ -206,9 +208,13 @@ class FocalLoss(nn.Module):
         labels = labels.view(-1)
 
         if self.ignore_index is not None:
-            mask = labels != self.ignore_index
-            logits = logits[mask]
-            labels = labels[mask]
+            # The computation of ignore_mask can potentially be sped up by avoiding the unnecessary expansion of dimensions and broadcasting directly where it's used.
+            ignore_mask = labels != self.ignore_index
+
+            # Ensure all tensors are on the same device
+            ignore_mask = ignore_mask.to(logits.device)
+            logits = logits[ignore_mask]
+            labels = labels[ignore_mask]
 
         ce_loss = F.cross_entropy(logits, labels, reduction="none")
         pt = torch.exp(-ce_loss)
@@ -234,19 +240,20 @@ class DiceLoss(nn.Module):
         logits = F.softmax(logits, dim=1)
         labels = labels.squeeze(1)
 
-        unique_labels = torch.unique(labels)
-        logger.debug(
-            f"Unique labels: {unique_labels}, length: {len(unique_labels)}, shape: {logits.shape}"
-        )
-
         labels_one_hot = torch.zeros_like(logits)
 
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
 
         if self.ignore_index is not None:
-            ignore_mask = (labels != self.ignore_index).unsqueeze(1)
+            # The computation of ignore_mask can potentially be sped up by avoiding the unnecessary expansion of dimensions and broadcasting directly where it's used.
+            ignore_mask = labels != self.ignore_index
 
-            labels_one_hot *= ignore_mask
+            # Ensure all tensors are on the same device
+            ignore_mask = ignore_mask.to(logits.device)
+            labels_one_hot = labels_one_hot.to(logits.device)
+
+            # Use in-place broadcasting and multiplication instead of expanding ignore_mask unnecessarily
+            labels_one_hot *= ignore_mask.unsqueeze(1)
 
         intersection = torch.sum(logits * labels_one_hot, dim=(2, 3))
         union = torch.sum(logits, dim=(2, 3)) + torch.sum(

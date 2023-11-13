@@ -1,5 +1,4 @@
 import multiprocessing as mp
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
@@ -196,7 +195,7 @@ def build_gate_dataset(
     num_classes=len(CLASSES),
     image_size=512,
     target_image_size=256,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     train_transforms = DatasetTransforms(
         512, target_image_size, initial_size=640, crop_size=image_size

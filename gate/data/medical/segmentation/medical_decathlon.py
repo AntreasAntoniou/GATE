@@ -99,7 +99,7 @@ def build_dataset(
         f"Loading Medical Decathlon {task_name} dataset, will download to {data_dir} if necessary."
     )
 
-    dataset = monai.apps.DecathlonDataset(
+    train_dataset = monai.apps.DecathlonDataset(
         root_dir=data_dir,
         task=task_name,
         section="training",
@@ -115,26 +115,42 @@ def build_dataset(
         runtime_cache=False,
     )
 
+    test_dataset = monai.apps.DecathlonDataset(
+        root_dir=data_dir,
+        task=task_name,
+        section="test",
+        download=True,
+        seed=0,
+        val_frac=0.0,
+        num_workers=mp.cpu_count(),
+        progress=True,
+        cache_num=0,
+        cache_rate=1.0,
+        copy_cache=False,
+        as_contiguous=True,
+        runtime_cache=False,
+    )
+
     # create a random 90-10 train-val split
 
-    dataset_length = len(dataset)
-    val_split = 0.2  # Fraction for the validation set (e.g., 10%)
+    dataset_length = len(train_dataset)
+    val_split = 0.3  # Fraction for the validation set (e.g., 10%)
 
     # Calculate the number of samples for train and validation sets
     val_test_length = int(dataset_length * val_split)
-    val_length = val_test_length // 2
-    test_length = val_test_length - val_length
+    val_length = val_test_length
+    # test_length = val_test_length - val_length
     train_length = dataset_length - val_test_length
 
     # Split the dataset into train and validation sets using the generator
-    train_data, val_data, test_data = random_split(
-        dataset, [train_length, val_length, test_length]
+    train_data, val_data = random_split(
+        train_dataset, [train_length, val_length]
     )
 
     dataset_dict = {
         "train": train_data,
         "val": val_data,
-        "test": test_data,
+        "test": test_dataset,
     }
 
     return dataset_dict[set_name]
@@ -217,16 +233,8 @@ class DatasetTransforms:
             self.med_transforms = None
 
     def __call__(self, item: Dict):
-        image = (
-            torch.stack([torch.tensor(i) for i in item["image"]])
-            if isinstance(item["image"], list)
-            else item["image"]
-        )
-        annotation = (
-            torch.stack([torch.tensor(i) for i in item["label"]])
-            if isinstance(item["label"], list)
-            else item["label"]
-        )
+        image = item["image"]
+        annotation = item["label"]
 
         if len(image.shape) == 4:
             image = image.permute(2, 3, 0, 1)
@@ -304,7 +312,7 @@ def build_gate_dataset(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     train_transforms = DatasetTransforms(
         input_size=image_size,
@@ -366,7 +374,7 @@ def build_gate_md_brain_tumour(
     label_image_size: int = 256,
     train_initial_size: int = 320,
     eval_initial_size: int = 256,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -393,7 +401,7 @@ def build_gate_md_heart(
     label_image_size: int = 256,
     train_initial_size: int = 384,
     eval_initial_size: int = 320,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -420,7 +428,7 @@ def build_gate_md_liver(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -447,7 +455,7 @@ def build_gate_md_hippocampus(
     label_image_size: int = 256,
     train_initial_size: int = 320,
     eval_initial_size: int = 256,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -474,7 +482,7 @@ def build_gate_md_prostate(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -501,7 +509,7 @@ def build_gate_md_lung(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -528,7 +536,7 @@ def build_gate_md_pancreas(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -555,7 +563,7 @@ def build_gate_md_hepatic_vessel(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -582,7 +590,7 @@ def build_gate_md_spleen(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,
@@ -609,7 +617,7 @@ def build_gate_md_colon(
     label_image_size: int = 256,
     train_initial_size: int = 640,
     eval_initial_size: int = 512,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     return build_gate_dataset(
         data_dir=data_dir,

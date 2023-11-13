@@ -185,31 +185,32 @@ def ensemble_marker(func):
     return wrapper
 
 
-def collect_metrics(func: Callable) -> Callable:
-    def collect_metrics(
-        metrics_dict: dict(),
-        phase_name: str,
-        experiment_tracker: Any,
-        global_step: int,
-    ) -> None:
-        if experiment_tracker is None:
-            experiment_tracker = wandb
+def collect_metrics(
+    metrics_dict: dict(),
+    phase_name: str,
+    experiment_tracker: Any,
+    global_step: int,
+) -> None:
+    if experiment_tracker is None:
+        experiment_tracker = wandb
 
-        detached_metrics_dict = {}
-        for metric_key, computed_value in metrics_dict.items():
-            if computed_value is not None:
-                value = (
-                    computed_value.detach()
-                    if isinstance(computed_value, torch.Tensor)
-                    else computed_value
-                )
-                detached_metrics_dict[metric_key] = value
+    detached_metrics_dict = {}
+    for metric_key, computed_value in metrics_dict.items():
+        if computed_value is not None:
+            value = (
+                computed_value.detach()
+                if isinstance(computed_value, torch.Tensor)
+                else computed_value
+            )
+            detached_metrics_dict[metric_key] = value
 
-        background_logging = BackgroundLogging(
-            experiment_tracker, global_step, phase_name, detached_metrics_dict
-        )
-        background_logging.start()
+    background_logging = BackgroundLogging(
+        experiment_tracker, global_step, phase_name, detached_metrics_dict
+    )
+    background_logging.start()
 
+
+def collect_metrics_mark(func: Callable) -> Callable:
     @functools.wraps(func)
     def wrapper_collect_metrics(*args, **kwargs):
         outputs = func(*args, **kwargs)

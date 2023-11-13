@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.decorators import collect_metrics_mark, configurable
 from gate.orchestration.evaluators import EvaluatorOutput
 from gate.orchestration.evaluators.classification import (
     ClassificationEvaluator,
@@ -76,7 +76,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             loss=loss,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
@@ -93,7 +93,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             output.metrics = {}
         return output
 
-    @collect_metrics
+    @collect_metrics_mark
     def testing_step(
         self,
         model,
@@ -114,7 +114,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             output.metrics = {}
         return output
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_validation(self, global_step):
         evaluator_output: EvaluatorOutput = super().end_validation(global_step)
         iou_metrics = self.model.model.compute_across_set_metrics()
@@ -130,7 +130,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_testing(self, global_step, prefix: Optional[str] = None):
         evaluator_output: EvaluatorOutput = super().end_testing(
             global_step, prefix=prefix
@@ -229,7 +229,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             loss=loss,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def validation_step(
         self, model, batch, global_step, accelerator: Accelerator
     ):
@@ -245,7 +245,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             output.metrics = {}
         return output
 
-    @collect_metrics
+    @collect_metrics_mark
     def testing_step(
         self,
         model,
@@ -265,7 +265,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             output.metrics = {}
         return output
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_validation(self, global_step):
         evaluator_output: EvaluatorOutput = super().end_validation(global_step)
         iou_metrics = self.model.model.compute_across_set_metrics()
@@ -281,7 +281,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_testing(self, global_step, prefix: Optional[str] = None):
         evaluator_output: EvaluatorOutput = super().end_testing(
             global_step, prefix=prefix

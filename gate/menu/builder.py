@@ -127,6 +127,7 @@ def run_experiments(
     evaluate_every_n_steps: int = 250,
     return_json: bool = False,
     shuffle: bool = False,
+    seed_list: List[int] = [7],
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -144,7 +145,6 @@ def run_experiments(
     Returns:
         experiment_dict (dict): A dictionary containing the experiment names as keys and the corresponding experiment commands as values.
     """
-    seed_list = [7]
     experiment_dict = {}
 
     experiment_configs: Dict[str, Dict] = {

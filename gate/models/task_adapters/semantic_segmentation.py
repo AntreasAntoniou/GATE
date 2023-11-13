@@ -85,41 +85,62 @@ def md_optimization_loss(
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
+
+    # start_time = time.time()
     dice_loss_fn = DiceLoss(ignore_index=ignore_index)
-
     dice_loss = dice_loss_fn.forward(logits, labels)
+    # dice_loss_time = time.time() - start_time
+    # logging.info(f"Dice loss computation time: {dice_loss_time:.6f} seconds")
 
-    focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+    # start_time = time.time()
+    # focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+    # focal_loss = focal_loss_fn.forward(logits, labels)
+    # focal_loss_time = time.time() - start_time
+    # logging.info(f"Focal loss computation time: {focal_loss_time:.6f} seconds")
 
-    focal_loss = focal_loss_fn.forward(logits, labels)
-
+    # start_time = time.time()
     ce_loss_fn = CrossEntropyLoss(ignore_index=ignore_index)
-
     ce_loss = ce_loss_fn.forward(logits, labels)
+    # ce_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Cross entropy loss computation time: {ce_loss_time:.6f} seconds"
+    # )
 
+    # start_time = time.time()
     background_dice_loss_fn = DiceLoss()
-
     background_dice_loss = background_dice_loss_fn.forward(logits, labels)
+    # background_dice_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Background dice loss computation time: {background_dice_loss_time:.6f} seconds"
+    # )
 
-    background_focal_loss_fn = FocalLoss()
+    # start_time = time.time()
+    # background_focal_loss_fn = FocalLoss()
+    # background_focal_loss = background_focal_loss_fn.forward(logits, labels)
+    # background_focal_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Background focal loss computation time: {background_focal_loss_time:.6f} seconds"
+    # )
 
-    background_focal_loss = background_focal_loss_fn.forward(logits, labels)
-
+    # start_time = time.time()
     background_ce_loss_fn = CrossEntropyLoss()
-
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
+    # background_ce_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Background cross entropy loss computation time: {background_ce_loss_time:.6f} seconds"
+    # )
 
-    loss = dice_loss + 0.1 * ce_loss
-    background_loss = background_dice_loss
+    loss = dice_loss + 0.01 * background_dice_loss
+    background_loss = background_dice_loss + background_ce_loss
 
     return {
         "loss": loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
-        "focal_loss": focal_loss,
-        "background_loss": background_loss,
+        # "focal_loss": focal_loss,
+        "background_loss": background_loss * background_loss_weight,
         "background_dice_loss": background_dice_loss,
-        "background_focal_loss": background_focal_loss,
+        # "background_focal_loss": background_focal_loss,
         "background_ce_loss": background_ce_loss,
     }
 
@@ -199,6 +220,9 @@ class SegmentationAdapter(nn.Module):
                 dropout_rate=decoder_dropout_rate,
             ),
         }
+        self.stem_instance_norm = nn.InstanceNorm2d(
+            num_features=3, affine=True
+        )
 
         self.decoder_head = decoder_layer_mapping[decoder_layer_type]
 
@@ -212,7 +236,7 @@ class SegmentationAdapter(nn.Module):
 
         self.iou_metric_complete = IoUMetric(
             num_classes=num_classes,
-            ignore_index=False,
+            ignore_index=None,
             class_idx_to_name={
                 i: name for i, name in enumerate(self.class_names)
             },
@@ -241,8 +265,10 @@ class SegmentationAdapter(nn.Module):
         return metrics_with_ignore | metrics_complete
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
+        image = self.stem_instance_norm(image)
         features = self.encoder(image)["image"]["per_layer_raw_features"]
-        # feature shape is either B, C, H, W or B, (W * H), C
+
+        # Assuming the shape of features matches the expected input shape of the decoder
         mask_predictions = self.decoder_head(features)
 
         logits = F.interpolate(
@@ -255,7 +281,7 @@ class SegmentationAdapter(nn.Module):
             align_corners=True,
         )
 
-        output = {"logits": logits.detach()}
+        output = {"logits": logits}
 
         if labels is not None:
             output.update(self.compute_loss_and_metrics(logits, labels))
@@ -268,7 +294,7 @@ class SegmentationAdapter(nn.Module):
             logits,
             labels,
             ignore_index=self.ignore_index,
-            background_loss_weight=self.background_loss_weight,  # Assuming optimization_loss is defined elsewhere
+            background_loss_weight=self.background_loss_weight,
         )
 
         if not self.training:

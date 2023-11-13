@@ -1,8 +1,10 @@
 import os
 
+import torch
 import torch.nn.functional as F
-import wandb
+from tqdm import tqdm
 
+import wandb
 from gate.boilerplate.wandb_utils import (
     log_wandb_3d_volumes_and_masks,
     visualize_volume,
@@ -50,30 +52,54 @@ def test_build_gate_dataset():
         break
 
 
-def test_build_gate_visualize_dataset():
+def test_build_gate_visualize_dataset(visualize: bool = False):
     wandb.init(project="gate_visualization_pytest")
     gate_dataset = build_gate_dataset(data_dir=os.environ.get("PYTEST_DIR"))
     assert gate_dataset["train"] is not None, "Train set should not be None"
     assert gate_dataset["val"] is not None, "Validation set should not be None"
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
-    for item in gate_dataset["train"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        wandb.log(visualize_volume(item, prefix="train-acdc"))
-        break
+    train_loader = torch.utils.data.DataLoader(
+        gate_dataset["train"], batch_size=1, shuffle=False, num_workers=16
+    )
+    val_loader = torch.utils.data.DataLoader(
+        gate_dataset["val"], batch_size=1, shuffle=False, num_workers=16
+    )
+    test_loader = torch.utils.data.DataLoader(
+        gate_dataset["test"], batch_size=1, shuffle=False, num_workers=16
+    )
 
-    for item in gate_dataset["val"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        wandb.log(visualize_volume(item, prefix="val-acdc"))
-        break
+    with tqdm(total=200, smoothing=0.0) as pbar:
+        for idx, item in enumerate(train_loader):
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            if visualize:
+                wandb.log(visualize_volume(item, prefix=f"acdc/train"))
+            pbar.update(1)
+            if idx > 200:
+                break
+    with tqdm(total=200, smoothing=0.0) as pbar:
+        for idx, item in enumerate(val_loader):
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            if visualize:
+                wandb.log(visualize_volume(item, prefix=f"acdc/val"))
+            pbar.update(1)
+            if idx > 200:
+                break
+    with tqdm(total=200, smoothing=0.0) as pbar:
+        for idx, item in enumerate(test_loader):
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            if visualize:
+                wandb.log(visualize_volume(item, prefix=f"acdc/test"))
+            pbar.update(1)
+            if idx > 200:
+                break
 
-    for item in gate_dataset["test"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        wandb.log(visualize_volume(item, prefix="test-acdc"))
-        break
+
+if __name__ == "__main__":
+    test_build_gate_visualize_dataset(visualize=False)

@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from enum import Enum
 
 import pytest
+import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
-import wandb
+from tqdm import tqdm
 
+import wandb
 from gate.boilerplate.wandb_utils import (
     log_wandb_3d_volumes_and_masks,
     visualize_volume,
@@ -90,31 +92,69 @@ class TaskOptions(Enum):
     ],
 )
 def test_build_gate_visualize_dataset(gate_dataset_class):
+    visualize = False
     wandb.init(project="gate_visualization_pytest")
     task_name = gate_dataset_class.__name__
     print(f"Testing {task_name}")
     gate_dataset = gate_dataset_class(data_dir=os.environ.get("PYTEST_DIR"))
+
     assert gate_dataset["train"] is not None, "Train set should not be None"
     assert gate_dataset["val"] is not None, "Validation set should not be None"
     assert gate_dataset["test"] is not None, "Test set should not be None"
 
-    for item in gate_dataset["train"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        wandb.log(visualize_volume(item, prefix=f"{task_name}/train"))
-        break
+    train_loader = torch.utils.data.DataLoader(
+        gate_dataset["train"], batch_size=1, shuffle=False, num_workers=16
+    )
+    val_loader = torch.utils.data.DataLoader(
+        gate_dataset["val"], batch_size=1, shuffle=False, num_workers=16
+    )
+    test_loader = torch.utils.data.DataLoader(
+        gate_dataset["test"], batch_size=1, shuffle=False, num_workers=16
+    )
 
-    for item in gate_dataset["val"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        wandb.log(visualize_volume(item, prefix=f"{task_name}/val"))
-        break
+    with tqdm(total=200, smoothing=0.0) as pbar:
+        for idx, item in enumerate(train_loader):
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            if visualize:
+                wandb.log(visualize_volume(item, prefix=f"{task_name}/train"))
+            pbar.update(1)
+            if idx > 200:
+                break
+    with tqdm(total=200, smoothing=0.0) as pbar:
+        for idx, item in enumerate(val_loader):
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            if visualize:
+                wandb.log(visualize_volume(item, prefix=f"{task_name}/val"))
+            pbar.update(1)
+            if idx > 200:
+                break
+    with tqdm(total=200, smoothing=0.0) as pbar:
+        for idx, item in enumerate(test_loader):
+            print(list(item.keys()))
+            assert item["image"] is not None, "Image should not be None"
+            assert item["labels"] is not None, "Label should not be None"
+            if visualize:
+                wandb.log(visualize_volume(item, prefix=f"{task_name}/test"))
+            pbar.update(1)
+            if idx > 200:
+                break
 
-    for item in gate_dataset["test"]:
-        print(list(item.keys()))
-        assert item["image"] is not None, "Image should not be None"
-        assert item["labels"] is not None, "Label should not be None"
-        wandb.log(visualize_volume(item, prefix=f"{task_name}/test"))
-        break
+
+if __name__ == "__main__":
+    for gate_dataset_class in [
+        build_gate_md_brain_tumour,
+        build_gate_md_heart,
+        build_gate_md_liver,
+        build_gate_md_hepatic_vessel,
+        build_gate_md_hippocampus,
+        build_gate_md_lung,
+        build_gate_md_pancreas,
+        build_gate_md_prostate,
+        build_gate_md_spleen,
+        build_gate_md_colon,
+    ]:
+        test_build_gate_visualize_dataset(gate_dataset_class)

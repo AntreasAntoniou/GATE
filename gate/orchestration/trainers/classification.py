@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.decorators import collect_metrics_mark, configurable
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.multi_class_classification import (
     average_precision_score,
@@ -66,7 +66,7 @@ class ClassificationTrainer(Trainer):
             loss=loss,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def training_step(
         self,
         model,
@@ -393,7 +393,7 @@ class MultiClassClassificationTrainer(Trainer):
             loss=loss,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def training_step(
         self,
         model,
@@ -434,7 +434,7 @@ class MultiClassClassificationTrainer(Trainer):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_training(
         self,
         global_step: int,

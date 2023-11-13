@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
-import wandb
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics
+import wandb
+from gate.boilerplate.decorators import collect_metrics_mark
 
 
 @dataclass
@@ -74,7 +74,7 @@ class Trainer(ABC):
 
         return best_global_step, best_metric
 
-    @collect_metrics
+    @collect_metrics_mark
     def start_training(
         self,
         global_step: int,
@@ -89,7 +89,7 @@ class Trainer(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_training(
         self,
         global_step: int,

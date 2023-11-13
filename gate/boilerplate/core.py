@@ -115,7 +115,6 @@ class Learner(nn.Module):
         self.evaluate_every_n_steps = evaluate_every_n_steps
         self.checkpoint_every_n_steps = checkpoint_every_n_steps
         self.checkpoint_after_validation = checkpoint_after_validation
-        self.step_idx = 0
         self.global_step = 0
 
         self.limit_train_iters = limit_train_iters
@@ -214,7 +213,12 @@ class Learner(nn.Module):
 
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_training_step_end(model, batch)
-        self.global_step += 1
+
+        if cur_output_dict.global_step != self.global_step:
+            self.global_step = cur_output_dict.global_step + 1
+        else:
+            self.global_step += 1
+
         return output_list
 
     def validation_step(self, model, batch):
@@ -431,6 +435,8 @@ class Learner(nn.Module):
         if train_dataloader is None:
             train_dataloader = self.train_dataloader
 
+        last_val_step = 0
+
         if train_dataloader is not None:
             self.start_training()
 
@@ -438,14 +444,25 @@ class Learner(nn.Module):
                 self.train_iters = len(train_dataloader)
 
             with tqdm(
-                initial=self.step_idx, total=self.train_iters, smoothing=0.0
+                initial=self.global_step, total=self.train_iters, smoothing=0.0
             ) as pbar_steps:
-                while self.step_idx < self.train_iters:
+                while self.global_step < self.train_iters:
+                    tqdm_iter = self.global_step
+
                     if self.limit_train_iters is not None:
-                        if self.step_idx >= self.limit_train_iters:
+                        if self.global_step >= self.limit_train_iters:
                             return self.end_training()
 
                     for batch_idx, batch in enumerate(train_dataloader):
+                        if (
+                            self.global_step % self.evaluate_every_n_steps == 0
+                            or self.global_step - last_val_step
+                            > self.evaluate_every_n_steps
+                            or self.global_step == 0
+                        ):
+                            self._validation_loop()
+                            last_val_step = self.global_step
+
                         output_list = self.training_step(
                             model=self.model,
                             batch=batch,
@@ -453,21 +470,21 @@ class Learner(nn.Module):
 
                         if (
                             self.checkpoint_every_n_steps is not None
-                            and self.step_idx % self.checkpoint_every_n_steps
-                            == 0
-                            and self.step_idx > 0
+                            and (
+                                self.global_step
+                                % self.checkpoint_every_n_steps
+                                == 0
+                                or self.global_step - last_val_step
+                                > self.evaluate_every_n_steps
+                            )
+                            and self.global_step > 0
                         ):
                             self.save_checkpoint(
                                 checkpoint_name=f"ckpt_{self.global_step}"
                             )
 
-                        if self.step_idx % self.evaluate_every_n_steps == 0:
-                            self._validation_loop()
-
-                        if self.step_idx >= self.train_iters:
+                        if self.global_step >= self.train_iters:
                             return self.end_training()
-
-                        self.step_idx += 1
 
                         loss = torch.mean(
                             torch.stack(
@@ -479,8 +496,9 @@ class Learner(nn.Module):
                                 ]
                             )
                         )
-
-                        pbar_steps.update(1)
+                        tqdm_update = self.global_step - tqdm_iter
+                        tqdm_iter = self.global_step
+                        pbar_steps.update(tqdm_update)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
 
             return self.end_training()
@@ -559,7 +577,7 @@ class Learner(nn.Module):
             ckpt_save_path.mkdir(parents=True)
 
         experiment_hyperparameters = dict(
-            step_idx=self.step_idx,
+            step_idx=self.global_step,
             global_step=self.global_step,
             current_epoch_dict={
                 "train": self.trainer.current_epoch_dict,
@@ -601,7 +619,7 @@ class Learner(nn.Module):
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
         )
-        self.step_idx = trainer_state["step_idx"]
+        self.global_step = trainer_state["step_idx"]
         self.global_step = trainer_state["global_step"]
         current_epoch_dict = trainer_state["current_epoch_dict"]
         per_epoch_metrics = trainer_state["per_epoch_metrics"]

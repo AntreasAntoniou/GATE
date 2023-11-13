@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import torch
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics
+from gate.boilerplate.decorators import collect_metrics_mark
 
 
 class Evaluator(ABC):
@@ -83,7 +83,7 @@ class Evaluator(ABC):
         else:
             return best_global_step[:kth_best], best_metric[:kth_best]
 
-    @collect_metrics
+    @collect_metrics_mark
     def start_validation(
         self,
         global_step: int,
@@ -98,7 +98,7 @@ class Evaluator(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def start_testing(
         self,
         global_step: int,
@@ -114,7 +114,7 @@ class Evaluator(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_validation(
         self,
         global_step: int,
@@ -139,7 +139,7 @@ class Evaluator(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_testing(
         self,
         global_step: int,
