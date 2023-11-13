@@ -183,7 +183,7 @@ class SegmentationAdapter(nn.Module):
     ):
         super().__init__()
 
-        self.encoder = encoder_model
+        self.model = encoder_model
         self.num_classes = num_classes
         self.class_names = (
             class_names
@@ -266,7 +266,7 @@ class SegmentationAdapter(nn.Module):
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
         image = self.stem_instance_norm(image)
-        features = self.encoder(image)["image"]["per_layer_raw_features"]
+        features = self.model(image)["image"]["per_layer_raw_features"]
 
         # Assuming the shape of features matches the expected input shape of the decoder
         mask_predictions = self.decoder_head(features)
@@ -326,7 +326,7 @@ class VolumeSegmentationAdapter(nn.Module):
     ):
         super().__init__()
 
-        self.encoder = encoder_model
+        self.model = encoder_model
         self.num_classes = num_classes
         self.class_names = (
             class_names
@@ -406,7 +406,7 @@ class VolumeSegmentationAdapter(nn.Module):
         return metrics_with_ignore  # | metrics_complete
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
-        features = self.encoder(image)["image"]["per_layer_raw_features"]
+        features = self.model(image)["image"]["per_layer_raw_features"]
         # feature shape is either B, C, H, W or B, (W * H), C
         mask_predictions = self.spatial_decoder_head(features)
         # b, c, h, w = mask_predictions.shape

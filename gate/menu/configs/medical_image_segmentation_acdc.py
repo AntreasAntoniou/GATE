@@ -30,7 +30,7 @@ config = {
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,
-        wd=0.0,
+        wd=0.01,
     ),
     "trainer": TRAINER_NAME,
     "evaluator": EVALUATOR_NAME,
