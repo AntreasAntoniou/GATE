@@ -101,6 +101,10 @@ class BackgroundLogging(threading.Thread):
                     )
                     log_dict.update(video_dict)
 
+                # for key, value in log_dict.items():
+                #     if value is not None:
+                #         print(f"{key}: {type(value)}")
+
                 self.experiment_tracker.log(log_dict)
 
 

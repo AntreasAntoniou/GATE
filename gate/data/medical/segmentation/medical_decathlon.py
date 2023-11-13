@@ -1,11 +1,11 @@
 import logging
 import multiprocessing as mp
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 import datasets
-import monai
 import numpy as np
 import torch
 import torchvision.transforms as T
@@ -24,6 +24,13 @@ from gate.data.transforms.segmentation import (
     MedicalImageSegmentationTransforms,
     PhotometricParams,
 )
+
+# Ignore all DeprecationWarnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Ignore all UserWarnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 logger = logging.getLogger(__name__)
 logging.getLogger("monai").setLevel(logging.CRITICAL)
@@ -86,6 +93,7 @@ def build_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
+    import monai
 
     logger.info(
         f"Loading Medical Decathlon {task_name} dataset, will download to {data_dir} if necessary."
@@ -101,7 +109,7 @@ def build_dataset(
         num_workers=mp.cpu_count(),
         progress=True,
         cache_num=0,
-        cache_rate=0.0,
+        cache_rate=1.0,
         copy_cache=False,
         as_contiguous=True,
         runtime_cache=False,
@@ -138,6 +146,29 @@ def patient_normalization(input_volume):
     )
 
     return input_volume
+
+
+def convert_to_b3hw(image):
+    image_shape_len = len(image.shape)
+
+    if image_shape_len == 4 and image.shape[1] == 4:  # Case of (b, 4, h, w)
+        # calculate the average contribution of alpha channel
+        alpha_contrib = image[:, 3:4, :, :] / 3.0
+        rgb = image[:, :3, :, :]
+        # Add alpha contribution to RGB channels, and clip values to be in [0,1]
+        image = rgb + alpha_contrib
+    elif image_shape_len == 4 and image.shape[1] == 1:  # Case of (b, 1, h, w)
+        # Simply repeat the single channel 3 times
+        image = image.expand(-1, 3, -1, -1)
+    elif image_shape_len == 3:  # Case of (b, h, w)
+        # Expand dimensions before repeating the single channel 3 times
+        image = image.unsqueeze(1).expand(-1, 3, -1, -1)
+    else:  # Case of (b, 3, h, w). Leave as is if already in the desired format
+        raise ValueError(
+            f"Invalid image shape {image.shape}, should be one of (b, 4, h, w), (b, 1, h, w), (b, h, w), (b, 3, h, w)"
+        )
+
+    return image
 
 
 class DatasetTransforms:
@@ -204,7 +235,10 @@ class DatasetTransforms:
             image = image.permute(2, 0, 1).unsqueeze(1)
             annotation = annotation.permute(2, 0, 1)
 
-        print(f"input shapes {image.shape}, {annotation.shape}")
+        logger.debug(f"input shapes {image.shape}, {annotation.shape}")
+
+        image = torch.tensor(image)
+        annotation = torch.tensor(annotation)
 
         image = T.Resize(
             (self.initial_size[0], self.initial_size[1]),
@@ -220,17 +254,17 @@ class DatasetTransforms:
 
         annotation = annotation.unsqueeze(1)
 
-        print(f"pre crop shapes {image.shape}, {annotation.shape}")
+        logger.debug(f"pre crop shapes {image.shape}, {annotation.shape}")
 
-        # if self.crop_size is not None:
-        #     image, annotation = self.crop_transform(image, annotation)
+        if self.crop_size is not None:
+            image, annotation = self.crop_transform(image, annotation)
 
-        print(f"post crop shapes {image.shape}, {annotation.shape}")
+        logger.debug(f"post crop shapes {image.shape}, {annotation.shape}")
 
-        # if self.med_transforms is not None:
-        #     image, annotation = self.med_transforms(image, annotation)
+        if self.med_transforms is not None:
+            image, annotation = self.med_transforms(image, annotation)
 
-        print(f"post med shapes {image.shape}, {annotation.shape}")
+        logger.debug(f"post med shapes {image.shape}, {annotation.shape}")
 
         image = T.Resize(
             (self.input_size[0], self.input_size[1]),
@@ -244,16 +278,17 @@ class DatasetTransforms:
             antialias=False,
         )(annotation)
 
-        print(f"post resize shapes {image.shape}, {annotation.shape}")
+        logger.debug(f"post resize shapes {image.shape}, {annotation.shape}")
 
+        image = convert_to_b3hw(image)
         image = patient_normalization(image)
         annotation = annotation.long()
 
-        print(
+        logger.debug(
             f"unique annotation values {torch.unique(annotation)}, frequency {torch.bincount(annotation.flatten())}",
         )
 
-        print(f"post norm shapes {image.shape}, {annotation.shape}")
+        logger.debug(f"post norm shapes {image.shape}, {annotation.shape}")
 
         return {
             "image": image,
@@ -267,7 +302,7 @@ def build_gate_dataset(
     task_name: str = "task01braintumour",
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -276,7 +311,6 @@ def build_gate_dataset(
         label_size=label_image_size,
         initial_size=train_initial_size,
         crop_size=image_size,
-        photometric_config=PhotometricParams(),
     )
     eval_transforms = DatasetTransforms(
         input_size=image_size,
@@ -330,7 +364,7 @@ def build_gate_md_brain_tumour(
     task_name=TaskOptions.BrainTumour.value,
     image_size: int = 256,
     label_image_size: int = 256,
-    train_initial_size: int = 384,
+    train_initial_size: int = 320,
     eval_initial_size: int = 256,
     ignore_index=-1,
 ) -> dict:
@@ -357,7 +391,7 @@ def build_gate_md_heart(
     task_name=TaskOptions.Heart.value,
     image_size: int = 320,
     label_image_size: int = 256,
-    train_initial_size: int = 512,
+    train_initial_size: int = 384,
     eval_initial_size: int = 320,
     ignore_index=-1,
 ) -> dict:
@@ -384,7 +418,7 @@ def build_gate_md_liver(
     task_name=TaskOptions.Liver.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -411,7 +445,7 @@ def build_gate_md_hippocampus(
     task_name=TaskOptions.Hippocampus.value,
     image_size: int = 256,
     label_image_size: int = 256,
-    train_initial_size: int = 512,
+    train_initial_size: int = 320,
     eval_initial_size: int = 256,
     ignore_index=-1,
 ) -> dict:
@@ -438,7 +472,7 @@ def build_gate_md_prostate(
     task_name=TaskOptions.Prostate.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -465,7 +499,7 @@ def build_gate_md_lung(
     task_name=TaskOptions.Lung.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -492,7 +526,7 @@ def build_gate_md_pancreas(
     task_name=TaskOptions.Pancreas.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -519,7 +553,7 @@ def build_gate_md_hepatic_vessel(
     task_name=TaskOptions.HepaticVessel.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -546,7 +580,7 @@ def build_gate_md_spleen(
     task_name=TaskOptions.Spleen.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:
@@ -573,7 +607,7 @@ def build_gate_md_colon(
     task_name=TaskOptions.Colon.value,
     image_size: int = 512,
     label_image_size: int = 256,
-    train_initial_size: int = 1024,
+    train_initial_size: int = 640,
     eval_initial_size: int = 512,
     ignore_index=-1,
 ) -> dict:

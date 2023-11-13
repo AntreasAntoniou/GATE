@@ -6,9 +6,12 @@ from enum import Enum
 import pytest
 import torch.nn.functional as F
 import torchvision.transforms as T
-
 import wandb
-from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks
+
+from gate.boilerplate.wandb_utils import (
+    log_wandb_3d_volumes_and_masks,
+    visualize_volume,
+)
 from gate.data.medical.segmentation.medical_decathlon import (
     build_dataset,
     build_gate_md_brain_tumour,
@@ -69,67 +72,6 @@ class TaskOptions(Enum):
 #         assert item["image"] is not None, "Image should not be None"
 #         assert item["labels"] is not None, "Label should not be None"
 #         break
-
-
-def visualize_volume(item, prefix: str):
-    input_volumes = item["image"].float()
-    predicted_volumes = item["labels"].float()
-    label_volumes = item["labels"].float()
-
-    # predicted_volumes[predicted_volumes == -1] = 10
-    # label_volumes[label_volumes == -1] = 10
-
-    print(
-        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
-    )
-    print(
-        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
-    )
-    print(
-        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
-    )
-
-    # Start a Weights & Biases run
-
-    target_size = 384
-    # Visualize the data
-    return log_wandb_3d_volumes_and_masks(
-        F.interpolate(
-            input_volumes.view(
-                -1,
-                input_volumes.shape[-3],
-                input_volumes.shape[-2],
-                input_volumes.shape[-1],
-            ),
-            size=(target_size, target_size),
-            mode="bicubic",
-        ).view(*input_volumes.shape[:-2] + (target_size, target_size)),
-        F.interpolate(
-            predicted_volumes.view(
-                -1,
-                predicted_volumes.shape[-3],
-                predicted_volumes.shape[-2],
-                predicted_volumes.shape[-1],
-            ),
-            size=(target_size, target_size),
-            mode="nearest-exact",
-        )
-        .view(*predicted_volumes.shape[:-2] + (target_size, target_size))
-        .long(),
-        F.interpolate(
-            label_volumes.view(
-                -1,
-                predicted_volumes.shape[-3],
-                predicted_volumes.shape[-2],
-                predicted_volumes.shape[-1],
-            ),
-            size=(target_size, target_size),
-            mode="nearest-exact",
-        )
-        .view(*predicted_volumes.shape[:-2] + (target_size, target_size))
-        .long(),
-        prefix=prefix,
-    )
 
 
 @pytest.mark.parametrize(

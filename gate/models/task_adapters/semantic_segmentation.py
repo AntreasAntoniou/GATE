@@ -9,7 +9,6 @@ from typing import Callable, Dict, List, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from datasets.table import pa
 
 from gate.boilerplate.decorators import ensemble_marker
 from gate.metrics.segmentation import (
@@ -86,7 +85,7 @@ def md_optimization_loss(
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
-    dice_loss_fn = DiceLoss()
+    dice_loss_fn = DiceLoss(ignore_index=ignore_index)
 
     dice_loss = dice_loss_fn.forward(logits, labels)
 
@@ -110,11 +109,11 @@ def md_optimization_loss(
 
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = dice_loss + ce_loss + 0.01 * background_ce_loss
+    loss = dice_loss + 0.1 * ce_loss
     background_loss = background_dice_loss
 
     return {
-        "loss": loss + 0.5 * background_loss,
+        "loss": loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
         "focal_loss": focal_loss,

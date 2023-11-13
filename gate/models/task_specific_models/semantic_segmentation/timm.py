@@ -12,6 +12,7 @@ from gate.config.variables import (
     HYDRATED_NUM_CLASSES,
     HYDRATED_TASK_NAME,
 )
+from gate.data.image.segmentation.classes import acdc_labels
 from gate.models import ModelAndTransform
 from gate.models.backbones.timm import TimmCLIPAdapter
 from gate.models.core import (
@@ -23,7 +24,6 @@ from gate.models.task_adapters.semantic_segmentation import (
     SegmentationAdapter,
     SegmentationAdapterOptions,
     SegmentationLossOptions,
-    VolumeSegmentationAdapter,
 )
 
 # modality_a_model: nn.Module,
@@ -132,6 +132,54 @@ def build_gate_md_model(
     if isinstance(num_classes, dict) or isinstance(num_classes, DictConfig):
         num_classes = len(num_classes[task_name])
 
+    model_and_transform = build_model(
+        timm_model_name=timm_model_name,
+        clip_model_name=clip_model_name,
+        pretrained=pretrained,
+        decoder_num_blocks=decoder_depth,
+        decoder_num_heads=decoder_num_heads,
+        num_classes=num_classes,
+        image_size=image_size,
+        decoder_layer_type=decoder_layer_type,
+        ignore_index=ignore_index,
+        background_loss_weight=background_loss_weight,
+        loss_type_id=SegmentationLossOptions.MD.value,
+    )
+
+    model_modality_config_image_classification = TargetModalityConfig(
+        image=[SourceModalityConfig(image=True)]
+    )
+
+    gate_model = GATEModel(
+        config=model_modality_config_image_classification,
+        model=model_and_transform.model,
+    )
+
+    return ModelAndTransform(
+        model=gate_model, transform=model_and_transform.transform
+    )
+
+
+@configurable(
+    group="model",
+    name="timm-acdc-segmentation-transformer",
+    defaults=dict(
+        num_classes=HYDRATED_NUM_CLASSES,
+        image_size=HYDRATED_IMAGE_SIZE,
+    ),
+)
+def build_gate_acdc_model(
+    timm_model_name: str = "resnet50.a1_in1k",
+    clip_model_name: str = "openai/clip-vit-base-patch16",
+    pretrained: bool = True,
+    decoder_depth: int = 2,
+    decoder_num_heads: int = 8,
+    num_classes: int = len(acdc_labels),
+    image_size: int = 512,
+    decoder_layer_type: str = SegmentationAdapterOptions.TRANSFORMER.value,
+    ignore_index: int = 0,
+    background_loss_weight: float = 0.01,
+):
     model_and_transform = build_model(
         timm_model_name=timm_model_name,
         clip_model_name=clip_model_name,
