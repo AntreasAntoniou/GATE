@@ -159,3 +159,6 @@ checkpoints/*
 *.pycharm
 *.pycharm_helpers
 *.egg-info
+
+# Secret files
+secrets/*.sh
