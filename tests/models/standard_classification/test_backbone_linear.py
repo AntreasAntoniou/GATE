@@ -66,7 +66,7 @@ data = [
         BartAdapter,
         dict(
             clip_model_name=CLIPModelPaths.openai_b_16,
-            bart_model_name=BartModelPaths.base_uncased,
+            bart_model_name=BartModelPaths.base,
             image_size=224,
         ),
     ),

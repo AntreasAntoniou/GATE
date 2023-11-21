@@ -68,7 +68,7 @@ class CLIPModelPaths:
 
 
 class BartModelPaths:
-    base_uncased: str = "facebook/bart-base"
+    base: str = "facebook/bart-base"
 
 
 @configurable(
@@ -79,7 +79,7 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
-        bart_model_name: str = BartModelPaths.base_uncased,
+        bart_model_name: str = BartModelPaths.base,
         pretrained: bool = True,
         image_size: Optional[int] = None,
     ):

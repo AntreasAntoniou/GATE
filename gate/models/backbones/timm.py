@@ -211,7 +211,7 @@ class TimmCLIPAdapter(GATEncoder):
         timm_model_name: str,
         clip_model_name: str,
         pretrained: bool = True,
-        image_size: Optional[List[int]] = None,
+        image_size: Optional[int] = None,
         embedding_dim: Optional[int] = None,
     ):
         super().__init__()

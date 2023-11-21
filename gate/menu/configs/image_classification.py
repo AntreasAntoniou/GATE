@@ -11,7 +11,7 @@ dataset_configs = {
     for dataset_name in DatasetName.IMAGE_CLASSIFICATION.value
 }
 
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 ADAPTER_CONFIG = AdapterTypeNames.IMAGE_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5

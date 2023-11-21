@@ -55,20 +55,11 @@ class ModifiedWav2Vec2Model(Wav2Vec2PreTrainedModel):
         image: Optional[torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
         output_attentions = self.config.output_attentions
-        output_hidden_states = self.config.output_hidden_states
 
         return_dict = self.config.use_return_dict
-        image = image.permute([0, 2, 1]).reshape(image.shape[0], -1)
-
-        extract_features = self.feature_extractor(image)
-        extract_features = extract_features.transpose(1, 2)
-
-        hidden_states, extract_features = self.feature_projection(
-            extract_features
-        )
 
         encoder_outputs = self.encoder(
-            hidden_states,
+            image,
             attention_mask=None,
             output_attentions=output_attentions,
             output_hidden_states=True,
@@ -124,11 +115,11 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
 
         self.vision_model = VisionRootReplacedBackbone(
             model=vision_embedding,
-            num_root_features=80,
+            num_root_features=1024,
             backbone_root_layers_to_remove=["embeddings"],
             image_size=image_size,
             num_channels=3,
-            patch_size=4,
+            patch_size=16,
             source_modality=Modality.image,
             target_modality=Modality.image,
         )

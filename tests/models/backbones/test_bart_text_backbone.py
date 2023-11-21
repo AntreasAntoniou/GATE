@@ -13,7 +13,7 @@ def clip_adapter():
     # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
     return BartAdapter(
         clip_model_name=CLIPModelPaths.openai_b_16,
-        bart_model_name=BartModelPaths.base_uncased,
+        bart_model_name=BartModelPaths.base,
         image_size=224,
     )
 

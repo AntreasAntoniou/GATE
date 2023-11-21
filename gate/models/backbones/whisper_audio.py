@@ -60,12 +60,11 @@ class ModifiedWhisperModel(WhisperPreTrainedModel):
          [1, 2, 512]
          ```"""
         output_attentions = self.config.output_attentions
-        output_hidden_states = self.config.output_hidden_states
 
         self.config.use_cache
         return_dict = self.config.use_return_dict
         image = image.permute(0, 2, 1)
-        image = F.adaptive_avg_pool1d(image, 3000)
+
         encoder_outputs = self.encoder(
             image,
             head_mask=None,
@@ -88,6 +87,7 @@ class CLIPModelPaths:
 
 class WhisperModelPaths:
     base: str = "openai/whisper-base"
+    small: str = "openai/whisper-small"
 
 
 @configurable(
@@ -98,7 +98,7 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
-        whisper_model_name: str = WhisperModelPaths.base,
+        whisper_model_name: str = WhisperModelPaths.small,
         pretrained: bool = True,
         image_size: Optional[int] = None,
     ):
@@ -125,7 +125,7 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
             backbone_root_layers_to_remove=["embeddings"],
             image_size=image_size,
             num_channels=3,
-            patch_size=4,
+            patch_size=16,
             source_modality=Modality.image,
             target_modality=Modality.image,
         )

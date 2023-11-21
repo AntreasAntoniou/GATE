@@ -156,13 +156,13 @@ class EncoderNames(Enum):
     )
     BART_TEXT = EncoderConfig(
         pretty_name="BART",
-        bart_model_name=BartModelPaths.base_uncased,
+        bart_model_name=BartModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="bart",
     )
     BERT_TEXT = EncoderConfig(
         pretty_name="BERT",
-        bart_model_name=BertModelPaths.base_uncased,
+        bert_model_name=BertModelPaths.base_uncased,
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="bert",
     )
@@ -174,7 +174,7 @@ class EncoderNames(Enum):
     )
     Wave2VecV2Base = EncoderConfig(
         pretty_name="W2V2",
-        encoder_name="wav2vec2",
+        encoder_name="wav2vecv2",
         wav2vec2_model_name=Wav2Vec2ModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
     )
