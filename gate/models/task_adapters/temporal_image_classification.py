@@ -224,8 +224,8 @@ class RegressionMetrics:
 
 def get_metric_fn(metric_type, num_classes):
     metrics = {
-        Metrics.classification: ClassificationMetrics(num_classes=num_classes),
-        Metrics.regression: RegressionMetrics(),
+        Metrics.CLASSIFICATION: ClassificationMetrics(num_classes=num_classes),
+        Metrics.REGRESSION: RegressionMetrics(),
     }
 
     return metrics[metric_type]
@@ -233,8 +233,8 @@ def get_metric_fn(metric_type, num_classes):
 
 @dataclass
 class Metrics:
-    classification = "classification"
-    regression = "regression"
+    CLASSIFICATION = "classification"
+    REGRESSION = "regression"
     get_metric_fn = get_metric_fn
 
 
@@ -248,7 +248,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         self,
         encoder: GATEncoder,
         num_classes: int,
-        metric_type: str = Metrics.classification,
+        metric_type: str = Metrics.CLASSIFICATION,
         temporal_transformer_nhead: int = 8,
         temporal_transformer_dim_feedforward: int = 2048,
         temporal_transformer_dropout: float = 0.0,

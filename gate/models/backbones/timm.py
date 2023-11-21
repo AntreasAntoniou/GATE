@@ -212,6 +212,7 @@ class TimmCLIPAdapter(GATEncoder):
         clip_model_name: str,
         pretrained: bool = True,
         image_size: Optional[List[int]] = None,
+        embedding_dim: Optional[int] = None,
     ):
         super().__init__()
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
@@ -233,6 +234,17 @@ class TimmCLIPAdapter(GATEncoder):
         ]
         self.image_num_features = self.vision_model_output_shape[2]
         self.text_num_features = self.clip.text_embed_dim
+        self.embedding_dim = embedding_dim
+
+        if embedding_dim:
+            self.image_embedding = nn.Linear(
+                self.image_num_features, embedding_dim
+            )
+            self.text_embedding = nn.Linear(
+                self.text_num_features, embedding_dim
+            )
+            self.image_num_features = embedding_dim
+            self.text_num_features = embedding_dim
 
     @property
     def num_in_features_image(self):
@@ -283,6 +295,11 @@ class TimmCLIPAdapter(GATEncoder):
                 output_dict["video"] = self.vision_model.forward(
                     video.view(b * s, c, h, w)
                 )
+                if self.embedding_dim:
+                    output_dict["video"]["features"] = self.image_embedding(
+                        output_dict["video"]["features"]
+                    )
+
                 for k, v in output_dict["video"].items():
                     if v is not None:
                         if isinstance(v, list) or isinstance(v, tuple):
@@ -290,11 +307,19 @@ class TimmCLIPAdapter(GATEncoder):
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
                 output_dict["video"] = self.vision_model.forward(video)
+                if self.embedding_dim:
+                    output_dict["video"]["features"] = self.image_embedding(
+                        output_dict["video"]["features"]
+                    )
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
             output_dict["text"]["features"] = text.pooler_output
             output_dict["text"]["raw_features"] = text.last_hidden_state
+            if self.embedding_dim:
+                output_dict["text"]["features"] = self.text_embedding(
+                    output_dict["text"]["features"]
+                )
 
         return output_dict
 

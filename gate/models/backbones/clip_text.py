@@ -109,16 +109,16 @@ class CLIPTextAdapter(
 ):
     def __init__(
         self,
-        model_name: str,
+        clip_model_name: str,
         pretrained: bool = True,
         image_size: Optional[int] = None,
     ):
         nn.Module.__init__(self)
         VisionTextGATEAdapter.__init__(self)
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
-            model_name
+            clip_model_name
         )
-        self.clip = CLIPModel.from_pretrained(model_name)
+        self.clip = CLIPModel.from_pretrained(clip_model_name)
         self.text_transforms = TextProcessor(self.preprocessor)
 
         if not pretrained:

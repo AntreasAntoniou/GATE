@@ -12,7 +12,7 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 32
-MODEL_TYPE = AdapterTypeNames.TIMM_IMAGE_CLASSIFICATION.value
+ENCODER_CONFIG = AdapterTypeNames.IMAGE_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.MULTI_CLASS_CLASSIFICATION.value
@@ -22,7 +22,7 @@ EVALUATOR_NAME = EvaluatorName.MULTI_CLASS_CLASSIFICATION.value
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ENCODER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,

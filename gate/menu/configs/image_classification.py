@@ -12,7 +12,7 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 128
-MODEL_TYPE = AdapterTypeNames.TIMM_IMAGE_CLASSIFICATION.value
+ADAPTER_CONFIG = AdapterTypeNames.IMAGE_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.IMAGE_CLASSIFICATION.value
@@ -22,7 +22,7 @@ EVALUATOR_NAME = EvaluatorName.IMAGE_CLASSIFICATION.value
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ADAPTER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,

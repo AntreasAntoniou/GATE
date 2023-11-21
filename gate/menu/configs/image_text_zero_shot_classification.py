@@ -12,7 +12,7 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 64
-MODEL_TYPE = AdapterTypeNames.TIMM_ZERO_SHOT_IMAGE_TEXT.value
+ENCODER_CONFIG = AdapterTypeNames.ZERO_SHOT_IMAGE_TEXT.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
@@ -21,7 +21,7 @@ EVALUATOR_NAME = EvaluatorName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ENCODER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,

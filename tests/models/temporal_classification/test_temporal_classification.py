@@ -99,7 +99,7 @@ def test_with_temporal_classification_forward_loss(encoder_class, arg_dict):
 
     encoder = encoder_class(**arg_dict)
     model = BackboneWithTemporalTransformerAndLinear(
-        encoder=encoder, num_classes=512, metric_type=Metrics.classification
+        encoder=encoder, num_classes=512, metric_type=Metrics.CLASSIFICATION
     )
     transform = model.adapter_transforms
     model = GATEModel(config=model.modality_config, model=model)
@@ -123,7 +123,7 @@ def test_with_temporal_regression_forward_loss(encoder_class, arg_dict):
 
     encoder = encoder_class(**arg_dict)
     model = BackboneWithTemporalTransformerAndLinear(
-        encoder=encoder, num_classes=1, metric_type=Metrics.regression
+        encoder=encoder, num_classes=1, metric_type=Metrics.REGRESSION
     )
     transform = model.adapter_transforms
     model = GATEModel(config=model.modality_config, model=model)

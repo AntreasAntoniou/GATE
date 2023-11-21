@@ -12,7 +12,7 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 32
-MODEL_TYPE = AdapterTypeNames.TIMM_TEMPORAL_REGRESSION.value
+ENCODER_CONFIG = AdapterTypeNames.TEMPORAL_REGRESSION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.VIDEO_REGRESSION.value
@@ -21,7 +21,7 @@ EVALUATOR_NAME = EvaluatorName.VIDEO_REGRESSION.value
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ENCODER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,
