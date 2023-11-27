@@ -215,6 +215,7 @@ class TimmCLIPAdapter(GATEncoder):
         embedding_dim: Optional[int] = None,
     ):
         super().__init__()
+        self.image_size = image_size if image_size else 224
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
@@ -245,6 +246,10 @@ class TimmCLIPAdapter(GATEncoder):
             )
             self.image_num_features = embedding_dim
             self.text_num_features = embedding_dim
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
 
     @property
     def num_in_features_image(self):

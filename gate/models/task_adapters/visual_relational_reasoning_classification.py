@@ -107,6 +107,28 @@ class DuoModalFusionModel(BaseModule):
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
 
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,))
+            if isinstance(self.num_classes, int)
+            else {
+                key: torch.randint(0, self.num_classes[key], (1,))
+                for key in self.num_classes.keys()
+            }
+            if isinstance(self.num_classes, dict)
+            else [
+                torch.randint(0, item)
+                for item in self.num_classes
+                if isinstance(item, list)
+            ],
+        }
+        _ = self(**dummy_batch)
+
     @ensemble_marker
     def compute_loss_and_metrics_multi_class(self, logits_dict, labels):
         output_dict = {}

@@ -11,7 +11,7 @@ from gate.models.backbones.clip_text import (  # replace 'your_module' with the 
 def clip_adapter():
     # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
     return CLIPTextAdapter(
-        clip_model_name=CLIPModelPaths.openai_b_16, image_size=224
+        model_name=CLIPModelPaths.openai_b_16, image_size=224
     )
 
 

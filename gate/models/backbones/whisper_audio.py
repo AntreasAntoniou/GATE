@@ -104,7 +104,7 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
     ):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
-
+        self.image_size = image_size
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
@@ -148,6 +148,10 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
 
         self.image_num_features = vision_embedding.config.hidden_size
         self.text_num_features = self.clip.text_embed_dim
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
 
     def init_weights(self):
         reinit(self)

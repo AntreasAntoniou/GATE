@@ -1,6 +1,7 @@
 import os
 from typing import Any, Callable, Optional
 
+import torch
 from accelerate import Accelerator
 
 # Set environmental variables for better debugging
@@ -120,7 +121,6 @@ def run(cfg: Any) -> None:
     model: GATEModel = GATEModel(
         config=task_adapted_model.modality_config, model=task_adapted_model
     )
-    model = accelerator.prepare(model)
 
     pretty_print_parameters(model)
 
@@ -145,6 +145,13 @@ def run(cfg: Any) -> None:
         cfg, test_dataset, cfg.eval_batch_size, shuffle=False
     )
 
+    optimizer = instantiate_optimizer(cfg, model)
+    scheduler = instantiate_scheduler(cfg, optimizer)
+
+    model, optimizer, scheduler = accelerator.prepare(
+        model, optimizer, scheduler
+    )
+
     (
         train_dataloader,
         val_dataloader,
@@ -152,11 +159,6 @@ def run(cfg: Any) -> None:
     ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
 
     wandb.log({"model/num_parameters": count_model_parameters(model)})
-
-    optimizer = instantiate_optimizer(cfg, model)
-    scheduler = instantiate_scheduler(cfg, optimizer)
-
-    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     trainer = instantiate(
         cfg.trainer,

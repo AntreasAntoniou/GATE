@@ -2,7 +2,7 @@ import math
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
 import PIL
 import torch
@@ -291,6 +291,11 @@ class GATEncoder(ABC, nn.Module):
     @abstractmethod
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    @property
+    @abstractmethod
+    def image_shape(self) -> Tuple[int, int]:
+        pass
 
     @property
     @abstractmethod

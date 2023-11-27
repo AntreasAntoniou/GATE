@@ -62,6 +62,17 @@ class BackboneWithLinearClassification(BaseModule):
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
 
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,)),
+        }
+        _ = self(**dummy_batch)
+
     @property
     def encoder_transforms(self):
         return self.encoder.get_transforms()

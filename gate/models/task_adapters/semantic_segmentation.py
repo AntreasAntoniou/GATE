@@ -211,6 +211,20 @@ class SegmentationAdapter(nn.Module):
         )
 
         self.background_loss_weight = background_loss_weight
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1,
+                self.num_classes,
+                3,
+                self.encoder.image_shape[0],
+                self.encoder.image_shape[1],
+            ),
+            "labels": torch.randint(0, self.num_classes, (1, 1)),
+        }
+        _ = self(**dummy_batch)
 
     @ensemble_marker
     def compute_across_set_metrics(self):

@@ -93,6 +93,7 @@ class EncoderConfig:
     image_size: int = 224
     pretrained: bool = True
     encoder_name: Optional[str] = None
+    model_name: Optional[str] = None
     timm_model_name: Optional[str] = None
     clip_model_name: Optional[str] = None
     bart_model_name: Optional[str] = None
@@ -146,12 +147,12 @@ class AdapterTypeNames(Enum):
 class EncoderNames(Enum):
     CLIPViTBase16_224HF_IMAGE = EncoderConfig(
         pretty_name="CLIP_B16_224HF_image",
-        clip_model_name=CLIPModelPaths.openai_b_16,
+        model_name=CLIPModelPaths.openai_b_16,
         encoder_name="clip-image",
     )
     CLIPViTBase16_224HF_TEXT = EncoderConfig(
         pretty_name="CLIP_B16_224HF_text",
-        clip_model_name=CLIPModelPaths.openai_b_16,
+        model_name=CLIPModelPaths.openai_b_16,
         encoder_name="clip-text",
     )
     BART_TEXT = EncoderConfig(
@@ -184,12 +185,12 @@ class EncoderNames(Enum):
         whisper_model_name=WhisperModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
     )
-    ResNet50A1 = EncoderConfig(
-        pretty_name="R50A1",
-        timm_model_name="resnet50.a1_in1k",
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="timm",
-    )
+    # ResNet50A1 = EncoderConfig(
+    #     pretty_name="R50A1",
+    #     timm_model_name="resnet50.a1_in1k",
+    #     clip_model_name=CLIPModelPaths.openai_b_16,
+    #     encoder_name="timm",
+    # )
     # ResNeXt50_32x4dA1 = EncoderConfig(
     #     pretty_name="RNX50_32x4A1",
     #     timm_model_name="resnext50_32x4d.a1_in1k",
@@ -202,24 +203,24 @@ class EncoderNames(Enum):
     #     clip_model_name=CLIPModelPaths.openai_b_16,
     #     encoder_name="timm",
     # )
-    # AugRegViTBase16_224 = EncoderConfig(
-    #     pretty_name="AR_ViT_B16_224",
-    #     timm_model_name="vit_base_patch16_224.augreg_in1k",
-    #     clip_model_name=CLIPModelPaths.openai_b_16,
-    #     encoder_name="timm",
-    # )
+    AugRegViTBase16_224 = EncoderConfig(
+        pretty_name="AR_ViT_B16_224",
+        timm_model_name="vit_base_patch16_224.augreg_in1k",
+        clip_model_name=CLIPModelPaths.openai_b_16,
+        encoder_name="timm",
+    )
     # DiNoViTBase16_224 = EncoderConfig(
     #     pretty_name="DINO_B16_224",
     #     timm_model_name="vit_base_patch16_224.dino",
     #     clip_model_name=CLIPModelPaths.openai_b_16,
     #     encoder_name="timm",
     # )
-    CLIPViTBase16_224 = EncoderConfig(
-        pretty_name="CLIP_B16_224",
-        timm_model_name="vit_base_patch32_clip_224",
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="timm",
-    )
+    # CLIPViTBase16_224 = EncoderConfig(
+    #     pretty_name="CLIP_B16_224",
+    #     timm_model_name="vit_base_patch32_clip_224",
+    #     clip_model_name=CLIPModelPaths.openai_b_16,
+    #     encoder_name="timm",
+    # )
     # LaionViTBase16_224 = EncoderConfig(
     #     pretty_name="Laion_B16_224",
     #     timm_model_name="vit_base_patch16_clip_224.laion2b",
@@ -232,12 +233,12 @@ class EncoderNames(Enum):
     #     clip_model_name=CLIPModelPaths.openai_b_16,
     #     encoder_name="timm",
     # )
-    # EffNetV2_RW_S_RA2 = EncoderConfig(
-    #     pretty_name="EffV2_RW_S",
-    #     timm_model_name="efficientnetv2_rw_s.ra2_in1k",
-    #     clip_model_name=CLIPModelPaths.openai_b_16,
-    #     encoder_name="timm",
-    # )
+    EffNetV2_RW_S_RA2 = EncoderConfig(
+        pretty_name="EffV2_RW_S",
+        timm_model_name="efficientnetv2_rw_s.ra2_in1k",
+        clip_model_name=CLIPModelPaths.openai_b_16,
+        encoder_name="timm",
+    )
     # ConvNextV2_Base = EncoderConfig(
     #     pretty_name="ConvNextV2_Base",
     #     timm_model_name="convnextv2_base",

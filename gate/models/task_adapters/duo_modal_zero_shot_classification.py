@@ -59,6 +59,16 @@ class DuoModalZeroShotModel(BaseModule):
                 out_features=projection_num_features,
                 bias=False,
             )
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,)),
+        }
+        _ = self(**dummy_batch)
 
     @ensemble_marker
     def compute_loss_and_metrics(self, logits, **kwargs):

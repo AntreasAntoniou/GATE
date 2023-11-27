@@ -24,8 +24,20 @@ class MultiClassBackboneWithLinear(BaseModule):
     ):
         super().__init__()
         self.encoder = encoder
+        self.num_classes = num_classes
         self.linear = nn.Linear(encoder.num_in_features_image, num_classes)
         self.classes = [f"class{idx}" for idx in range(num_classes)]
+
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,)),
+        }
+        _ = self(**dummy_batch)
 
     @property
     def encoder_transforms(self):

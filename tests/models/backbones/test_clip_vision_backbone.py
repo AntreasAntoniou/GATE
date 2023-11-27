@@ -10,7 +10,7 @@ from gate.models.backbones.clip_image import (  # replace 'your_module' with the
 @pytest.fixture
 def adapter():
     # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
-    return CLIPVisionAdapter(clip_model_name=CLIPModelPaths.openai_b_16)
+    return CLIPVisionAdapter(model_name=CLIPModelPaths.openai_b_16)
 
 
 def test_clip_adapter_init(adapter):
