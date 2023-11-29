@@ -217,12 +217,11 @@ class SegmentationAdapter(nn.Module):
         dummy_batch = {
             "image": torch.randn(
                 1,
-                self.num_classes,
                 3,
                 self.encoder.image_shape[0],
                 self.encoder.image_shape[1],
             ),
-            "labels": torch.randint(0, self.num_classes, (1, 1)),
+            "labels": torch.randint(0, self.num_classes, (1, 1, 256, 256)),
         }
         _ = self(**dummy_batch)
 
