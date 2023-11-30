@@ -346,9 +346,9 @@ def get_model_selection(adapter_config, batch_size, resnet_lr, vit_lr):
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
+        EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.CLIPViTBase16_224,
+            encoder_config=EncoderNames.AugRegViTBase16_224,
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
@@ -436,9 +436,9 @@ def get_model_selection(adapter_config, batch_size, resnet_lr, vit_lr):
         #     train_batch_size=batch_size,
         #     eval_batch_size=batch_size,
         # ),
-        EncoderNames.ResNet50A1.value.pretty_name: ModelConfig(
+        EncoderNames.EffNetV2_RW_S_RA2.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.ResNet50A1,
+            encoder_config=EncoderNames.EffNetV2_RW_S_RA2,
             learning_rate_config=LearningRateConfig(
                 default=[resnet_lr], dataset_specific={}
             ),

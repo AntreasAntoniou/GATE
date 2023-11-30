@@ -64,9 +64,9 @@ class DuoModalZeroShotModel(BaseModule):
     def build(self):
         dummy_batch = {
             "image": torch.randn(
-                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+                2, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
             ),
-            "labels": torch.randint(0, self.num_classes, (1,)),
+            "text": torch.randint(0, 100, (2, 10)),
         }
         _ = self(**dummy_batch)
 
