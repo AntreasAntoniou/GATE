@@ -10,7 +10,10 @@ from gate.models.backbones.clip_image import (  # replace 'your_module' with the
 @pytest.fixture
 def adapter():
     # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
-    return CLIPVisionAdapter(model_name=CLIPModelPaths.openai_b_16)
+    return CLIPVisionAdapter(
+        model_name=CLIPModelPaths.openai_b_16,
+        num_projection_features=64,
+    )
 
 
 def test_clip_adapter_init(adapter):
@@ -23,7 +26,7 @@ def test_forward_pass_image(adapter):
     image_tensor = torch.rand((1, 3, 224, 224))  # Mocking an image tensor
     result = adapter.forward(image=image_tensor)
     assert "image" in result
-    assert "classifier" in result["image"]
+    assert "features" in result["image"]
     assert "raw_features" in result["image"]
     assert "per_layer_raw_features" in result["image"]
 
@@ -33,7 +36,7 @@ def test_forward_pass_text(adapter):
     text_tensor = torch.randint(0, 2000, (1, 10))  # Mocking a text tensor
     result = adapter.forward(text=text_tensor)
     assert "text" in result
-    assert "classifier" in result["text"]
+    assert "features" in result["text"]
     assert "raw_features" in result["text"]
     assert "per_layer_raw_features" in result["text"]
 
@@ -43,7 +46,7 @@ def test_forward_pass_video(adapter):
     video_tensor = torch.rand((1, 10, 3, 224, 224))  # Mocking a video tensor
     result = adapter.forward(video=video_tensor)
     assert "video" in result
-    assert "classifier" in result["video"]
+    assert "features" in result["video"]
     assert "raw_features" in result["video"]
     assert "per_layer_raw_features" in result["video"]
 

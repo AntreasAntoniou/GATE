@@ -107,6 +107,7 @@ class BertAdapter(VisionTextGATEAdapter, GATEncoder):
         bert_model_name: str = BertModelPaths.base_uncased,
         pretrained: bool = True,
         image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
     ):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
@@ -133,13 +134,25 @@ class BertAdapter(VisionTextGATEAdapter, GATEncoder):
             source_modality=Modality.image,
             target_modality=Modality.image,
         )
-        self.visual_projection = nn.Linear(
-            vision_embedding.config.hidden_size,
-            self.clip.vision_embed_dim,
-            bias=False,
+        self.visual_projection = (
+            nn.Linear(
+                vision_embedding.config.hidden_size,
+                num_projection_features,
+                bias=False,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
         )
+
         self.text_model = self.clip.text_model
-        self.text_projection = self.clip.text_projection
+        self.text_projection = (
+            nn.Linear(
+                self.text_model.config.hidden_size,
+                num_projection_features,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
 
         # setattr signature: setattr(object, name, value)
 
@@ -150,8 +163,19 @@ class BertAdapter(VisionTextGATEAdapter, GATEncoder):
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        self.image_num_features = self.clip.vision_embed_dim
-        self.text_num_features = self.clip.text_embed_dim
+        self.image_num_features = (
+            self.clip.vision_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+
+        self.text_num_raw_features = self.text_model.config.hidden_size
+        self.image_num_raw_features = vision_embedding.config.hidden_size
 
     @property
     def image_shape(self):
@@ -167,6 +191,14 @@ class BertAdapter(VisionTextGATEAdapter, GATEncoder):
     @property
     def num_in_features_text(self):
         return self.text_num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_num_raw_features
 
     @property
     def num_in_features_video(self):

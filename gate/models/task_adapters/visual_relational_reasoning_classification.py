@@ -49,28 +49,28 @@ class DuoModalFusionModel(BaseModule):
     def __init__(
         self,
         encoder: GATEncoder,
-        projection_num_features: int = 512,
         dropout_fusion_prob: float = 0.0,
         num_classes: Union[List[int], int, Dict[str, int]] = 10,
+        projection_num_features: int = 512,
     ):
         super().__init__()
         self.encoder = encoder
-        self.projection_num_features = projection_num_features
 
         self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
+        self.projection_num_features = projection_num_features
 
         self.image_linear = nn.Linear(
-            self.encoder.num_in_features_image,
+            self.encoder.num_raw_features_image,
             projection_num_features,
             bias=False,
         )
-        self.text_image = nn.Linear(
-            self.encoder.num_in_features_text,
+        self.text_linear = nn.Linear(
+            self.encoder.num_raw_features_text,
             projection_num_features,
             bias=False,
         )
 
-        self.fusion_in_features = self.projection_num_features
+        self.fusion_in_features = projection_num_features
         self.image_instance_norm = nn.InstanceNorm2d(
             3, affine=True, track_running_stats=False
         )
@@ -217,7 +217,7 @@ class DuoModalFusionModel(BaseModule):
             self.projection_num_features,
         )
 
-        text_features = self.text_image(
+        text_features = self.text_linear(
             text_features.reshape(-1, text_features.shape[-1])
         ).reshape(
             text_features.shape[0],

@@ -161,7 +161,7 @@ class VisionTextGATEAdapter(ABC):
 
         if image is not None:
             output_dict["image"] = self.vision_model(image=image)
-            output_dict["image"]["classifier"] = self.visual_projection(
+            output_dict["image"]["features"] = self.visual_projection(
                 output_dict["image"]["features"]
             )
 
@@ -180,13 +180,13 @@ class VisionTextGATEAdapter(ABC):
             else:
                 output_dict["video"] = self.vision_model.forward(image=video)
 
-            output_dict["video"]["classifier"] = self.visual_projection(
+            output_dict["video"]["features"] = self.visual_projection(
                 output_dict["video"]["features"]
             )
 
         if text is not None:
             output_dict["text"] = self.text_model(text=text)
-            output_dict["text"]["classifier"] = self.text_projection(
+            output_dict["text"]["features"] = self.text_projection(
                 output_dict["text"]["features"]
             )
 
@@ -310,6 +310,16 @@ class GATEncoder(ABC, nn.Module):
     @property
     @abstractmethod
     def num_in_features_video(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_raw_features_image(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_raw_features_text(self):
         pass
 
     @abstractmethod

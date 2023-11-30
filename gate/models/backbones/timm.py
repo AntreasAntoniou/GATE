@@ -212,7 +212,7 @@ class TimmCLIPAdapter(GATEncoder):
         clip_model_name: str,
         pretrained: bool = True,
         image_size: Optional[int] = None,
-        embedding_dim: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
     ):
         super().__init__()
         self.image_size = image_size if image_size else 224
@@ -233,19 +233,40 @@ class TimmCLIPAdapter(GATEncoder):
         self.vision_model_output_shape = self.vision_model.get_output_shape()[
             "raw_features"
         ]
-        self.image_num_features = self.vision_model_output_shape[2]
-        self.text_num_features = self.clip.text_embed_dim
-        self.embedding_dim = embedding_dim
+        self.image_num_features = (
+            self.vision_model_output_shape[2]
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.num_projection_features = num_projection_features
 
-        if embedding_dim:
-            self.image_embedding = nn.Linear(
-                self.image_num_features, embedding_dim
+        self.visual_projection = (
+            nn.Linear(
+                self.vision_model_output_shape[2],
+                num_projection_features,
+                bias=False,
             )
-            self.text_embedding = nn.Linear(
-                self.text_num_features, embedding_dim
+            if num_projection_features is not None
+            else nn.Identity()
+        )
+
+        self.text_model = self.clip.text_model
+        self.text_projection = (
+            nn.Linear(
+                self.text_model.config.hidden_size,
+                num_projection_features,
             )
-            self.image_num_features = embedding_dim
-            self.text_num_features = embedding_dim
+            if num_projection_features is not None
+            else nn.Identity()
+        )
+
+        self.text_num_raw_features = self.text_model.config.hidden_size
+        self.image_num_raw_features = self.vision_model_output_shape[2]
 
     @property
     def image_shape(self):
@@ -258,6 +279,14 @@ class TimmCLIPAdapter(GATEncoder):
     @property
     def num_in_features_text(self):
         return self.text_num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_num_raw_features
 
     @property
     def num_in_features_video(self):
@@ -293,6 +322,10 @@ class TimmCLIPAdapter(GATEncoder):
 
         if image is not None:
             output_dict["image"] = self.vision_model.forward(image)
+            if self.num_projection_features:
+                output_dict["image"]["features"] = self.visual_projection(
+                    output_dict["image"]["features"]
+                )
 
         if video is not None:
             if len(video.shape) == 5:
@@ -300,8 +333,8 @@ class TimmCLIPAdapter(GATEncoder):
                 output_dict["video"] = self.vision_model.forward(
                     video.view(b * s, c, h, w)
                 )
-                if self.embedding_dim:
-                    output_dict["video"]["features"] = self.image_embedding(
+                if self.num_projection_features:
+                    output_dict["video"]["features"] = self.visual_projection(
                         output_dict["video"]["features"]
                     )
 
@@ -312,8 +345,8 @@ class TimmCLIPAdapter(GATEncoder):
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
                 output_dict["video"] = self.vision_model.forward(video)
-                if self.embedding_dim:
-                    output_dict["video"]["features"] = self.image_embedding(
+                if self.num_projection_features:
+                    output_dict["video"]["features"] = self.visual_projection(
                         output_dict["video"]["features"]
                     )
 
@@ -321,8 +354,8 @@ class TimmCLIPAdapter(GATEncoder):
             text: CLIPOutput = self.text_model(input_ids=text)
             output_dict["text"]["features"] = text.pooler_output
             output_dict["text"]["raw_features"] = text.last_hidden_state
-            if self.embedding_dim:
-                output_dict["text"]["features"] = self.text_embedding(
+            if self.num_projection_features:
+                output_dict["text"]["features"] = self.text_projection(
                     output_dict["text"]["features"]
                 )
 

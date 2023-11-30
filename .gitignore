@@ -165,3 +165,6 @@ secrets/*.sh
 
 # Logs
 logs/*
+
+# Debug
+debug-*

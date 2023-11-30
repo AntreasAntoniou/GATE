@@ -100,7 +100,11 @@ class VariableSequenceTransformerEncoder(BaseModule):
         x = self.transformer(x)[:, -1, :]  # take the last frame
         raw_features = self.transformer(x)
         features = self.output_norm(x)
-        return {"features": features, "raw_features": raw_features}
+        return {
+            "features": features,
+            "raw_features": raw_features,
+            "features": features,
+        }
 
 
 class ClassificationMetrics:

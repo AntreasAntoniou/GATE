@@ -29,6 +29,7 @@ data = [
         dict(
             timm_model_name=EncoderNames.EffNetV2_RW_S_RA2.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
+            num_projection_features=64,
         ),
     ),
     (
@@ -36,15 +37,24 @@ data = [
         dict(
             timm_model_name=EncoderNames.AugRegViTBase16_224.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
+            num_projection_features=64,
         ),
     ),
     (
         CLIPVisionAdapter,
-        dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
+        dict(
+            model_name=CLIPModelPaths.openai_b_16,
+            image_size=224,
+            num_projection_features=64,
+        ),
     ),
     (
         CLIPTextAdapter,
-        dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
+        dict(
+            model_name=CLIPModelPaths.openai_b_16,
+            image_size=224,
+            num_projection_features=64,
+        ),
     ),
     (
         BertAdapter,
@@ -52,6 +62,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             bert_model_name=BertModelPaths.base_uncased,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -60,6 +71,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             mpnet_model_name=MPNetModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -68,6 +80,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             bart_model_name=BartModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -76,6 +89,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             whisper_model_name=WhisperModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -84,6 +98,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             wav2vec2_model_name=Wav2Vec2ModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
 ]
