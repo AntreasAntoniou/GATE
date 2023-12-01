@@ -122,11 +122,11 @@ def test_with_linear_forward_loss(encoder_class, arg_dict):
 
     output = model.forward(input_dict)
 
-    assert output["image"]["image"]["logits"]["similarities"][
+    assert output["image_text"]["image_text"]["logits"]["similarities"][
         "image_to_text_similarities"
     ].shape == (20, 20)
 
-    loss = output["image"]["image"]["loss"]
+    loss = output["image_text"]["image_text"]["loss"]
 
     assert loss.item() > 0
 
@@ -149,11 +149,11 @@ def test_with_linear_forward_loss_5D(encoder_class, arg_dict):
     input_dict["return_loss"] = True
 
     output = model.forward(input_dict)
-    assert output["image"]["image"]["logits"]["similarities"][
+    assert output["image_text"]["image_text"]["logits"]["similarities"][
         "image_to_text_similarities"
     ].shape == (20, 20)
 
-    loss = output["image"]["image"]["loss"]
+    loss = output["image_text"]["image_text"]["loss"]
 
     assert loss.item() > 0
 

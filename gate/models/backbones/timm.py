@@ -118,7 +118,12 @@ class TimmModel(nn.Module):
         )
 
         self.transforms = T.Compose(
-            [T.Resize(size=img_size, interpolation=InterpolationMode.BICUBIC)]
+            [
+                T.Resize(
+                    size=(img_size, img_size),
+                    interpolation=InterpolationMode.BICUBIC,
+                )
+            ]
             + [
                 transform
                 for transform in self.transforms.transforms
@@ -363,7 +368,9 @@ class TimmCLIPAdapter(GATEncoder):
 
     def get_transforms(self):
         def image_transforms(x):
-            return self.vision_model.transforms(x)
+            x = self.vision_model.transforms(x)
+
+            return x
 
         def text_transforms(x):
             return self.text_transforms.apply_transform(x)

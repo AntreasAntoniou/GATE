@@ -1,6 +1,9 @@
 import pytest
 import torch
 
+from gate.data.image_text.visual_relational_reasoning.clevr import (
+    num_classes as rr_num_classes,
+)
 from gate.menu.core import EncoderNames
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
 from gate.models.backbones.bert_text import BertAdapter, BertModelPaths
@@ -106,10 +109,10 @@ data = [
 # `test_with_linear_forward_loss` test for all cases in the data list. Each run of the test will
 # create an instance of the class with the provided arguments.
 @pytest.mark.parametrize("encoder_class,arg_dict", data)
-def test_with_linear_forward_loss(encoder_class, arg_dict):
-    image = torch.rand(20, 3, 224, 224)
-    text = ["Let's go for a walk"] * 20
-    labels = torch.randint(0, 10, (20,))
+def test_rr(encoder_class, arg_dict):
+    image = torch.rand(2, 3, 224, 224)
+    text = ["Let's go for a walk"] * 2
+    labels = torch.randint(0, 10, (2,))
 
     encoder = encoder_class(**arg_dict)
     model = DuoModalFusionModel(encoder=encoder, num_classes=100)
@@ -117,5 +120,34 @@ def test_with_linear_forward_loss(encoder_class, arg_dict):
     model = GATEModel(config=model.modality_config, model=model)
     input_dict = transform({"image": image, "text": text, "labels": labels})
 
+    output = model.forward(input_dict)
+    output["image_text"]["image_text"]["loss"].backward()
+
+
+@pytest.mark.parametrize("encoder_class,arg_dict", data)
+def test_rr_mm(encoder_class, arg_dict):
+    image = torch.rand(2, 3, 224, 224)
+    text = ["Let's go for a walk"] * 2
+    labels = torch.stack(
+        [
+            torch.randint(value, (1,))
+            for value in list(rr_num_classes.values())[:2]
+        ]
+    )
+
+    answer_type = list(rr_num_classes.keys())[:2]
+
+    encoder = encoder_class(**arg_dict)
+    model = DuoModalFusionModel(encoder=encoder, num_classes=rr_num_classes)
+    transform = model.adapter_transforms
+    model = GATEModel(config=model.modality_config, model=model)
+    input_dict = transform(
+        {
+            "image": image,
+            "text": text,
+            "labels": labels,
+            "answer_type": answer_type,
+        }
+    )
     output = model.forward(input_dict)
     output["image_text"]["image_text"]["loss"].backward()
