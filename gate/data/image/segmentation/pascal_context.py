@@ -2,20 +2,16 @@
 import logging
 import os
 import pathlib
-import tarfile
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, List, Optional
 
 import numpy as np
-import requests
 import scipy
 import torch
 import torchvision.transforms as T
 from PIL import Image
 from torch.utils.data import Dataset, random_split
-from torchvision import transforms
 from torchvision.datasets.utils import download_and_extract_archive
-from tqdm import tqdm
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR

@@ -1,10 +1,7 @@
-from typing import List, Union
-
-import pytest
 import torch
 from transformers import CLIPProcessor
 
-from gate.models.backbones.clip import TextProcessor
+from gate.models.backbones.clip_image import TextProcessor
 
 clip_model_name = "openai/clip-vit-base-patch16"
 

@@ -2,7 +2,7 @@ import json
 import logging
 import random
 import subprocess
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import fire
 from rich import print
@@ -32,7 +32,7 @@ from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
 from gate.menu.configs.video_classification import (
     config as video_classification_config,
 )
-from gate.menu.utils import build_command, get_commands
+from gate.menu.utils import build_command
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)

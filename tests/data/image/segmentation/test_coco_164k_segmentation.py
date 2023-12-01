@@ -69,8 +69,6 @@ def test_build_gate_visualize_dataset():
         visualize_volume(item, name="test-visualization/coco_164k")
         break
 
-    import multiprocessing as mp
-
     from torch.utils.data import DataLoader
 
     mixed_dataset = torch.utils.data.ConcatDataset(

@@ -28,7 +28,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
+    np.random.RandomState(42)
 
     logger.info(
         f"Loading CLEVR Math dataset, will download to {data_dir} if necessary."

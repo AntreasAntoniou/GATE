@@ -1,12 +1,9 @@
 from math import sqrt
 
-import pytest
 import torch
 from torch.autograd import Variable
 
-from gate.models.task_adapters.semantic_segmentation import (
-    PreResizeSimpleSegmentationDecoder,
-)
+from gate.models.blocks.segmentation import ChannelMixerDecoder
 
 
 def generate_input_data(bs, c, h, w):
@@ -31,7 +28,7 @@ def test_simple_segmentation_decoder_normal_input():
     ]
 
     # Initialize the model
-    model = PreResizeSimpleSegmentationDecoder(
+    model = ChannelMixerDecoder(
         input_list, num_classes, target_size, hidden_size
     )
 
@@ -57,7 +54,7 @@ def test_simple_segmentation_decoder_sequence_input():
     ]
 
     # Initialize the model with sequence input
-    sequence_model = PreResizeSimpleSegmentationDecoder(
+    sequence_model = ChannelMixerDecoder(
         sequence_input_list, num_classes, target_size, hidden_size
     )
 

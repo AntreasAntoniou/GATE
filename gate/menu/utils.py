@@ -3,10 +3,6 @@
 import os
 from typing import Dict, List, Union
 
-from rich import print
-
-from gate.config.variables import NUM_WORKERS
-
 
 def build_command(
     exp_name: str,

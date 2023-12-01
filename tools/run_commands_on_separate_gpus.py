@@ -15,7 +15,6 @@ from pynvml import (
     nvmlInit,
     nvmlShutdown,
 )
-from rich import print
 from tqdm.auto import tqdm
 
 

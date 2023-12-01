@@ -148,6 +148,19 @@ models--*
 wandb/*
 checkpoints/*
 
+
 # Experiment logs
 *.stderr
 *.stdout
+
+# Pycharm
+.idea/
+.idea_modules/
+*.iml
+*.iws
+*.ipr
+*.ids
+*.pydevproject
+*.pycharm
+*.pycharm_helpers
+*.egg-info

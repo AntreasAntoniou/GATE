@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from zmq import has
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +121,7 @@ class GATEModel(nn.Module):
         if key in self.supported_input_modalities:
             if extra_arg_items is not None:
                 input_modalities.update(extra_arg_items)
+
             return self.model(**input_modalities)
         else:
             raise ValueError(f"Unsupported modality: {key}")
@@ -164,6 +164,7 @@ class GATEModel(nn.Module):
 
             # 📞 Call the process_modalities method with the
             # target_modality_name and input_modalities
+
             try:
                 output = self.process_modalities(
                     target_modality_name=target_modality_name,
@@ -177,6 +178,9 @@ class GATEModel(nn.Module):
                     "_".join(supported_modalities)
                 ] = output
             except NotImplementedError:
+                logger.warning(
+                    f"Ignoring processing modality pair: target: {target_modality_name}, supported_ {supported_modalities}"
+                )
                 pass  # 🛑 Handle unsupported cases, or do nothing
                 # if no action is needed for unsupported cases
 

@@ -113,13 +113,14 @@ def run(cfg: Any) -> None:
 
     global_step = setup(ckpt_path, cfg)
 
-    model_and_transform = instantiate(cfg.model)
-    # task_adaptor = instantiate(cfg.task_adaptor)
-    # model = task_adaptor(model_and_transform.model)
+    encoder = instantiate(cfg.encoder)
+    task_adapted_model = instantiate(cfg.adapter, encoder=encoder)
+    transform: Optional[Callable] = task_adapted_model.adapter_transforms
 
-    model: GATEModel = model_and_transform.model
+    model: GATEModel = GATEModel(
+        config=task_adapted_model.modality_config, model=task_adapted_model
+    )
     model = accelerator.prepare(model)
-    transform: Optional[Callable] = model_and_transform.transform
 
     pretty_print_parameters(model)
 

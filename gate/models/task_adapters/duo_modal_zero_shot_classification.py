@@ -1,41 +1,42 @@
 import logging
-import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from accelerate import Accelerator
 from tqdm.auto import tqdm
 
-from gate.boilerplate.decorators import ensemble_marker
+from gate.boilerplate.decorators import configurable, ensemble_marker
+from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.models.backbones import GATEncoder
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import (
     compute_zero_shot_loss_and_metrics,
     get_similarities,
 )
 
+accelerator = Accelerator()
+
+
 logger = logging.getLogger(__name__)
 
 
+@configurable(
+    group="adapter",
+    name="duo-modal-zero-shot-classifier",
+)
 class DuoModalZeroShotModel(BaseModule):
     def __init__(
         self,
-        modality_a_model: nn.Module,
-        modality_b_model: nn.Module,
-        modality_a_identifier: str,
-        modality_b_identifier: str,
-        modality_a_num_features: int,
-        modality_b_num_features: int,
+        encoder: GATEncoder,
         projection_num_features: Optional[int] = None,
         temperature_parameter: Optional[float] = 1.0 / 0.07,
-        head_identifier: Optional[str] = "projection_output",
+        head_identifier: Optional[str] = "features",
     ):
         super().__init__()
-        self.modality_a_model = modality_a_model
-        self.modality_b_model = modality_b_model
-
-        self.modality_a_identifier = modality_a_identifier
-        self.modality_b_identifier = modality_b_identifier
+        self.encoder = encoder
 
         self.head_identifier = head_identifier
 
@@ -48,13 +49,13 @@ class DuoModalZeroShotModel(BaseModule):
             )
 
         if self.projection_num_features is not None:
-            self.modality_a_linear = nn.Linear(
-                in_features=modality_a_num_features,
+            self.image_linear_projection = nn.Linear(
+                in_features=encoder.num_in_features_image,
                 out_features=projection_num_features,
                 bias=False,
             )
-            self.modality_b_linear = nn.Linear(
-                in_features=modality_b_num_features,
+            self.text_linear_projection = nn.Linear(
+                in_features=encoder.num_in_features_text,
                 out_features=projection_num_features,
                 bias=False,
             )
@@ -65,6 +66,14 @@ class DuoModalZeroShotModel(BaseModule):
             similarities=logits["similarities"],
             is_irregular_shape=logits["is_irregular_shape"],
         )
+
+    @property
+    def encoder_transforms(self):
+        return self.encoder.get_transforms()
+
+    @property
+    def modality_config(self):
+        return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
 
     def forward(
         self,
@@ -85,8 +94,8 @@ class DuoModalZeroShotModel(BaseModule):
                 f"Exactly two modalities must be provided. You provided {len(non_none_modalities)}"
             )
 
-        modality_a_features = None
-        modality_b_features = None
+        image_features = None
+        text_features = None
 
         is_irregular_shape = False
 
@@ -99,34 +108,22 @@ class DuoModalZeroShotModel(BaseModule):
             is_irregular_shape = True
 
         if image is not None:
-            if self.modality_a_identifier == "image":
-                modality_a_features = self.modality_a_model(image=image)[
-                    self.modality_a_identifier
-                ][self.head_identifier]
-            elif self.modality_b_identifier == "image":
-                modality_b_features = self.modality_b_model(image=image)[
-                    self.modality_b_identifier
-                ][self.head_identifier]
+            image_features = self.encoder(image=image)["image"][
+                self.head_identifier
+            ]
 
         if text is not None:
-            if self.modality_a_identifier == "text":
-                modality_a_features = self.modality_a_model(text=text)[
-                    self.modality_a_identifier
-                ][self.head_identifier]
-            elif self.modality_b_identifier == "text":
-                modality_b_features = self.modality_b_model(text=text)[
-                    self.modality_b_identifier
-                ][self.head_identifier]
+            text_features = self.encoder(text=text)["text"][
+                self.head_identifier
+            ]
 
         if self.projection_num_features is not None:
-            modality_a_features = self.modality_a_linear(modality_a_features)
-            modality_b_features = self.modality_b_linear(modality_b_features)
+            image_features = self.image_linear_projection(image_features)
+            text_features = self.text_linear_projection(text_features)
 
         similarities_dict = get_similarities(
-            modality_a_name=self.modality_a_identifier,
-            modality_a_features=modality_a_features,
-            modality_b_name=self.modality_b_identifier,
-            modality_b_features=modality_b_features,
+            image_features=image_features,
+            text_features=text_features,
             temperature_parameter=self.temperature_parameter,
         )
 
@@ -151,91 +148,24 @@ class DuoModalZeroShotModel(BaseModule):
 
         return output_dict | metrics_dict
 
-
-from accelerate import Accelerator
-
-accelerator = Accelerator()
-
-
-class DuoModalZeroShotModelWithPresetClasses(BaseModule):
-    def __init__(
-        self,
-        image_modality_model: nn.Module,
-        text_modality_model: nn.Module,
-        image_modality_num_features: int,
-        class_prompts: Dict[str, List[str]] = None,
-        projection_num_features: Optional[int] = None,
-        temperature_parameter: Optional[float] = 1.0,
-        backbone_output_key: str = "projection_output",
-    ):
-        super().__init__()
-        self.image_modality_model = image_modality_model
-        self.text_modality_model = text_modality_model
-        self.backbone_output_key = backbone_output_key
-
-        self.projection_num_features = projection_num_features
-
-        if temperature_parameter is None:
-            self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
-        else:
-            self.temperature_parameter = temperature_parameter
-
-        self.class_prompts = class_prompts
-
-        if self.projection_num_features is not None:
-            self.linear_projection = nn.Linear(
-                image_modality_num_features,
-                projection_num_features,
-                bias=False,
-            )
-        self.class_prototypes = None
-
-    def build_class_prototypes(self, class_prompts):
-        self.class_prototypes = []
-        self.text_modality_model.eval()
-        print(f"Building class prototypes for {len(class_prompts)} classes")
-        with torch.no_grad():
-            for class_key, class_prompts in tqdm(class_prompts.items()):
-                class_prompt_tokens = (
-                    self.text_modality_model.get_transforms()["text"](
-                        class_prompts
-                    )
+    def adapter_transforms(self, inputs: Union[Dict, Any]):
+        if "image" in inputs:
+            image = inputs["image"]
+            if isinstance(image, List):
+                image = torch.stack(
+                    [
+                        self.encoder_transforms["image"](sample)
+                        for sample in image
+                    ]
                 )
-                class_prompt_tokens = class_prompt_tokens.to(
-                    accelerator.device
-                )
+            else:
+                image = self.encoder_transforms["image"](image)
+            inputs["image"] = image
 
-                class_prototype = self.text_modality_model(
-                    text=class_prompt_tokens
-                )["text"][self.backbone_output_key].mean(0)
-                self.class_prototypes.append(class_prototype)
+        if "text" in inputs:
+            text = inputs["text"]
+            text = self.encoder_transforms["text"](text)
 
-        self.class_prototypes = torch.stack(self.class_prototypes)
+            inputs["text"] = text
 
-    @torch.inference_mode()
-    def forward(
-        self,
-        image: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
-        if self.class_prototypes is None:
-            self.build_class_prototypes(self.class_prompts)
-
-        if image is not None:
-            image_features = self.image_modality_model(image=image)["image"][
-                self.backbone_output_key
-            ]
-        else:
-            raise ValueError("An image input must be provided")
-
-        if self.projection_num_features is not None:
-            image_features = self.modality_a_linear(image_features)
-
-        logits = (
-            F.linear(image_features, self.class_prototypes)
-            * self.temperature_parameter
-        )
-
-        output_dict: dict[str, torch.Tensor] = {"logits": logits}
-
-        return output_dict
+        return inputs

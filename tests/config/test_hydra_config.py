@@ -8,7 +8,7 @@ def test_collect_config_store():
     from rich import print
 
     # Collect and store the configurations
-    config_store = collect_config_store()
+    collect_config_store()
 
     with initialize(config_path=None, job_name="config"):
         # Compose the configuration
