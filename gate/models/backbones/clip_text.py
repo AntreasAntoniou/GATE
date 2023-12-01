@@ -9,7 +9,7 @@ from transformers.models.clip.configuration_clip import CLIPTextConfig
 from transformers.models.clip.modeling_clip import (
     CLIPEncoder,
     CLIPTextEmbeddings,
-    _make_causal_mask,
+    _create_4d_causal_attention_mask,
 )
 
 from gate.boilerplate.decorators import configurable
@@ -61,7 +61,7 @@ class ModifiedCLIPTextTransformer(nn.Module):
 
         # CLIP's text model uses causal mask, prepare it here.
         # https://github.com/openai/CLIP/blob/cfcffb90e69f37bf2ff1e988237a0fbe41f33c04/clip/model.py#L324
-        causal_attention_mask = _make_causal_mask(
+        causal_attention_mask = _create_4d_causal_attention_mask(
             hidden_states.shape[:2],
             hidden_states.dtype,
             device=hidden_states.device,
