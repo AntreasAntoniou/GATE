@@ -18,6 +18,7 @@ from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 
+
 colour_dict = {
     "blue": 0,
     "brown": 1,
@@ -54,9 +55,18 @@ size_dict = {
     "small": 1,
 }
 
+yes_no_dict = {"no": 0, "yes": 1}
+
 material_dict = {"metal": 0, "rubber": 1}
 
-yes_no_dict = {"no": 0, "yes": 1}
+num_classes: Dict = {
+    "colour": len(colour_dict),
+    "shape": len(shape_dict),
+    "count": len(count_dict),
+    "size": len(size_dict),
+    "yes_no": len(yes_no_dict),
+    "material": len(material_dict),
+}
 
 
 class CLEVRClassificationDataset(Dataset):
@@ -286,7 +296,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes: int = 28,
+    num_classes: Dict = num_classes,
 ):
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),

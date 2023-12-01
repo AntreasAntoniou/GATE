@@ -33,7 +33,7 @@ def build_food101_dataset(
     Returns:
         A dictionary containing the dataset split.
     """
-    rng = np.random.RandomState(42)
+    np.random.RandomState(42)
 
     logger.info(
         f"Loading Food-101 dataset, will download to {data_dir} if necessary."

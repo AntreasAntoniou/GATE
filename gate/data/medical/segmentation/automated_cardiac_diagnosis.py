@@ -16,9 +16,7 @@ from gate.data.medical.segmentation.medical_decathlon import (
 )
 from gate.data.transforms.segmentation import (
     DualImageRandomCrop,
-    DualImageRandomFlip,
     MedicalImageSegmentationTransforms,
-    PhotoMetricDistortion,
     PhotometricParams,
 )
 

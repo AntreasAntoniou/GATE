@@ -2,7 +2,8 @@ import json
 import logging
 import random
 import subprocess
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from dataclasses import asdict
+from typing import Dict, List, Optional, Union
 
 import fire
 from rich import print
@@ -32,7 +33,7 @@ from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
 from gate.menu.configs.video_classification import (
     config as video_classification_config,
 )
-from gate.menu.utils import build_command, get_commands
+from gate.menu.utils import build_command
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)
@@ -84,16 +85,39 @@ def generate_commands(
                         "_", "-"
                     )
                 )
-                model_args = ""
-                if model_config.encoder_config.value.timm_model_name:
-                    model_args = f"model.timm_model_name={model_config.encoder_config.value.timm_model_name}"
+                encoder_args = ""
+                for key, value in asdict(
+                    model_config.encoder_config.value
+                ).items():
+                    if "pretty_name" in key:
+                        continue
+                    if "encoder_name" in key:
+                        continue
+                    if value is None:
+                        continue
+
+                    encoder_args += f"encoder.{key}={value} "
+
+                adapter_args = ""
+                for key, value in asdict(model_config.adapter_config).items():
+                    if "pretty_name" in key:
+                        continue
+                    if "adapter_name" in key:
+                        continue
+                    if value is None:
+                        continue
+
+                    adapter_args += f"adapter.{key}={value} "
+
                 lr_list = model_config.learning_rate_config.get_lr()
                 for lr in lr_list:
                     command = build_command(
                         exp_name=exp_name,
-                        model_name=model_config.model_type,
+                        encoder_name=model_config.encoder_config.value.encoder_name,
+                        adapter_name=model_config.adapter_config.adapter_name,
                         dataset_name=dataset_value,
-                        model_args=model_args,
+                        encoder_args=encoder_args,
+                        adapter_args=adapter_args,
                         num_workers=num_workers,
                         gpu_ids=gpu_ids,
                         lr=lr,
@@ -145,6 +169,7 @@ def run_experiments(
     Returns:
         experiment_dict (dict): A dictionary containing the experiment names as keys and the corresponding experiment commands as values.
     """
+
     experiment_dict = {}
 
     experiment_configs: Dict[str, Dict] = {

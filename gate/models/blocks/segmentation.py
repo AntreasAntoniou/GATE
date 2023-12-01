@@ -1,5 +1,4 @@
 import math
-import time
 from collections import OrderedDict
 from typing import List, Tuple, Union
 
@@ -237,7 +236,7 @@ class ChannelMixerDecoder(nn.Module):
     def __init__(
         self,
         num_classes: int,
-        target_image_size: Union[int, tuple] = (64, 64),
+        target_image_size: int = 64,
         hidden_size: int = 256,
         decoder_num_blocks: int = 2,
         pre_output_dropout_rate: float = 0.3,
@@ -273,7 +272,7 @@ class ChannelMixerDecoder(nn.Module):
 
         if len(input_list[0].shape) == 4:
             input_list = [
-                self.upsample(x) if x.shape[-1] != target_image_size[0] else x
+                self.upsample(x) if x.shape[-1] != target_image_size else x
                 for x in input_list
             ]
             input_list = torch.cat(input_list, dim=1)
@@ -389,7 +388,7 @@ class ChannelMixerDecoder(nn.Module):
             else:
                 self.closest_square_root = int(np.sqrt(sequence_length))
 
-            self.built = True
+        self.built = True
 
     def forward(self, input_list: list):
         """
@@ -456,7 +455,7 @@ def upsample_tensor(input_tensor):
     b, c, s = input_tensor.shape
     new_size = math.ceil(math.sqrt(s)) ** 2
     sq_root = int(math.sqrt(new_size))
-    new_shape = (b, c, new_size)
+    (b, c, new_size)
     output_tensor = F.upsample(
         input_tensor,
         size=(sq_root * sq_root),

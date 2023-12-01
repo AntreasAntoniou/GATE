@@ -1,9 +1,7 @@
 import multiprocessing as mp
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
-import numpy as np
 import torch
-import torchvision.transforms as T
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
@@ -12,7 +10,6 @@ from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import cocostuff_10k_dict as CLASSES
 from gate.data.transforms.segmentation import (
     BaseDatasetTransforms,
-    DualImageRandomCrop,
     KeySelectorTransforms,
 )
 

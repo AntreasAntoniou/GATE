@@ -1,6 +1,7 @@
 import os
 from typing import Any, Callable, Optional
 
+import torch
 from accelerate import Accelerator
 
 # Set environmental variables for better debugging
@@ -11,7 +12,6 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 import logging
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
@@ -22,6 +22,7 @@ from rich.text import Text
 from rich.traceback import install
 from torch import nn
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -113,13 +114,13 @@ def run(cfg: Any) -> None:
 
     global_step = setup(ckpt_path, cfg)
 
-    model_and_transform = instantiate(cfg.model)
-    # task_adaptor = instantiate(cfg.task_adaptor)
-    # model = task_adaptor(model_and_transform.model)
+    encoder = instantiate(cfg.encoder)
+    task_adapted_model = instantiate(cfg.adapter, encoder=encoder)
+    transform: Optional[Callable] = task_adapted_model.adapter_transforms
 
-    model: GATEModel = model_and_transform.model
-    model = accelerator.prepare(model)
-    transform: Optional[Callable] = model_and_transform.transform
+    model: GATEModel = GATEModel(
+        config=task_adapted_model.modality_config, model=task_adapted_model
+    )
 
     pretty_print_parameters(model)
 
@@ -144,6 +145,13 @@ def run(cfg: Any) -> None:
         cfg, test_dataset, cfg.eval_batch_size, shuffle=False
     )
 
+    optimizer = instantiate_optimizer(cfg, model)
+    scheduler = instantiate_scheduler(cfg, optimizer)
+
+    model, optimizer, scheduler = accelerator.prepare(
+        model, optimizer, scheduler
+    )
+
     (
         train_dataloader,
         val_dataloader,
@@ -151,11 +159,6 @@ def run(cfg: Any) -> None:
     ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
 
     wandb.log({"model/num_parameters": count_model_parameters(model)})
-
-    optimizer = instantiate_optimizer(cfg, model)
-    scheduler = instantiate_scheduler(cfg, optimizer)
-
-    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     trainer = instantiate(
         cfg.trainer,

@@ -1,52 +1,59 @@
 import pytest
 import torch
 
+from gate.models.backbones.clip_image import CLIPModelPaths
 from gate.models.backbones.timm import (  # replace 'your_module' with the module where you have defined CLIPAdapter
     TimmCLIPAdapter,
 )
 
 
-def test_TimmCLIPAdapter_resnet():
-    clip_model_name = "openai/clip-vit-base-patch32"
-    timm_model_name = "resnet50.a1_in1k"
-    adapter = TimmCLIPAdapter(
-        timm_model_name=timm_model_name, clip_model_name=clip_model_name
+@pytest.fixture
+def clip_adapter():
+    # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
+    return TimmCLIPAdapter(
+        clip_model_name=CLIPModelPaths.openai_b_16,
+        timm_model_name="vit_base_patch16_224",
+        image_size=224,
+        num_projection_features=64,
     )
 
-    # Test with only image input
-    image = torch.randn(1, 3, 224, 224)
-    output = adapter.forward(image=image)
 
-    # Test with only text input
-    text = torch.randint(0, 100, (1, 10))  # Assuming text input is token IDs
-    output = adapter.forward(text=text)
+def test_clip_adapter_init(clip_adapter):
+    assert clip_adapter.clip is not None
+    assert clip_adapter.text_transforms is not None
 
-    # Test with both image and text input
-    output = adapter.forward(image=image, text=text)
 
-    # Test with neither image nor text input
+def test_forward_pass_image(clip_adapter):
+    # You will need to mock or create a sample image tensor here
+    image_tensor = torch.rand((1, 3, 224, 224))  # Mocking an image tensor
+    result = clip_adapter.forward(image=image_tensor)
+    assert "image" in result
+    assert "features" in result["image"]
+    assert "features" in result["image"]
+    assert "raw_features" in result["image"]
+    assert "per_layer_raw_features" in result["image"]
+
+
+def test_forward_pass_text(clip_adapter):
+    # You will need to mock or create a sample text tensor here
+    text_tensor = torch.randint(0, 2000, (1, 10))  # Mocking a text tensor
+    result = clip_adapter.forward(text=text_tensor)
+    assert "text" in result
+    assert "features" in result["text"]
+    assert "raw_features" in result["text"]
+
+
+def test_forward_pass_video(clip_adapter):
+    # You will need to mock or create a sample video tensor here
+    video_tensor = torch.rand((1, 10, 3, 224, 224))  # Mocking a video tensor
+    result = clip_adapter.forward(video=video_tensor)
+    assert "video" in result
+    assert "features" in result["video"]
+    assert "features" in result["video"]
+    assert "raw_features" in result["video"]
+    assert "per_layer_raw_features" in result["video"]
+
+
+def test_forward_pass_raises_exception_with_no_input(clip_adapter):
     with pytest.raises(ValueError):
-        output = adapter.forward()
-
-
-def test_TimmCLIPAdapter_vit():
-    clip_model_name = "openai/clip-vit-base-patch32"
-    timm_model_name = "vit_tiny_patch16_224.augreg_in21k"
-    adapter = TimmCLIPAdapter(
-        timm_model_name=timm_model_name, clip_model_name=clip_model_name
-    )
-
-    # Test with only image input
-    image = torch.randn(1, 3, 224, 224)
-    output = adapter.forward(image=image)
-
-    # Test with only text input
-    text = torch.randint(0, 100, (1, 10))  # Assuming text input is token IDs
-    output = adapter.forward(text=text)
-
-    # Test with both image and text input
-    output = adapter.forward(image=image, text=text)
-
-    # Test with neither image nor text input
-    with pytest.raises(ValueError):
-        output = adapter.forward()
+        clip_adapter.forward()

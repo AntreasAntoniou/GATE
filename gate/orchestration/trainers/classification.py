@@ -76,6 +76,7 @@ class ClassificationTrainer(Trainer):
     ) -> TrainerOutput:
         model.train()
         self.optimizer.zero_grad()
+
         step_output: StepOutput = self.step(
             model=model,
             batch=batch,

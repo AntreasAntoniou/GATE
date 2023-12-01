@@ -1,10 +1,7 @@
 from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,
-    EncoderNames,
     EvaluatorName,
-    LearningRateConfig,
-    ModelConfig,
     TrainerName,
     get_model_selection,
 )
@@ -14,8 +11,8 @@ dataset_configs = {
     for dataset_name in DatasetName.IMAGE_CLASSIFICATION.value
 }
 
-BATCH_SIZE = 128
-MODEL_TYPE = AdapterTypeNames.TIMM_IMAGE_CLASSIFICATION.value
+BATCH_SIZE = 64
+ADAPTER_CONFIG = AdapterTypeNames.IMAGE_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.IMAGE_CLASSIFICATION.value
@@ -25,7 +22,7 @@ EVALUATOR_NAME = EvaluatorName.IMAGE_CLASSIFICATION.value
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ADAPTER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,

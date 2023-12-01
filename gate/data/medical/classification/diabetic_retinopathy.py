@@ -135,6 +135,7 @@ def build_gate_dataset(
     label_idx_to_class_name=class_idx_to_descriptions,
 ) -> dict:
     dataset_dict = build_dataset(data_dir=data_dir)
+
     train_set = GATEDataset(
         dataset=dataset_dict["train"],
         infinite_sampling=True,

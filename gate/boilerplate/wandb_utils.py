@@ -4,8 +4,6 @@ import math
 from typing import Dict, List, Optional, Union
 
 import numpy as np
-import pandas as pd
-import PIL
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -236,6 +234,15 @@ def log_wandb_images(
         episode_list.append(ae_episode)
 
     return {f"{prefix}/autoencoder_episode": episode_list}
+
+
+from typing import Dict, List, Union
+
+import torch
+import torchvision.transforms as T
+from PIL import Image
+
+import wandb
 
 
 def log_wandb_image_classification(

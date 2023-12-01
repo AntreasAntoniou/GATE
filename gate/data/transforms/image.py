@@ -1,6 +1,5 @@
 from typing import List, Tuple, Union
 
-import numpy as np
 import PIL
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF

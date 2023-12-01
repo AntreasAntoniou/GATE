@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
-import torchvision.transforms as T
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable

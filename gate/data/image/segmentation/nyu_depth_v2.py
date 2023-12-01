@@ -1,10 +1,7 @@
 # cityscapes.py
 import multiprocessing as mp
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
-import numpy as np
-import torch
-import torchvision.transforms as T
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable

@@ -1,6 +1,5 @@
 # Importing pytest and required libraries for testing
 import numpy as np
-import pytest
 import torch
 from PIL import Image
 
