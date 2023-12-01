@@ -127,9 +127,10 @@ class DuoModalFusionModel(BaseModule):
                 ]
             ),
             "answer_type": list(self.num_classes.keys())[:2]
-            if isinstance(self.num_classes, dict)
+            if not isinstance(self.num_classes, int)
             else None,
         }
+        print(dummy_batch, self.num_classes)
         _ = self(**dummy_batch)
 
     @ensemble_marker
@@ -268,30 +269,10 @@ class DuoModalFusionModel(BaseModule):
         reinit(self)
 
     def adapter_transforms(self, inputs: dict):
-        output_dict = {}
-
         if "image" in inputs:
-            output_dict["image"] = self.encoder_transforms["image"](
-                inputs["image"]
-            )
+            inputs["image"] = self.encoder_transforms["image"](inputs["image"])
 
         if "text" in inputs:
-            output_dict["text"] = self.encoder_transforms["text"](
-                inputs["text"]
-            )
+            inputs["text"] = self.encoder_transforms["text"](inputs["text"])
 
-        if "labels" in inputs:
-            output_dict["labels"] = inputs["labels"]
-
-        if "answer_type" in inputs:
-            output_dict["answer_type"] = inputs["answer_type"]
-
-        if "question_family_idx" in inputs:
-            output_dict["question_family_idx"] = inputs["question_family_idx"]
-
-        if "return_loss_and_metrics" in inputs:
-            output_dict["return_loss_and_metrics"] = inputs[
-                "return_loss_and_metrics"
-            ]
-
-        return output_dict
+        return inputs

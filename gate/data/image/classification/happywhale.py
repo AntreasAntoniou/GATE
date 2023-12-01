@@ -250,6 +250,4 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
-    # some logic that sets num_classes = get_label_dict(dataset_dict["train"])
-
     return dataset_dict
