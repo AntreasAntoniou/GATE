@@ -13,6 +13,7 @@ from torch.utils.data import Dataset, random_split
 
 from gate import data
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import enrichen_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import (
@@ -32,7 +33,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 logger = logging.getLogger(__name__)
-logging.getLogger("monai").setLevel(logging.CRITICAL)
+monai_logger = logging.getLogger("monai").setLevel(logging.CRITICAL)
+monai_logger = enrichen_logger(monai_logger)
 
 
 class TaskOptions(Enum):

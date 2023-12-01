@@ -20,6 +20,7 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+logger = logging.getLogger(__name__)
 from gate.config.variables import HF_OFFLINE_MODE
 
 int_or_str = Union[int, str]
@@ -51,6 +52,21 @@ def get_logger(
         logger.addHandler(ch)
 
     install()
+
+    return logger
+
+
+def enrichen_logger(logger: logging.Logger) -> logging.Logger:
+    ch = RichHandler()
+
+    # create formatter with concise time and date
+    formatter = logging.Formatter("%(message)s", datefmt="[%X]")
+
+    # add formatter to ch
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)
 
     return logger
 
@@ -222,11 +238,6 @@ def load_json(filepath: Union[str, pathlib.Path]):
         dict_to_load = json.loads(json_file.read())
 
     return dict_to_load
-
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 def download_model_with_name(
