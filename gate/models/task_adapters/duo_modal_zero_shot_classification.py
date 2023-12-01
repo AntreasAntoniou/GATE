@@ -84,7 +84,7 @@ class DuoModalZeroShotModel(BaseModule):
     @property
     def modality_config(self):
         return TargetModalityConfig(
-            image_text=[SourceModalityConfig(image_text=True)]
+            image_text=[SourceModalityConfig(image=True, text=True)]
         )
 
     def forward(

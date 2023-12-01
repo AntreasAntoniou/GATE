@@ -278,7 +278,7 @@ class SegmentationAdapter(nn.Module):
         return metrics_with_ignore  # | metrics_complete
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
-        features = self.model(image)["image"]["per_layer_raw_features"]
+        features = self.encoder(image)["image"]["per_layer_raw_features"]
         # feature shape is either B, C, H, W or B, (W * H), C
         mask_predictions = self.spatial_decoder_head(features)
         # b, c, h, w = mask_predictions.shape

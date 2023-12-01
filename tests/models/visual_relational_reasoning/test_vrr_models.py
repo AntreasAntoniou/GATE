@@ -31,6 +31,7 @@ data = [
             timm_model_name=EncoderNames.EffNetV2_RW_S_RA2.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
             num_projection_features=64,
+            image_size=224,
         ),
     ),
     (
@@ -39,6 +40,7 @@ data = [
             timm_model_name=EncoderNames.AugRegViTBase16_224.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
             num_projection_features=64,
+            image_size=224,
         ),
     ),
     (

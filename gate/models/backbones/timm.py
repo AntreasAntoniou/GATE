@@ -78,7 +78,7 @@ class TimmModel(nn.Module):
     def __init__(
         self,
         model_identifier: str = "hf_hub:timm/vit_large_patch14_clip_224.openai_ft_in12k_in1k",
-        img_size: Optional[List[int]] = None,
+        image_size: Optional[int] = None,
         pretrained: bool = True,
     ):
         super().__init__()
@@ -95,17 +95,17 @@ class TimmModel(nn.Module):
                 f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
             )
             logger.info(
-                f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {img_size}"
+                f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {image_size}"
             )
             self.model = timm.create_model(
                 model_name=model_identifier,
-                img_size=img_size,
+                img_size=image_size,
                 pretrained=pretrained,
             )
         logger.info(f"Loaded Model {self.model}")
-        if img_size is None:
-            img_size = self.model.default_cfg["input_size"][-2:]
-
+        if image_size is None:
+            image_size = self.model.default_cfg["input_size"][-1]
+        print(f"image_size: {image_size}")
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
             **resolve_data_config(
@@ -120,7 +120,7 @@ class TimmModel(nn.Module):
         self.transforms = T.Compose(
             [
                 T.Resize(
-                    size=(img_size, img_size),
+                    size=(image_size, image_size),
                     interpolation=InterpolationMode.BICUBIC,
                 )
             ]
@@ -220,7 +220,7 @@ class TimmCLIPAdapter(GATEncoder):
         num_projection_features: Optional[int] = None,
     ):
         super().__init__()
-        self.image_size = image_size if image_size else 224
+        self.image_size = image_size if image_size is not None else 224
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
@@ -231,7 +231,7 @@ class TimmCLIPAdapter(GATEncoder):
         self.vision_model = TimmModel(
             model_identifier=timm_model_name,
             pretrained=pretrained,
-            img_size=image_size,
+            image_size=self.image_size,
         )
         self.text_model = self.clip.text_model
 
