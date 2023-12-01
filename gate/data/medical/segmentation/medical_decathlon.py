@@ -33,8 +33,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 logger = logging.getLogger(__name__)
-monai_logger = logging.getLogger("monai").setLevel(logging.CRITICAL)
+monai_logger = logging.getLogger("monai")
 monai_logger = enrichen_logger(monai_logger)
+monai_logger.setLevel(logging.CRITICAL)
 
 
 class TaskOptions(Enum):

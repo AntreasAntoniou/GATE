@@ -42,8 +42,8 @@ def get_gpu_processes(memory_threshold=5, util_threshold=10):
 
 def run_command_on_gpu(command, gpu_id, exp_name):
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
-    stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout", "a")
-    stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr", "a")
+    stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout", "w")
+    stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr", "w")
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )  # Return the process handle

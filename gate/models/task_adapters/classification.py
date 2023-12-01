@@ -69,7 +69,12 @@ class BackboneWithLinearClassification(BaseModule):
             "image": torch.randn(
                 1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
             ),
-            "labels": torch.randint(0, self.num_classes, (1,)),
+            "labels": torch.randint(0, self.num_classes, (1,))
+            if isinstance(self.num_classes, int)
+            else {
+                key: torch.randint(0, n, (1,))
+                for key, n in self.num_classes.items()
+            },
         }
         _ = self(**dummy_batch)
 
