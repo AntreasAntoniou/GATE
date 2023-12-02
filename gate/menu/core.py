@@ -211,13 +211,13 @@ class EncoderNames(Enum):
     #     clip_model_name=CLIPModelPaths.openai_b_16,
     #     encoder_name="timm",
     # )
-    AugRegViTBase16_224 = EncoderConfig(
-        pretty_name="AR_ViT_B16_224",
-        timm_model_name="vit_base_patch16_224.augreg_in1k",
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="timm",
-        num_projection_features=768,
-    )
+    # AugRegViTBase16_224 = EncoderConfig(
+    #     pretty_name="AR_ViT_B16_224",
+    #     timm_model_name="vit_base_patch16_224.augreg_in1k",
+    #     clip_model_name=CLIPModelPaths.openai_b_16,
+    #     encoder_name="timm",
+    #     num_projection_features=768,
+    # )
     # DiNoViTBase16_224 = EncoderConfig(
     #     pretty_name="DINO_B16_224",
     #     timm_model_name="vit_base_patch16_224.dino",
@@ -274,12 +274,12 @@ class EncoderNames(Enum):
     #     encoder_name="timm",
     #     embedding_dim=768,
     # )
-    # SIGLIPPathch16_224 = EncoderConfig(
-    #     pretty_name="SIGLIP_P16_224",
-    #     timm_model_name="vit_base_patch16_siglip_224",
-    #     clip_model_name=CLIPModelPaths.openai_b_16,
-    #     encoder_name="timm",
-    # )
+    SIGLIPPathch16_224 = EncoderConfig(
+        pretty_name="SIGLIP_P16_224",
+        timm_model_name="vit_base_patch16_siglip_224",
+        clip_model_name=CLIPModelPaths.openai_b_16,
+        encoder_name="timm",
+    )
 
 
 @dataclass
@@ -366,15 +366,15 @@ def get_model_selection(
         #     train_batch_size=batch_size,
         #     eval_batch_size=batch_size,
         # ),
-        EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.AugRegViTBase16_224,
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
+        # EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.AugRegViTBase16_224,
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
         # EncoderNames.LaionViTBase16_224.value.pretty_name: ModelConfig(
         #     adapter_config=adapter_config,
         #     encoder_config=EncoderNames.LaionViTBase16_224,
@@ -438,15 +438,15 @@ def get_model_selection(
         #     train_batch_size=batch_size,
         #     eval_batch_size=batch_size,
         # ),
-        # EncoderNames.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
-        #     adapter_config=adapter_config,
-        #     encoder_config=EncoderNames.SIGLIPPathch16_224,
-        #     learning_rate_config=LearningRateConfig(
-        #         default=[vit_lr], dataset_specific={}
-        #     ),
-        #     train_batch_size=batch_size,
-        #     eval_batch_size=batch_size,
-        # ),
+        EncoderNames.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
+            adapter_config=adapter_config,
+            encoder_config=EncoderNames.SIGLIPPathch16_224,
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
         # EncoderNames.EfficientFormer_s0.value.pretty_name: ModelConfig(
         #     adapter_config=adapter_config,
         #     encoder_config=EncoderNames.EfficientFormer_s0,

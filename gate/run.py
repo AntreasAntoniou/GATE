@@ -122,8 +122,6 @@ def run(cfg: Any) -> None:
         config=task_adapted_model.modality_config, model=task_adapted_model
     )
 
-    pretty_print_parameters(model)
-
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     log_wandb_parameters(config_dict, global_step)
@@ -158,6 +156,7 @@ def run(cfg: Any) -> None:
         test_dataloader,
     ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
 
+    pretty_print_parameters(model)
     wandb.log({"model/num_parameters": count_model_parameters(model)})
 
     trainer = instantiate(
