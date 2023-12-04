@@ -11,7 +11,6 @@ import torchvision.transforms as T
 from datasets import concatenate_datasets
 from torch.utils.data import Dataset, random_split
 
-from gate import data
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import enrichen_logger
 from gate.config.variables import DATASET_DIR
@@ -117,42 +116,27 @@ def build_dataset(
         runtime_cache=False,
     )
 
-    test_dataset = monai.apps.DecathlonDataset(
-        root_dir=data_dir,
-        task=task_name,
-        section="test",
-        download=True,
-        seed=0,
-        val_frac=0.0,
-        num_workers=mp.cpu_count(),
-        progress=True,
-        cache_num=0,
-        cache_rate=1.0,
-        copy_cache=False,
-        as_contiguous=True,
-        runtime_cache=False,
-    )
-
     # create a random 90-10 train-val split
 
     dataset_length = len(train_dataset)
-    val_split = 0.3  # Fraction for the validation set (e.g., 10%)
-
+    val_split = 0.2  # Fraction for the validation set (e.g., 10%)
+    test_split = 0.2
     # Calculate the number of samples for train and validation sets
-    val_test_length = int(dataset_length * val_split)
-    val_length = val_test_length
-    # test_length = val_test_length - val_length
+    val_test_length = int(dataset_length * (val_split + test_split))
+    val_length = int(dataset_length * val_split)
+    test_length = val_test_length - val_length
+
     train_length = dataset_length - val_test_length
 
     # Split the dataset into train and validation sets using the generator
-    train_data, val_data = random_split(
-        train_dataset, [train_length, val_length]
+    train_data, val_data, test_data = random_split(
+        train_dataset, [train_length, val_length, test_length]
     )
 
     dataset_dict = {
         "train": train_data,
         "val": val_data,
-        "test": test_dataset,
+        "test": test_data,
     }
 
     return dataset_dict[set_name]
