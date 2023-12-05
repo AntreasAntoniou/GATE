@@ -3,7 +3,7 @@ import os
 from typing import List
 
 import fire
-from huggingface_hub import HfApi, Repository
+from huggingface_hub import HfApi
 from rich.logging import RichHandler
 from tqdm.auto import tqdm
 

@@ -17,6 +17,7 @@ RESNET_LR = 1e-3
 VIT_LR = 1e-5
 TRAINER_NAME = TrainerName.VIDEO_CLASSIFICATION.value
 EVALUATOR_NAME = EvaluatorName.VIDEO_CLASSIFICATION.value
+IMAGE_SIZE = 224
 
 config = {
     "dataset": dataset_configs,
@@ -25,6 +26,7 @@ config = {
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,
+        image_size=IMAGE_SIZE,
     ),
     "trainer": TRAINER_NAME,
     "evaluator": EVALUATOR_NAME,

@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
+from gate.data import image
 from gate.data.few_shot import DatasetName as few_shot_dataset_name
 from gate.data.image.classification import (
     DatasetName as image_class_dataset_name,
@@ -293,7 +294,12 @@ class ModelConfig:
 
 
 def get_model_selection(
-    adapter_config, batch_size, resnet_lr, vit_lr, wd: float = 0.01
+    adapter_config,
+    batch_size,
+    resnet_lr,
+    vit_lr,
+    wd: float = 0.01,
+    image_size: int = 224,
 ):
     return {
         # EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(
@@ -440,7 +446,13 @@ def get_model_selection(
         # ),
         EncoderNames.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.SIGLIPPathch16_224,
+            encoder_config=EncoderConfig(
+                pretty_name="SIGLIP_P16_224",
+                timm_model_name="vit_base_patch16_siglip_224",
+                clip_model_name=CLIPModelPaths.openai_b_16,
+                encoder_name="timm",
+                image_size=image_size,
+            ),
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),

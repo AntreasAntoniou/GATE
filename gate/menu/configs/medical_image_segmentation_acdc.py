@@ -19,6 +19,7 @@ RESNET_LR = 6e-4
 VIT_LR = 6e-6
 TRAINER_NAME = TrainerName.MEDICAL_SEMANTIC_SEGMENTATION.value
 EVALUATOR_NAME = EvaluatorName.MEDICAL_SEMANTIC_SEGMENTATION.value
+IMAGE_SIZE = 512
 
 config = {
     "dataset": dataset_configs,
@@ -28,6 +29,7 @@ config = {
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,
         wd=0.01,
+        image_size=IMAGE_SIZE,
     ),
     "trainer": TRAINER_NAME,
     "evaluator": EVALUATOR_NAME,

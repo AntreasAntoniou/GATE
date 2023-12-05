@@ -86,9 +86,7 @@ def generate_commands(
                     )
                 )
                 encoder_args = ""
-                for key, value in asdict(
-                    model_config.encoder_config.value
-                ).items():
+                for key, value in asdict(model_config.encoder_config).items():
                     if "pretty_name" in key:
                         continue
                     if "encoder_name" in key:
@@ -113,7 +111,7 @@ def generate_commands(
                 for lr in lr_list:
                     command = build_command(
                         exp_name=exp_name,
-                        encoder_name=model_config.encoder_config.value.encoder_name,
+                        encoder_name=model_config.encoder_config.encoder_name,
                         adapter_name=model_config.adapter_config.adapter_name,
                         dataset_name=dataset_value,
                         encoder_args=encoder_args,
