@@ -103,7 +103,7 @@ class EncoderConfig:
     whisper_model_name: Optional[str] = None
     mpnet_model_name: Optional[str] = None
     embedding_dim: Optional[int] = None
-    num_projection_features: Optional[int] = None
+    num_projection_features: Optional[int] = 768
 
 
 @dataclass
