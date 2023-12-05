@@ -2,6 +2,7 @@ from gate.menu.core import (
     AdapterTypeNames,
     DatasetName,
     EvaluatorName,
+    MixedPrecisionMode,
     TrainerName,
     get_model_selection,
 )
@@ -30,6 +31,7 @@ config = {
         vit_lr=VIT_LR,
         wd=0.01,
         image_size=IMAGE_SIZE,
+        mixed_precision_mode=MixedPrecisionMode.FP16,
     ),
     "trainer": TRAINER_NAME,
     "evaluator": EVALUATOR_NAME,

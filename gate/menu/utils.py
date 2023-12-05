@@ -24,11 +24,14 @@ def build_command(
     gate_run_path: str = "/app/gate/run.py",
     train_iters: int = 10000,
     evaluate_every_n_steps: int = 250,
+    mixed_precision_mode: str = "bf16",
 ) -> str:
     """
     Build a command for running an experiment. 🛠️
     """
-    accelerate_launch_command = f"{accelerate_launch_path} --mixed_precision={os.environ.get('MIXED_PRECISION', 'bf16')}"
+    accelerate_launch_command = (
+        f"{accelerate_launch_path} --mixed_precision={mixed_precision_mode}"
+    )
 
     if gpu_ids:
         accelerate_launch_command += f" --gpu_ids={gpu_ids}"

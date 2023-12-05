@@ -129,6 +129,7 @@ def generate_commands(
                         gate_run_path=gate_run_path,
                         train_iters=train_iters,
                         evaluate_every_n_steps=evaluate_every_n_steps,
+                        mixed_precision_mode=model_config.mixed_precision_mode,
                     )
                     command_dict[exp_name] = command
     return command_dict

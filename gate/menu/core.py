@@ -284,6 +284,12 @@ class EncoderNames(Enum):
 
 
 @dataclass
+class MixedPrecisionMode:
+    BF16 = "bf16"
+    FP16 = "fp16"
+
+
+@dataclass
 class ModelConfig:
     learning_rate_config: LearningRateConfig
     adapter_config: AdapterConfig
@@ -291,6 +297,7 @@ class ModelConfig:
     eval_batch_size: int = 128
     train_batch_size: int = 128
     weight_decay: float = 0.01
+    mixed_precision_mode: str = MixedPrecisionMode.BF16
 
 
 def get_model_selection(
@@ -300,6 +307,7 @@ def get_model_selection(
     vit_lr,
     wd: float = 0.01,
     image_size: int = 224,
+    mixed_precision_mode: str = MixedPrecisionMode.BF16,
 ):
     return {
         # EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(
@@ -458,6 +466,7 @@ def get_model_selection(
             ),
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
+            mixed_precision_mode=mixed_precision_mode,
         ),
         # EncoderNames.EfficientFormer_s0.value.pretty_name: ModelConfig(
         #     adapter_config=adapter_config,
