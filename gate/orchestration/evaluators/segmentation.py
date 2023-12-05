@@ -2,6 +2,7 @@ import logging
 from typing import Any, Optional
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from accelerate import Accelerator
 
@@ -35,13 +36,10 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         self.model = None
 
     def step(self, model, batch, global_step, accelerator: Accelerator):
-        # start_time = time.time()
-
         if self.model is None:
             self.model = model
 
         output_dict = model.forward(batch)
-        # logger.info(f"forward time: {time.time() - start_time}")
         output_dict = output_dict[self.target_modality][self.source_modality]
 
         loss = output_dict["loss"]
@@ -131,11 +129,19 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
 
     @collect_metrics_mark
-    def end_testing(self, global_step, prefix: Optional[str] = None):
+    def end_testing(
+        self,
+        global_step,
+        model: Optional[nn.Module] = None,
+        prefix: Optional[str] = None,
+    ):
+        if model is None:
+            model = self.model
+
         evaluator_output: EvaluatorOutput = super().end_testing(
-            global_step, prefix=prefix
+            global_step, prefix=prefix, model=model
         )
-        iou_metrics = self.model.model.compute_across_set_metrics()
+        iou_metrics = model.model.compute_across_set_metrics()
 
         for key, value in iou_metrics.items():
             self.current_epoch_dict[key].append(value)
@@ -282,11 +288,19 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
 
     @collect_metrics_mark
-    def end_testing(self, global_step, prefix: Optional[str] = None):
+    def end_testing(
+        self,
+        global_step,
+        model: Optional[nn.Module] = None,
+        prefix: Optional[str] = None,
+    ):
+        if model is None:
+            model = self.model
+
         evaluator_output: EvaluatorOutput = super().end_testing(
-            global_step, prefix=prefix
+            global_step, prefix=prefix, model=model
         )
-        iou_metrics = self.model.model.compute_across_set_metrics()
+        iou_metrics = model.model.compute_across_set_metrics()
 
         for key, value in iou_metrics.items():
             self.current_epoch_dict[key].append(value)

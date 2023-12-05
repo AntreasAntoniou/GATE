@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from accelerate import Accelerator
 
@@ -428,7 +429,8 @@ class MultiClassClassificationEvaluator(Evaluator):
     @collect_metrics_mark
     def end_testing(
         self,
-        global_step: int,
+        global_step,
+        model: Optional[nn.Module] = None,
         prefix: Optional[str] = None,
     ):
         phase_metrics = self.compute_epoch_metrics(global_step)

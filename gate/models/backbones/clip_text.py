@@ -19,7 +19,6 @@ from gate.models.backbones import (
     VisionTextGATEAdapter,
     forward_dict,
 )
-from gate.models.core import reinit
 from gate.models.task_adapters.modality_transfer_classification import (
     VisionRootReplacedBackbone,
 )

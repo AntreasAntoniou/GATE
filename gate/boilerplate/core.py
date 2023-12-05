@@ -366,13 +366,15 @@ class Learner(nn.Module):
         )
         logger.debug("Starting testing 🧪")
 
-    def end_testing(self, prefix):
+    def end_testing(self, prefix, model):
         self.callback_handler.on_testing_end(
             experiment=self,
-            model=self.model,
+            model=model,
         )
 
-        self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
+        self.evaluator.end_testing(
+            global_step=self.global_step, model=model, prefix=prefix
+        )
 
         self.check_manage_background_threads()
 
@@ -407,7 +409,7 @@ class Learner(nn.Module):
         base_model = copy.deepcopy(self.model)
 
         if model is None:
-            for kth in [3, 1]:
+            for kth in [1, 3, 5]:
                 if self.evaluator.model_selection_metric_name is not None:
                     model = self.load_best_model(
                         metric_name=self.evaluator.model_selection_metric_name,
@@ -565,7 +567,7 @@ class Learner(nn.Module):
                     )
                     pbar_dataloaders.update(1)
 
-            self.end_testing(prefix=prefix)
+            self.end_testing(prefix=prefix, model=model)
 
     def save_checkpoint(
         self,

@@ -222,28 +222,37 @@ class SegmentationAdapter(nn.Module):
                 dropout_rate=decoder_dropout_rate,
             ),
         }
-
+        self.iou_metric = None
+        self.iou_metric_complete = None
         self.spatial_decoder_head = decoder_layer_mapping[decoder_layer_type]
         self.temporal_decoder_head = None
 
-        self.iou_metric = IoUMetric(
-            num_classes=num_classes,
-            ignore_index=ignore_index,
-            class_idx_to_name={
-                i: name for i, name in enumerate(self.class_names)
-            },
-        )
-
-        # self.iou_metric_complete = IoUMetric(
-        #     num_classes=num_classes,
-        #     ignore_index=None,
-        #     class_idx_to_name={
-        #         i: name for i, name in enumerate(self.class_names)
-        #     },
-        # )
-
         self.background_loss_weight = background_loss_weight
         self.build()
+
+    @property
+    @ensemble_marker
+    def iou_metrics_dict(self):
+        if self.iou_metric is None:
+            self.iou_metric = IoUMetric(
+                num_classes=self.num_classes,
+                ignore_index=self.ignore_index,
+                class_idx_to_name={
+                    i: name for i, name in enumerate(self.class_names)
+                },
+            )
+        if self.iou_metric_complete is None:
+            self.iou_metric_complete = IoUMetric(
+                num_classes=self.num_classes,
+                ignore_index=None,
+                class_idx_to_name={
+                    i: name for i, name in enumerate(self.class_names)
+                },
+            )
+        return dict(
+            iou_metric=self.iou_metric,
+            iou_metric_complete=self.iou_metric_complete,
+        )
 
     def build(self):
         dummy_batch = {
@@ -259,23 +268,29 @@ class SegmentationAdapter(nn.Module):
 
     @ensemble_marker
     def compute_across_set_metrics(self):
-        metrics = self.iou_metric.compute_metrics()
-        self.iou_metric.pretty_print(metrics=metrics)
-        self.iou_metric.reset()  # Resetting the metrics after computation
+        metrics = self.iou_metrics_dict["iou_metric"].compute_metrics()
+        self.iou_metrics_dict["iou_metric"].pretty_print(metrics=metrics)
+        self.iou_metrics_dict[
+            "iou_metric"
+        ].reset()  # Resetting the metrics after computation
         metrics_with_ignore = {
             k: v for k, v in metrics.items() if "per_class" not in k
         }
 
-        # complete_metrics = self.iou_metric_complete.compute_metrics()
-        # self.iou_metric_complete.pretty_print(metrics=complete_metrics)
-        # self.iou_metric_complete.reset()
-        # metrics_complete = {
-        #     f"{k}_complete": v
-        #     for k, v in complete_metrics.items()
-        #     if "per_class" not in k
-        # }
+        complete_metrics = self.iou_metrics_dict[
+            "iou_metric_complete"
+        ].compute_metrics()
+        self.iou_metrics_dict["iou_metric_complete"].pretty_print(
+            metrics=complete_metrics
+        )
+        self.iou_metrics_dict["iou_metric_complete"].reset()
+        metrics_complete = {
+            f"{k}_complete": v
+            for k, v in complete_metrics.items()
+            if "per_class" not in k
+        }
 
-        return metrics_with_ignore  # | metrics_complete
+        return metrics_with_ignore | metrics_complete
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
         features = self.encoder(image)["image"]["per_layer_raw_features"]
@@ -335,14 +350,14 @@ class SegmentationAdapter(nn.Module):
             logits,
             labels,
             ignore_index=self.ignore_index,
-            background_loss_weight=self.background_loss_weight,  # Assuming optimization_loss is defined elsewhere
+            background_loss_weight=self.background_loss_weight,
         )
 
         if not self.training:
             preds = torch.argmax(logits, dim=1)
             labels = labels.squeeze()
-            self.iou_metric.update(preds, labels)
-            # self.iou_metric_complete.update(preds, labels)
+            for value in self.iou_metrics_dict.values():
+                value.update(preds, labels)
 
         return loss_and_metrics
 

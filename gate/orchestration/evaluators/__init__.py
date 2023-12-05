@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import torch
+import torch.nn as nn
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics_mark
@@ -142,7 +143,8 @@ class Evaluator(ABC):
     @collect_metrics_mark
     def end_testing(
         self,
-        global_step: int,
+        global_step,
+        model: Optional[nn.Module] = None,
         prefix: Optional[str] = None,
     ):
         phase_metrics = {}

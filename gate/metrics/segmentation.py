@@ -58,11 +58,11 @@ class IoUMetric:
         label = label.clone().cpu().view(-1)
 
         if self.ignore_index is not None:
-            ignore_mask = label != self.ignore_index
+            keep_mask = label != self.ignore_index
 
-            ignore_mask = ignore_mask.to(pred.device)
-            pred = pred[ignore_mask]
-            label = label[ignore_mask]
+            keep_mask = keep_mask.to(pred.device)
+            pred = pred[keep_mask]
+            label = label[keep_mask]
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
