@@ -31,7 +31,7 @@ class DuoModalZeroShotModel(BaseModule):
     def __init__(
         self,
         encoder: GATEncoder,
-        projection_num_features: Optional[int] = None,
+        projection_num_features: Optional[int] = 768,
         temperature_parameter: Optional[float] = 1.0 / 0.07,
         head_identifier: Optional[str] = "features",
     ):

@@ -112,6 +112,7 @@ def test_build_gate_visualize_dataset(gate_dataset_class):
         gate_dataset["test"], batch_size=1, shuffle=False, num_workers=16
     )
 
+    assert len(train_loader) > 0, "Train loader should not be empty"
     with tqdm(total=200, smoothing=0.0) as pbar:
         for idx, item in enumerate(train_loader):
             print(list(item.keys()))
@@ -122,6 +123,8 @@ def test_build_gate_visualize_dataset(gate_dataset_class):
             pbar.update(1)
             if idx > 200:
                 break
+
+    assert len(val_loader) > 0, "Val loader should not be empty"
     with tqdm(total=200, smoothing=0.0) as pbar:
         for idx, item in enumerate(val_loader):
             print(list(item.keys()))
@@ -132,6 +135,8 @@ def test_build_gate_visualize_dataset(gate_dataset_class):
             pbar.update(1)
             if idx > 200:
                 break
+
+    assert len(test_loader) > 0, "Test loader should not be empty"
     with tqdm(total=200, smoothing=0.0) as pbar:
         for idx, item in enumerate(test_loader):
             print(list(item.keys()))
@@ -142,19 +147,3 @@ def test_build_gate_visualize_dataset(gate_dataset_class):
             pbar.update(1)
             if idx > 200:
                 break
-
-
-if __name__ == "__main__":
-    for gate_dataset_class in [
-        build_gate_md_brain_tumour,
-        build_gate_md_heart,
-        build_gate_md_liver,
-        build_gate_md_hepatic_vessel,
-        build_gate_md_hippocampus,
-        build_gate_md_lung,
-        build_gate_md_pancreas,
-        build_gate_md_prostate,
-        build_gate_md_spleen,
-        build_gate_md_colon,
-    ]:
-        test_build_gate_visualize_dataset(gate_dataset_class)
