@@ -56,9 +56,7 @@ class Evaluator(ABC):
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
-        print(
-            f"global_steps: {global_steps}, per_epoch_metrics: {self.per_epoch_metrics}, current_epoch_dict: {self.current_epoch_dict}"
-        )
+        print(f"global_steps: {global_steps}")
 
         if isinstance(metrics, List):
             if len(metrics) == 0:
@@ -147,6 +145,11 @@ class Evaluator(ABC):
         model: Optional[nn.Module] = None,
         prefix: Optional[str] = None,
     ):
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         phase_metrics = {}
         for key, value in self.current_epoch_dict.items():
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
@@ -158,7 +161,7 @@ class Evaluator(ABC):
                 phase_metrics[f"{key}-epoch-std"]
             )
 
-        self.per_epoch_metrics["global_step"].append(global_step)
+        self.per_epoch_metrics[f"{prefix}global_step"].append(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,

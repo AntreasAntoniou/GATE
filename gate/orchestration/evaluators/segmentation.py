@@ -35,9 +35,21 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         )
         self.model = None
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
+    def step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        prefix: Optional[str] = None,
+    ):
         if self.model is None:
             self.model = model
+
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
 
         output_dict = model.forward(batch)
         output_dict = output_dict[self.target_modality][self.source_modality]
@@ -65,7 +77,7 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         for key, value in output_dict.items():
             if "loss" in key or "iou" in key or "accuracy" in key:
                 if isinstance(value, torch.Tensor):
-                    self.current_epoch_dict[key].append(
+                    self.current_epoch_dict[f"{prefix}{key}"].append(
                         value.detach().float().mean().cpu()
                     )
 
@@ -138,14 +150,19 @@ class ImageSemanticSegmentationEvaluator(ClassificationEvaluator):
         if model is None:
             model = self.model
 
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         evaluator_output: EvaluatorOutput = super().end_testing(
             global_step, prefix=prefix, model=model
         )
         iou_metrics = model.model.compute_across_set_metrics()
 
         for key, value in iou_metrics.items():
-            self.current_epoch_dict[key].append(value)
-            self.per_epoch_metrics[key].append(value)
+            self.current_epoch_dict[f"{prefix}{key}"].append(value)
+            self.per_epoch_metrics[f"{prefix}{key}"].append(value)
 
         return EvaluatorOutput(
             global_step=global_step,
@@ -201,9 +218,22 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             del output_dict["logits"]
         return output_dict
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
+    def step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        prefix: Optional[str] = None,
+    ):
         if self.model is None:
             self.model = model
+
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         output_list = []
         for sub_batch in sub_batch_generator(batch, self.sub_batch_size):
             output_dict = model.forward(sub_batch)
@@ -216,7 +246,7 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
             for key, value in output_dict.items():
                 if "loss" in key or "iou" in key or "accuracy" in key:
                     if isinstance(value, torch.Tensor):
-                        self.current_epoch_dict[key].append(
+                        self.current_epoch_dict[f"{prefix}{key}"].append(
                             value.detach().float().mean().cpu()
                         )
             output_list.append(output_dict)
@@ -294,6 +324,11 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         model: Optional[nn.Module] = None,
         prefix: Optional[str] = None,
     ):
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         if model is None:
             model = self.model
 
@@ -303,8 +338,8 @@ class MedicalSemanticSegmentationEvaluator(ClassificationEvaluator):
         iou_metrics = model.model.compute_across_set_metrics()
 
         for key, value in iou_metrics.items():
-            self.current_epoch_dict[key].append(value)
-            self.per_epoch_metrics[key].append(value)
+            self.current_epoch_dict[f"{prefix}{key}"].append(value)
+            self.per_epoch_metrics[f"{prefix}{key}"].append(value)
 
         return EvaluatorOutput(
             global_step=global_step,

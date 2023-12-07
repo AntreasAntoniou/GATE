@@ -2,12 +2,14 @@ import copy
 import logging
 import pathlib
 import time
+from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
 from accelerate import Accelerator
+from attr import dataclass
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -31,6 +33,12 @@ logger = logging.getLogger(__name__)
 
 from pathlib import Path
 from typing import Union
+
+
+class ExperimentStatus(Enum):
+    COMPLETED: str = "completed"
+    IN_PROGRESS: str = "in_progress"
+    STARTING: str = "starting"
 
 
 @configurable(
@@ -433,6 +441,11 @@ class Learner(nn.Module):
                 prefix=prefix,
             )
 
+    def _finalize_training(self):
+        self._validation_loop()
+        self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
+        return self.end_training()
+
     def _training_loop(self, train_dataloader: DataLoader = None):
         if train_dataloader is None:
             train_dataloader = self.train_dataloader
@@ -445,15 +458,16 @@ class Learner(nn.Module):
             if self.train_iters is None:
                 self.train_iters = len(train_dataloader)
 
+            if self.limit_train_iters is not None:
+                self.train_iters = min(
+                    self.train_iters, self.limit_train_iters
+                )
+
             with tqdm(
                 initial=self.global_step, total=self.train_iters, smoothing=0.0
             ) as pbar_steps:
-                while self.global_step < self.train_iters:
+                while self.global_step <= self.train_iters:
                     tqdm_iter = self.global_step
-
-                    if self.limit_train_iters is not None:
-                        if self.global_step >= self.limit_train_iters:
-                            return self.end_training()
 
                     for batch_idx, batch in enumerate(train_dataloader):
                         if (
@@ -485,9 +499,6 @@ class Learner(nn.Module):
                                 checkpoint_name=f"ckpt_{self.global_step}"
                             )
 
-                        if self.global_step >= self.train_iters:
-                            return self.end_training()
-
                         loss = torch.mean(
                             torch.stack(
                                 [
@@ -503,7 +514,7 @@ class Learner(nn.Module):
                         pbar_steps.update(tqdm_update)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
 
-            return self.end_training()
+        return self._finalize_training()
 
     def _validation_loop(
         self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
@@ -616,7 +627,7 @@ class Learner(nn.Module):
         )
 
         if not (pathlib.Path(checkpoint_path) / "trainer_state.pt").exists():
-            return
+            return ExperimentStatus.STARTING
 
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
@@ -667,6 +678,8 @@ class Learner(nn.Module):
             experiment=self,
             checkpoint_path=checkpoint_path,
         )
+
+        return ExperimentStatus.IN_PROGRESS
 
     def load_best_model(
         self,

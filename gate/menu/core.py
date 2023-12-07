@@ -117,6 +117,9 @@ class AdapterTypeNames(Enum):
     IMAGE_CLASSIFICATION = AdapterConfig(
         adapter_name="backbone-with-linear-classifier"
     )
+    MULTI_CLASS_CLASSIFICATION = AdapterConfig(
+        adapter_name="multi-class-with-linear-classifier"
+    )
     FEW_SHOT_PROTONET = AdapterConfig(adapter_name="fs-protonet")
     SEGMENTATION = AdapterConfig(
         adapter_name="segmentation-adapter",

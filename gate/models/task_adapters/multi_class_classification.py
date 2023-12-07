@@ -48,11 +48,11 @@ class MultiClassBackboneWithLinear(BaseModule):
         return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
 
     @ensemble_marker
-    def compute_multi_class_loss(self, logits, targets):
-        opt_loss = F.binary_cross_entropy_with_logits(logits, targets)
+    def compute_loss_and_metrics(self, logits, labels):
+        opt_loss = F.binary_cross_entropy_with_logits(logits, labels)
 
         loss = F.binary_cross_entropy_with_logits(
-            logits, targets, reduction="none"
+            logits, labels, reduction="none"
         )
         loss = loss.detach()
         logits = logits.detach()
@@ -60,8 +60,6 @@ class MultiClassBackboneWithLinear(BaseModule):
         metrics = {
             "mixed_loss": loss.mean(),
             "loss": opt_loss,
-            "predictions": logits,
-            "targets": targets,
         }
 
         for c_idx, class_name in enumerate(self.classes):
@@ -76,7 +74,7 @@ class MultiClassBackboneWithLinear(BaseModule):
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
-        return_loss: bool = False,
+        return_loss_and_metrics: bool = False,
     ) -> Dict[str, torch.Tensor]:
         if image is not None:
             x = self.encoder(image=image)["image"]["features"]
@@ -92,11 +90,11 @@ class MultiClassBackboneWithLinear(BaseModule):
 
         x = self.linear(x)
 
-        if return_loss and labels is not None:
-            loss = self.compute_multi_class_loss(x, labels)
-            return loss
+        if return_loss_and_metrics and labels is not None:
+            loss = self.compute_loss_and_metrics(x, labels)
+            return loss | {"logits": x, "labels": labels}
 
-        return x
+        return {"logits": x, "labels": labels}
 
     def adapter_transforms(self, inputs: Union[Dict, Any]):
         output_dict = {}
