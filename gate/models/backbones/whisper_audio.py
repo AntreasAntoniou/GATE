@@ -65,9 +65,10 @@ class ModifiedWhisperModel(WhisperPreTrainedModel):
         return_dict = self.config.use_return_dict
         image = image.permute(0, 2, 1)
 
-        self.encoder.embed_positions.weight = nn.Parameter(torch.zeros(1)).to(
-            image.device
-        )
+        if self.encoder.embed_positions.weight.view(-1).shape[0] > 1:
+            self.encoder.embed_positions.weight = nn.Parameter(
+                torch.zeros(1)
+            ).to(image.device)
 
         encoder_outputs = self.encoder(
             image,
