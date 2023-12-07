@@ -470,6 +470,8 @@ class Learner(nn.Module):
                     tqdm_iter = self.global_step
 
                     for batch_idx, batch in enumerate(train_dataloader):
+                        if self.global_step > self.train_iters:
+                            break
                         if (
                             self.global_step % self.evaluate_every_n_steps == 0
                             or self.global_step - last_val_step
