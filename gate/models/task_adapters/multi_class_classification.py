@@ -13,7 +13,7 @@ from gate.models.task_adapters import BaseModule
 
 @configurable(
     group="adapter",
-    name="multi-class-with-linear-classifier",
+    name="backbone-with-linear-multi-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class MultiClassBackboneWithLinear(BaseModule):

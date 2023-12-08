@@ -40,7 +40,9 @@ def build_command(
 
     command_template = (
         f"{accelerate_launch_command} {gate_run_command} "
-        f"exp_name={exp_name} encoder={encoder_name} {encoder_args} adapter={adapter_name} {adapter_args} dataset={dataset_name} optimizer.lr={lr} optimizer.weight_decay={weight_decay} "
+        f"exp_name={exp_name} encoder={encoder_name} {encoder_args} "
+        f"adapter={adapter_name} {adapter_args} dataset={dataset_name} "
+        f"optimizer.lr={lr} optimizer.weight_decay={weight_decay} "
         f"trainer={trainer} evaluator={evaluator} num_workers={num_workers} "
         f"seed={seed} train_batch_size={train_batch_size} eval_batch_size={eval_batch_size} "
         f"train_iters={train_iters} learner.evaluate_every_n_steps={evaluate_every_n_steps}"

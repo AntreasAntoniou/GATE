@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @configurable(
     group="adapter",
-    name="backbone-with-linear-classifier",
+    name="backbone-with-linear-single-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class BackboneWithLinearClassification(BaseModule):
