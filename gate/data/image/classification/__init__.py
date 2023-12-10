@@ -8,4 +8,4 @@ class DatasetName(Enum):
     # STL10 = "stl10"
     # SVHN = "svhn"
     P365 = "places365"
-    HAPPYWHALE = "happy_whale_dolphin_classification"
+    # HAPPYWHALE = "happy_whale_dolphin_classification"

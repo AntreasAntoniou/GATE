@@ -21,13 +21,9 @@ def unzip_file(zip_file_path: pathlib.Path, target_dir_path: pathlib.Path):
                     target_dir_path.joinpath(member.filename).write_bytes(
                         z.read(member)
                     )
-                    pbar.update()  # update the progress bar
-    except zipfile.BadZipFile as e:
-        raise ValueError(
-            "Bad zip file, please report on "
-            "www.github.com/kaggle/kaggle-api",
-            e,
-        )
+                    pbar.update(1)  # update the progress bar
+    except Exception as e:
+        logger.error(f"Could not extract zip file, got {e}")
 
     # Delete the zip file after extraction
     try:
@@ -64,9 +60,13 @@ def download_kaggle_dataset(
     api.authenticate()
 
     if is_competition:
+        print(
+            f"Check if path {dataset_download_path / f'{dataset_path}.zip'} exists"
+        )
         if not pathlib.Path(
             dataset_download_path / f"{dataset_path}.zip"
         ).exists():
+            print(f"Downloading competition {dataset_path}")
             api.competition_download_files(
                 competition=dataset_path,
                 path=dataset_download_path,
@@ -75,8 +75,8 @@ def download_kaggle_dataset(
             )
         if unzip:
             unzip_file(
-                dataset_download_path / f"{dataset_path}.zip",
-                dataset_download_path,
+                zip_file_path=dataset_download_path / f"{dataset_path}.zip",
+                target_dir_path=dataset_download_path,
             )
     else:
         # Download the dataset
