@@ -172,3 +172,7 @@ logs/*
 
 # Debug
 debug-*
+
+# CSV and Tex
+notebooks/*.csv
+notebooks/*.tex
