@@ -8,10 +8,8 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import ade20_classes as CLASSES
-from gate.data.transforms.segmentation import (
-    BaseDatasetTransforms,
-    KeySelectorTransforms,
-)
+from gate.data.transforms.segmentation import (BaseDatasetTransforms,
+                                               KeySelectorTransforms)
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:

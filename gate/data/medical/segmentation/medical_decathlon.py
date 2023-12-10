@@ -1,7 +1,6 @@
 import logging
 import multiprocessing as mp
 import warnings
-from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -9,20 +8,16 @@ import datasets
 import torch
 import torchvision.transforms as T
 from datasets import concatenate_datasets
-from torch.utils.data import Dataset, random_split
+from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import enrichen_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.segmentation.classes import (
-    medical_decathlon_labels as CLASSES_DICT,
-)
+from gate.data.image.segmentation.classes import \
+    medical_decathlon_labels as CLASSES_DICT
 from gate.data.transforms.segmentation import (
-    DualImageRandomCrop,
-    MedicalImageSegmentationTransforms,
-    PhotometricParams,
-)
+    DualImageRandomCrop, MedicalImageSegmentationTransforms, PhotometricParams)
 
 # Ignore all DeprecationWarnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)

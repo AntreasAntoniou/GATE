@@ -10,11 +10,8 @@ from gulpio2 import GulpDirectory
 from torchvision.transforms import Compose
 
 from . import utils as utils
-from .transforms import (
-    GroupNDarrayToPILImage,
-    GroupPILImageToNDarray,
-    GroupSqueezeScale,
-)
+from .transforms import (GroupNDarrayToPILImage, GroupPILImageToNDarray,
+                         GroupSqueezeScale)
 
 logger = logging.getLogger(__name__)
 

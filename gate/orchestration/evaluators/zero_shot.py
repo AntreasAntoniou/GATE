@@ -2,9 +2,8 @@ import logging
 from typing import Any, Optional
 
 from gate.boilerplate.decorators import configurable
-from gate.orchestration.evaluators.classification import (
-    ClassificationEvaluator,
-)
+from gate.orchestration.evaluators.classification import \
+    ClassificationEvaluator
 
 logger = logging.getLogger(__name__)
 

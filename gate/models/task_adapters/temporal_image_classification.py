@@ -1,7 +1,7 @@
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import torch
 import torch.nn as nn

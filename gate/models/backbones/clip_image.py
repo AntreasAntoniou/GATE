@@ -6,13 +6,8 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
-from gate.models.backbones import (
-    GATEncoder,
-    TextProcessor,
-    VisionTextGATEAdapter,
-    forward_dict,
-)
+from gate.models.backbones import (GATEncoder, TextProcessor,
+                                   VisionTextGATEAdapter, forward_dict)
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import List, Optional
 from urllib.request import urlopen
@@ -15,7 +14,6 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder, Modality, image_dim_reshape
 from gate.models.backbones.clip_image import TextProcessor
 from gate.models.core import reinit

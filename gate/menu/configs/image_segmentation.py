@@ -1,10 +1,5 @@
-from gate.menu.core import (
-    AdapterTypeNames,
-    DatasetName,
-    EvaluatorName,
-    TrainerName,
-    get_model_selection,
-)
+from gate.menu.core import (AdapterTypeNames, DatasetName, EvaluatorName,
+                            TrainerName, get_model_selection)
 
 dataset_configs = {
     dataset_name: dataset_name.value

@@ -1,7 +1,6 @@
 # Complete Python code with the requested adjustments to make 'accelerate_launch_path' and 'gate_run_path' accessible at the 'get_commands' level.
 
-import os
-from typing import Dict, List, Union
+from typing import Union
 
 
 def build_command(

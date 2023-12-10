@@ -1,23 +1,12 @@
-import imp
 import logging
 import multiprocessing as mp
-import os
-import pathlib
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Optional
 
-import numpy as np
-import pandas as pd
-import torch
 import torchvision.transforms as T
 from datasets import load_dataset
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset
-from torch.utils.data.dataset import Dataset
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
-from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
 from gate.data.image.classification.imagenet1k import StandardAugmentations
 

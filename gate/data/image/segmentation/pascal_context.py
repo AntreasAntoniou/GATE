@@ -16,13 +16,10 @@ from torchvision.datasets.utils import download_and_extract_archive
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.segmentation.classes import (
-    pascal_context_classes as CLASSES,
-)
-from gate.data.transforms.segmentation import (
-    BaseDatasetTransforms,
-    KeySelectorTransforms,
-)
+from gate.data.image.segmentation.classes import \
+    pascal_context_classes as CLASSES
+from gate.data.transforms.segmentation import (BaseDatasetTransforms,
+                                               KeySelectorTransforms)
 
 logger = logging.getLogger(__name__)
 

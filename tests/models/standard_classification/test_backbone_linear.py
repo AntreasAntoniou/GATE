@@ -1,7 +1,5 @@
 import pytest
 import torch
-import torch.nn as nn
-from numpy import imag
 
 from gate.menu.core import EncoderNames
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
@@ -10,18 +8,13 @@ from gate.models.backbones.clip_image import CLIPVisionAdapter
 from gate.models.backbones.clip_text import CLIPTextAdapter
 from gate.models.backbones.mpnet_text import MPNetAdapter, MPNetModelPaths
 from gate.models.backbones.timm import CLIPModelPaths, TimmCLIPAdapter
-from gate.models.backbones.wave2vec_audio import (
-    Wav2Vec2ModelPaths,
-    Wav2VecV2Adapter,
-)
-from gate.models.backbones.whisper_audio import (
-    WhisperAdapter,
-    WhisperModelPaths,
-)
+from gate.models.backbones.wave2vec_audio import (Wav2Vec2ModelPaths,
+                                                  Wav2VecV2Adapter)
+from gate.models.backbones.whisper_audio import (WhisperAdapter,
+                                                 WhisperModelPaths)
 from gate.models.core import GATEModel
-from gate.models.task_adapters.classification import (
-    BackboneWithLinearClassification,
-)
+from gate.models.task_adapters.classification import \
+    BackboneWithLinearClassification
 
 data = [
     (

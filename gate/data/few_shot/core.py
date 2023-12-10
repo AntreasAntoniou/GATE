@@ -14,10 +14,8 @@ from omegaconf import DictConfig
 from torch.utils.data import Dataset
 from tqdm.auto import tqdm
 
-from gate.data.few_shot.utils import (
-    FewShotSuperSplitSetOptions,
-    get_class_to_idx_dict,
-)
+from gate.data.few_shot.utils import (FewShotSuperSplitSetOptions,
+                                      get_class_to_idx_dict)
 
 logger = logging.getLogger(__name__)
 

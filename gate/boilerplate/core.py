@@ -9,22 +9,18 @@ from typing import List, Optional, Union
 import torch
 import torch.nn as nn
 from accelerate import Accelerator
-from attr import dataclass
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name
-from gate.config.variables import (
-    DUMMY_BATCH_MODE,
-    HYDRATED_CURRENT_EXPERIMENT_DIR,
-    HYDRATED_EXPERIMENT_NAME,
-    HYDRATED_HF_CACHE_DIR,
-    HYDRATED_HF_REPO_PATH,
-    HYDRATED_TRAIN_ITERS,
-    RESUME,
-)
+from gate.config.variables import (DUMMY_BATCH_MODE,
+                                   HYDRATED_CURRENT_EXPERIMENT_DIR,
+                                   HYDRATED_EXPERIMENT_NAME,
+                                   HYDRATED_HF_CACHE_DIR,
+                                   HYDRATED_HF_REPO_PATH, HYDRATED_TRAIN_ITERS,
+                                   RESUME)
 from gate.models.core import Ensemble, GATEModel
 from gate.orchestration.evaluators.classification import Evaluator
 from gate.orchestration.trainers.classification import Trainer

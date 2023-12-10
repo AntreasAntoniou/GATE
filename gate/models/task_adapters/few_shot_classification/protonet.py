@@ -4,16 +4,12 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.few_shot_classification.utils import (
-    compute_prototypes,
-    compute_prototypical_accuracy,
-    compute_prototypical_logits,
-    compute_prototypical_loss,
-)
+    compute_prototypes, compute_prototypical_accuracy,
+    compute_prototypical_logits, compute_prototypical_loss)
 
 
 @configurable(group="adapter", name="fs-protonet")

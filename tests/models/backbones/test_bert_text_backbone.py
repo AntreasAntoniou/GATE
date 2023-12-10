@@ -2,10 +2,7 @@ import pytest
 import torch
 
 from gate.models.backbones.bert_text import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    BertAdapter,
-    BertModelPaths,
-    CLIPModelPaths,
-)
+    BertAdapter, BertModelPaths, CLIPModelPaths)
 
 
 @pytest.fixture

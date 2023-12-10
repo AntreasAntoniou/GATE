@@ -4,9 +4,8 @@ from pathlib import Path
 from accelerate import Accelerator
 from huggingface_hub import snapshot_download
 
-from ..loader.gulp_sparsesample_skeleton_dataset import (
-    GulpSparsesampleSkeletonDataset,
-)
+from ..loader.gulp_sparsesample_skeleton_dataset import \
+    GulpSparsesampleSkeletonDataset
 
 
 def build_gulp_skeleton_dataset(

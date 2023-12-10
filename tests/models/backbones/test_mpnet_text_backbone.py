@@ -2,10 +2,7 @@ import pytest
 import torch
 
 from gate.models.backbones.mpnet_text import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    CLIPModelPaths,
-    MPNetAdapter,
-    MPNetModelPaths,
-)
+    CLIPModelPaths, MPNetAdapter, MPNetModelPaths)
 
 
 @pytest.fixture

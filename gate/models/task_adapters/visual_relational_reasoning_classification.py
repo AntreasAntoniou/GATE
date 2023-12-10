@@ -12,9 +12,8 @@ from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.temporal_image_classification import (
-    VariableSequenceTransformerEncoder,
-)
+from gate.models.task_adapters.temporal_image_classification import \
+    VariableSequenceTransformerEncoder
 from gate.models.task_adapters.utils import reinit
 
 logger = get_logger(__name__, set_rich=True)

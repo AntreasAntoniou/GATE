@@ -16,9 +16,8 @@ from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.transforms.video import BaseVideoTransform, TrainVideoTransform
 from gate.data.video.classification import DatasetNames
-from gate.data.video.utils.loader.gulp_sparsesample_dataset import (
-    GulpSparsesampleDataset,
-)
+from gate.data.video.utils.loader.gulp_sparsesample_dataset import \
+    GulpSparsesampleDataset
 
 
 @dataclass

@@ -3,19 +3,14 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from accelerate import Accelerator
-from tqdm.auto import tqdm
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import (
-    compute_zero_shot_loss_and_metrics,
-    get_similarities,
-)
+    compute_zero_shot_loss_and_metrics, get_similarities)
 
 accelerator = Accelerator()
 

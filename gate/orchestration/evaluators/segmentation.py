@@ -9,13 +9,9 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import collect_metrics_mark, configurable
 from gate.orchestration.evaluators import EvaluatorOutput
 from gate.orchestration.evaluators.classification import (
-    ClassificationEvaluator,
-    StepOutput,
-)
-from gate.orchestration.trainers.segmentation import (
-    integrate_output_list,
-    sub_batch_generator,
-)
+    ClassificationEvaluator, StepOutput)
+from gate.orchestration.trainers.segmentation import (integrate_output_list,
+                                                      sub_batch_generator)
 
 logger = logging.getLogger(__name__)
 

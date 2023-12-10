@@ -2,14 +2,13 @@ import math
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import PIL
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
 from torch import Tensor
-from torch.nn import Module
 
 from gate.models.task_adapters.utils import reinit
 

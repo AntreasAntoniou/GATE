@@ -12,10 +12,8 @@ from torchvision import transforms as T
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.few_shot.core import (
-    FewShotClassificationMetaDataset,
-    key_mapper,
-)
+from gate.data.few_shot.core import (FewShotClassificationMetaDataset,
+                                     key_mapper)
 
 logger = logging.getLogger(__name__)
 

@@ -2,11 +2,9 @@ import pytest
 import torch
 from rich import print
 
-from gate.models.blocks.segmentation import (
-    ChannelMixerDecoder,
-    TransformerSegmentationDecoder,
-    upsample_tensor,
-)
+from gate.models.blocks.segmentation import (ChannelMixerDecoder,
+                                             TransformerSegmentationDecoder,
+                                             upsample_tensor)
 
 
 @pytest.mark.parametrize(

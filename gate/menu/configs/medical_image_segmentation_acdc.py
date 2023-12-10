@@ -1,11 +1,6 @@
-from gate.menu.core import (
-    AdapterTypeNames,
-    DatasetName,
-    EvaluatorName,
-    MixedPrecisionMode,
-    TrainerName,
-    get_model_selection,
-)
+from gate.menu.core import (AdapterTypeNames, DatasetName, EvaluatorName,
+                            MixedPrecisionMode, TrainerName,
+                            get_model_selection)
 
 dataset_configs = DatasetName.MEDICAL_ACDC_SEGMENTATION.value
 

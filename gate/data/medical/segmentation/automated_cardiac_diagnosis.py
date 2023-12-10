@@ -11,14 +11,9 @@ from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import acdc_labels as CLASSES
 from gate.data.medical.segmentation.medical_decathlon import (
-    convert_to_b3hw,
-    patient_normalization,
-)
+    convert_to_b3hw, patient_normalization)
 from gate.data.transforms.segmentation import (
-    DualImageRandomCrop,
-    MedicalImageSegmentationTransforms,
-    PhotometricParams,
-)
+    DualImageRandomCrop, MedicalImageSegmentationTransforms, PhotometricParams)
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:

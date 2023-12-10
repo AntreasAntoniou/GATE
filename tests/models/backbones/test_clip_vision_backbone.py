@@ -2,9 +2,7 @@ import pytest
 import torch
 
 from gate.models.backbones.clip_image import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    CLIPModelPaths,
-    CLIPVisionAdapter,
-)
+    CLIPModelPaths, CLIPVisionAdapter)
 
 
 @pytest.fixture

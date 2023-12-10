@@ -3,26 +3,16 @@ from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.whisper.modeling_whisper import (
-    WhisperConfig,
-    WhisperEncoder,
-    WhisperPreTrainedModel,
-)
+    WhisperConfig, WhisperEncoder, WhisperPreTrainedModel)
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import (
-    GATEncoder,
-    Modality,
-    TextProcessor,
-    VisionTextGATEAdapter,
-    forward_dict,
-)
+from gate.models.backbones import (GATEncoder, Modality, TextProcessor,
+                                   VisionTextGATEAdapter, forward_dict)
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import (
-    VisionRootReplacedBackbone,
-)
+from gate.models.task_adapters.modality_transfer_classification import \
+    VisionRootReplacedBackbone
 
 logger = logging.getLogger(__name__)
 

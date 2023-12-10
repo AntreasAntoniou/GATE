@@ -4,9 +4,7 @@ import os
 import pytest
 
 from gate.data.image.visual_relational_reasoning.clevr_math import (
-    build_dataset,
-    build_gate_dataset,
-)
+    build_dataset, build_gate_dataset)
 
 
 def test_build_dataset():

@@ -1,7 +1,7 @@
 import pytest
 import torch
-import wandb
 
+import wandb
 from gate.boilerplate.wandb_utils import log_wandb_masks
 
 wandb.init()

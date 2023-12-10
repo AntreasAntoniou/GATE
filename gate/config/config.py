@@ -12,24 +12,13 @@ from torch.utils.data import DataLoader
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.decorators import register_configurables
 from gate.boilerplate.utils import get_hydra_config, pretty_config
-from gate.config.variables import (
-    CODE_DIR,
-    DATASET_DIR,
-    DUMMY_BATCH_MODE,
-    EVAL_BATCH_SIZE,
-    EXPERIMENTS_ROOT_DIR,
-    HF_USERNAME,
-    HYDRATED_NUM_WORKERS,
-    LOGGER_LEVEL,
-    NUM_WORKERS,
-    PERSISTENT_WORKERS,
-    PIN_MEMORY,
-    PREFETCH_FACTOR,
-    RESUME,
-    SEED,
-    TRAIN_BATCH_SIZE,
-    TRAIN_ITERS,
-)
+from gate.config.variables import (CODE_DIR, DATASET_DIR, DUMMY_BATCH_MODE,
+                                   EVAL_BATCH_SIZE, EXPERIMENTS_ROOT_DIR,
+                                   HF_USERNAME, HYDRATED_NUM_WORKERS,
+                                   LOGGER_LEVEL, NUM_WORKERS,
+                                   PERSISTENT_WORKERS, PIN_MEMORY,
+                                   PREFETCH_FACTOR, RESUME, SEED,
+                                   TRAIN_BATCH_SIZE, TRAIN_ITERS)
 from gate.data.core import collate_fn_with_token_pad
 
 hydra_logger = logging.getLogger("hydra")

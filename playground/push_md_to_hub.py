@@ -6,9 +6,7 @@ import datasets
 import dotenv
 import huggingface_hub
 import monai
-import monai.transforms as mT
 import torch
-import torchvision.transforms as T
 from rich import print as rprint
 from tqdm.auto import tqdm
 

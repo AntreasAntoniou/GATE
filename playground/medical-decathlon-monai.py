@@ -2,10 +2,7 @@ import os
 
 import dotenv
 import monai
-import rich
-import torch
 import torch.nn.functional as F
-import torchvision.transforms as T
 import wandb
 
 from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks

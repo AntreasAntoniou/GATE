@@ -2,36 +2,29 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
-from gate.data import image
 from gate.data.few_shot import DatasetName as few_shot_dataset_name
-from gate.data.image.classification import (
-    DatasetName as image_class_dataset_name,
-)
+from gate.data.image.classification import \
+    DatasetName as image_class_dataset_name
 from gate.data.image.segmentation import DatasetName as image_seg_dataset_name
-from gate.data.image_text.visual_relational_reasoning import (
-    DatasetName as image_rr_dataset_name,
-)
-from gate.data.image_text.zero_shot import (
-    DatasetName as image_text_dataset_name,
-)
-from gate.data.medical.classification import (
-    DatasetName as med_classification_dataset_name,
-)
+from gate.data.image_text.visual_relational_reasoning import \
+    DatasetName as image_rr_dataset_name
+from gate.data.image_text.zero_shot import \
+    DatasetName as image_text_dataset_name
+from gate.data.medical.classification import \
+    DatasetName as med_classification_dataset_name
 from gate.data.medical.segmentation import ACDCDatasetName as acdc_dataset_name
 from gate.data.medical.segmentation import MD_DatasetName as md_options
 from gate.data.video import DatasetName as video_dataset_name
-from gate.data.video import (
-    RegressionDatasetName as video_regression_dataset_name,
-)
+from gate.data.video import \
+    RegressionDatasetName as video_regression_dataset_name
 from gate.models.backbones.bart_text import BartModelPaths
 from gate.models.backbones.bert_text import BertModelPaths
 from gate.models.backbones.clip_image import CLIPModelPaths
 from gate.models.backbones.mpnet_text import MPNetModelPaths
 from gate.models.backbones.wave2vec_audio import Wav2Vec2ModelPaths
 from gate.models.backbones.whisper_audio import WhisperModelPaths
-from gate.models.task_adapters.semantic_segmentation import (
-    SegmentationLossOptions,
-)
+from gate.models.task_adapters.semantic_segmentation import \
+    SegmentationLossOptions
 from gate.models.task_adapters.temporal_image_classification import Metrics
 
 
