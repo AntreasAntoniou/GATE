@@ -289,6 +289,8 @@ class Ensemble(nn.Module):
             for value in self.iou_metrics_dict.values():
                 value.reset()
 
+        logger.info(f"Ensemble model with {len(self.models)} models created.")
+
     def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
         """
         Compute the ensemble predictions, weighted ensemble predictions, and model soup predictions.
@@ -303,7 +305,7 @@ class Ensemble(nn.Module):
 
         with torch.inference_mode():
             # # Get the outputs from each model
-            print(f"Ensemble: {len(self.models)}")
+
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
 

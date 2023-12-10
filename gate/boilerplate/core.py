@@ -15,12 +15,15 @@ from tqdm import tqdm
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name
-from gate.config.variables import (DUMMY_BATCH_MODE,
-                                   HYDRATED_CURRENT_EXPERIMENT_DIR,
-                                   HYDRATED_EXPERIMENT_NAME,
-                                   HYDRATED_HF_CACHE_DIR,
-                                   HYDRATED_HF_REPO_PATH, HYDRATED_TRAIN_ITERS,
-                                   RESUME)
+from gate.config.variables import (
+    DUMMY_BATCH_MODE,
+    HYDRATED_CURRENT_EXPERIMENT_DIR,
+    HYDRATED_EXPERIMENT_NAME,
+    HYDRATED_HF_CACHE_DIR,
+    HYDRATED_HF_REPO_PATH,
+    HYDRATED_TRAIN_ITERS,
+    RESUME,
+)
 from gate.models.core import Ensemble, GATEModel
 from gate.orchestration.evaluators.classification import Evaluator
 from gate.orchestration.trainers.classification import Trainer
@@ -411,15 +414,17 @@ class Learner(nn.Module):
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
         base_model = copy.deepcopy(self.model)
+        base_evaluator = copy.deepcopy(self.evaluator)
 
         if model is None:
             for kth in [1, 3, 5]:
                 if self.evaluator.model_selection_metric_name is not None:
                     model = self.load_best_model(
-                        metric_name=self.evaluator.model_selection_metric_name,
-                        higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
+                        metric_name=base_evaluator.model_selection_metric_name,
+                        higher_is_better=base_evaluator.model_selection_metric_higher_is_better,
                         kth_best=kth,
                         base_model=base_model,
+                        evaluator=base_evaluator,
                     )
                 model = self.accelerator.prepare(model)
 
@@ -470,12 +475,9 @@ class Learner(nn.Module):
                             break
                         if (
                             self.global_step % self.evaluate_every_n_steps == 0
-                            or self.global_step - last_val_step
-                            > self.evaluate_every_n_steps
                             or self.global_step == 0
                         ):
                             self._validation_loop()
-                            last_val_step = self.global_step
 
                         output_list = self.training_step(
                             model=self.model,
@@ -488,8 +490,6 @@ class Learner(nn.Module):
                                 self.global_step
                                 % self.checkpoint_every_n_steps
                                 == 0
-                                or self.global_step - last_val_step
-                                > self.evaluate_every_n_steps
                             )
                             and self.global_step > 0
                         ):
@@ -685,11 +685,12 @@ class Learner(nn.Module):
         higher_is_better: bool,
         kth_best: int,
         base_model: nn.Module,
+        evaluator: Evaluator = None,
     ):
         (
             best_global_step,
             best_metric,
-        ) = self.evaluator.get_best_model_global_step_and_metric(
+        ) = evaluator.get_best_model_global_step_and_metric(
             metric_name, higher_is_better, kth_best=10
         )
         print(

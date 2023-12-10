@@ -106,9 +106,12 @@ class BackboneWithLinearClassification(BaseModule):
 
             output_dict[f"loss_{class_type}"] = loss
             output_dict[f"accuracy_top_1_{class_type}"] = accuracy_top_1
-            output_dict[f"accuracy_top_5_{class_type}"] = accuracy_top_5
+            output_dict[
+                f"accuracy_top_{min(5, self.num_classes[class_type])}_{class_type}"
+            ] = accuracy_top_5
             overall_loss.append(loss)
             overall_accuracy_top_1.append(accuracy_top_1)
+            overall_accuracy_top_5.append(accuracy_top_5)
 
         output_dict["loss"] = torch.mean(torch.stack(overall_loss))
         output_dict["accuracy_top_1"] = torch.mean(
