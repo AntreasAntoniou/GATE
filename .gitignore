@@ -176,3 +176,4 @@ debug-*
 # CSV and Tex
 notebooks/*.csv
 notebooks/*.tex
+notebooks/*.txt
