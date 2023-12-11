@@ -443,8 +443,8 @@ class Learner(nn.Module):
             )
 
     def _finalize_training(self):
-        self._validation_loop()
-        self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
+        # self._validation_loop()
+        # self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
         return self.end_training()
 
     def _training_loop(self, train_dataloader: DataLoader = None):
