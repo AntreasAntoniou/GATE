@@ -1,3 +1,4 @@
+import logging
 import multiprocessing as mp
 import os
 
@@ -8,11 +9,14 @@ import torch
 from rich import print as rprint
 from tqdm.auto import tqdm
 
+from gate.boilerplate.utils import enrichen_logger
 from gate.data.image.classification.happywhale import (
     build_dataset,
     get_label_dict,
 )
 
+logger = logging.getLogger(__name__)
+logger = enrichen_logger(logger)
 dotenv.load_dotenv(dotenv_path="secrets/setup_variables.env")
 
 
@@ -22,7 +26,7 @@ def report_summary_statistics(x):
     std = tensor.std()
     max = tensor.max()
     min = tensor.min()
-    rprint(f"mean: {mean}, std: {std}, max: {max}, min: {min}")
+    logger.info(f"mean: {mean}, std: {std}, max: {max}, min: {min}")
     return x
 
 
@@ -92,4 +96,4 @@ if __name__ == "__main__":
             )
             completed = True
         except Exception as e:
-            print(e)
+            logger.error(e)

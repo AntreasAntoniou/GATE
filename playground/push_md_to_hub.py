@@ -1,3 +1,4 @@
+import logging
 import multiprocessing as mp
 import os
 from dataclasses import dataclass
@@ -10,6 +11,10 @@ import torch
 from rich import print as rprint
 from tqdm.auto import tqdm
 
+from gate.boilerplate.utils import enrichen_logger
+
+logger = logging.getLogger(__name__)
+logger = enrichen_logger(logger)
 dotenv.load_dotenv(
     dotenv_path="/disk/scratch_fast1/aantoni2/GATE/secrets/setup_variables.env"
 )
@@ -21,7 +26,7 @@ def report_summary_statistics(x):
     std = tensor.std()
     max = tensor.max()
     min = tensor.min()
-    rprint(f"mean: {mean}, std: {std}, max: {max}, min: {min}")
+    logger.error(f"mean: {mean}, std: {std}, max: {max}, min: {min}")
     return x
 
 
@@ -73,7 +78,7 @@ if __name__ == "__main__":
     task_list = vars(TaskOptions()).values()
 
     def dataset_generator(value, set_name, task_name):
-        print("Processing", task_name)
+        logger.info("Processing", task_name)
         dataset = value(set_name=set_name, task_name=task_name)
 
         for item in tqdm(dataset):
@@ -117,4 +122,4 @@ if __name__ == "__main__":
                 )
                 completed = True
             except Exception as e:
-                print(e)
+                logger.error(e)

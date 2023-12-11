@@ -23,15 +23,22 @@ from torch import nn
 
 import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
-from gate.boilerplate.convenience import (count_model_parameters, get_datasets,
-                                          instantiate_dataloader,
-                                          instantiate_optimizer,
-                                          instantiate_scheduler,
-                                          log_checkpoint_path,
-                                          log_wandb_parameters, setup)
+from gate.boilerplate.convenience import (
+    count_model_parameters,
+    get_datasets,
+    instantiate_dataloader,
+    instantiate_optimizer,
+    instantiate_scheduler,
+    log_checkpoint_path,
+    log_wandb_parameters,
+    setup,
+)
 from gate.boilerplate.core import Learner
-from gate.boilerplate.utils import (create_hf_model_repo_and_download_maybe,
-                                    pretty_config, set_seed)
+from gate.boilerplate.utils import (
+    create_hf_model_repo_and_download_maybe,
+    pretty_config,
+    set_seed,
+)
 from gate.config.config import collect_config_store
 from gate.data.core import GATEDataset
 from gate.models.core import GATEModel
@@ -79,7 +86,6 @@ def run(cfg: Any) -> None:
         cfg (Any): The configuration parameters
     """
     accelerator = Accelerator()
-    print(accelerator.state)
     # Pretty print the configuration
     print(pretty_config(cfg, resolve=True))
 

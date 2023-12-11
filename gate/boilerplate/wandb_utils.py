@@ -52,13 +52,13 @@ def visualize_volume(item, prefix: str):
     # predicted_volumes[predicted_volumes == -1] = 10
     # label_volumes[label_volumes == -1] = 10
 
-    print(
+    logger.info(
         f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
     )
 
@@ -170,10 +170,6 @@ def log_wandb_3d_volumes_and_masks(
     bg_image = T.ToPILImage()(bg_image)
     prediction_mask = prediction_mask.cpu().numpy()
     true_mask = true_mask.cpu().numpy()
-
-    # print(
-    #     f"mask shape {prediction_mask.shape}, dtype: {prediction_mask.dtype}, min: {prediction_mask.min()}, max: {prediction_mask.max()}"
-    # )
 
     return {
         f"{prefix}/medical_segmentation_episode": [
@@ -390,13 +386,13 @@ def visualize_volume(item, prefix: str, target_size: int = 384):
     # predicted_volumes[predicted_volumes == -1] = 10
     # label_volumes[label_volumes == -1] = 10
 
-    print(
+    logger.info(
         f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
     )
 

@@ -253,7 +253,7 @@ def print_dict_structure(d, indent=0):
     from rich import print
 
     for key, value in d.items():
-        print(" " * indent + str(key))
+        logger.info(" " * indent + str(key))
         if isinstance(value, dict):
             print_dict_structure(value, indent + 2)
 

@@ -11,9 +11,12 @@ from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 
 import wandb
-from gate.boilerplate.wandb_utils import (log_wandb_3d_volumes_and_masks,
-                                          log_wandb_images, log_wandb_masks,
-                                          visualize_video_with_labels)
+from gate.boilerplate.wandb_utils import (
+    log_wandb_3d_volumes_and_masks,
+    log_wandb_images,
+    log_wandb_masks,
+    visualize_video_with_labels,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -96,10 +99,6 @@ class BackgroundLogging(threading.Thread):
                         labels=value["label"],
                     )
                     log_dict.update(video_dict)
-
-                # for key, value in log_dict.items():
-                #     if value is not None:
-                #         print(f"{key}: {type(value)}")
 
                 self.experiment_tracker.log(log_dict)
 

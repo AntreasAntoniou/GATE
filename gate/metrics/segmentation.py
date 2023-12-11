@@ -44,7 +44,7 @@ class IoUMetric:
         self.total_area_union = torch.zeros(num_classes)
         self.total_area_pred = torch.zeros(num_classes)
         self.total_area_label = torch.zeros(num_classes)
-        print(self)
+        logger.info(self)
 
     def __repr__(self):
         return (

@@ -28,7 +28,7 @@ def unzip_file(zip_file_path: pathlib.Path, target_dir_path: pathlib.Path):
     try:
         zip_file_path.unlink()  # Using pathlib's unlink method to delete the file
     except OSError as e:
-        print(f"Could not delete zip file, got {e}")
+        logger.error(f"Could not delete zip file, got {e}")
 
 
 def download_kaggle_dataset(
@@ -59,13 +59,13 @@ def download_kaggle_dataset(
     api.authenticate()
 
     if is_competition:
-        print(
+        logger.info(
             f"Check if path {dataset_download_path / f'{dataset_path}.zip'} exists"
         )
         if not pathlib.Path(
             dataset_download_path / f"{dataset_path}.zip"
         ).exists():
-            print(f"Downloading competition {dataset_path}")
+            logger.info(f"Downloading competition {dataset_path}")
             api.competition_download_files(
                 competition=dataset_path,
                 path=dataset_download_path,

@@ -103,7 +103,7 @@ class TimmModel(nn.Module):
         logger.info(f"Loaded Model {self.model}")
         if image_size is None:
             image_size = self.model.default_cfg["input_size"][-1]
-        print(f"image_size: {image_size}")
+        logger.info(f"image_size: {image_size}")
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
             **resolve_data_config(

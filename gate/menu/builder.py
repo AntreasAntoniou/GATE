@@ -9,23 +9,30 @@ import fire
 from rich import print
 from rich.logging import RichHandler
 
-from gate.menu.configs.few_shot_learning import \
-    config as few_shot_learning_config
-from gate.menu.configs.image_classification import \
-    config as image_classification_config
-from gate.menu.configs.image_segmentation import \
-    config as image_segmentation_config
-from gate.menu.configs.image_text_zero_shot_classification import \
-    config as image_text_zero_shot_classification_config
-from gate.menu.configs.medical_image_classification import \
-    config as medical_image_classification_config
-from gate.menu.configs.medical_image_segmentation_acdc import \
-    config as acdc_config
+from gate.menu.configs.few_shot_learning import (
+    config as few_shot_learning_config,
+)
+from gate.menu.configs.image_classification import (
+    config as image_classification_config,
+)
+from gate.menu.configs.image_segmentation import (
+    config as image_segmentation_config,
+)
+from gate.menu.configs.image_text_zero_shot_classification import (
+    config as image_text_zero_shot_classification_config,
+)
+from gate.menu.configs.medical_image_classification import (
+    config as medical_image_classification_config,
+)
+from gate.menu.configs.medical_image_segmentation_acdc import (
+    config as acdc_config,
+)
 from gate.menu.configs.medical_image_segmentation_md import config as md_config
 from gate.menu.configs.relational_reasoning import config as rr_config
 from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
-from gate.menu.configs.video_classification import \
-    config as video_classification_config
+from gate.menu.configs.video_classification import (
+    config as video_classification_config,
+)
 from gate.menu.utils import build_command
 
 # Logging configuration using Rich for better terminal output
@@ -195,7 +202,7 @@ def run_experiments(
                     )
                 )
             else:
-                print("Invalid experiment type selected.")
+                logger.error("Invalid experiment type selected.")
                 return
 
     elif experiment_type == "all":
@@ -227,12 +234,12 @@ def run_experiments(
                 evaluate_every_n_steps=evaluate_every_n_steps,
             )
         else:
-            print("Invalid experiment type selected.")
+            logger.error("Invalid experiment type selected.")
             return
 
     if print_commands:
         for experiment_name, experiment_command in experiment_dict.items():
-            print(f"{experiment_command}")
+            logger.info(f"{experiment_command}")
 
             if run_commands:
                 # Execute the command and capture stdout and stderr
@@ -245,17 +252,17 @@ def run_experiments(
 
                 # Print stdout and stderr in real-time
                 for line in iter(process.stdout.readline, b""):
-                    print(line.decode().strip())
+                    logger.info(line.decode().strip())
 
                 for line in iter(process.stderr.readline, b""):
-                    print(line.decode().strip())
+                    logger.info(line.decode().strip())
 
                 # Wait for the process to complete and get the exit code
                 process.communicate()
                 exit_code = process.returncode
 
                 if exit_code != 0:
-                    print(
+                    logger.error(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
 

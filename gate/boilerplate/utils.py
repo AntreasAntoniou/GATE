@@ -271,7 +271,7 @@ def download_model_with_name(
             }
             for key, value in path_dict.items():
                 if isinstance(value, pathlib.Path):
-                    print(f"Checking {key} exists: {value.exists()}")
+                    logger.info(f"Checking {key} exists: {value.exists()}")
                     if not value.exists():
                         validated_ckpt_dir = False
                         break
@@ -319,6 +319,11 @@ def download_model_with_name(
                 if filename != "scaler.pt":
                     invalid_download = True
                 logger.info(f"Error downloading {filename}: {e}")
+                if filename == "scaler.pt":
+                    logger.info(
+                        f"Skipping scaler.pt -- However if your model uses fp16, this will cause an error. "
+                        f"Please initialize a scaler manually or download a relevant scaler.pt file."
+                    )
         # Handle config.yaml separately
         config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
         download_and_copy("config.yaml", config_target_path, subfolder="")
@@ -485,7 +490,7 @@ def create_hf_model_repo_and_download_maybe(
             idx += 1
         return download_dict
     else:
-        print(f"Created repo {hf_repo_path}, {hf_cache_dir}")
+        logger.info(f"Created repo {hf_repo_path}, {hf_cache_dir}")
         return None
 
 

@@ -289,14 +289,14 @@ class Learner(nn.Module):
         for thread in self.background_threads:
             if not thread.done:
                 if not thread.is_alive() and not thread.started:
-                    print(f"Starting thread {thread}")
+                    logger.info(f"Starting thread {thread}")
                     thread.start()
 
                 else:
                     # Check if the thread has been running for too long
                     elapsed_time = time.time() - thread.start_time
                     if elapsed_time > TIME_LIMIT:
-                        print(
+                        logger.info(
                             f"Thread {thread} has been running for too long. Stopping it."
                         )
                         setattr(thread, STOP_THREAD_FLAG, True)
@@ -304,7 +304,7 @@ class Learner(nn.Module):
                         # The thread should stop itself upon checking the STOP_THREAD_FLAG
             else:
                 self.background_threads.remove(thread)
-                print(f"Removing thread {thread} since it is done")
+                logger.info(f"Removing thread {thread} since it is done")
 
     def complete_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
@@ -315,14 +315,14 @@ class Learner(nn.Module):
             for thread in self.background_threads:
                 if not thread.done:
                     if not thread.is_alive() and not thread.started:
-                        print(f"Starting thread {thread}")
+                        logger.info(f"Starting thread {thread}")
                         thread.start()
                         break
                     else:
                         # Check if the thread has been running for too long
                         elapsed_time = time.time() - thread.start_time
                         if elapsed_time > TIME_LIMIT:
-                            print(
+                            logger.info(
                                 f"Thread {thread} has been running for too long. Stopping it."
                             )
                             setattr(thread, STOP_THREAD_FLAG, True)
@@ -330,7 +330,7 @@ class Learner(nn.Module):
                             # The thread should stop itself upon checking the STOP_THREAD_FLAG
                 else:
                     self.background_threads.remove(thread)
-                    print(f"Removing thread {thread} since it is done")
+                    logger.info(f"Removing thread {thread} since it is done")
 
             time.sleep(1)  # Prevent the loop from consuming too much CPU usage
 
@@ -693,10 +693,10 @@ class Learner(nn.Module):
         ) = evaluator.get_best_model_global_step_and_metric(
             metric_name, higher_is_better, kth_best=10
         )
-        print(
+        logger.info(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
         )
-        print(
+        logger.info(
             f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
 

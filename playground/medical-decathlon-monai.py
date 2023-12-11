@@ -1,12 +1,16 @@
+import logging
 import os
 
 import dotenv
 import monai
 import torch.nn.functional as F
-import wandb
 
+import wandb
+from gate.boilerplate.utils import enrichen_logger
 from gate.boilerplate.wandb_utils import log_wandb_3d_volumes_and_masks
 
+logger = logging.getLogger(__name__)
+logger = enrichen_logger(logger)
 # Load environment variables from .env file
 dotenv.load_dotenv(
     dotenv_path="/disk/scratch_fast1/aantoni2/GATE/secrets/setup_variables.env"
@@ -24,13 +28,13 @@ def visualize_volume(
     # predicted_volumes[predicted_volumes == -1] = 10
     # label_volumes[label_volumes == -1] = 10
 
-    print(
+    logger.info(
         f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
     )
 
@@ -98,7 +102,7 @@ def test_build_gate_visualize_dataset():
     )
 
     for item in gate_dataset:
-        print(list(item.keys()))
+        logger.info(list(item.keys()))
         assert item["image"] is not None, "Image should not be None"
         assert item["label"] is not None, "Label should not be None"
         item["image"] = item["image"].permute([2, 3, 0, 1])

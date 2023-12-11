@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
@@ -8,6 +9,10 @@ import torch.nn as nn
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics_mark
+from gate.boilerplate.utils import enrichen_logger
+
+logger = logging.getLogger(__name__)
+logger = enrichen_logger(logger)
 
 
 class Evaluator(ABC):
@@ -56,7 +61,7 @@ class Evaluator(ABC):
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
-        print(f"global_steps: {global_steps}")
+        logger.info(f"global_steps: {global_steps}")
 
         if isinstance(metrics, List):
             if len(metrics) == 0:

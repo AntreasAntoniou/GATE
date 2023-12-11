@@ -16,21 +16,24 @@ from torchvision.datasets.utils import download_and_extract_archive
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.segmentation.classes import \
-    pascal_context_classes as CLASSES
-from gate.data.transforms.segmentation import (BaseDatasetTransforms,
-                                               KeySelectorTransforms)
+from gate.data.image.segmentation.classes import (
+    pascal_context_classes as CLASSES,
+)
+from gate.data.transforms.segmentation import (
+    BaseDatasetTransforms,
+    KeySelectorTransforms,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def get_matching_ids(dir1, dir2):
     # Get list of file names (without extensions) in each directory
-    print(f"dir1 {dir1}, dir2 {dir2}")
+    logger.info(f"dir1 {dir1}, dir2 {dir2}")
     files_dir1 = [f.stem for f in Path(dir1).glob("*")]
     files_dir2 = [f.stem for f in Path(dir2).glob("*")]
 
-    print(
+    logger.info(
         f"len files_dir1 {len(files_dir1)}, len files_dir2 {len(files_dir2)}"
     )
 
@@ -70,7 +73,7 @@ class PascalContextDataset(Dataset):
 
         self.ids = get_matching_ids(self.image_dir, self.annotation_dir)
 
-        print(f"len ids {len(self.ids)}")
+        logger.info(f"len ids {len(self.ids)}")
 
         # Define the classes you care about
         self.selected_classes = CLASSES
