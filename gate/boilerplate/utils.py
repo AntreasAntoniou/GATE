@@ -303,7 +303,7 @@ def download_model_with_name(
         file_mapping = {
             "trainer_state.pt": "trainer_state_filepath",
             "optimizer.bin": "optimizer_filepath",
-            "pytorch_model.bin": "model_filepath",
+            "model.safetensors": "model_filepath",
             "random_states_0.pkl": "random_states_filepath",
             "scaler.pt": "scaler_filepath",
         }
