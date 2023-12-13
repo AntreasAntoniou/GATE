@@ -665,8 +665,10 @@ class Learner(nn.Module):
 
         if "status" in trainer_state:
             self.status = trainer_state["status"]
+            print(f"Found status {self.status}")
         else:
             self.status = ExperimentStatus.STARTING
+            print(f"Could not find status, setting to {self.status}")
 
         if isinstance(current_epoch_dict["train"], List):
             loaded_trainer_epoch_dict = current_epoch_dict["train"][0]
