@@ -348,7 +348,7 @@ def create_hf_model_repo(hf_repo_path: str) -> str:
     huggingface_hub.login(
         token=os.environ["HF_TOKEN"], add_to_git_credential=True
     )
-    print(f"Creating repo {hf_repo_path}")
+    logger.info(f"Creating repo {hf_repo_path}")
     return huggingface_hub.create_repo(
         hf_repo_path, repo_type="model", exist_ok=True, private=True
     )

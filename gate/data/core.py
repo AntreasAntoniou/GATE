@@ -186,7 +186,6 @@ def retry_on_exception(func):
                 traceback.format_exc()
             )  # This gets the full traceback as a string
             logger.warning(f"Error at index {index}: {e}\n{tb}")
-            print(f"Error at index {index}: {e}\n{tb}")
 
     return wrapper
 

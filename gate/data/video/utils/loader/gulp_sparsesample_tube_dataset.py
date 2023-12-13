@@ -21,7 +21,7 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
 
     ```
     data = next(iter(train_loader))
-    print(train_dataset.tubes[data['indices'][0]])
+    train_dataset.tubes[data['indices'][0]]
     ```
 
     It uses GulpIO2 instead of reading directly from jpg frames to speed up the IO!
