@@ -11,6 +11,7 @@ import torch.nn as nn
 from accelerate import Accelerator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from zmq import has
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
@@ -36,7 +37,8 @@ from typing import Union
 
 class ExperimentStatus(Enum):
     COMPLETED: str = "completed"
-    IN_PROGRESS: str = "in_progress"
+    TRAINING: str = "training"
+    TESTING: str = "testing"
     STARTING: str = "starting"
 
 
@@ -122,6 +124,7 @@ class Learner(nn.Module):
         self.evaluate_every_n_steps = evaluate_every_n_steps
         self.checkpoint_every_n_steps = checkpoint_every_n_steps
         self.checkpoint_after_validation = checkpoint_after_validation
+        self.status = ExperimentStatus.STARTING
         self.global_step = 0
 
         self.limit_train_iters = limit_train_iters
@@ -409,7 +412,11 @@ class Learner(nn.Module):
         test_dataloader: List[DataLoader] = None,
         model: nn.Module = None,
         prefix: Optional[str] = None,
+        force: Optional[bool] = False,
     ):
+        if self.status == ExperimentStatus.COMPLETED and not force:
+            return
+
         if test_dataloader is not None:
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
@@ -442,12 +449,23 @@ class Learner(nn.Module):
                 prefix=prefix,
             )
 
+        self.save_checkpoint(
+            checkpoint_name=f"ckpt_{self.train_iters}",
+            status=ExperimentStatus.COMPLETED,
+        )
+
     def _finalize_training(self):
         # self._validation_loop()
         # self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
         return self.end_training()
 
     def _training_loop(self, train_dataloader: DataLoader = None):
+        if (
+            self.status == ExperimentStatus.TESTING
+            or self.status == ExperimentStatus.COMPLETED
+        ) and self.global_step >= self.train_iters:
+            return self._finalize_training()
+
         if train_dataloader is None:
             train_dataloader = self.train_dataloader
 
@@ -494,7 +512,10 @@ class Learner(nn.Module):
                             and self.global_step > 0
                         ):
                             self.save_checkpoint(
-                                checkpoint_name=f"ckpt_{self.global_step}"
+                                checkpoint_name=f"ckpt_{self.global_step}",
+                                status=ExperimentStatus.TRAINING
+                                if self.global_step < self.train_iters
+                                else ExperimentStatus.TESTING,
                             )
 
                         loss = torch.mean(
@@ -512,6 +533,10 @@ class Learner(nn.Module):
                         pbar_steps.update(tqdm_update)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
 
+        self.save_checkpoint(
+            checkpoint_name=f"ckpt_{self.train_iters}",
+            status=ExperimentStatus.TESTING,
+        )
         return self._finalize_training()
 
     def _validation_loop(
@@ -581,6 +606,7 @@ class Learner(nn.Module):
     def save_checkpoint(
         self,
         checkpoint_name: str,
+        status: ExperimentStatus = ExperimentStatus.TRAINING,
     ):
         ckpt_save_path = self.checkpoints_dir / checkpoint_name
 
@@ -597,6 +623,7 @@ class Learner(nn.Module):
             per_epoch_metrics={
                 "eval": self.evaluator.per_epoch_metrics,
             },
+            status=status,
         )
 
         torch.save(
@@ -634,6 +661,11 @@ class Learner(nn.Module):
         self.global_step = trainer_state["global_step"]
         current_epoch_dict = trainer_state["current_epoch_dict"]
         per_epoch_metrics = trainer_state["per_epoch_metrics"]
+
+        if "status" in trainer_state:
+            self.status = trainer_state["status"]
+        else:
+            self.status = ExperimentStatus.STARTING
 
         if isinstance(current_epoch_dict["train"], List):
             loaded_trainer_epoch_dict = current_epoch_dict["train"][0]
@@ -677,7 +709,7 @@ class Learner(nn.Module):
             checkpoint_path=checkpoint_path,
         )
 
-        return ExperimentStatus.IN_PROGRESS
+        return self.status
 
     def load_best_model(
         self,
