@@ -450,7 +450,7 @@ class Learner(nn.Module):
             )
 
         self.save_checkpoint(
-            checkpoint_name=f"ckpt_{self.train_iters}",
+            checkpoint_name=f"ckpt_{self.global_step}",
             status=ExperimentStatus.COMPLETED,
         )
 
@@ -534,7 +534,7 @@ class Learner(nn.Module):
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
 
         self.save_checkpoint(
-            checkpoint_name=f"ckpt_{self.train_iters}",
+            checkpoint_name=f"ckpt_{self.global_step}",
             status=ExperimentStatus.TESTING,
         )
         return self._finalize_training()
