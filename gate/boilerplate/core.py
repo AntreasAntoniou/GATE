@@ -638,6 +638,7 @@ class Learner(nn.Module):
             experiment=self,
             checkpoint_path=ckpt_save_path,
         )
+        self.status = status
 
         return ckpt_save_path
 
