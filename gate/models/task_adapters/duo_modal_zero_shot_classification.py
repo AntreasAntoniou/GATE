@@ -10,7 +10,9 @@ from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import (
-    compute_zero_shot_loss_and_metrics, get_similarities)
+    compute_zero_shot_loss_and_metrics,
+    get_similarities,
+)
 
 accelerator = Accelerator()
 

@@ -1,12 +1,14 @@
 import os
 
 import torch
+import wandb
 from tqdm import tqdm
 
-import wandb
 from gate.boilerplate.wandb_utils import visualize_volume
 from gate.data.medical.segmentation.automated_cardiac_diagnosis import (
-    build_dataset, build_gate_dataset)
+    build_dataset,
+    build_gate_dataset,
+)
 
 # You can set this to the path where you have the dataset stored on your machine
 DATASET_PATH = os.environ.get("PYTEST_DIR")

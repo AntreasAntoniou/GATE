@@ -2,7 +2,10 @@ import pytest
 import torch
 
 from gate.models.backbones.wave2vec_audio import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    CLIPModelPaths, Wav2Vec2ModelPaths, Wav2VecV2Adapter)
+    CLIPModelPaths,
+    Wav2Vec2ModelPaths,
+    Wav2VecV2Adapter,
+)
 
 
 @pytest.fixture

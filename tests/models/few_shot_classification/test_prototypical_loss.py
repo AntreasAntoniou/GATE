@@ -2,7 +2,9 @@
 import torch
 
 from gate.models.task_adapters.few_shot_classification.utils import (
-    compute_prototypical_logits, compute_prototypical_loss)
+    compute_prototypical_logits,
+    compute_prototypical_loss,
+)
 
 
 # Define a test function to validate the prototypical_loss function

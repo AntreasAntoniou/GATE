@@ -1,9 +1,9 @@
 import pytest
 import torch
+import wandb
 from PIL import Image
 from torchvision import transforms as T
 
-import wandb
 from gate.boilerplate.wandb_utils import log_wandb_image_classification
 
 # Mock WandB init and finish

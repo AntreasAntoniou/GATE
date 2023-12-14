@@ -1,8 +1,10 @@
 # test_food101.py
 import os
 
-from gate.data.medical.classification.ham10k import (build_dataset,
-                                                     build_gate_dataset)
+from gate.data.medical.classification.ham10k import (
+    build_dataset,
+    build_gate_dataset,
+)
 
 
 def test_build_dataset():

@@ -316,7 +316,6 @@ def get_model_selection(
     wd: float = 0.01,
     image_size: int = 224,
     mixed_precision_mode: str = MixedPrecisionMode.BF16,
-
 ):
     return {
         EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(

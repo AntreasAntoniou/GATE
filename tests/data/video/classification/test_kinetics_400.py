@@ -1,12 +1,14 @@
 import os
 
 import pytest
+import wandb
 from torch.utils.data import DataLoader
 
-import wandb
 from gate.boilerplate.utils import visualize_video_with_labels
 from gate.data.video.classification.build_kinetics_400 import (
-    build_dataset, build_gate_dataset)
+    build_dataset,
+    build_gate_dataset,
+)
 
 
 def test_build_kinetics_400_dataset():
