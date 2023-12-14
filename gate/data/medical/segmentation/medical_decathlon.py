@@ -14,10 +14,14 @@ from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import enrichen_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.segmentation.classes import \
-    medical_decathlon_labels as CLASSES_DICT
+from gate.data.image.segmentation.classes import (
+    medical_decathlon_labels as CLASSES_DICT,
+)
 from gate.data.transforms.segmentation import (
-    DualImageRandomCrop, MedicalImageSegmentationTransforms, PhotometricParams)
+    DualImageRandomCrop,
+    MedicalImageSegmentationTransforms,
+    PhotometricParams,
+)
 
 # Ignore all DeprecationWarnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)

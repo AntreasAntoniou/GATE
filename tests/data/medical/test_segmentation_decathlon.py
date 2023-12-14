@@ -3,15 +3,22 @@ from enum import Enum
 
 import pytest
 import torch
+import wandb
 from tqdm import tqdm
 
-import wandb
 from gate.boilerplate.wandb_utils import visualize_volume
 from gate.data.medical.segmentation.medical_decathlon import (
-    build_gate_md_brain_tumour, build_gate_md_colon, build_gate_md_heart,
-    build_gate_md_hepatic_vessel, build_gate_md_hippocampus,
-    build_gate_md_liver, build_gate_md_lung, build_gate_md_pancreas,
-    build_gate_md_prostate, build_gate_md_spleen)
+    build_gate_md_brain_tumour,
+    build_gate_md_colon,
+    build_gate_md_heart,
+    build_gate_md_hepatic_vessel,
+    build_gate_md_hippocampus,
+    build_gate_md_liver,
+    build_gate_md_lung,
+    build_gate_md_pancreas,
+    build_gate_md_prostate,
+    build_gate_md_spleen,
+)
 
 
 class TaskOptions(Enum):

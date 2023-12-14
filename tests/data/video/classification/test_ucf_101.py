@@ -1,12 +1,13 @@
 import os
 
 import pytest
+import wandb
 from torch.utils.data import DataLoader
 
-import wandb
 from gate.boilerplate.utils import visualize_video_with_labels
-from gate.data.video.classification.build_gulp_sparsesample import \
-    build_ucf_101_gate_dataset
+from gate.data.video.classification.build_gulp_sparsesample import (
+    build_ucf_101_gate_dataset,
+)
 
 
 # Helper function to initialize wandb if you wish to visualize

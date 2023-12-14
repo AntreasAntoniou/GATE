@@ -5,15 +5,26 @@ import torch
 import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.wav2vec2.modeling_wav2vec2 import (
-    Wav2Vec2Config, Wav2Vec2Encoder, Wav2Vec2EncoderStableLayerNorm,
-    Wav2Vec2FeatureEncoder, Wav2Vec2FeatureProjection, Wav2Vec2PreTrainedModel)
+    Wav2Vec2Config,
+    Wav2Vec2Encoder,
+    Wav2Vec2EncoderStableLayerNorm,
+    Wav2Vec2FeatureEncoder,
+    Wav2Vec2FeatureProjection,
+    Wav2Vec2PreTrainedModel,
+)
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import (GATEncoder, Modality, TextProcessor,
-                                   VisionTextGATEAdapter, forward_dict)
+from gate.models.backbones import (
+    GATEncoder,
+    Modality,
+    TextProcessor,
+    VisionTextGATEAdapter,
+    forward_dict,
+)
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import \
-    VisionRootReplacedBackbone
+from gate.models.task_adapters.modality_transfer_classification import (
+    VisionRootReplacedBackbone,
+)
 
 logger = logging.getLogger(__name__)
 

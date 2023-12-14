@@ -46,4 +46,3 @@ def build_command(
         f"train_iters={train_iters} learner.evaluate_every_n_steps={evaluate_every_n_steps}"
     )
     return command_template
-

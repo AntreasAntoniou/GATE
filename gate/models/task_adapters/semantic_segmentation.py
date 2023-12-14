@@ -8,11 +8,17 @@ import torch.nn.functional as F
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
-from gate.metrics.segmentation import (CrossEntropyLoss, DiceLoss, FocalLoss,
-                                       IoUMetric)
+from gate.metrics.segmentation import (
+    CrossEntropyLoss,
+    DiceLoss,
+    FocalLoss,
+    IoUMetric,
+)
 from gate.models.backbones import GATEncoder
-from gate.models.blocks.segmentation import (ChannelMixerDecoder,
-                                             TransformerSegmentationDecoder)
+from gate.models.blocks.segmentation import (
+    ChannelMixerDecoder,
+    TransformerSegmentationDecoder,
+)
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters.utils import reinit
 
