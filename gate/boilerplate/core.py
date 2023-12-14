@@ -2,6 +2,7 @@ import copy
 import logging
 import pathlib
 import time
+from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -10,6 +11,7 @@ import torch.nn as nn
 from accelerate import Accelerator
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from zmq import has
 
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
@@ -31,6 +33,13 @@ logger = logging.getLogger(__name__)
 
 from pathlib import Path
 from typing import Union
+
+
+class ExperimentStatus(Enum):
+    COMPLETED: str = "completed"
+    TRAINING: str = "training"
+    TESTING: str = "testing"
+    STARTING: str = "starting"
 
 
 @configurable(
@@ -115,7 +124,7 @@ class Learner(nn.Module):
         self.evaluate_every_n_steps = evaluate_every_n_steps
         self.checkpoint_every_n_steps = checkpoint_every_n_steps
         self.checkpoint_after_validation = checkpoint_after_validation
-        self.step_idx = 0
+        self.status = ExperimentStatus.STARTING
         self.global_step = 0
 
         self.limit_train_iters = limit_train_iters
@@ -214,7 +223,12 @@ class Learner(nn.Module):
 
         self.callback_handler.on_batch_end(model, batch)
         self.callback_handler.on_training_step_end(model, batch)
-        self.global_step += 1
+
+        if cur_output_dict.global_step != self.global_step:
+            self.global_step = cur_output_dict.global_step + 1
+        else:
+            self.global_step += 1
+
         return output_list
 
     def validation_step(self, model, batch):
@@ -278,14 +292,14 @@ class Learner(nn.Module):
         for thread in self.background_threads:
             if not thread.done:
                 if not thread.is_alive() and not thread.started:
-                    print(f"Starting thread {thread}")
+                    logger.info(f"Starting thread {thread}")
                     thread.start()
 
                 else:
                     # Check if the thread has been running for too long
                     elapsed_time = time.time() - thread.start_time
                     if elapsed_time > TIME_LIMIT:
-                        print(
+                        logger.info(
                             f"Thread {thread} has been running for too long. Stopping it."
                         )
                         setattr(thread, STOP_THREAD_FLAG, True)
@@ -293,7 +307,7 @@ class Learner(nn.Module):
                         # The thread should stop itself upon checking the STOP_THREAD_FLAG
             else:
                 self.background_threads.remove(thread)
-                print(f"Removing thread {thread} since it is done")
+                logger.info(f"Removing thread {thread} since it is done")
 
     def complete_background_threads(self):
         # iterate threads to find up to where they are done, and start the next one
@@ -304,14 +318,14 @@ class Learner(nn.Module):
             for thread in self.background_threads:
                 if not thread.done:
                     if not thread.is_alive() and not thread.started:
-                        print(f"Starting thread {thread}")
+                        logger.info(f"Starting thread {thread}")
                         thread.start()
                         break
                     else:
                         # Check if the thread has been running for too long
                         elapsed_time = time.time() - thread.start_time
                         if elapsed_time > TIME_LIMIT:
-                            print(
+                            logger.info(
                                 f"Thread {thread} has been running for too long. Stopping it."
                             )
                             setattr(thread, STOP_THREAD_FLAG, True)
@@ -319,7 +333,7 @@ class Learner(nn.Module):
                             # The thread should stop itself upon checking the STOP_THREAD_FLAG
                 else:
                     self.background_threads.remove(thread)
-                    print(f"Removing thread {thread} since it is done")
+                    logger.info(f"Removing thread {thread} since it is done")
 
             time.sleep(1)  # Prevent the loop from consuming too much CPU usage
 
@@ -362,13 +376,15 @@ class Learner(nn.Module):
         )
         logger.debug("Starting testing 🧪")
 
-    def end_testing(self, prefix):
+    def end_testing(self, prefix, model):
         self.callback_handler.on_testing_end(
             experiment=self,
-            model=self.model,
+            model=model,
         )
 
-        self.evaluator.end_testing(global_step=self.global_step, prefix=prefix)
+        self.evaluator.end_testing(
+            global_step=self.global_step, model=model, prefix=prefix
+        )
 
         self.check_manage_background_threads()
 
@@ -396,20 +412,26 @@ class Learner(nn.Module):
         test_dataloader: List[DataLoader] = None,
         model: nn.Module = None,
         prefix: Optional[str] = None,
+        force: Optional[bool] = False,
     ):
+        if self.status == ExperimentStatus.COMPLETED and not force:
+            return
+
         if test_dataloader is not None:
             test_dataloader = self.accelerator.prepare(test_dataloader)
             self.test_dataloader = test_dataloader
         base_model = copy.deepcopy(self.model)
+        base_evaluator = copy.deepcopy(self.evaluator)
 
         if model is None:
-            for kth in [3, 1]:
+            for kth in [1, 3, 5]:
                 if self.evaluator.model_selection_metric_name is not None:
                     model = self.load_best_model(
-                        metric_name=self.evaluator.model_selection_metric_name,
-                        higher_is_better=self.evaluator.model_selection_metric_higher_is_better,
+                        metric_name=base_evaluator.model_selection_metric_name,
+                        higher_is_better=base_evaluator.model_selection_metric_higher_is_better,
                         kth_best=kth,
                         base_model=base_model,
+                        evaluator=base_evaluator,
                     )
                 model = self.accelerator.prepare(model)
 
@@ -427,9 +449,27 @@ class Learner(nn.Module):
                 prefix=prefix,
             )
 
+        self.save_checkpoint(
+            checkpoint_name=f"ckpt_{self.global_step}",
+            status=ExperimentStatus.COMPLETED,
+        )
+
+    def _finalize_training(self):
+        # self._validation_loop()
+        # self.save_checkpoint(checkpoint_name=f"ckpt_{self.global_step}")
+        return self.end_training()
+
     def _training_loop(self, train_dataloader: DataLoader = None):
+        if (
+            self.status == ExperimentStatus.TESTING
+            or self.status == ExperimentStatus.COMPLETED
+        ) and self.global_step >= self.train_iters:
+            return self._finalize_training()
+
         if train_dataloader is None:
             train_dataloader = self.train_dataloader
+
+        last_val_step = 0
 
         if train_dataloader is not None:
             self.start_training()
@@ -437,15 +477,26 @@ class Learner(nn.Module):
             if self.train_iters is None:
                 self.train_iters = len(train_dataloader)
 
+            if self.limit_train_iters is not None:
+                self.train_iters = min(
+                    self.train_iters, self.limit_train_iters
+                )
+
             with tqdm(
-                initial=self.step_idx, total=self.train_iters
+                initial=self.global_step, total=self.train_iters, smoothing=0.0
             ) as pbar_steps:
-                while self.step_idx < self.train_iters:
-                    if self.limit_train_iters is not None:
-                        if self.step_idx >= self.limit_train_iters:
-                            return self.end_training()
+                while self.global_step <= self.train_iters:
+                    tqdm_iter = self.global_step
 
                     for batch_idx, batch in enumerate(train_dataloader):
+                        if self.global_step > self.train_iters:
+                            break
+                        if (
+                            self.global_step % self.evaluate_every_n_steps == 0
+                            or self.global_step == 0
+                        ):
+                            self._validation_loop()
+
                         output_list = self.training_step(
                             model=self.model,
                             batch=batch,
@@ -453,21 +504,19 @@ class Learner(nn.Module):
 
                         if (
                             self.checkpoint_every_n_steps is not None
-                            and self.step_idx % self.checkpoint_every_n_steps
-                            == 0
-                            and self.step_idx > 0
+                            and (
+                                self.global_step
+                                % self.checkpoint_every_n_steps
+                                == 0
+                            )
+                            and self.global_step > 0
                         ):
                             self.save_checkpoint(
-                                checkpoint_name=f"ckpt_{self.global_step}"
+                                checkpoint_name=f"ckpt_{self.global_step}",
+                                status=ExperimentStatus.TRAINING
+                                if self.global_step < self.train_iters
+                                else ExperimentStatus.TESTING,
                             )
-
-                        if self.step_idx % self.evaluate_every_n_steps == 0:
-                            self._validation_loop()
-
-                        if self.step_idx >= self.train_iters:
-                            return self.end_training()
-
-                        self.step_idx += 1
 
                         loss = torch.mean(
                             torch.stack(
@@ -479,11 +528,16 @@ class Learner(nn.Module):
                                 ]
                             )
                         )
-
-                        pbar_steps.update(1)
+                        tqdm_update = self.global_step - tqdm_iter
+                        tqdm_iter = self.global_step
+                        pbar_steps.update(tqdm_update)
                         pbar_steps.set_description(f"Loss: {loss:.4f}")
 
-            return self.end_training()
+        self.save_checkpoint(
+            checkpoint_name=f"ckpt_{self.global_step}",
+            status=ExperimentStatus.TESTING,
+        )
+        return self._finalize_training()
 
     def _validation_loop(
         self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
@@ -499,7 +553,9 @@ class Learner(nn.Module):
         if val_dataloader is not None:
             self.start_validation()
 
-            with tqdm(total=len(val_dataloader)) as pbar_dataloaders:
+            with tqdm(
+                total=len(val_dataloader), smoothing=0.0
+            ) as pbar_dataloaders:
                 pre_batch_time = time.time()
                 for batch_idx, batch in enumerate(val_dataloader):
                     if self.limit_val_iters is not None:
@@ -534,7 +590,9 @@ class Learner(nn.Module):
         if test_dataloader is not None:
             self.start_testing(prefix=prefix)
 
-            with tqdm(total=len(test_dataloader)) as pbar_dataloaders:
+            with tqdm(
+                total=len(test_dataloader), smoothing=0.0
+            ) as pbar_dataloaders:
                 for batch_idx, batch in enumerate(test_dataloader):
                     self.testing_step(
                         model=model,
@@ -543,11 +601,12 @@ class Learner(nn.Module):
                     )
                     pbar_dataloaders.update(1)
 
-            self.end_testing(prefix=prefix)
+            self.end_testing(prefix=prefix, model=model)
 
     def save_checkpoint(
         self,
         checkpoint_name: str,
+        status: ExperimentStatus = ExperimentStatus.TRAINING,
     ):
         ckpt_save_path = self.checkpoints_dir / checkpoint_name
 
@@ -555,7 +614,7 @@ class Learner(nn.Module):
             ckpt_save_path.mkdir(parents=True)
 
         experiment_hyperparameters = dict(
-            step_idx=self.step_idx,
+            step_idx=self.global_step,
             global_step=self.global_step,
             current_epoch_dict={
                 "train": self.trainer.current_epoch_dict,
@@ -564,6 +623,7 @@ class Learner(nn.Module):
             per_epoch_metrics={
                 "eval": self.evaluator.per_epoch_metrics,
             },
+            status=status,
         )
 
         torch.save(
@@ -578,6 +638,7 @@ class Learner(nn.Module):
             experiment=self,
             checkpoint_path=ckpt_save_path,
         )
+        self.status = status
 
         return ckpt_save_path
 
@@ -592,15 +653,22 @@ class Learner(nn.Module):
         )
 
         if not (pathlib.Path(checkpoint_path) / "trainer_state.pt").exists():
-            return
+            return ExperimentStatus.STARTING
 
         trainer_state = torch.load(
             pathlib.Path(checkpoint_path) / "trainer_state.pt"
         )
-        self.step_idx = trainer_state["step_idx"]
+        self.global_step = trainer_state["step_idx"]
         self.global_step = trainer_state["global_step"]
         current_epoch_dict = trainer_state["current_epoch_dict"]
         per_epoch_metrics = trainer_state["per_epoch_metrics"]
+
+        if "status" in trainer_state:
+            self.status = trainer_state["status"]
+            logger.info(f"Found status {self.status}")
+        else:
+            self.status = ExperimentStatus.STARTING
+            logger.info(f"Could not find status, setting to {self.status}")
 
         if isinstance(current_epoch_dict["train"], List):
             loaded_trainer_epoch_dict = current_epoch_dict["train"][0]
@@ -644,23 +712,26 @@ class Learner(nn.Module):
             checkpoint_path=checkpoint_path,
         )
 
+        return self.status
+
     def load_best_model(
         self,
         metric_name: str,
         higher_is_better: bool,
         kth_best: int,
         base_model: nn.Module,
+        evaluator: Evaluator = None,
     ):
         (
             best_global_step,
             best_metric,
-        ) = self.evaluator.get_best_model_global_step_and_metric(
+        ) = evaluator.get_best_model_global_step_and_metric(
             metric_name, higher_is_better, kth_best=10
         )
-        print(
+        logger.info(
             f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
         )
-        print(
+        logger.info(
             f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
 

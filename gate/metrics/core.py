@@ -20,7 +20,6 @@ def accuracy_top_k(
     with torch.no_grad():
         # Get the top-k predictions for each example in the batch
         topk_values, topk_indices = logits.topk(k, dim=1)
-
         # Compute the number of correct predictions in the top-k predictions
         correct_topk = torch.tensor(
             [

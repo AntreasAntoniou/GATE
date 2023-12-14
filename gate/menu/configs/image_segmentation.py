@@ -1,10 +1,5 @@
-from gate.menu.core import (
-    AdapterTypeNames,
-    DatasetName,
-    EvaluatorName,
-    TrainerName,
-    get_model_selection,
-)
+from gate.menu.core import (AdapterTypeNames, DatasetName, EvaluatorName,
+                            TrainerName, get_model_selection)
 
 dataset_configs = {
     dataset_name: dataset_name.value
@@ -12,20 +7,21 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 8
-MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
+ENCODER_CONFIG = AdapterTypeNames.SEGMENTATION.value
 RESNET_LR = 6e-4
 VIT_LR = 6e-6
 TRAINER_NAME = TrainerName.IMAGE_SEMANTIC_SEGMENTATION.value
 EVALUATOR_NAME = EvaluatorName.IMAGE_SEMANTIC_SEGMENTATION.value
-
+IMAGE_SIZE = 1024
 
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ENCODER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,
+        image_size=IMAGE_SIZE,
     ),
     "trainer": TRAINER_NAME,
     "evaluator": EVALUATOR_NAME,

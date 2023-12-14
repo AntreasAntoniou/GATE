@@ -4,10 +4,11 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics, configurable
+from gate.boilerplate.decorators import collect_metrics_mark, configurable
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
 from gate.metrics.multi_class_classification import (
     average_precision_score,
@@ -274,15 +275,22 @@ class MultiClassClassificationEvaluator(Evaluator):
             "bs": brier_score_loss,
         }
 
-    def compute_epoch_metrics(self, global_step: int):
+    def compute_epoch_metrics(
+        self, global_step: int, prefix: Optional[str] = None
+    ):
         phase_metrics = {}
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         for key, value in self.current_epoch_dict.items():
-            if key not in ["labels", "logits"]:
+            if "labels" not in key and "logits" not in key:
                 phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
                 phase_metrics[f"{key}-epoch-std"] = torch.stack(value).std()
 
-        labels = torch.cat(self.current_epoch_dict["labels"]).detach()
-        logits = torch.cat(self.current_epoch_dict["logits"]).detach()
+        labels = torch.cat(self.current_epoch_dict[f"{prefix}labels"]).detach()
+        logits = torch.cat(self.current_epoch_dict[f"{prefix}logits"]).detach()
         for metric_name, metric_fn in self.metrics.items():
             for c_idx, class_name in enumerate(self.label_idx_to_class_name):
                 phase_metrics[f"{class_name}-{metric_name}"] = metric_fn(
@@ -294,42 +302,60 @@ class MultiClassClassificationEvaluator(Evaluator):
                     for class_name in self.label_idx_to_class_name
                 ]
             )
-            phase_metrics["global_step"] = global_step
+            phase_metrics[f"{prefix}global_step"] = global_step
             for key, value in phase_metrics.items():
                 if key not in self.per_epoch_metrics:
-                    self.per_epoch_metrics[key] = [phase_metrics[key]]
+                    self.per_epoch_metrics[f"{prefix}{key}"] = [
+                        phase_metrics[f"{key}"]
+                    ]
                 else:
-                    self.per_epoch_metrics[key].append(phase_metrics[key])
+                    self.per_epoch_metrics[f"{prefix}{key}"].append(
+                        phase_metrics[f"{key}"]
+                    )
 
         return phase_metrics
 
-    def compute_step_metrics(self, output_dict, batch, loss):
+    def compute_step_metrics(
+        self, output_dict, batch, loss, prefix: Optional[str] = None
+    ):
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         # fallback to numbering classes if no class names are provided
         if self.label_idx_to_class_name is None:
             self.label_idx_to_class_name = [
                 f"class-{idx}" for idx in range(batch["labels"].shape[1])
             ]
 
-        metrics = {"loss": loss.mean()}
+        metrics = {f"{prefix}loss": loss.mean()}
         for c_idx, class_name in enumerate(self.label_idx_to_class_name):
-            metrics[f"{class_name}-loss"] = loss[:, c_idx].mean()
+            metrics[f"{prefix}{class_name}-loss"] = loss[:, c_idx].mean()
 
         for key, value in metrics.items():
-            self.per_epoch_metrics.setdefault(key, []).append(
+            self.per_epoch_metrics.setdefault(f"{prefix}{key}", []).append(
                 value.detach().cpu()
             )
 
         # we need to round the labels because they might be soft labels due to mixup/label smoothing
-        self.current_epoch_dict.setdefault("labels", []).append(
+        self.current_epoch_dict.setdefault(f"{prefix}labels", []).append(
             batch["labels"].cpu().round()
         )
-        self.current_epoch_dict.setdefault("logits", []).append(
+        self.current_epoch_dict.setdefault(f"{prefix}logits", []).append(
             output_dict[self.target_modality][self.source_modality]["logits"]
             .cpu()
             .sigmoid_()
         )
 
-    def step(self, model, batch, global_step, accelerator: Accelerator):
+    def step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+        prefix: Optional[str] = None,
+    ):
         batch["return_loss_and_metrics"] = False
         output_dict = model.forward(batch)
         logits = output_dict[self.target_modality][self.source_modality][
@@ -343,7 +369,9 @@ class MultiClassClassificationEvaluator(Evaluator):
             )
 
             logits = logits.detach().cpu()
-            self.compute_step_metrics(output_dict, batch, loss.detach().cpu())
+            self.compute_step_metrics(
+                output_dict, batch, loss.detach().cpu(), prefix=prefix
+            )
             loss = loss.mean()
             output_dict = {
                 "loss": loss,
@@ -357,7 +385,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    @collect_metrics
+    @collect_metrics_mark
     def validation_step(
         self,
         model,
@@ -384,7 +412,7 @@ class MultiClassClassificationEvaluator(Evaluator):
         )
 
     @torch.inference_mode()
-    @collect_metrics
+    @collect_metrics_mark
     def testing_step(
         self,
         model,
@@ -400,6 +428,7 @@ class MultiClassClassificationEvaluator(Evaluator):
             batch=batch,
             global_step=global_step,
             accelerator=accelerator,
+            prefix=prefix,
         )
 
         metrics = step_output.metrics
@@ -411,7 +440,7 @@ class MultiClassClassificationEvaluator(Evaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_validation(
         self,
         global_step: int,
@@ -425,13 +454,14 @@ class MultiClassClassificationEvaluator(Evaluator):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_testing(
         self,
-        global_step: int,
+        global_step,
+        model: Optional[nn.Module] = None,
         prefix: Optional[str] = None,
     ):
-        phase_metrics = self.compute_epoch_metrics(global_step)
+        phase_metrics = self.compute_epoch_metrics(global_step, prefix=prefix)
 
         return EvaluatorOutput(
             global_step=global_step,

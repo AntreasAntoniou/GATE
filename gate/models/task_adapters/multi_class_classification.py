@@ -13,7 +13,7 @@ from gate.models.task_adapters import BaseModule
 
 @configurable(
     group="adapter",
-    name="multi-class-with-linear-classifier",
+    name="backbone-with-linear-multi-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class MultiClassBackboneWithLinear(BaseModule):
@@ -24,8 +24,20 @@ class MultiClassBackboneWithLinear(BaseModule):
     ):
         super().__init__()
         self.encoder = encoder
+        self.num_classes = num_classes
         self.linear = nn.Linear(encoder.num_in_features_image, num_classes)
         self.classes = [f"class{idx}" for idx in range(num_classes)]
+
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,)),
+        }
+        _ = self(**dummy_batch)
 
     @property
     def encoder_transforms(self):
@@ -36,11 +48,11 @@ class MultiClassBackboneWithLinear(BaseModule):
         return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
 
     @ensemble_marker
-    def compute_multi_class_loss(self, logits, targets):
-        opt_loss = F.binary_cross_entropy_with_logits(logits, targets)
+    def compute_loss_and_metrics(self, logits, labels):
+        opt_loss = F.binary_cross_entropy_with_logits(logits, labels)
 
         loss = F.binary_cross_entropy_with_logits(
-            logits, targets, reduction="none"
+            logits, labels, reduction="none"
         )
         loss = loss.detach()
         logits = logits.detach()
@@ -48,8 +60,6 @@ class MultiClassBackboneWithLinear(BaseModule):
         metrics = {
             "mixed_loss": loss.mean(),
             "loss": opt_loss,
-            "predictions": logits,
-            "targets": targets,
         }
 
         for c_idx, class_name in enumerate(self.classes):
@@ -64,7 +74,7 @@ class MultiClassBackboneWithLinear(BaseModule):
         audio: Optional[torch.Tensor] = None,
         video: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
-        return_loss: bool = False,
+        return_loss_and_metrics: bool = False,
     ) -> Dict[str, torch.Tensor]:
         if image is not None:
             x = self.encoder(image=image)["image"]["features"]
@@ -80,11 +90,11 @@ class MultiClassBackboneWithLinear(BaseModule):
 
         x = self.linear(x)
 
-        if return_loss and labels is not None:
-            loss = self.compute_multi_class_loss(x, labels)
-            return loss
+        if return_loss_and_metrics and labels is not None:
+            loss = self.compute_loss_and_metrics(x, labels)
+            return loss | {"logits": x, "labels": labels}
 
-        return x
+        return {"logits": x, "labels": labels}
 
     def adapter_transforms(self, inputs: Union[Dict, Any]):
         output_dict = {}

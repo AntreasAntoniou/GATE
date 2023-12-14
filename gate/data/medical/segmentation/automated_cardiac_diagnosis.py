@@ -11,13 +11,9 @@ from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import acdc_labels as CLASSES
 from gate.data.medical.segmentation.medical_decathlon import (
-    patient_normalization,
-)
+    convert_to_b3hw, patient_normalization)
 from gate.data.transforms.segmentation import (
-    DualImageRandomCrop,
-    MedicalImageSegmentationTransforms,
-    PhotometricParams,
-)
+    DualImageRandomCrop, MedicalImageSegmentationTransforms, PhotometricParams)
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> Dataset:
@@ -146,54 +142,34 @@ class DatasetTransforms:
 
         image_list = []
         annotation_list = []
-        image = image.reshape(-1, image.shape[-2], image.shape[-1])
+        image = image.reshape(-1, image.shape[-2], image.shape[-1]).unsqueeze(
+            1
+        )
         annotation = annotation.reshape(
             -1, annotation.shape[-2], annotation.shape[-1]
-        )
+        ).unsqueeze(1)
 
-        for image_item, annotation_item in zip(image, annotation):
-            image_item = image_item.unsqueeze(0)
-            annotation_item = annotation_item.unsqueeze(0)
+        if self.crop_size is not None:
+            image, annotation = self.crop_transform(image, annotation)
 
-            if self.crop_size is not None:
-                image_item, annotation_item = self.crop_transform(
-                    image_item, annotation_item
-                )
+        if self.med_transforms is not None:
+            image = self.med_transforms(image, annotation)
 
-            if self.med_transforms is not None:
-                image_item = self.med_transforms(image_item, annotation_item)
+        image = T.Resize(
+            (self.input_size[0], self.input_size[1]),
+            interpolation=T.InterpolationMode.BICUBIC,
+            antialias=True,
+        )(image)
 
-            image_item = T.Resize(
-                (self.input_size[0], self.input_size[1]),
-                interpolation=T.InterpolationMode.BICUBIC,
-                antialias=True,
-            )(image_item)
+        annotation = T.Resize(
+            (self.label_size[0], self.label_size[1]),
+            interpolation=T.InterpolationMode.NEAREST_EXACT,
+            antialias=True,
+        )(annotation)
 
-            annotation_item = T.Resize(
-                (self.label_size[0], self.label_size[1]),
-                interpolation=T.InterpolationMode.NEAREST_EXACT,
-                antialias=True,
-            )(annotation_item)
-
-            image_list.append(image_item)
-            annotation_list.append(annotation_item)
-
-        image = torch.stack(image_list)
-        annotation = torch.stack(annotation_list)
-
-        image = patient_normalization(image).unsqueeze(2)
+        image = convert_to_b3hw(image)
+        image = patient_normalization(image)
         annotation = annotation.long()
-        # by this point the shapes are num_scan, slices, channels, height, width, and each patient has about two scans
-        # we choose to consider the two scans as one image, so we concatenate them along the slices dimension
-        image = image.reshape(
-            -1, image.shape[2], image.shape[3], image.shape[4]
-        )
-        annotation = annotation.reshape(
-            -1, annotation.shape[2], annotation.shape[3]
-        )
-
-        # convert 1 channel to 3 channels
-        image = torch.cat((image, image, image), dim=1)
 
         return {
             "image": image,
@@ -212,9 +188,10 @@ def build_gate_dataset(
     num_classes=len(CLASSES),
     image_size=512,
     target_image_size=256,
+    ignore_index=0,
 ) -> dict:
     train_transforms = DatasetTransforms(
-        512, target_image_size, initial_size=1024, crop_size=image_size
+        512, target_image_size, initial_size=640, crop_size=image_size
     )
     eval_transforms = DatasetTransforms(
         512,

@@ -6,8 +6,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
-import wandb
 from PIL import Image
+
+import wandb
 
 logger = logging.getLogger(name=__name__)
 
@@ -43,6 +44,67 @@ def visualize_video_with_labels(video, logits, labels, name):
     return wandb_video_data_dict
 
 
+def visualize_volume(item, prefix: str):
+    input_volumes = item["image"].float()
+    predicted_volumes = item["labels"].float()
+    label_volumes = item["labels"].float()
+
+    # predicted_volumes[predicted_volumes == -1] = 10
+    # label_volumes[label_volumes == -1] = 10
+
+    logger.info(
+        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
+    )
+    logger.info(
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+    )
+    logger.info(
+        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+    )
+
+    # Start a Weights & Biases run
+
+    target_size = 384
+    # Visualize the data
+    return log_wandb_3d_volumes_and_masks(
+        F.interpolate(
+            input_volumes.view(
+                -1,
+                input_volumes.shape[-3],
+                input_volumes.shape[-2],
+                input_volumes.shape[-1],
+            ),
+            size=(target_size, target_size),
+            mode="bicubic",
+        ).view(*input_volumes.shape[:-2] + (target_size, target_size)),
+        F.interpolate(
+            predicted_volumes.view(
+                -1,
+                predicted_volumes.shape[-3],
+                predicted_volumes.shape[-2],
+                predicted_volumes.shape[-1],
+            ),
+            size=(target_size, target_size),
+            mode="nearest-exact",
+        )
+        .view(*predicted_volumes.shape[:-2] + (target_size, target_size))
+        .long(),
+        F.interpolate(
+            label_volumes.view(
+                -1,
+                predicted_volumes.shape[-3],
+                predicted_volumes.shape[-2],
+                predicted_volumes.shape[-1],
+            ),
+            size=(target_size, target_size),
+            mode="nearest-exact",
+        )
+        .view(*predicted_volumes.shape[:-2] + (target_size, target_size))
+        .long(),
+        prefix=prefix,
+    )
+
+
 def log_wandb_3d_volumes_and_masks(
     volumes: torch.Tensor,
     logits: torch.Tensor,
@@ -65,36 +127,20 @@ def log_wandb_3d_volumes_and_masks(
     """
 
     # Convert PyTorch tensors to NumPy arrays
-    input_volumes_np = normalize_image(volumes.float()).cpu()
-    predicted_volumes_np = logits.long().cpu()
-    label_volumes_np = labels.long().cpu()
-
-    if len(input_volumes_np.shape) == 4:
-        input_volumes_np = input_volumes_np.unsqueeze(0)
-    if len(predicted_volumes_np.shape) == 3:
-        predicted_volumes_np = predicted_volumes_np.unsqueeze(0)
-    if len(label_volumes_np.shape) == 3:
-        label_volumes_np = label_volumes_np.unsqueeze(0)
-
-    for data, name in zip(
-        [input_volumes_np, predicted_volumes_np, label_volumes_np],
-        ["Input", "Predicted", "Label"],
-    ):
-        if data is input_volumes_np:
-            assert (
-                len(data.shape) == 5
-            ), f"{name} volumes should be 5D in the shape of (b, s, c, h, w)"
-        else:
-            assert (
-                len(data.shape) == 4
-            ), f"{name} volumes should be 4D in the shape of (b, s, h, w)"
+    input_volumes = normalize_image(volumes.float()).cpu()
+    predicted_volumes = logits.long().cpu()
+    label_volumes = labels.long().cpu()
 
     # If no label description is provided, use a default mapping of indices to themselves
     if label_idx_to_description is None:
-        unique_labels = np.unique(label_volumes_np)
+        unique_labels = np.unique(label_volumes)
         label_idx_to_description = {
             label: str(label) for label in unique_labels
         }
+
+    logger.debug(
+        f"unique labels: {torch.unique(label_volumes)}, frequency: {torch.bincount(label_volumes.flatten())}"
+    )
 
     # Define a helper function to create a wandb.Image with masks
     def wb_mask(bg_img, pred_mask, true_mask):
@@ -112,21 +158,24 @@ def log_wandb_3d_volumes_and_masks(
             },
         )
 
-    image_mask_list = []
     # Log volumes to wandb
-    for i in range(input_volumes_np.shape[0]):
-        bg_image = (
-            create_montage(input_volumes_np[i]).permute([2, 0, 1]).float()
-        )
-        prediction_mask = create_montage(predicted_volumes_np[i]).long()
-        true_mask = create_montage(label_volumes_np[i]).long()
 
-        bg_image = T.ToPILImage()(bg_image)
-        prediction_mask = prediction_mask.numpy()
-        true_mask = true_mask.numpy()
-        image_mask_list.append(wb_mask(bg_image, prediction_mask, true_mask))
+    predicted_volumes = predicted_volumes.squeeze()
+    label_volumes = label_volumes.squeeze()
 
-    return {f"{prefix}/medical_segmentation_episode": image_mask_list}
+    bg_image = create_montage(input_volumes).permute([2, 0, 1]).float()
+    prediction_mask = create_montage(predicted_volumes).long().squeeze()
+    true_mask = create_montage(label_volumes).long().squeeze()
+
+    bg_image = T.ToPILImage()(bg_image)
+    prediction_mask = prediction_mask.cpu().numpy()
+    true_mask = true_mask.cpu().numpy()
+
+    return {
+        f"{prefix}/medical_segmentation_episode": [
+            wb_mask(bg_image, prediction_mask, true_mask)
+        ]
+    }
 
 
 def log_wandb_masks(
@@ -186,8 +235,9 @@ from typing import Dict, List, Union
 
 import torch
 import torchvision.transforms as T
-import wandb
 from PIL import Image
+
+import wandb
 
 
 def log_wandb_image_classification(
@@ -276,23 +326,27 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
     assert len(arr.shape) in [
         3,
         4,
+        5,
     ], "Input array should be 3D in the shape of (s, h, w) or 4D in the shape of (s, c, h, w)"
 
     # Get the shape of the input array
     if len(arr.shape) == 3:
         s, h, w = arr.shape
         c = None
-    else:
+    elif len(arr.shape) == 4:
         s, c, h, w = arr.shape
+    else:
+        b, s, c, h, w = arr.shape
+        arr = arr.reshape(-1, c, h, w)
 
     # Compute the new height and width
     h_new = w_new = math.ceil(math.sqrt(s))
 
     # Create an empty array to hold the montage
     montage = (
-        np.empty((h_new * h, w_new * w, c))
+        torch.empty((h_new * h, w_new * w, c))
         if c is not None
-        else np.empty((h_new * h, w_new * w))
+        else torch.empty((h_new * h, w_new * w))
     )
 
     # Fill the montage with slices from the input array
@@ -302,9 +356,9 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             if idx < s:
                 if c is not None:
                     if isinstance(arr, torch.Tensor):
-                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
-                            arr[idx].permute(1, 2, 0).numpy()
-                        )
+                        montage[
+                            i * h : (i + 1) * h, j * w : (j + 1) * w
+                        ] = arr[idx].permute(1, 2, 0)
                     else:
                         montage[
                             i * h : (i + 1) * h, j * w : (j + 1) * w
@@ -316,51 +370,69 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             else:
                 # Fill any extra entries with empty arrays
                 montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
-                    np.zeros((h, w, c)) if c is not None else np.zeros((h, w))
+                    torch.zeros((h, w, c))
+                    if c is not None
+                    else torch.zeros((h, w))
                 )
 
     return torch.tensor(montage)
 
 
-def visualize_volume(item, name):
-    input_volumes = item["image"]
-    input_volumes = input_volumes.float().unsqueeze(0).unsqueeze(0)
-    predicted_volumes = item["labels"].float().unsqueeze(0)
-    label_volumes = item["labels"].float().unsqueeze(0)
+def visualize_volume(item, prefix: str, target_size: int = 384):
+    input_volumes = item["image"].float()
+    predicted_volumes = item["labels"].float()
+    label_volumes = item["labels"].float()
 
-    print(
+    # predicted_volumes[predicted_volumes == -1] = 10
+    # label_volumes[label_volumes == -1] = 10
+
+    logger.info(
         f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
     )
-    print(
+    logger.info(
         f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
     )
 
     # Start a Weights & Biases run
-    run = wandb.init(
-        project="gate-visualization", job_type="visualize_dataset"
-    )
 
     # Visualize the data
-    wandb.log(
-        log_wandb_3d_volumes_and_masks(
-            F.interpolate(
-                input_volumes.reshape(
-                    -1,
-                    input_volumes.shape[-3],
-                    input_volumes.shape[-2],
-                    input_volumes.shape[-1],
-                ),
-                size=(256, 256),
-                mode="bicubic",
-            ).reshape(*input_volumes.shape[:-2] + (256, 256)),
-            predicted_volumes.long(),
-            label_volumes.long(),
-            prefix=name,
+    return log_wandb_3d_volumes_and_masks(
+        F.interpolate(
+            input_volumes.view(
+                -1,
+                input_volumes.shape[-3],
+                input_volumes.shape[-2],
+                input_volumes.shape[-1],
+            ),
+            size=(target_size, target_size),
+            mode="bicubic",
+        ).view(*input_volumes.shape[:-2] + (target_size, target_size)),
+        F.interpolate(
+            predicted_volumes.view(
+                -1,
+                predicted_volumes.shape[-3],
+                predicted_volumes.shape[-2],
+                predicted_volumes.shape[-1],
+            ),
+            size=(target_size, target_size),
+            mode="nearest-exact",
         )
+        .view(*predicted_volumes.shape[:-2] + (target_size, target_size))
+        .long(),
+        F.interpolate(
+            label_volumes.view(
+                -1,
+                predicted_volumes.shape[-3],
+                predicted_volumes.shape[-2],
+                predicted_volumes.shape[-1],
+            ),
+            size=(target_size, target_size),
+            mode="nearest-exact",
+        )
+        .view(*predicted_volumes.shape[:-2] + (target_size, target_size))
+        .long(),
+        prefix=prefix,
     )
-
-    # Finish the run
-    run.finish()

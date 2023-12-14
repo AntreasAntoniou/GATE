@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @configurable(
     group="adapter",
-    name="backbone-with-linear-classifier",
+    name="backbone-with-linear-single-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
 class BackboneWithLinearClassification(BaseModule):
@@ -62,6 +62,22 @@ class BackboneWithLinearClassification(BaseModule):
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
 
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,))
+            if isinstance(self.num_classes, int)
+            else {
+                key: torch.randint(0, n, (1,))
+                for key, n in self.num_classes.items()
+            },
+        }
+        _ = self(**dummy_batch)
+
     @property
     def encoder_transforms(self):
         return self.encoder.get_transforms()
@@ -75,21 +91,34 @@ class BackboneWithLinearClassification(BaseModule):
         output_dict = {}
         overall_loss = []
         overall_accuracy_top_1 = []
+        overall_accuracy_top_5 = []
         for class_type in logits_dict.keys():
             temp_logits = logits_dict[class_type]
             temp_labels = labels[class_type]
             temp_labels = torch.tensor(temp_labels).to(temp_logits.device)
             loss = F.cross_entropy(temp_logits, temp_labels)
             accuracy_top_1 = accuracy_top_k(temp_logits, temp_labels, k=1)
+            accuracy_top_5 = accuracy_top_k(
+                temp_logits,
+                temp_labels,
+                k=min(5, self.num_classes[class_type]),
+            )
 
             output_dict[f"loss_{class_type}"] = loss
             output_dict[f"accuracy_top_1_{class_type}"] = accuracy_top_1
+            output_dict[
+                f"accuracy_top_{min(5, self.num_classes[class_type])}_{class_type}"
+            ] = accuracy_top_5
             overall_loss.append(loss)
             overall_accuracy_top_1.append(accuracy_top_1)
+            overall_accuracy_top_5.append(accuracy_top_5)
 
         output_dict["loss"] = torch.mean(torch.stack(overall_loss))
         output_dict["accuracy_top_1"] = torch.mean(
             torch.stack(overall_accuracy_top_1)
+        )
+        output_dict["accuracy_top_5"] = torch.mean(
+            torch.stack(overall_accuracy_top_5)
         )
         return output_dict
 

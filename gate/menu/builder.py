@@ -2,6 +2,7 @@ import json
 import logging
 import random
 import subprocess
+from dataclasses import asdict
 from typing import Dict, List, Optional, Union
 
 import fire
@@ -84,16 +85,37 @@ def generate_commands(
                         "_", "-"
                     )
                 )
-                model_args = ""
-                if model_config.encoder_config.value.timm_model_name:
-                    model_args = f"model.timm_model_name={model_config.encoder_config.value.timm_model_name}"
+                encoder_args = ""
+                for key, value in asdict(model_config.encoder_config).items():
+                    if "pretty_name" in key:
+                        continue
+                    if "encoder_name" in key:
+                        continue
+                    if value is None:
+                        continue
+
+                    encoder_args += f"encoder.{key}={value} "
+
+                adapter_args = ""
+                for key, value in asdict(model_config.adapter_config).items():
+                    if "pretty_name" in key:
+                        continue
+                    if "adapter_name" in key:
+                        continue
+                    if value is None:
+                        continue
+
+                    adapter_args += f"adapter.{key}={value} "
+
                 lr_list = model_config.learning_rate_config.get_lr()
                 for lr in lr_list:
                     command = build_command(
                         exp_name=exp_name,
-                        model_name=model_config.model_type,
+                        encoder_name=model_config.encoder_config.encoder_name,
+                        adapter_name=model_config.adapter_config.adapter_name,
                         dataset_name=dataset_value,
-                        model_args=model_args,
+                        encoder_args=encoder_args,
+                        adapter_args=adapter_args,
                         num_workers=num_workers,
                         gpu_ids=gpu_ids,
                         lr=lr,
@@ -107,6 +129,7 @@ def generate_commands(
                         gate_run_path=gate_run_path,
                         train_iters=train_iters,
                         evaluate_every_n_steps=evaluate_every_n_steps,
+                        mixed_precision_mode=model_config.mixed_precision_mode,
                     )
                     command_dict[exp_name] = command
     return command_dict
@@ -126,7 +149,7 @@ def run_experiments(
     train_iters: int = 10000,
     evaluate_every_n_steps: int = 250,
     return_json: bool = False,
-    shuffle: bool = False,
+    seed_list: List[int] = [7],
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -144,7 +167,7 @@ def run_experiments(
     Returns:
         experiment_dict (dict): A dictionary containing the experiment names as keys and the corresponding experiment commands as values.
     """
-    seed_list = [7]
+
     experiment_dict = {}
 
     experiment_configs: Dict[str, Dict] = {
@@ -153,14 +176,29 @@ def run_experiments(
         "med-class": medical_image_classification_config,
         "image-seg": image_segmentation_config,
         "image-text": image_text_zero_shot_classification_config,
-        "acdc": acdc_config,
-        "md": md_config,
+        # "acdc": acdc_config,
+        # "md": md_config,
         "rr": rr_config,
         "rr-mm": rr_mm_config,
         "video-class": video_classification_config,
     }
 
-    if "+" in experiment_type:
+    if experiment_type == "all":
+        for experiment_type in experiment_configs:
+            experiment_dict.update(
+                generate_commands(
+                    prefix=prefix,
+                    seed_list=seed_list,
+                    experiment_config=experiment_configs[experiment_type],
+                    num_workers=num_workers,
+                    accelerate_launch_path=accelerate_launch_path,
+                    gate_run_path=gate_run_path,
+                    gpu_ids=gpu_ids,
+                    train_iters=train_iters,
+                    evaluate_every_n_steps=evaluate_every_n_steps,
+                )
+            )
+    elif "+" in experiment_type:
         experiment_types = experiment_type.split("+")
         for experiment_type in experiment_types:
             if experiment_type in experiment_configs:
@@ -178,24 +216,8 @@ def run_experiments(
                     )
                 )
             else:
-                print("Invalid experiment type selected.")
+                logger.error("Invalid experiment type selected.")
                 return
-
-    elif experiment_type == "all":
-        for config in experiment_configs.values():
-            experiment_dict.update(
-                generate_commands(
-                    prefix=prefix,
-                    seed_list=seed_list,
-                    experiment_config=config,
-                    num_workers=num_workers,
-                    accelerate_launch_path=accelerate_launch_path,
-                    gate_run_path=gate_run_path,
-                    gpu_ids=gpu_ids,
-                    train_iters=train_iters,
-                    evaluate_every_n_steps=evaluate_every_n_steps,
-                )
-            )
     else:
         if experiment_type in experiment_configs:
             experiment_dict = generate_commands(
@@ -210,12 +232,12 @@ def run_experiments(
                 evaluate_every_n_steps=evaluate_every_n_steps,
             )
         else:
-            print("Invalid experiment type selected.")
+            logger.error("Invalid experiment type selected.")
             return
 
     if print_commands:
         for experiment_name, experiment_command in experiment_dict.items():
-            print(f"{experiment_command}")
+            logger.info(f"{experiment_command}")
 
             if run_commands:
                 # Execute the command and capture stdout and stderr
@@ -228,28 +250,19 @@ def run_experiments(
 
                 # Print stdout and stderr in real-time
                 for line in iter(process.stdout.readline, b""):
-                    print(line.decode().strip())
+                    logger.info(line.decode().strip())
 
                 for line in iter(process.stderr.readline, b""):
-                    print(line.decode().strip())
+                    logger.info(line.decode().strip())
 
                 # Wait for the process to complete and get the exit code
                 process.communicate()
                 exit_code = process.returncode
 
                 if exit_code != 0:
-                    print(
+                    logger.error(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
-
-    if shuffle:
-        # shuffle a copy of the dictionary
-        experiment_dict = {
-            k: v
-            for k, v in random.sample(
-                experiment_dict.items(), len(experiment_dict)
-            )
-        }
 
     if return_json:
         return json.dumps(experiment_dict)

@@ -31,11 +31,12 @@ class IoUMetric:
     def __init__(
         self,
         num_classes: int,
-        ignore_index: int = 255,
+        ignore_index: Optional[int] = None,
         class_idx_to_name: Optional[dict] = None,
     ):
         self.num_classes = num_classes
         self.ignore_index = ignore_index
+
         self.class_idx_to_name = class_idx_to_name
         self.total_updates = 0
 
@@ -43,38 +44,41 @@ class IoUMetric:
         self.total_area_union = torch.zeros(num_classes)
         self.total_area_pred = torch.zeros(num_classes)
         self.total_area_label = torch.zeros(num_classes)
+        logger.info(self)
+
+    def __repr__(self):
+        return (
+            f"IoUMetric(num_classes={self.num_classes}, "
+            f"ignore_index={self.ignore_index}, "
+            f"class_idx_to_name={self.class_idx_to_name})"
+        )
 
     def update(self, pred: torch.Tensor, label: torch.Tensor):
-        if len(label.shape) == 2:
-            label = label.unsqueeze(0)
-        mask = label != self.ignore_index
-        logger.debug(
-            f"mask: {mask.shape}, pred: {pred.shape}, label: {label.shape}"
-        )
-        pred = pred[mask].cpu()
-        label = label[mask].cpu()
-        # unique_preds = torch.unique(pred)
-        # unique_labels = torch.unique(label)
+        pred = pred.clone().cpu().view(-1)
+        label = label.clone().cpu().view(-1)
 
-        # print(f"unique_preds: {unique_preds}, unique_labels: {unique_labels}")
-        # print(
-        #     f"total unique_preds: {len(unique_preds)}, total unique_labels: {len(unique_labels)}"
-        # )
+        if self.ignore_index is not None:
+            keep_mask = label != self.ignore_index
+
+            keep_mask = keep_mask.to(pred.device)
+            pred = pred[keep_mask]
+            label = label[keep_mask]
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
+
         area_union = (
             torch.bincount(pred, minlength=self.num_classes)
             + torch.bincount(label, minlength=self.num_classes)
             - area_intersect
         )
+
         area_label = torch.bincount(label, minlength=self.num_classes)
 
         self.total_area_intersect += area_intersect.float()
         self.total_area_union += area_union.float()
         self.total_area_label += area_label.float()
         self.total_updates += 1
-        # print(f"total_updates: {self.total_updates}")
 
     def reset(self):
         self.total_area_intersect = torch.zeros(self.num_classes)
@@ -203,9 +207,13 @@ class FocalLoss(nn.Module):
         labels = labels.view(-1)
 
         if self.ignore_index is not None:
-            mask = labels != self.ignore_index
-            logits = logits[mask]
-            labels = labels[mask]
+            # The computation of ignore_mask can potentially be sped up by avoiding the unnecessary expansion of dimensions and broadcasting directly where it's used.
+            ignore_mask = labels != self.ignore_index
+
+            # Ensure all tensors are on the same device
+            ignore_mask = ignore_mask.to(logits.device)
+            logits = logits[ignore_mask]
+            labels = labels[ignore_mask]
 
         ce_loss = F.cross_entropy(logits, labels, reduction="none")
         pt = torch.exp(-ce_loss)
@@ -231,19 +239,20 @@ class DiceLoss(nn.Module):
         logits = F.softmax(logits, dim=1)
         labels = labels.squeeze(1)
 
-        unique_labels = torch.unique(labels)
-        logger.debug(
-            f"Unique labels: {unique_labels}, length: {len(unique_labels)}, shape: {logits.shape}"
-        )
-
         labels_one_hot = torch.zeros_like(logits)
 
         labels_one_hot.scatter_(1, labels.unsqueeze(1), 1)
 
         if self.ignore_index is not None:
-            ignore_mask = (labels != self.ignore_index).unsqueeze(1)
+            # The computation of ignore_mask can potentially be sped up by avoiding the unnecessary expansion of dimensions and broadcasting directly where it's used.
+            ignore_mask = labels != self.ignore_index
 
-            labels_one_hot *= ignore_mask
+            # Ensure all tensors are on the same device
+            ignore_mask = ignore_mask.to(logits.device)
+            labels_one_hot = labels_one_hot.to(logits.device)
+
+            # Use in-place broadcasting and multiplication instead of expanding ignore_mask unnecessarily
+            labels_one_hot *= ignore_mask.unsqueeze(1)
 
         intersection = torch.sum(logits * labels_one_hot, dim=(2, 3))
         union = torch.sum(logits, dim=(2, 3)) + torch.sum(

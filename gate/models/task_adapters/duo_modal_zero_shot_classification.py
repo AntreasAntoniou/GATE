@@ -3,19 +3,14 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from accelerate import Accelerator
-from tqdm.auto import tqdm
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.utils import (
-    compute_zero_shot_loss_and_metrics,
-    get_similarities,
-)
+    compute_zero_shot_loss_and_metrics, get_similarities)
 
 accelerator = Accelerator()
 
@@ -31,7 +26,7 @@ class DuoModalZeroShotModel(BaseModule):
     def __init__(
         self,
         encoder: GATEncoder,
-        projection_num_features: Optional[int] = None,
+        projection_num_features: Optional[int] = 768,
         temperature_parameter: Optional[float] = 1.0 / 0.07,
         head_identifier: Optional[str] = "features",
     ):
@@ -59,6 +54,16 @@ class DuoModalZeroShotModel(BaseModule):
                 out_features=projection_num_features,
                 bias=False,
             )
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                2, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "text": torch.randint(0, 100, (2, 10)),
+        }
+        _ = self(**dummy_batch)
 
     @ensemble_marker
     def compute_loss_and_metrics(self, logits, **kwargs):
@@ -73,7 +78,9 @@ class DuoModalZeroShotModel(BaseModule):
 
     @property
     def modality_config(self):
-        return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
+        return TargetModalityConfig(
+            image_text=[SourceModalityConfig(image=True, text=True)]
+        )
 
     def forward(
         self,

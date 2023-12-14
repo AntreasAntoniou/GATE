@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from omegaconf import DictConfig
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
+from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
@@ -15,6 +16,8 @@ from gate.models.task_adapters.temporal_image_classification import (
     VariableSequenceTransformerEncoder,
 )
 from gate.models.task_adapters.utils import reinit
+
+logger = get_logger(__name__, set_rich=True)
 
 
 class SkipConnectionModule(nn.Module):
@@ -49,28 +52,28 @@ class DuoModalFusionModel(BaseModule):
     def __init__(
         self,
         encoder: GATEncoder,
-        projection_num_features: int = 512,
         dropout_fusion_prob: float = 0.0,
         num_classes: Union[List[int], int, Dict[str, int]] = 10,
+        projection_num_features: int = 512,
     ):
         super().__init__()
         self.encoder = encoder
-        self.projection_num_features = projection_num_features
 
         self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
+        self.projection_num_features = projection_num_features
 
         self.image_linear = nn.Linear(
-            self.encoder.num_in_features_image,
+            self.encoder.num_raw_features_image,
             projection_num_features,
             bias=False,
         )
-        self.text_image = nn.Linear(
-            self.encoder.num_in_features_text,
+        self.text_linear = nn.Linear(
+            self.encoder.num_raw_features_text,
             projection_num_features,
             bias=False,
         )
 
-        self.fusion_in_features = self.projection_num_features
+        self.fusion_in_features = projection_num_features
         self.image_instance_norm = nn.InstanceNorm2d(
             3, affine=True, track_running_stats=False
         )
@@ -107,6 +110,29 @@ class DuoModalFusionModel(BaseModule):
                 f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
             )
 
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                2, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
+            ),
+            "text": torch.randint(0, 100, (2, 10)),
+            "labels": torch.randint(0, self.num_classes, (2,))
+            if isinstance(self.num_classes, int)
+            else torch.stack(
+                [
+                    torch.randint(value, (1,))
+                    for value in list(self.num_classes.values())[:2]
+                ]
+            ),
+            "answer_type": list(self.num_classes.keys())[:2]
+            if not isinstance(self.num_classes, int)
+            else None,
+        }
+        logger.info(dummy_batch, self.num_classes)
+        _ = self(**dummy_batch)
+
     @ensemble_marker
     def compute_loss_and_metrics_multi_class(self, logits_dict, labels):
         output_dict = {}
@@ -114,7 +140,7 @@ class DuoModalFusionModel(BaseModule):
         overall_accuracy_top_1 = []
         for answer in logits_dict.keys():
             temp_logits = logits_dict[answer]
-            temp_labels = labels[answer]
+            temp_labels = labels[answer].view(-1)
             loss = F.cross_entropy(temp_logits, temp_labels, reduction="none")
             accuracy_top_1 = accuracy_top_k(temp_logits, temp_labels, k=1)
 
@@ -157,34 +183,17 @@ class DuoModalFusionModel(BaseModule):
 
     def forward(
         self,
-        image: Optional[torch.Tensor] = None,
-        text: Optional[torch.Tensor] = None,
+        image: torch.Tensor,
+        text: torch.Tensor,
         labels: Optional[torch.Tensor] = None,
         answer_type: Optional[str] = None,
         question_family_idx: Optional[int] = None,
         return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
-        modalities = [image, text]
-        non_none_modalities = [
-            modality for modality in modalities if modality is not None
-        ]
 
-        if len(non_none_modalities) != 2:
-            raise ValueError(
-                f"Exactly two modalities must be provided. You provided {len(non_none_modalities)}"
-            )
-
-        image_features = None
-        text_features = None
-
-        if image is not None:
-            image = self.image_instance_norm(image)
-            image_features = self.encoder(image=image)["image"]["raw_features"]
-
-        if text is not None:
-            text_features = self.encoder(text=text)["text"]["raw_features"]
-
+        image = self.image_instance_norm(image)
+        image_features = self.encoder(image=image)["image"]["raw_features"]
         image_features = self.image_linear(
             image_features.reshape(-1, image_features.shape[-1])
         ).reshape(
@@ -193,7 +202,9 @@ class DuoModalFusionModel(BaseModule):
             self.projection_num_features,
         )
 
-        text_features = self.text_image(
+        text_features = self.encoder(text=text)["text"]["raw_features"]
+
+        text_features = self.text_linear(
             text_features.reshape(-1, text_features.shape[-1])
         ).reshape(
             text_features.shape[0],
@@ -210,21 +221,30 @@ class DuoModalFusionModel(BaseModule):
         if isinstance(self.classifier, nn.ModuleDict):
             for answer in self.classifier.keys():
                 answer_specific_idx = [
-                    item
-                    for item in range(len(answer_type))
-                    if answer_type[item] == answer
+                    idx
+                    for idx, item in enumerate(answer_type)
+                    if item == answer
                 ]
+                if len(answer_specific_idx) == 0:
+                    continue
                 temp_features = features[answer_specific_idx]
-                temp_labels = labels[answer_specific_idx]
 
                 logits_dict[answer] = self.classifier[answer](temp_features)
-                labels_dict[answer] = temp_labels
+
+                if labels is not None:
+                    labels_dict[answer] = (
+                        labels[answer_specific_idx]
+                        if isinstance(labels, torch.Tensor)
+                        else [labels[idx] for idx in answer_specific_idx]
+                    )
+
                 output_dict = {"logits": logits_dict, "labels": labels_dict}
         else:
             output_dict = {
                 "logits": self.classifier(features),
-                "labels": labels,
             }
+            if labels is not None:
+                output_dict["labels"] = labels
 
         if labels is not None and return_loss_and_metrics:
             output_dict |= self.compute_loss_and_metrics(
@@ -249,19 +269,10 @@ class DuoModalFusionModel(BaseModule):
         reinit(self)
 
     def adapter_transforms(self, inputs: dict):
-        output_dict = {}
-
         if "image" in inputs:
-            output_dict["image"] = self.encoder_transforms["image"](
-                inputs["image"]
-            )
+            inputs["image"] = self.encoder_transforms["image"](inputs["image"])
 
         if "text" in inputs:
-            output_dict["text"] = self.encoder_transforms["text"](
-                inputs["text"]
-            )
+            inputs["text"] = self.encoder_transforms["text"](inputs["text"])
 
-        if "labels" in inputs:
-            output_dict["labels"] = inputs["labels"]
-
-        return output_dict
+        return inputs

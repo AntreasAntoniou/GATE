@@ -6,13 +6,8 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPVisionEmbeddings
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
-from gate.models.backbones import (
-    GATEncoder,
-    TextProcessor,
-    VisionTextGATEAdapter,
-    forward_dict,
-)
+from gate.models.backbones import (GATEncoder, TextProcessor,
+                                   VisionTextGATEAdapter, forward_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +27,11 @@ class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
         model_name: str,
         pretrained: bool = True,
         image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
     ):
         nn.Module.__init__(self)
         VisionTextGATEAdapter.__init__(self)
-
+        self.image_size = image_size
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             model_name
         )
@@ -46,9 +42,25 @@ class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
             self.clip.init_weights()
 
         self.vision_model = self.clip.vision_model
-        self.visual_projection = self.clip.visual_projection
+        self.visual_projection = (
+            nn.Linear(
+                self.vision_model.config.hidden_size,
+                num_projection_features,
+                bias=False,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
+
         self.text_model = self.clip.text_model
-        self.text_projection = self.clip.text_projection
+        self.text_projection = (
+            nn.Linear(
+                self.text_model.config.hidden_size,
+                num_projection_features,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
 
         # setattr signature: setattr(object, name, value)
 
@@ -67,8 +79,23 @@ class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
         if image_size is not None:
             self.modify_expected_image_size(image_size)
 
-        self.image_num_features = self.clip.vision_embed_dim
-        self.text_num_features = self.clip.text_embed_dim
+        self.image_num_features = (
+            self.clip.vision_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+
+        self.text_num_raw_features = self.text_model.config.hidden_size
+        self.image_num_raw_features = self.vision_model.config.hidden_size
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
 
     def modify_expected_image_size(self, image_size: int):
         config = self.vision_model.config
@@ -86,6 +113,14 @@ class CLIPVisionAdapter(VisionTextGATEAdapter, GATEncoder):
     @property
     def num_in_features_text(self):
         return self.text_num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_num_raw_features
 
     @property
     def num_in_features_video(self):

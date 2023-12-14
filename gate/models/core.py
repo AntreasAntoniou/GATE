@@ -1,4 +1,3 @@
-import inspect
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -254,17 +253,9 @@ def print_dict_structure(d, indent=0):
     from rich import print
 
     for key, value in d.items():
-        print(" " * indent + str(key))
+        logger.info(" " * indent + str(key))
         if isinstance(value, dict):
             print_dict_structure(value, indent + 2)
-
-
-def is_desired_method(member):
-    return inspect.ismethod(member) or inspect.isfunction(member)
-
-
-def is_desired_variable(name, member):
-    return "metric" in name.lower() and not callable(member)
 
 
 class Ensemble(nn.Module):
@@ -283,15 +274,22 @@ class Ensemble(nn.Module):
         """
         super(Ensemble, self).__init__()
         self.models = nn.ModuleList(models)
+        self.compute_loss_and_metrics = None
+        self.iou_metrics_dict = None
 
         for model in self.models:
             model.eval()
 
         for name in dir(self.models[0]):
             member = getattr(self.models[0], name)
-            if is_desired_method(member) or is_desired_variable(name, member):
-                if hasattr(member, "__used_in_ensemble__"):
-                    setattr(self, name, member)
+            if hasattr(member, "__used_in_ensemble__"):
+                setattr(self, name, member)
+
+        if self.iou_metrics_dict is not None:
+            for value in self.iou_metrics_dict.values():
+                value.reset()
+
+        logger.info(f"Ensemble model with {len(self.models)} models created.")
 
     def forward(self, *args, **kwargs) -> dict[str, torch.Tensor]:
         """
@@ -307,7 +305,7 @@ class Ensemble(nn.Module):
 
         with torch.inference_mode():
             # # Get the outputs from each model
-            print(f"Ensemble: {len(self.models)}")
+
             model_outputs = [model(*args, **kwargs) for model in self.models]
             labels = None
 

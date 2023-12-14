@@ -6,10 +6,8 @@ import torch
 from tqdm import tqdm
 
 from gate.boilerplate.wandb_utils import visualize_volume
-from gate.data.image.segmentation.coco_164k import (
-    build_dataset,
-    build_gate_dataset,
-)
+from gate.data.image.segmentation.coco_164k import (build_dataset,
+                                                    build_gate_dataset)
 
 
 def test_build_dataset():

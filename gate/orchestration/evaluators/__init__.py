@@ -1,12 +1,18 @@
+import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import torch
+import torch.nn as nn
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics
+from gate.boilerplate.decorators import collect_metrics_mark
+from gate.boilerplate.utils import enrichen_logger
+
+logger = logging.getLogger(__name__)
+logger = enrichen_logger(logger)
 
 
 class Evaluator(ABC):
@@ -55,9 +61,7 @@ class Evaluator(ABC):
         # and returns the global step and the metric value of that model
         metrics = self.per_epoch_metrics[metric_name]
         global_steps = self.per_epoch_metrics["global_step"]
-        print(
-            f"global_steps: {global_steps}, per_epoch_metrics: {self.per_epoch_metrics}, current_epoch_dict: {self.current_epoch_dict}"
-        )
+        logger.info(f"global_steps: {global_steps}")
 
         if isinstance(metrics, List):
             if len(metrics) == 0:
@@ -83,7 +87,7 @@ class Evaluator(ABC):
         else:
             return best_global_step[:kth_best], best_metric[:kth_best]
 
-    @collect_metrics
+    @collect_metrics_mark
     def start_validation(
         self,
         global_step: int,
@@ -98,7 +102,7 @@ class Evaluator(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def start_testing(
         self,
         global_step: int,
@@ -114,7 +118,7 @@ class Evaluator(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_validation(
         self,
         global_step: int,
@@ -139,12 +143,18 @@ class Evaluator(ABC):
             experiment_tracker=self.experiment_tracker,
         )
 
-    @collect_metrics
+    @collect_metrics_mark
     def end_testing(
         self,
-        global_step: int,
+        global_step,
+        model: Optional[nn.Module] = None,
         prefix: Optional[str] = None,
     ):
+        if prefix is None:
+            prefix = ""
+        else:
+            prefix = f"{prefix}-"
+
         phase_metrics = {}
         for key, value in self.current_epoch_dict.items():
             phase_metrics[f"{key}-epoch-mean"] = torch.stack(value).mean()
@@ -156,7 +166,7 @@ class Evaluator(ABC):
                 phase_metrics[f"{key}-epoch-std"]
             )
 
-        self.per_epoch_metrics["global_step"].append(global_step)
+        self.per_epoch_metrics[f"{prefix}global_step"].append(global_step)
 
         return EvaluatorOutput(
             global_step=global_step,

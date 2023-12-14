@@ -5,26 +5,15 @@ import torch
 import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.wav2vec2.modeling_wav2vec2 import (
-    Wav2Vec2Config,
-    Wav2Vec2Encoder,
-    Wav2Vec2EncoderStableLayerNorm,
-    Wav2Vec2FeatureEncoder,
-    Wav2Vec2FeatureProjection,
-    Wav2Vec2PreTrainedModel,
-)
+    Wav2Vec2Config, Wav2Vec2Encoder, Wav2Vec2EncoderStableLayerNorm,
+    Wav2Vec2FeatureEncoder, Wav2Vec2FeatureProjection, Wav2Vec2PreTrainedModel)
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import (
-    GATEncoder,
-    Modality,
-    TextProcessor,
-    VisionTextGATEAdapter,
-    forward_dict,
-)
+from gate.models.backbones import (GATEncoder, Modality, TextProcessor,
+                                   VisionTextGATEAdapter, forward_dict)
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import (
-    VisionRootReplacedBackbone,
-)
+from gate.models.task_adapters.modality_transfer_classification import \
+    VisionRootReplacedBackbone
 
 logger = logging.getLogger(__name__)
 
@@ -55,20 +44,11 @@ class ModifiedWav2Vec2Model(Wav2Vec2PreTrainedModel):
         image: Optional[torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
         output_attentions = self.config.output_attentions
-        output_hidden_states = self.config.output_hidden_states
 
         return_dict = self.config.use_return_dict
-        image = image.permute([0, 2, 1]).reshape(image.shape[0], -1)
-
-        extract_features = self.feature_extractor(image)
-        extract_features = extract_features.transpose(1, 2)
-
-        hidden_states, extract_features = self.feature_projection(
-            extract_features
-        )
 
         encoder_outputs = self.encoder(
-            hidden_states,
+            image,
             attention_mask=None,
             output_attentions=output_attentions,
             output_hidden_states=True,
@@ -104,10 +84,11 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
         wav2vec2_model_name: str = Wav2Vec2ModelPaths.base,
         pretrained: bool = True,
         image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
     ):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
-
+        self.image_size = image_size
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
@@ -124,21 +105,34 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
 
         self.vision_model = VisionRootReplacedBackbone(
             model=vision_embedding,
-            num_root_features=80,
+            num_root_features=1024,
             backbone_root_layers_to_remove=["embeddings"],
             image_size=image_size,
             num_channels=3,
-            patch_size=4,
+            patch_size=16,
             source_modality=Modality.image,
             target_modality=Modality.image,
         )
-        self.visual_projection = nn.Linear(
-            vision_embedding.config.hidden_size,
-            self.clip.vision_embed_dim,
-            bias=False,
+
+        self.visual_projection = (
+            nn.Linear(
+                vision_embedding.config.hidden_size,
+                num_projection_features,
+                bias=False,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
         )
+
         self.text_model = self.clip.text_model
-        self.text_projection = self.clip.text_projection
+        self.text_projection = (
+            nn.Linear(
+                self.text_model.config.hidden_size,
+                num_projection_features,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
 
         # setattr signature: setattr(object, name, value)
 
@@ -149,8 +143,23 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        self.image_num_features = vision_embedding.config.hidden_size
-        self.text_num_features = self.clip.text_embed_dim
+        self.image_num_features = (
+            vision_embedding.config.hidden_size
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+
+        self.text_num_raw_features = self.text_model.config.hidden_size
+        self.image_num_raw_features = vision_embedding.config.hidden_size
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
 
     def init_weights(self):
         reinit(self)
@@ -162,6 +171,14 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
     @property
     def num_in_features_text(self):
         return self.text_num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_num_raw_features
 
     @property
     def num_in_features_video(self):

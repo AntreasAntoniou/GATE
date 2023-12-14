@@ -6,11 +6,11 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import configurable
-from gate.orchestration.trainers.classification import (
-    ClassificationTrainer,
-    StepOutput,
-)
+from gate.boilerplate.decorators import (collect_metrics, collect_metrics_mark,
+                                         configurable)
+from gate.orchestration.trainers import TrainerOutput
+from gate.orchestration.trainers.classification import (ClassificationTrainer,
+                                                        StepOutput)
 
 logger = logging.getLogger(__name__)
 
@@ -219,8 +219,46 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
                         self.current_epoch_dict[key].append(
                             value.detach().cpu()
                         )
-            output_list.append(output_dict)
+            yield StepOutput(
+                output_metrics_dict=output_dict
+                | {"fprop_time": fprop_time, "bprop_time": bprop_time},
+                loss=loss,
+            )
+
+    @collect_metrics_mark
+    def training_step(
+        self,
+        model,
+        batch,
+        global_step,
+        accelerator: Accelerator,
+    ) -> TrainerOutput:
+        model.train()
+        self.optimizer.zero_grad()
+        output_list = []
+        cur_global_step = global_step
+        for step_idx, step_output in enumerate(
+            self.step(
+                model=model,
+                batch=batch,
+                global_step=global_step,
+                accelerator=accelerator,
+            )
+        ):
+            self.optimizer.step()
+            self.scheduler.step(step_output.loss)
+            self.optimizer.zero_grad()
+            output_list.append(step_output.output_metrics_dict)
+            cur_global_step += 1
+            collect_metrics(
+                metrics_dict=step_output.output_metrics_dict,
+                phase_name="training",
+                global_step=cur_global_step,
+                experiment_tracker=self.experiment_tracker,
+            )
+
         output_dict = integrate_output_list(output_list)
+
         if "logits" in output_dict:
             if global_step % 100 == 0:
                 output_dict = self.collect_segmentation_episode(
@@ -234,8 +272,12 @@ class MedicalSemanticSegmentationTrainer(ClassificationTrainer):
             if "loss" in key or "iou" in key or "accuracy" in key:
                 output_dict[key] = value.mean()
 
-        return StepOutput(
-            output_metrics_dict=output_dict
-            | {"fprop_time": fprop_time, "bprop_time": bprop_time},
-            loss=loss,
+        output_dict["lr"] = self.optimizer.param_groups[0]["lr"]
+
+        return TrainerOutput(
+            phase_name="training",
+            opt_loss=step_output.output_metrics_dict["loss"],
+            global_step=cur_global_step,
+            metrics=output_dict,
+            experiment_tracker=self.experiment_tracker,
         )

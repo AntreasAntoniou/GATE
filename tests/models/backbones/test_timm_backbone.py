@@ -2,9 +2,8 @@ import pytest
 import torch
 
 from gate.models.backbones.clip_image import CLIPModelPaths
-from gate.models.backbones.timm import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    TimmCLIPAdapter,
-)
+from gate.models.backbones.timm import \
+    TimmCLIPAdapter  # replace 'your_module' with the module where you have defined CLIPAdapter
 
 
 @pytest.fixture
@@ -14,6 +13,7 @@ def clip_adapter():
         clip_model_name=CLIPModelPaths.openai_b_16,
         timm_model_name="vit_base_patch16_224",
         image_size=224,
+        num_projection_features=64,
     )
 
 
@@ -27,7 +27,7 @@ def test_forward_pass_image(clip_adapter):
     image_tensor = torch.rand((1, 3, 224, 224))  # Mocking an image tensor
     result = clip_adapter.forward(image=image_tensor)
     assert "image" in result
-    assert "classifier" in result["image"]
+    assert "features" in result["image"]
     assert "features" in result["image"]
     assert "raw_features" in result["image"]
     assert "per_layer_raw_features" in result["image"]
@@ -47,7 +47,7 @@ def test_forward_pass_video(clip_adapter):
     video_tensor = torch.rand((1, 10, 3, 224, 224))  # Mocking a video tensor
     result = clip_adapter.forward(video=video_tensor)
     assert "video" in result
-    assert "classifier" in result["video"]
+    assert "features" in result["video"]
     assert "features" in result["video"]
     assert "raw_features" in result["video"]
     assert "per_layer_raw_features" in result["video"]

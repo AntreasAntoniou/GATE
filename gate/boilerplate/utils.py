@@ -20,6 +20,7 @@ from rich.syntax import Syntax
 from rich.traceback import install
 from rich.tree import Tree
 
+logger = logging.getLogger(__name__)
 from gate.config.variables import HF_OFFLINE_MODE
 
 int_or_str = Union[int, str]
@@ -51,6 +52,21 @@ def get_logger(
         logger.addHandler(ch)
 
     install()
+
+    return logger
+
+
+def enrichen_logger(logger: logging.Logger) -> logging.Logger:
+    ch = RichHandler()
+
+    # create formatter with concise time and date
+    formatter = logging.Formatter("%(message)s", datefmt="[%X]")
+
+    # add formatter to ch
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)
 
     return logger
 
@@ -224,11 +240,6 @@ def load_json(filepath: Union[str, pathlib.Path]):
     return dict_to_load
 
 
-import logging
-
-logger = logging.getLogger(__name__)
-
-
 def download_model_with_name(
     hf_repo_path: str,
     hf_cache_dir: str,
@@ -260,7 +271,7 @@ def download_model_with_name(
             }
             for key, value in path_dict.items():
                 if isinstance(value, pathlib.Path):
-                    print(f"Checking {key} exists: {value.exists()}")
+                    logger.info(f"Checking {key} exists: {value.exists()}")
                     if not value.exists():
                         validated_ckpt_dir = False
                         break
@@ -292,7 +303,7 @@ def download_model_with_name(
         file_mapping = {
             "trainer_state.pt": "trainer_state_filepath",
             "optimizer.bin": "optimizer_filepath",
-            "pytorch_model.bin": "model_filepath",
+            "model.safetensors": "model_filepath",
             "random_states_0.pkl": "random_states_filepath",
             "scaler.pt": "scaler_filepath",
         }
@@ -308,6 +319,11 @@ def download_model_with_name(
                 if filename != "scaler.pt":
                     invalid_download = True
                 logger.info(f"Error downloading {filename}: {e}")
+                if filename == "scaler.pt":
+                    logger.info(
+                        f"Skipping scaler.pt -- However if your model uses fp16, this will cause an error. "
+                        f"Please initialize a scaler manually or download a relevant scaler.pt file."
+                    )
         # Handle config.yaml separately
         config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
         download_and_copy("config.yaml", config_target_path, subfolder="")
@@ -332,7 +348,7 @@ def create_hf_model_repo(hf_repo_path: str) -> str:
     huggingface_hub.login(
         token=os.environ["HF_TOKEN"], add_to_git_credential=True
     )
-    print(f"Creating repo {hf_repo_path}")
+    logger.info(f"Creating repo {hf_repo_path}")
     return huggingface_hub.create_repo(
         hf_repo_path, repo_type="model", exist_ok=True, private=True
     )
@@ -474,7 +490,7 @@ def create_hf_model_repo_and_download_maybe(
             idx += 1
         return download_dict
     else:
-        print(f"Created repo {hf_repo_path}, {hf_cache_dir}")
+        logger.info(f"Created repo {hf_repo_path}, {hf_cache_dir}")
         return None
 
 

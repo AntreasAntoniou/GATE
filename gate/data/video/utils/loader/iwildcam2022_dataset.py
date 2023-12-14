@@ -9,9 +9,7 @@ import torch.utils.data
 from torchvision.transforms import Resize
 
 from gate.data.video.regression.iwildcam_2022 import (
-    filter_metadata_with_counts,
-    read_all_train_metadata,
-)
+    filter_metadata_with_counts, read_all_train_metadata)
 
 logger = logging.getLogger(__name__)
 

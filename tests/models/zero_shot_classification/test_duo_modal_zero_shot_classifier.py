@@ -8,18 +8,13 @@ from gate.models.backbones.clip_image import CLIPVisionAdapter
 from gate.models.backbones.clip_text import CLIPTextAdapter
 from gate.models.backbones.mpnet_text import MPNetAdapter, MPNetModelPaths
 from gate.models.backbones.timm import CLIPModelPaths, TimmCLIPAdapter
-from gate.models.backbones.wave2vec_audio import (
-    Wav2Vec2ModelPaths,
-    Wav2VecV2Adapter,
-)
-from gate.models.backbones.whisper_audio import (
-    WhisperAdapter,
-    WhisperModelPaths,
-)
+from gate.models.backbones.wave2vec_audio import (Wav2Vec2ModelPaths,
+                                                  Wav2VecV2Adapter)
+from gate.models.backbones.whisper_audio import (WhisperAdapter,
+                                                 WhisperModelPaths)
 from gate.models.core import GATEModel
-from gate.models.task_adapters.duo_modal_zero_shot_classification import (
-    DuoModalZeroShotModel,
-)
+from gate.models.task_adapters.duo_modal_zero_shot_classification import \
+    DuoModalZeroShotModel
 
 data = [
     (
@@ -27,6 +22,7 @@ data = [
         dict(
             timm_model_name=EncoderNames.EffNetV2_RW_S_RA2.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
+            num_projection_features=64,
         ),
     ),
     (
@@ -34,15 +30,24 @@ data = [
         dict(
             timm_model_name=EncoderNames.AugRegViTBase16_224.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
+            num_projection_features=64,
         ),
     ),
     (
         CLIPVisionAdapter,
-        dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
+        dict(
+            model_name=CLIPModelPaths.openai_b_16,
+            image_size=224,
+            num_projection_features=64,
+        ),
     ),
     (
         CLIPTextAdapter,
-        dict(model_name=CLIPModelPaths.openai_b_16, image_size=224),
+        dict(
+            model_name=CLIPModelPaths.openai_b_16,
+            image_size=224,
+            num_projection_features=64,
+        ),
     ),
     (
         BertAdapter,
@@ -50,6 +55,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             bert_model_name=BertModelPaths.base_uncased,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -58,14 +64,16 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             mpnet_model_name=MPNetModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
         BartAdapter,
         dict(
             clip_model_name=CLIPModelPaths.openai_b_16,
-            bart_model_name=BartModelPaths.base_uncased,
+            bart_model_name=BartModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -74,6 +82,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             whisper_model_name=WhisperModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
     (
@@ -82,6 +91,7 @@ data = [
             clip_model_name=CLIPModelPaths.openai_b_16,
             wav2vec2_model_name=Wav2Vec2ModelPaths.base,
             image_size=224,
+            num_projection_features=64,
         ),
     ),
 ]
@@ -107,11 +117,11 @@ def test_with_linear_forward_loss(encoder_class, arg_dict):
 
     output = model.forward(input_dict)
 
-    assert output["image"]["image"]["logits"]["similarities"][
+    assert output["image_text"]["image_text"]["logits"]["similarities"][
         "image_to_text_similarities"
     ].shape == (20, 20)
 
-    loss = output["image"]["image"]["loss"]
+    loss = output["image_text"]["image_text"]["loss"]
 
     assert loss.item() > 0
 
@@ -134,11 +144,11 @@ def test_with_linear_forward_loss_5D(encoder_class, arg_dict):
     input_dict["return_loss"] = True
 
     output = model.forward(input_dict)
-    assert output["image"]["image"]["logits"]["similarities"][
+    assert output["image_text"]["image_text"]["logits"]["similarities"][
         "image_to_text_similarities"
     ].shape == (20, 20)
 
-    loss = output["image"]["image"]["loss"]
+    loss = output["image_text"]["image_text"]["loss"]
 
     assert loss.item() > 0
 

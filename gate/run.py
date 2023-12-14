@@ -86,7 +86,6 @@ def run(cfg: Any) -> None:
         cfg (Any): The configuration parameters
     """
     accelerator = Accelerator()
-    print(accelerator.state)
     # Pretty print the configuration
     print(pretty_config(cfg, resolve=True))
 
@@ -120,9 +119,6 @@ def run(cfg: Any) -> None:
     model: GATEModel = GATEModel(
         config=task_adapted_model.modality_config, model=task_adapted_model
     )
-    model = accelerator.prepare(model)
-
-    pretty_print_parameters(model)
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
@@ -145,18 +141,21 @@ def run(cfg: Any) -> None:
         cfg, test_dataset, cfg.eval_batch_size, shuffle=False
     )
 
+    optimizer = instantiate_optimizer(cfg, model)
+    scheduler = instantiate_scheduler(cfg, optimizer)
+
+    model, optimizer, scheduler = accelerator.prepare(
+        model, optimizer, scheduler
+    )
+
     (
         train_dataloader,
         val_dataloader,
         test_dataloader,
     ) = accelerator.prepare(train_dataloader, val_dataloader, test_dataloader)
 
+    pretty_print_parameters(model)
     wandb.log({"model/num_parameters": count_model_parameters(model)})
-
-    optimizer = instantiate_optimizer(cfg, model)
-    scheduler = instantiate_scheduler(cfg, optimizer)
-
-    optimizer, scheduler = accelerator.prepare(optimizer, scheduler)
 
     trainer = instantiate(
         cfg.trainer,

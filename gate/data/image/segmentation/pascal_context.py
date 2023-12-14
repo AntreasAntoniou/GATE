@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 
 def get_matching_ids(dir1, dir2):
     # Get list of file names (without extensions) in each directory
-    print(f"dir1 {dir1}, dir2 {dir2}")
+    logger.info(f"dir1 {dir1}, dir2 {dir2}")
     files_dir1 = [f.stem for f in Path(dir1).glob("*")]
     files_dir2 = [f.stem for f in Path(dir2).glob("*")]
 
-    print(
+    logger.info(
         f"len files_dir1 {len(files_dir1)}, len files_dir2 {len(files_dir2)}"
     )
 
@@ -73,7 +73,7 @@ class PascalContextDataset(Dataset):
 
         self.ids = get_matching_ids(self.image_dir, self.annotation_dir)
 
-        print(f"len ids {len(self.ids)}")
+        logger.info(f"len ids {len(self.ids)}")
 
         # Define the classes you care about
         self.selected_classes = CLASSES
@@ -199,6 +199,7 @@ def build_gate_dataset(
     num_classes=len(CLASSES),
     image_size=1024,
     target_image_size=256,
+    ignore_index=0,
 ) -> dict:
     input_transforms = KeySelectorTransforms(
         initial_size=2048,

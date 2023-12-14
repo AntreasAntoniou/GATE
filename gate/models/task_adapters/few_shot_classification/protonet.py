@@ -4,16 +4,12 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
 from gate.models.task_adapters import BaseModule
 from gate.models.task_adapters.few_shot_classification.utils import (
-    compute_prototypes,
-    compute_prototypical_accuracy,
-    compute_prototypical_logits,
-    compute_prototypical_loss,
-)
+    compute_prototypes, compute_prototypical_accuracy,
+    compute_prototypical_logits, compute_prototypical_loss)
 
 
 @configurable(group="adapter", name="fs-protonet")
@@ -52,6 +48,28 @@ class PrototypicalNetwork(BaseModule):
             self.linear = nn.Linear(
                 self.encoder.num_in_features_image, num_output_features
             )
+        self.build()
+
+    def build(self):
+        support_set_inputs = torch.rand(
+            (2, 2, 3, self.encoder.image_shape[0], self.encoder.image_shape[1])
+        )
+        query_set_inputs = torch.rand(
+            (2, 2, 3, self.encoder.image_shape[0], self.encoder.image_shape[1])
+        )
+        support_set_labels = torch.randint(0, 1, (2, 2))
+        query_set_labels: torch.Tensor = torch.randint(0, 1, (2, 2))
+        dummy_batch = {
+            "image": {
+                "support_set": support_set_inputs,
+                "query_set": query_set_inputs,
+            },
+            "labels": {
+                "support_set": support_set_labels,
+                "query_set": query_set_labels,
+            },
+        }
+        _ = self(**dummy_batch)
 
     def init_weights(self):
         reinit(self)

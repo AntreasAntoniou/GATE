@@ -1,7 +1,7 @@
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -100,7 +100,11 @@ class VariableSequenceTransformerEncoder(BaseModule):
         x = self.transformer(x)[:, -1, :]  # take the last frame
         raw_features = self.transformer(x)
         features = self.output_norm(x)
-        return {"features": features, "raw_features": raw_features}
+        return {
+            "features": features,
+            "raw_features": raw_features,
+            "features": features,
+        }
 
 
 class ClassificationMetrics:
@@ -224,8 +228,8 @@ class RegressionMetrics:
 
 def get_metric_fn(metric_type, num_classes):
     metrics = {
-        Metrics.classification: ClassificationMetrics(num_classes=num_classes),
-        Metrics.regression: RegressionMetrics(),
+        Metrics.CLASSIFICATION: ClassificationMetrics(num_classes=num_classes),
+        Metrics.REGRESSION: RegressionMetrics(),
     }
 
     return metrics[metric_type]
@@ -233,8 +237,8 @@ def get_metric_fn(metric_type, num_classes):
 
 @dataclass
 class Metrics:
-    classification = "classification"
-    regression = "regression"
+    CLASSIFICATION = "classification"
+    REGRESSION = "regression"
     get_metric_fn = get_metric_fn
 
 
@@ -248,7 +252,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         self,
         encoder: GATEncoder,
         num_classes: int,
-        metric_type: str = Metrics.classification,
+        metric_type: str = Metrics.CLASSIFICATION,
         temporal_transformer_nhead: int = 8,
         temporal_transformer_dim_feedforward: int = 2048,
         temporal_transformer_dropout: float = 0.0,
@@ -278,6 +282,20 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         self.metric_fn_dict = Metrics.get_metric_fn(
             metric_type, num_classes=num_classes
         )
+        self.build()
+
+    def build(self):
+        dummy_batch = {
+            "video": torch.randn(
+                1,
+                1,
+                3,
+                self.encoder.image_shape[0],
+                self.encoder.image_shape[1],
+            ),
+            "labels": torch.randint(0, self.num_classes, (1,)),
+        }
+        _ = self(**dummy_batch)
 
     @property
     def modality_config(self):

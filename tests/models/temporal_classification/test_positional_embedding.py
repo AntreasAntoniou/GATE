@@ -1,9 +1,8 @@
 import pytest
 import torch
 
-from gate.models.task_adapters.temporal_image_classification import (
-    PositionalEncoding,
-)
+from gate.models.task_adapters.temporal_image_classification import \
+    PositionalEncoding
 
 
 def test_output_shape():

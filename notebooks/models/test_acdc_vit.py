@@ -64,7 +64,7 @@ def build_dataloader(
         data = md.build_gate_dataset(
             data_dir=data_dir,
             image_size=image_size,
-            target_image_size=target_image_size,
+            label_image_size=target_image_size,
             transforms=transforms,
         )
     elif dataset_name == "acdc":

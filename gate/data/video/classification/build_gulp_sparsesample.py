@@ -1,6 +1,7 @@
 # Refactoring the code for readability, maintainability, and efficiency.
 # Adding docstrings and comments for better understanding.
 
+import logging
 import multiprocessing as mp
 import os
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ from huggingface_hub import snapshot_download
 from torch.utils.data import random_split
 
 from gate.boilerplate.decorators import configurable
+from gate.boilerplate.utils import enrichen_logger
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.transforms.video import BaseVideoTransform, TrainVideoTransform
@@ -19,6 +21,9 @@ from gate.data.video.classification import DatasetNames
 from gate.data.video.utils.loader.gulp_sparsesample_dataset import (
     GulpSparsesampleDataset,
 )
+
+logger = logging.getLogger(__name__)
+logger = enrichen_logger(logger)
 
 
 @dataclass
@@ -175,7 +180,7 @@ def build_specific_dataset(
             gulp_dir_path=val_config.gulp_dir_path,
         )
     except Exception as e:
-        print(f"Could not generate 'val' set: {e}")
+        logger.info(f"Could not generate 'val' set: {e}")
         need_subsets = True
 
     try:
@@ -186,7 +191,7 @@ def build_specific_dataset(
             gulp_dir_path=test_config.gulp_dir_path,
         )
     except Exception as e:
-        print(f"Could not generate 'test' set: {e}")
+        logger.error(f"Could not generate 'test' set: {e}")
         need_subsets = True
 
     if need_subsets:

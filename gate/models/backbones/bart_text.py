@@ -3,27 +3,16 @@ from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
-from transformers import (
-    BartConfig,
-    BartPretrainedModel,
-    CLIPModel,
-    CLIPProcessor,
-)
+from transformers import (BartConfig, BartPretrainedModel, CLIPModel,
+                          CLIPProcessor)
 from transformers.models.bart.modeling_bart import BartEncoder
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
-from gate.models.backbones import (
-    GATEncoder,
-    Modality,
-    TextProcessor,
-    VisionTextGATEAdapter,
-    forward_dict,
-)
+from gate.models.backbones import (GATEncoder, Modality, TextProcessor,
+                                   VisionTextGATEAdapter, forward_dict)
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import (
-    VisionRootReplacedBackbone,
-)
+from gate.models.task_adapters.modality_transfer_classification import \
+    VisionRootReplacedBackbone
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +57,7 @@ class CLIPModelPaths:
 
 
 class BartModelPaths:
-    base_uncased: str = "facebook/bart-base"
+    base: str = "facebook/bart-base"
 
 
 @configurable(
@@ -79,13 +68,14 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
     def __init__(
         self,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
-        bart_model_name: str = BartModelPaths.base_uncased,
+        bart_model_name: str = BartModelPaths.base,
         pretrained: bool = True,
         image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
     ):
         VisionTextGATEAdapter.__init__(self)
         nn.Module.__init__(self)
-
+        self.image_size = image_size
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
@@ -107,13 +97,27 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
             source_modality=Modality.image,
             target_modality=Modality.image,
         )
-        self.visual_projection = nn.Linear(
-            vision_embedding.config.hidden_size,
-            self.clip.vision_embed_dim,
-            bias=False,
+        self.visual_projection = (
+            nn.Linear(
+                vision_embedding.config.hidden_size,
+                num_projection_features,
+                bias=False,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
         )
+
         self.text_model = self.clip.text_model
-        self.text_projection = self.clip.text_projection
+        self.text_projection = (
+            nn.Linear(
+                self.text_model.config.hidden_size,
+                num_projection_features,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
+        self.text_num_raw_features = self.text_model.config.hidden_size
+        self.image_num_raw_features = vision_embedding.config.hidden_size
 
         # setattr signature: setattr(object, name, value)
 
@@ -124,8 +128,20 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
             self.text_model, "forward", forward_dict.__get__(self.text_model)
         )
 
-        self.image_num_features = self.clip.vision_embed_dim
-        self.text_num_features = self.clip.text_embed_dim
+        self.image_num_features = (
+            self.clip.vision_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
 
     def init_weights(self):
         reinit(self)
@@ -133,6 +149,14 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
     @property
     def num_in_features_image(self):
         return self.image_num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_num_raw_features
 
     @property
     def num_in_features_text(self):

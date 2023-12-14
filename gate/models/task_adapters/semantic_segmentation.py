@@ -8,17 +8,11 @@ import torch.nn.functional as F
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
-from gate.metrics.segmentation import (
-    CrossEntropyLoss,
-    DiceLoss,
-    FocalLoss,
-    IoUMetric,
-)
+from gate.metrics.segmentation import (CrossEntropyLoss, DiceLoss, FocalLoss,
+                                       IoUMetric)
 from gate.models.backbones import GATEncoder
-from gate.models.blocks.segmentation import (
-    ChannelMixerDecoder,
-    TransformerSegmentationDecoder,
-)
+from gate.models.blocks.segmentation import (ChannelMixerDecoder,
+                                             TransformerSegmentationDecoder)
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters.utils import reinit
 
@@ -85,41 +79,62 @@ def md_optimization_loss(
         logits: (B, C, H, W)
         labels: (B, 1, H, W)
     """
+
+    # start_time = time.time()
     dice_loss_fn = DiceLoss(ignore_index=ignore_index)
-
     dice_loss = dice_loss_fn.forward(logits, labels)
+    # dice_loss_time = time.time() - start_time
+    # logging.info(f"Dice loss computation time: {dice_loss_time:.6f} seconds")
 
-    focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+    # start_time = time.time()
+    # focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+    # focal_loss = focal_loss_fn.forward(logits, labels)
+    # focal_loss_time = time.time() - start_time
+    # logging.info(f"Focal loss computation time: {focal_loss_time:.6f} seconds")
 
-    focal_loss = focal_loss_fn.forward(logits, labels)
-
+    # start_time = time.time()
     ce_loss_fn = CrossEntropyLoss(ignore_index=ignore_index)
-
     ce_loss = ce_loss_fn.forward(logits, labels)
+    # ce_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Cross entropy loss computation time: {ce_loss_time:.6f} seconds"
+    # )
 
+    # start_time = time.time()
     background_dice_loss_fn = DiceLoss()
-
     background_dice_loss = background_dice_loss_fn.forward(logits, labels)
+    # background_dice_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Background dice loss computation time: {background_dice_loss_time:.6f} seconds"
+    # )
 
-    background_focal_loss_fn = FocalLoss()
+    # start_time = time.time()
+    # background_focal_loss_fn = FocalLoss()
+    # background_focal_loss = background_focal_loss_fn.forward(logits, labels)
+    # background_focal_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Background focal loss computation time: {background_focal_loss_time:.6f} seconds"
+    # )
 
-    background_focal_loss = background_focal_loss_fn.forward(logits, labels)
-
+    # start_time = time.time()
     background_ce_loss_fn = CrossEntropyLoss()
-
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
+    # background_ce_loss_time = time.time() - start_time
+    # logging.info(
+    #     f"Background cross entropy loss computation time: {background_ce_loss_time:.6f} seconds"
+    # )
 
-    loss = dice_loss
-    background_loss = background_dice_loss
+    loss = dice_loss + 0.01 * background_dice_loss
+    background_loss = background_dice_loss + background_ce_loss
 
     return {
-        "loss": loss + 0.5 * background_loss,
+        "loss": loss,
         "ce_loss": ce_loss,
         "dice_loss": dice_loss,
-        "focal_loss": focal_loss,
-        "background_loss": background_loss,
+        # "focal_loss": focal_loss,
+        "background_loss": background_loss * background_loss_weight,
         "background_dice_loss": background_dice_loss,
-        "background_focal_loss": background_focal_loss,
+        # "background_focal_loss": background_focal_loss,
         "background_ce_loss": background_ce_loss,
     }
 
@@ -201,28 +216,110 @@ class SegmentationAdapter(nn.Module):
                 dropout_rate=decoder_dropout_rate,
             ),
         }
-
-        self.decoder_head = decoder_layer_mapping[decoder_layer_type]
-
-        self.iou_metric = IoUMetric(
-            num_classes,
-            ignore_index,
-            {i: name for i, name in enumerate(self.class_names)},
-        )
+        self.iou_metric = None
+        self.iou_metric_complete = None
+        self.spatial_decoder_head = decoder_layer_mapping[decoder_layer_type]
+        self.temporal_decoder_head = None
 
         self.background_loss_weight = background_loss_weight
+        self.build()
+
+    @property
+    @ensemble_marker
+    def iou_metrics_dict(self):
+        if self.iou_metric is None:
+            self.iou_metric = IoUMetric(
+                num_classes=self.num_classes,
+                ignore_index=self.ignore_index,
+                class_idx_to_name={
+                    i: name for i, name in enumerate(self.class_names)
+                },
+            )
+        if self.iou_metric_complete is None:
+            self.iou_metric_complete = IoUMetric(
+                num_classes=self.num_classes,
+                ignore_index=None,
+                class_idx_to_name={
+                    i: name for i, name in enumerate(self.class_names)
+                },
+            )
+        return dict(
+            iou_metric=self.iou_metric,
+            iou_metric_complete=self.iou_metric_complete,
+        )
+
+    def build(self):
+        dummy_batch = {
+            "image": torch.randn(
+                1,
+                3,
+                self.encoder.image_shape[0],
+                self.encoder.image_shape[1],
+            ),
+            "labels": torch.randint(0, self.num_classes, (1, 1, 256, 256)),
+        }
+        _ = self(**dummy_batch)
 
     @ensemble_marker
     def compute_across_set_metrics(self):
-        metrics = self.iou_metric.compute_metrics()
-        self.iou_metric.pretty_print(metrics=metrics)
-        self.iou_metric.reset()  # Resetting the metrics after computation
-        return {k: v for k, v in metrics.items() if "per_class" not in k}
+        metrics = self.iou_metrics_dict["iou_metric"].compute_metrics()
+        self.iou_metrics_dict["iou_metric"].pretty_print(metrics=metrics)
+        self.iou_metrics_dict[
+            "iou_metric"
+        ].reset()  # Resetting the metrics after computation
+        metrics_with_ignore = {
+            k: v for k, v in metrics.items() if "per_class" not in k
+        }
+
+        complete_metrics = self.iou_metrics_dict[
+            "iou_metric_complete"
+        ].compute_metrics()
+        self.iou_metrics_dict["iou_metric_complete"].pretty_print(
+            metrics=complete_metrics
+        )
+        self.iou_metrics_dict["iou_metric_complete"].reset()
+        metrics_complete = {
+            f"{k}_complete": v
+            for k, v in complete_metrics.items()
+            if "per_class" not in k
+        }
+
+        return metrics_with_ignore | metrics_complete
 
     def forward(self, image, labels: Optional[torch.Tensor] = None):
         features = self.encoder(image)["image"]["per_layer_raw_features"]
         # feature shape is either B, C, H, W or B, (W * H), C
-        mask_predictions = self.decoder_head(features)
+        mask_predictions = self.spatial_decoder_head(features)
+        # b, c, h, w = mask_predictions.shape
+        # if self.temporal_decoder_head is None:
+        #     transformer_encoder_layer = nn.TransformerEncoderLayer(
+        #         d_model=c,
+        #         nhead=1,
+        #         dim_feedforward=c * 4,
+        #         dropout=0.0,
+        #         activation="gelu",
+        #         batch_first=True,
+        #     )
+
+        #     self.segmentation_temporal_processing_head = nn.TransformerEncoder(
+        #         encoder_layer=transformer_encoder_layer,
+        #         num_layers=4,
+        #         norm=nn.LayerNorm(c),
+        #     )
+
+        #     self.final_conv = nn.Conv1d(c, self.num_classes, kernel_size=1)
+        #     self.to(device=image.device)
+
+        # mask_predictions = mask_predictions.permute(0, 2, 3, 1).reshape(
+        #     b, h * w, c
+        # )
+
+        # mask_predictions = self.segmentation_temporal_processing_head(
+        #     mask_predictions
+        # )
+        # mask_predictions = self.final_conv(mask_predictions.permute(0, 2, 1))
+
+        # mask_predictions = mask_predictions.reshape(b, self.num_classes, h, w)
 
         logits = F.interpolate(
             input=mask_predictions,
@@ -247,13 +344,14 @@ class SegmentationAdapter(nn.Module):
             logits,
             labels,
             ignore_index=self.ignore_index,
-            background_loss_weight=self.background_loss_weight,  # Assuming optimization_loss is defined elsewhere
+            background_loss_weight=self.background_loss_weight,
         )
 
         if not self.training:
             preds = torch.argmax(logits, dim=1)
             labels = labels.squeeze()
-            self.iou_metric.update(preds, labels)
+            for value in self.iou_metrics_dict.values():
+                value.update(preds, labels)
 
         return loss_and_metrics
 

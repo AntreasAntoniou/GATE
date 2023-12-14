@@ -1,6 +1,7 @@
 import functools
 import json
 import logging
+import traceback
 from collections import defaultdict
 from typing import Any, Dict, Mapping, Optional
 
@@ -104,7 +105,7 @@ def dataclass_collate(batch):
             batched_dict = {key: batched_dict[key][0] for key in batched_dict}
             return batch[0].__class__(**batched_dict)
     except Exception as e:
-        print(
+        logger.error(
             f"Current batch we botched up on "
             f"{json.dumps(dict_to_summary(batch), indent=4)}"
         )
@@ -181,8 +182,10 @@ def retry_on_exception(func):
         try:
             return func(self, index)
         except Exception as e:
-            logger.warn(f"Error at index {index}: {e}")
-            print(f"Error at index {index}: {e}")
+            tb = (
+                traceback.format_exc()
+            )  # This gets the full traceback as a string
+            logger.warning(f"Error at index {index}: {e}\n{tb}")
 
     return wrapper
 

@@ -1,10 +1,6 @@
-from gate.menu.core import (
-    AdapterTypeNames,
-    DatasetName,
-    EvaluatorName,
-    TrainerName,
-    get_model_selection,
-)
+from gate.menu.core import (AdapterTypeNames, DatasetName, EvaluatorName,
+                            MixedPrecisionMode, TrainerName,
+                            get_model_selection)
 
 dataset_configs = DatasetName.MEDICAL_ACDC_SEGMENTATION.value
 
@@ -14,20 +10,23 @@ dataset_configs = {
 }
 
 BATCH_SIZE = 1
-MODEL_TYPE = AdapterTypeNames.TIMM_SEGMENTATION.value
+ENCODER_CONFIG = AdapterTypeNames.SEGMENTATION.value
 RESNET_LR = 6e-4
 VIT_LR = 6e-6
 TRAINER_NAME = TrainerName.MEDICAL_SEMANTIC_SEGMENTATION.value
 EVALUATOR_NAME = EvaluatorName.MEDICAL_SEMANTIC_SEGMENTATION.value
+IMAGE_SIZE = 512
 
 config = {
     "dataset": dataset_configs,
     "model": get_model_selection(
-        model_type=MODEL_TYPE,
+        adapter_config=ENCODER_CONFIG,
         batch_size=BATCH_SIZE,
         resnet_lr=RESNET_LR,
         vit_lr=VIT_LR,
-        wd=0.0,
+        wd=0.01,
+        image_size=IMAGE_SIZE,
+        mixed_precision_mode=MixedPrecisionMode.FP16,
     ),
     "trainer": TRAINER_NAME,
     "evaluator": EVALUATOR_NAME,

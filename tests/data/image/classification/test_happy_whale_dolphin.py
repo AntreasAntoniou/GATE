@@ -4,10 +4,8 @@ import torch
 import torchvision.transforms as T
 from tqdm import tqdm
 
-from gate.data.image.classification.happywhale import (
-    build_dataset,
-    build_gate_dataset,
-)
+from gate.data.image.classification.happywhale import (build_dataset,
+                                                       build_gate_dataset)
 
 
 def test_build_dataset():

@@ -528,13 +528,8 @@ class MedicalImageSegmentationTransforms:
         """
         Apply the data augmentation techniques.
         """
-        # Validate input shape
-        if img.shape != mask.shape or len(img.shape) != 4:
-            raise ValueError(
-                "Input image and mask must have the same shape (num_scan, num_slices, height, width)"
-            )
 
-        # Apply random rotation
+        # # Apply random rotation
         img, mask = self._apply_random_rotation(img, mask)
 
         # Apply random horizontal flip

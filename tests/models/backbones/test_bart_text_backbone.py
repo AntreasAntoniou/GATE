@@ -2,10 +2,7 @@ import pytest
 import torch
 
 from gate.models.backbones.bart_text import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    BartAdapter,
-    BartModelPaths,
-    CLIPModelPaths,
-)
+    BartAdapter, BartModelPaths, CLIPModelPaths)
 
 
 @pytest.fixture
@@ -13,8 +10,9 @@ def clip_adapter():
     # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
     return BartAdapter(
         clip_model_name=CLIPModelPaths.openai_b_16,
-        bart_model_name=BartModelPaths.base_uncased,
+        bart_model_name=BartModelPaths.base,
         image_size=224,
+        num_projection_features=64,
     )
 
 
@@ -28,7 +26,7 @@ def test_forward_pass_image(clip_adapter):
     image_tensor = torch.rand((1, 3, 224, 224))  # Mocking an image tensor
     result = clip_adapter.forward(image=image_tensor)
     assert "image" in result
-    assert "classifier" in result["image"]
+    assert "features" in result["image"]
     assert "raw_features" in result["image"]
     assert "per_layer_raw_features" in result["image"]
 
@@ -38,7 +36,7 @@ def test_forward_pass_text(clip_adapter):
     text_tensor = torch.randint(0, 2000, (1, 10))  # Mocking a text tensor
     result = clip_adapter.forward(text=text_tensor)
     assert "text" in result
-    assert "classifier" in result["text"]
+    assert "features" in result["text"]
     assert "raw_features" in result["text"]
     assert "per_layer_raw_features" in result["text"]
 
@@ -48,7 +46,7 @@ def test_forward_pass_video(clip_adapter):
     video_tensor = torch.rand((1, 10, 3, 224, 224))  # Mocking a video tensor
     result = clip_adapter.forward(video=video_tensor)
     assert "video" in result
-    assert "classifier" in result["video"]
+    assert "features" in result["video"]
     assert "raw_features" in result["video"]
     assert "per_layer_raw_features" in result["video"]
 

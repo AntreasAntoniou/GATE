@@ -6,14 +6,8 @@ from typing import List, Optional
 
 import torch
 
-from gate.metrics.glossary import (
-    articles,
-    comma_strip,
-    contractions,
-    manual_map,
-    period_strip,
-    punct,
-)
+from gate.metrics.glossary import (articles, comma_strip, contractions,
+                                   manual_map, period_strip, punct)
 
 
 @dataclass

@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import List, Optional
 from urllib.request import urlopen
@@ -15,7 +14,6 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.boilerplate.decorators import configurable
-from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder, Modality, image_dim_reshape
 from gate.models.backbones.clip_image import TextProcessor
 from gate.models.core import reinit
@@ -78,7 +76,7 @@ class TimmModel(nn.Module):
     def __init__(
         self,
         model_identifier: str = "hf_hub:timm/vit_large_patch14_clip_224.openai_ft_in12k_in1k",
-        img_size: Optional[List[int]] = None,
+        image_size: Optional[int] = None,
         pretrained: bool = True,
     ):
         super().__init__()
@@ -95,17 +93,17 @@ class TimmModel(nn.Module):
                 f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
             )
             logger.info(
-                f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {img_size}"
+                f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {image_size}"
             )
             self.model = timm.create_model(
                 model_name=model_identifier,
-                img_size=img_size,
+                img_size=image_size,
                 pretrained=pretrained,
             )
         logger.info(f"Loaded Model {self.model}")
-        if img_size is None:
-            img_size = self.model.default_cfg["input_size"][-2:]
-
+        if image_size is None:
+            image_size = self.model.default_cfg["input_size"][-1]
+        logger.info(f"image_size: {image_size}")
         # get model specific transforms (normalization, resize)
         self.transforms = create_transform(
             **resolve_data_config(
@@ -118,7 +116,12 @@ class TimmModel(nn.Module):
         )
 
         self.transforms = T.Compose(
-            [T.Resize(size=img_size, interpolation=InterpolationMode.BICUBIC)]
+            [
+                T.Resize(
+                    size=(image_size, image_size),
+                    interpolation=InterpolationMode.BICUBIC,
+                )
+            ]
             + [
                 transform
                 for transform in self.transforms.transforms
@@ -211,9 +214,11 @@ class TimmCLIPAdapter(GATEncoder):
         timm_model_name: str,
         clip_model_name: str,
         pretrained: bool = True,
-        image_size: Optional[List[int]] = None,
+        image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
     ):
         super().__init__()
+        self.image_size = image_size if image_size is not None else 224
         self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
             clip_model_name
         )
@@ -224,15 +229,51 @@ class TimmCLIPAdapter(GATEncoder):
         self.vision_model = TimmModel(
             model_identifier=timm_model_name,
             pretrained=pretrained,
-            img_size=image_size,
+            image_size=self.image_size,
         )
         self.text_model = self.clip.text_model
 
         self.vision_model_output_shape = self.vision_model.get_output_shape()[
             "raw_features"
         ]
-        self.image_num_features = self.vision_model_output_shape[2]
-        self.text_num_features = self.clip.text_embed_dim
+        self.image_num_features = (
+            self.vision_model_output_shape[2]
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self.num_projection_features = num_projection_features
+
+        self.visual_projection = (
+            nn.Linear(
+                self.vision_model_output_shape[2],
+                num_projection_features,
+                bias=False,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
+
+        self.text_model = self.clip.text_model
+        self.text_projection = (
+            nn.Linear(
+                self.text_model.config.hidden_size,
+                num_projection_features,
+            )
+            if num_projection_features is not None
+            else nn.Identity()
+        )
+
+        self.text_num_raw_features = self.text_model.config.hidden_size
+        self.image_num_raw_features = self.vision_model_output_shape[2]
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
 
     @property
     def num_in_features_image(self):
@@ -241,6 +282,14 @@ class TimmCLIPAdapter(GATEncoder):
     @property
     def num_in_features_text(self):
         return self.text_num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_num_raw_features
 
     @property
     def num_in_features_video(self):
@@ -275,14 +324,29 @@ class TimmCLIPAdapter(GATEncoder):
         # return_dict: Optional[bool] = None,
 
         if image is not None:
+            # if self.image_instance_norm is None:
+            #     self.image_instance_norm = nn.InstanceNorm2d(
+            #         image.shape[1], affine=True
+            #     )
+            # image = self.image_instance_norm(image)
             output_dict["image"] = self.vision_model.forward(image)
+            if self.num_projection_features:
+                output_dict["image"]["features"] = self.visual_projection(
+                    output_dict["image"]["features"]
+                )
 
         if video is not None:
             if len(video.shape) == 5:
                 b, s, c, h, w = video.shape
+
                 output_dict["video"] = self.vision_model.forward(
                     video.view(b * s, c, h, w)
                 )
+                if self.num_projection_features:
+                    output_dict["video"]["features"] = self.visual_projection(
+                        output_dict["video"]["features"]
+                    )
+
                 for k, v in output_dict["video"].items():
                     if v is not None:
                         if isinstance(v, list) or isinstance(v, tuple):
@@ -290,17 +354,27 @@ class TimmCLIPAdapter(GATEncoder):
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
                 output_dict["video"] = self.vision_model.forward(video)
+                if self.num_projection_features:
+                    output_dict["video"]["features"] = self.visual_projection(
+                        output_dict["video"]["features"]
+                    )
 
         if text is not None:
             text: CLIPOutput = self.text_model(input_ids=text)
             output_dict["text"]["features"] = text.pooler_output
             output_dict["text"]["raw_features"] = text.last_hidden_state
+            if self.num_projection_features:
+                output_dict["text"]["features"] = self.text_projection(
+                    output_dict["text"]["features"]
+                )
 
         return output_dict
 
     def get_transforms(self):
         def image_transforms(x):
-            return self.vision_model.transforms(x)
+            x = self.vision_model.transforms(x)
+
+            return x
 
         def text_transforms(x):
             return self.text_transforms.apply_transform(x)
