@@ -2,8 +2,9 @@ import pytest
 import torch
 
 from gate.models.backbones.clip_image import CLIPModelPaths
-from gate.models.backbones.timm import \
-    TimmCLIPAdapter  # replace 'your_module' with the module where you have defined CLIPAdapter
+from gate.models.backbones.timm import (
+    TimmCLIPAdapter,  # replace 'your_module' with the module where you have defined CLIPAdapter
+)
 
 
 @pytest.fixture

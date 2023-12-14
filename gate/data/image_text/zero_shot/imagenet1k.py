@@ -6,12 +6,15 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.classification.imagenet1k import build_dataset
-from gate.data.image.classification.metadata.clip_imagenet_class_labels import \
-    imagenet_classes
-from gate.data.image_text.zero_shot.metadata.clip_imagenet_prompts import \
-    imagenet_prompt_templates
-from gate.data.tasks.zero_shot_classification import \
-    ZeroShotViaLabelDescriptionTask
+from gate.data.image.classification.metadata.clip_imagenet_class_labels import (
+    imagenet_classes,
+)
+from gate.data.image_text.zero_shot.metadata.clip_imagenet_prompts import (
+    imagenet_prompt_templates,
+)
+from gate.data.tasks.zero_shot_classification import (
+    ZeroShotViaLabelDescriptionTask,
+)
 
 
 def generate_per_class_prompts():

@@ -6,11 +6,16 @@ import torch
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import (collect_metrics, collect_metrics_mark,
-                                         configurable)
+from gate.boilerplate.decorators import (
+    collect_metrics,
+    collect_metrics_mark,
+    configurable,
+)
 from gate.orchestration.trainers import TrainerOutput
-from gate.orchestration.trainers.classification import (ClassificationTrainer,
-                                                        StepOutput)
+from gate.orchestration.trainers.classification import (
+    ClassificationTrainer,
+    StepOutput,
+)
 
 logger = logging.getLogger(__name__)
 

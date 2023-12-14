@@ -1,7 +1,8 @@
 import torch
 
-from gate.data.transforms.segmentation import \
-    MedicalImageSegmentationTransforms
+from gate.data.transforms.segmentation import (
+    MedicalImageSegmentationTransforms,
+)
 
 
 def test_MedicalImageSegmentationTransforms():

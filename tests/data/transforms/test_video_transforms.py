@@ -1,10 +1,15 @@
 import torch
 
-from gate.data.transforms.video import (BaseVideoTransform,
-                                        TemporalBrightnessContrast,
-                                        TemporalCrop, TemporalFlip,
-                                        TemporalJitter, TemporalRotation,
-                                        TemporalScale, TrainVideoTransform)
+from gate.data.transforms.video import (
+    BaseVideoTransform,
+    TemporalBrightnessContrast,
+    TemporalCrop,
+    TemporalFlip,
+    TemporalJitter,
+    TemporalRotation,
+    TemporalScale,
+    TrainVideoTransform,
+)
 
 
 def test_TemporalCrop():

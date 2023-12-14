@@ -1,5 +1,10 @@
-from gate.menu.core import (AdapterTypeNames, DatasetName, EvaluatorName,
-                            TrainerName, get_model_selection)
+from gate.menu.core import (
+    AdapterTypeNames,
+    DatasetName,
+    EvaluatorName,
+    TrainerName,
+    get_model_selection,
+)
 
 dataset_configs = [DatasetName.VISUAL_RELATIONAL_REASONING.value.CLEVR]
 

@@ -44,6 +44,7 @@ def run_command_on_gpu(command, gpu_id, exp_name):
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr", "w")
+
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )  # Return the process handle
