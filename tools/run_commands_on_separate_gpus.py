@@ -119,11 +119,11 @@ def main(
         # If data is being piped to this script, read stdin
         command_dict = parse_commands_input(sys.stdin.read())
 
-    command_dict = {
-        key: value
-        for idx, (key, value) in enumerate(command_dict.items())
-        if idx >= starting_exp_idx
-    }
+    # command_dict = {
+    #     key: value
+    #     for idx, (key, value) in enumerate(command_dict.items())
+    #     if idx >= starting_exp_idx
+    # }
     # save the commands in a txt file
     with open(f"{os.environ['LOG_DIR']}/commands.txt", "w") as f:
         for command_name, command in command_dict.items():
