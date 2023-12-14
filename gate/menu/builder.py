@@ -150,6 +150,8 @@ def run_experiments(
     evaluate_every_n_steps: int = 250,
     return_json: bool = False,
     seed_list: List[int] = [7],
+    start_idx: Optional[int] = None,
+    end_idx: Optional[int] = None,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -263,6 +265,14 @@ def run_experiments(
                     logger.error(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
+
+    if start_idx is None:
+        start_idx = 0
+
+    if end_idx is None:
+        end_idx = len(experiment_dict)
+
+    experiment_dict = dict(list(experiment_dict.items())[start_idx:end_idx])
 
     if return_json:
         return json.dumps(experiment_dict)
