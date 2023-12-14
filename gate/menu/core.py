@@ -316,6 +316,7 @@ def get_model_selection(
     wd: float = 0.01,
     image_size: int = 224,
     mixed_precision_mode: str = MixedPrecisionMode.BF16,
+
 ):
     return {
         EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(
@@ -410,6 +411,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),

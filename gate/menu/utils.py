@@ -31,7 +31,6 @@ def build_command(
     accelerate_launch_command = (
         f"{accelerate_launch_path} --mixed_precision={mixed_precision_mode}"
     )
-
     if gpu_ids:
         accelerate_launch_command += f" --gpu_ids={gpu_ids}"
 
@@ -47,3 +46,4 @@ def build_command(
         f"train_iters={train_iters} learner.evaluate_every_n_steps={evaluate_every_n_steps}"
     )
     return command_template
+
