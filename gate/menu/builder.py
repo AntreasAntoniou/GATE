@@ -292,7 +292,7 @@ def run_experiments(
                     logger.error(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
-
+    random.seed(42)
     if shuffle:
         # shuffle a copy of the dictionary
         experiment_dict = {
