@@ -264,7 +264,7 @@ def download_model_with_name(
             path_dict = {
                 "trainer_state_filepath": ckpt_dir / "trainer_state.pt",
                 "optimizer_filepath": ckpt_dir / "optimizer.bin",
-                "model_filepath": ckpt_dir / "pytorch_model.bin",
+                "model_filepath": ckpt_dir / "model.safetensors",
                 "random_states_filepath": ckpt_dir / "random_states_0.pkl",
                 "root_filepath": ckpt_dir,
                 "validation_passed": True,
