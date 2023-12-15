@@ -4,7 +4,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Callable, Iterator, List, Optional
 
-import h5py
 import torch.utils.data
 from numpy import random
 from torch.utils.data import Subset
@@ -111,17 +110,6 @@ def get_class_to_image_idx_and_bbox(
         ]
 
     return temp_class_to_image_idx_and_bbox
-
-
-def store_dict_as_hdf5(input_dict: dict, h5_path: str):
-    if pathlib.Path(h5_path).exists():
-        pathlib.Path(h5_path).unlink()
-
-    with h5py.File(h5_path, "w") as h5_file:
-        for k, v in input_dict.items():
-            h5_file.create_dataset(f"{k}", data=v)
-
-    return h5py.File(h5_path, "r")
 
 
 def collate_fn_replace_corrupted(batch, dataset):

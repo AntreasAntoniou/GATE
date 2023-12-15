@@ -27,12 +27,7 @@ RUN mamba install -c conda-forge starship jupyterlab black git-lfs tmux glances 
 RUN mamba install -c conda-forge git-crypt nvitop -y
 RUN echo y | pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-# RUN mamba install -c conda-forge gcc gxx_linux-64 -y
 
-# pip install -U openmim
-# mim install mmengine
-# mim install "mmcv>=2.0.0"
-# pip install "mmsegmentation>=1.0.0"
 
 RUN conda init bash
 RUN conda init fish
@@ -47,12 +42,9 @@ RUN mkdir /app/
 ADD requirements.txt /app/
 ADD requirements_dev.txt /app/
 ADD setup.py /app/
-RUN echo y | pip install -r /app/requirements_dev.txt
+RUN echo y | pip install -r /app/requirements_dev.txt --upgrade
 
 ADD gate/ /app/gate
 RUN echo y | pip install /app/[dev]
-
-# Expose SSH port
-# EXPOSE 22
 
 ENTRYPOINT ["/bin/bash"]

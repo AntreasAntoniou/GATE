@@ -1,14 +1,33 @@
+# Requirements
 -r requirements.txt
+
+# Testing
 pytest
-isort
-jupyterlab
-black
-sphinx
-sphinx_rtd_theme
-sphinx-autodoc-typehints
-sphinx-material
-matplotlib
+pytest-cov
+pytest-mock
 pytest-rich
 pytest-sugar
 pytest-xdist
 
+# Code Formatting
+autoflake
+isort
+black
+
+# Interactive Development Environment
+jupyterlab
+
+# GPU Monitoring
+nvitop
+
+# GitHub CLI
+gh
+
+# Documentation
+sphinx
+sphinx_rtd_theme
+sphinx-autodoc-typehints
+sphinx-material
+
+# Data Visualization
+matplotlib
