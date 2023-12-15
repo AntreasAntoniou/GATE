@@ -755,8 +755,13 @@ class Learner(nn.Module):
             # Create a new instance of the model architecture
             model = copy.deepcopy(base_model)
 
+            # Load the state dictionary
+            state_dict = torch.load(
+                download_dict["model_filepath"], map_location="cpu"
+            )
+
             # Use Accelerate's state_dict loading
-            model.load_state(download_dict["model_filepath"])
+            model.load_state_dict(state_dict)
 
             models.append(model.model)
 

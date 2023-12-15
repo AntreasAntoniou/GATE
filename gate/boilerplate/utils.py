@@ -264,28 +264,25 @@ def download_model_with_name(
             path_dict = {
                 "trainer_state_filepath": ckpt_dir / "trainer_state.pt",
                 "optimizer_filepath": ckpt_dir / "optimizer.bin",
-                "model_filepath": [
-                    ckpt_dir / "pytorch_model.bin",
-                    ckpt_dir / "model.safetensors",
-                ],
+                "model_filepath": ckpt_dir
+                / "pytorch_model.bin",  # ckpt_dir / "model.safetensors",
                 "random_states_filepath": ckpt_dir / "random_states_0.pkl",
                 "root_filepath": ckpt_dir,
                 "validation_passed": True,
             }
-            model_weights_found = False
+            # model_weights_found = False
             for key, value in path_dict.items():
                 if isinstance(value, pathlib.Path):
                     logger.info(f"Checking {key} exists: {value.exists()}")
                     if not value.exists():
                         validated_ckpt_dir = False
                         break
-                elif isinstance(value, list):
-                    for path in value:
-                        logger.info(f"Checking {key} exists: {path.exists()}")
-                        if path.exists():
-                            model_weights_found = True
-                            break
-            validated_ckpt_dir = validated_ckpt_dir and model_weights_found
+                # elif isinstance(value, list):
+                #     for path in value:
+                #         logger.info(f"Checking {key} exists: {path.exists()}")
+                #         if path.exists():
+                #             model_weights_found = True
+                #             break
             if validated_ckpt_dir:
                 return path_dict
 
@@ -314,7 +311,7 @@ def download_model_with_name(
         file_mapping = {
             "trainer_state.pt": "trainer_state_filepath",
             "optimizer.bin": "optimizer_filepath",
-            "model.safetensors": "model_filepath",
+            # "model.safetensors": "model_filepath",
             "pytorch_model.bin": "model_filepath",
             "random_states_0.pkl": "random_states_filepath",
             "scaler.pt": "scaler_filepath",

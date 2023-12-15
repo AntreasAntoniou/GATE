@@ -26,7 +26,7 @@ def delete_models_with_string_in_name(string: str | List[str]):
             ):
                 logger.info(f"Deleting {model_repo.__dict__['modelId']}")
                 client.delete_repo(repo_id=model_repo.__dict__["modelId"])
-        elif string in model_repo.__dict__["modelId"]:
+        elif str(string) in model_repo.__dict__["modelId"]:
             logger.info(f"Deleting {model_repo.__dict__['modelId']}")
             client.delete_repo(repo_id=model_repo.__dict__["modelId"])
 
