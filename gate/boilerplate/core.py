@@ -630,7 +630,7 @@ class Learner(nn.Module):
             obj=experiment_hyperparameters,
             f=ckpt_save_path / "trainer_state.pt",
         )
-        self.accelerator.save_state(ckpt_save_path)
+        self.accelerator.save_state(ckpt_save_path, safe_serialization=False)
 
         self.callback_handler.on_save_checkpoint(
             model=self.model,
@@ -755,13 +755,8 @@ class Learner(nn.Module):
             # Create a new instance of the model architecture
             model = copy.deepcopy(base_model)
 
-            # Load the state dictionary
-            state_dict = torch.load(
-                download_dict["model_filepath"], map_location="cpu"
-            )
-
             # Use Accelerate's state_dict loading
-            model.load_state_dict(state_dict)
+            model.load_state(download_dict["model_filepath"])
 
             models.append(model.model)
 
