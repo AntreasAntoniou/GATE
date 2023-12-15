@@ -2,6 +2,8 @@
 pytest
 isort
 jupyterlab
+nvitop
+gh
 black
 sphinx
 sphinx_rtd_theme
