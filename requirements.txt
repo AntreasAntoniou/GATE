@@ -20,6 +20,6 @@ natsort
 evaluate
 huggingface_hub
 einops
-git+https://github.com/huggingface/pytorch-image-models.git
 fire
+git+https://github.com/huggingface/pytorch-image-models.git
 git+https://github.com/kiyoon/GulpIO2#egg=gulpio2
