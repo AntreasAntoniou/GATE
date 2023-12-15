@@ -1,25 +1,56 @@
+# Deep Learning Frameworks
 torch
 torchvision
 torchaudio
+
+# Torch Extensions
 torchgeometry
 torchmetrics
+
+# High-level Libraries built on Torch
 accelerate
-datasets
 transformers
+
+# Dataset and Model Hub
+datasets
+huggingface_hub
+
+# Efficient JSON library
 orjson
+
+# Configuration and Typing
 hydra-zen
 torchtyping
+
+# Experiment Tracking
 wandb
+
+# Console Rich
 rich
+
+# Image Processing
 opencv-python
+
+# Scientific Computing
 scipy
 scikit-learn
+
+# Video Decoding
 decord
+
+# Data Science Competition
 kaggle
+
+# Natural Sorting
 natsort
+
+# Evaluation
 evaluate
-huggingface_hub
+
+# Operations
 einops
 fire
+
+# Git Repositories
 git+https://github.com/huggingface/pytorch-image-models.git
 git+https://github.com/kiyoon/GulpIO2#egg=gulpio2
