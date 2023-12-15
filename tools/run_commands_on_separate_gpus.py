@@ -44,6 +44,7 @@ def run_command_on_gpu(command, gpu_id, exp_name):
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr", "w")
+
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )  # Return the process handle
@@ -119,11 +120,11 @@ def main(
         # If data is being piped to this script, read stdin
         command_dict = parse_commands_input(sys.stdin.read())
 
-    command_dict = {
-        key: value
-        for idx, (key, value) in enumerate(command_dict.items())
-        if idx >= starting_exp_idx
-    }
+    # command_dict = {
+    #     key: value
+    #     for idx, (key, value) in enumerate(command_dict.items())
+    #     if idx >= starting_exp_idx
+    # }
     # save the commands in a txt file
     with open(f"{os.environ['LOG_DIR']}/commands.txt", "w") as f:
         for command_name, command in command_dict.items():

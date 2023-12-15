@@ -410,6 +410,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),

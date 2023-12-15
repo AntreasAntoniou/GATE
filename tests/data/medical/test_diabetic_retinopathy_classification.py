@@ -2,7 +2,9 @@
 import os
 
 from gate.data.medical.classification.diabetic_retinopathy import (
-    build_dataset, build_gate_dataset)
+    build_dataset,
+    build_gate_dataset,
+)
 
 
 def test_build_dataset():

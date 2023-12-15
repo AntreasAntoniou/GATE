@@ -2,7 +2,10 @@ import pytest
 import torch
 
 from gate.models.backbones.whisper_audio import (  # replace 'your_module' with the module where you have defined CLIPAdapter
-    CLIPModelPaths, WhisperAdapter, WhisperModelPaths)
+    CLIPModelPaths,
+    WhisperAdapter,
+    WhisperModelPaths,
+)
 
 
 @pytest.fixture

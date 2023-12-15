@@ -4,15 +4,22 @@ from typing import Dict, List, Optional, Union
 import torch
 import torch.nn as nn
 from transformers import CLIPModel, CLIPProcessor
-from transformers.models.mpnet.modeling_mpnet import (MPNetEncoder,
-                                                      MPNetPreTrainedModel)
+from transformers.models.mpnet.modeling_mpnet import (
+    MPNetEncoder,
+    MPNetPreTrainedModel,
+)
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import (GATEncoder, Modality, VisionTextGATEAdapter,
-                                   forward_dict)
+from gate.models.backbones import (
+    GATEncoder,
+    Modality,
+    VisionTextGATEAdapter,
+    forward_dict,
+)
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import \
-    VisionRootReplacedBackbone
+from gate.models.task_adapters.modality_transfer_classification import (
+    VisionRootReplacedBackbone,
+)
 
 logger = logging.getLogger(__name__)
 

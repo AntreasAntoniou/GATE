@@ -7,13 +7,21 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 from transformers.models.clip.configuration_clip import CLIPTextConfig
 from transformers.models.clip.modeling_clip import (
-    CLIPEncoder, CLIPTextEmbeddings, _create_4d_causal_attention_mask)
+    CLIPEncoder,
+    CLIPTextEmbeddings,
+    _create_4d_causal_attention_mask,
+)
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import (Modality, TextProcessor,
-                                   VisionTextGATEAdapter, forward_dict)
-from gate.models.task_adapters.modality_transfer_classification import \
-    VisionRootReplacedBackbone
+from gate.models.backbones import (
+    Modality,
+    TextProcessor,
+    VisionTextGATEAdapter,
+    forward_dict,
+)
+from gate.models.task_adapters.modality_transfer_classification import (
+    VisionRootReplacedBackbone,
+)
 
 logger = logging.getLogger(__name__)
 

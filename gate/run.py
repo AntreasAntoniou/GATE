@@ -11,6 +11,7 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 import logging
 
 import hydra
+import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
@@ -21,7 +22,6 @@ from rich.text import Text
 from rich.traceback import install
 from torch import nn
 
-import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,

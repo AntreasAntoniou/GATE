@@ -4,7 +4,9 @@ import os
 import pytest
 
 from gate.data.image_text.zero_shot.pokemon_blip_captions import (
-    build_dataset, build_gate_dataset)
+    build_dataset,
+    build_gate_dataset,
+)
 
 
 def test_build_dataset():

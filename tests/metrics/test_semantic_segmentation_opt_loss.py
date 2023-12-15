@@ -1,8 +1,11 @@
 import pytest
 import torch
 
-from gate.metrics.segmentation import (DiceLoss, FocalLoss,
-                                       WeightedCrossEntropyLoss)
+from gate.metrics.segmentation import (
+    DiceLoss,
+    FocalLoss,
+    WeightedCrossEntropyLoss,
+)
 
 
 @pytest.fixture

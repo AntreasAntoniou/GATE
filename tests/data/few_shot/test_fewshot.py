@@ -5,25 +5,33 @@ import pytest
 from accelerate.utils import set_seed
 
 from gate.data.few_shot.aircraft import AircraftFewShotClassificationDataset
-from gate.data.few_shot.aircraft import \
-    build_gate_dataset as build_gate_dataset_aircraft
+from gate.data.few_shot.aircraft import (
+    build_gate_dataset as build_gate_dataset_aircraft,
+)
 from gate.data.few_shot.cubirds200 import CUB200FewShotClassificationDataset
-from gate.data.few_shot.cubirds200 import \
-    build_gate_dataset as build_gate_dataset_cubirds200
-from gate.data.few_shot.describable_textures import \
-    DescribableTexturesFewShotClassificationDataset
-from gate.data.few_shot.describable_textures import \
-    build_gate_dataset as build_gate_dataset_describable_textures
+from gate.data.few_shot.cubirds200 import (
+    build_gate_dataset as build_gate_dataset_cubirds200,
+)
+from gate.data.few_shot.describable_textures import (
+    DescribableTexturesFewShotClassificationDataset,
+)
+from gate.data.few_shot.describable_textures import (
+    build_gate_dataset as build_gate_dataset_describable_textures,
+)
 from gate.data.few_shot.fungi import FungiFewShotClassificationDataset
-from gate.data.few_shot.fungi import \
-    build_gate_dataset as build_gate_dataset_fungi
-from gate.data.few_shot.mini_imagenet import \
-    MiniImageNetFewShotClassificationDataset
-from gate.data.few_shot.mini_imagenet import \
-    build_gate_dataset as build_gate_dataset_mini_imagenet
+from gate.data.few_shot.fungi import (
+    build_gate_dataset as build_gate_dataset_fungi,
+)
+from gate.data.few_shot.mini_imagenet import (
+    MiniImageNetFewShotClassificationDataset,
+)
+from gate.data.few_shot.mini_imagenet import (
+    build_gate_dataset as build_gate_dataset_mini_imagenet,
+)
 from gate.data.few_shot.omniglot import OmniglotFewShotClassificationDataset
-from gate.data.few_shot.omniglot import \
-    build_gate_dataset as build_gate_dataset_omniglot
+from gate.data.few_shot.omniglot import (
+    build_gate_dataset as build_gate_dataset_omniglot,
+)
 
 set_seed(42)
 

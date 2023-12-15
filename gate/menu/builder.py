@@ -149,8 +149,9 @@ def run_experiments(
     train_iters: int = 10000,
     evaluate_every_n_steps: int = 250,
     return_json: bool = False,
-    shuffle: bool = False,
     seed_list: List[int] = [7],
+    start_idx: Optional[int] = None,
+    end_idx: Optional[int] = None,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -177,26 +178,29 @@ def run_experiments(
         "med-class": medical_image_classification_config,
         "image-seg": image_segmentation_config,
         "image-text": image_text_zero_shot_classification_config,
-        "acdc": acdc_config,
-        "md": md_config,
+        # "acdc": acdc_config,
+        # "md": md_config,
         "rr": rr_config,
         "rr-mm": rr_mm_config,
         "video-class": video_classification_config,
-        "all": {
-            **image_classification_config,
-            **few_shot_learning_config,
-            **medical_image_classification_config,
-            **image_segmentation_config,
-            **image_text_zero_shot_classification_config,
-            **acdc_config,
-            **md_config,
-            **rr_config,
-            **rr_mm_config,
-            **video_classification_config,
-        },
     }
 
-    if "+" in experiment_type:
+    if experiment_type == "all":
+        for experiment_type in experiment_configs:
+            experiment_dict.update(
+                generate_commands(
+                    prefix=prefix,
+                    seed_list=seed_list,
+                    experiment_config=experiment_configs[experiment_type],
+                    num_workers=num_workers,
+                    accelerate_launch_path=accelerate_launch_path,
+                    gate_run_path=gate_run_path,
+                    gpu_ids=gpu_ids,
+                    train_iters=train_iters,
+                    evaluate_every_n_steps=evaluate_every_n_steps,
+                )
+            )
+    elif "+" in experiment_type:
         experiment_types = experiment_type.split("+")
         for experiment_type in experiment_types:
             if experiment_type in experiment_configs:
@@ -216,37 +220,6 @@ def run_experiments(
             else:
                 logger.error("Invalid experiment type selected.")
                 return
-
-    if "~" in experiment_type:
-        base_experiment, *removed_experiments = experiment_type.split("~")
-        if base_experiment not in experiment_configs:
-            logger.error(
-                f"Invalid base experiment type {base_experiment} selected."
-            )
-            return
-        for removed_experiment in removed_experiments:
-            if removed_experiment not in experiment_configs:
-                logger.error(
-                    f"Invalid removed experiment type {removed_experiment} selected."
-                )
-                return
-        experiment_configs_adjusted = {
-            k: v
-            for k, v in experiment_configs.items()
-            if k not in removed_experiments
-        }
-        experiment_dict = generate_commands(
-            prefix=prefix,
-            seed_list=seed_list,
-            experiment_config=experiment_configs_adjusted[base_experiment],
-            num_workers=num_workers,
-            accelerate_launch_path=accelerate_launch_path,
-            gate_run_path=gate_run_path,
-            gpu_ids=gpu_ids,
-            train_iters=train_iters,
-            evaluate_every_n_steps=evaluate_every_n_steps,
-        )
-
     else:
         if experiment_type in experiment_configs:
             experiment_dict = generate_commands(
@@ -292,15 +265,14 @@ def run_experiments(
                     logger.error(
                         f"Error executing {experiment_name}. Continuing with the next command."
                     )
-    random.seed(42)
-    if shuffle:
-        # shuffle a copy of the dictionary
-        experiment_dict = {
-            k: v
-            for k, v in random.sample(
-                experiment_dict.items(), len(experiment_dict)
-            )
-        }
+
+    if start_idx is None:
+        start_idx = 0
+
+    if end_idx is None:
+        end_idx = len(experiment_dict)
+
+    experiment_dict = dict(list(experiment_dict.items())[start_idx:end_idx])
 
     if return_json:
         return json.dumps(experiment_dict)

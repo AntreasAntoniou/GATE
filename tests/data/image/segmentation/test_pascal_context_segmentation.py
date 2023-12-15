@@ -10,9 +10,11 @@ from rich import print
 from tqdm import tqdm
 
 from gate.boilerplate.wandb_utils import visualize_volume
-from gate.data.image.segmentation.pascal_context import (PascalContextDataset,
-                                                         build_dataset,
-                                                         build_gate_dataset)
+from gate.data.image.segmentation.pascal_context import (
+    PascalContextDataset,
+    build_dataset,
+    build_gate_dataset,
+)
 
 DATA_DIR = pathlib.Path(os.environ.get("PYTEST_DIR"))
 
