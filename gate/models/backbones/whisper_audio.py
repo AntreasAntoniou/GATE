@@ -99,7 +99,7 @@ class ModifiedWhisperModel(WhisperPreTrainedModel):
             ).to(image.device)
 
         if image.shape[1] != 3000:
-            print(f"Resizing image from {image.shape} to (3000)")
+            logger.debug(f"Resizing image from {image.shape} to (3000)")
             image = torch.nn.functional.interpolate(
                 image, size=(3000), mode="nearest"
             )
