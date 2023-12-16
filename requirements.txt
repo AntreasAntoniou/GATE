@@ -12,6 +12,7 @@ accelerate
 transformers
 
 # Dataset and Model Hub
+h5py
 datasets
 huggingface_hub
 
