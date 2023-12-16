@@ -207,18 +207,21 @@ class EncoderNames(Enum):
         timm_model_name="resnet50.a1_in1k",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     ResNeXt50_32x4dA1 = EncoderConfig(
         pretty_name="RNX50_32x4A1",
         timm_model_name="resnext50_32x4d.a1_in1k",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     SamViTBase16_224 = EncoderConfig(
         pretty_name="SViT_B16_224",
         timm_model_name="vit_base_patch16_224.sam_in1k",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     AugRegViTBase16_224 = EncoderConfig(
         pretty_name="AR_ViT_B16_224",
@@ -232,24 +235,28 @@ class EncoderNames(Enum):
         timm_model_name="vit_base_patch16_224.dino",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     CLIPViTBase16_224 = EncoderConfig(
         pretty_name="CLIP_B16_224",
         timm_model_name="vit_base_patch16_clip_224",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     LaionViTBase16_224 = EncoderConfig(
         pretty_name="Laion_B16_224",
         timm_model_name="vit_base_patch16_clip_224.laion2b",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     EfficientFormer_s0 = EncoderConfig(
         pretty_name="EffFormer_s0",
         timm_model_name="efficientformerv2_s0",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     EffNetV2_RW_S_RA2 = EncoderConfig(
         pretty_name="EffV2_RW_S",
@@ -263,31 +270,35 @@ class EncoderNames(Enum):
         timm_model_name="convnextv2_base",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     DeiT3BasePatch16_224 = EncoderConfig(
         pretty_name="DeiT3_B16_224",
         timm_model_name="deit3_base_patch16_224.fb_in1k",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     FlexViTBase_1200EP = EncoderConfig(
         pretty_name="Flex_B_1200EP",
         timm_model_name="flexivit_base.1200ep_in1k",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
     IJEPAViTHugePatch14_224 = EncoderConfig(
         pretty_name="IJEPA_Huge_P14_224",
         timm_model_name="vit_huge_patch14_gap_224.in22k_ijepa",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
-        embedding_dim=768,
+        num_projection_features=768,
     )
     SIGLIPPathch16_224 = EncoderConfig(
         pretty_name="SIGLIP_P16_224",
         timm_model_name="vit_base_patch16_siglip_224",
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="timm",
+        num_projection_features=768,
     )
 
 
