@@ -161,7 +161,7 @@ class IoUMetric:
                 class_name = str(idx)
 
             table.add_row(
-                class_name,
+                str(class_name),
                 f"{metrics['per_class_iou'][class_name]:.2f}",
                 f"{metrics['per_class_accuracy'][class_name]:.2f}",
             )
