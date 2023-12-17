@@ -84,7 +84,7 @@ def transform_wrapper(inputs: Dict, target_size=224):
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=11,
+    num_classes: int = 11,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
@@ -110,15 +110,3 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_dataset(transforms: Optional[Any] = None) -> dict:
-    # Create a dummy dataset that emulates food-101's shape and modality
-    pass
-
-
-@dataclass
-class DefaultHyperparameters:
-    train_batch_size: int = 256
-    eval_batch_size: int = 512
-    num_classes: int = 101

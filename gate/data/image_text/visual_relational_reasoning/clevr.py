@@ -322,13 +322,3 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_dataset(transforms: Optional[Any] = None):
-    pass
-
-
-@dataclass
-class DefaultHyperparameters:
-    train_batch_size: int = 256
-    eval_batch_size: int = 512

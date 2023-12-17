@@ -130,7 +130,7 @@ class DuoModalFusionModel(BaseModule):
             if not isinstance(self.num_classes, int)
             else None,
         }
-        logger.info(dummy_batch, self.num_classes)
+
         _ = self(**dummy_batch)
 
     @ensemble_marker
