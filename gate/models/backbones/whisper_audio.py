@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Optional
+import math
+from typing import Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -24,6 +25,34 @@ from gate.models.task_adapters.modality_transfer_classification import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def find_nearest_n(x: Union[int, float], target: Union[int, float]) -> int:
+    """
+    Function to find the `n` that makes `(x / n) ** 2` closest to the target.
+
+    Args:
+        x (Union[int, float]): The input value.
+        target (Union[int, float]): The target value to get as close as possible to.
+
+    Returns:
+        int: The value of `n` that makes `(x / n) ** 2` closest to the target.
+    """
+    # Calculate the ideal 'n' using reverse operation
+    n_ideal = x / math.sqrt(target)
+
+    # Calculate outputs for floor and ceiling of ideal 'n'
+    out_floor = (x / math.floor(n_ideal)) ** 2
+    out_ceil = (x / math.ceil(n_ideal)) ** 2
+
+    # Calculate the differences from the target
+    diff_floor = abs(target - out_floor)
+    diff_ceil = abs(target - out_ceil)
+
+    # Return the 'n' that gives the output closest to the target
+    return (
+        math.floor(n_ideal) if diff_floor < diff_ceil else math.ceil(n_ideal)
+    )
 
 
 class ModifiedWhisperModel(WhisperPreTrainedModel):
@@ -68,6 +97,12 @@ class ModifiedWhisperModel(WhisperPreTrainedModel):
             self.encoder.embed_positions.weight = nn.Parameter(
                 torch.zeros(1)
             ).to(image.device)
+
+        if image.shape[1] != 3000:
+            logger.debug(f"Resizing image from {image.shape} to (3000)")
+            image = torch.nn.functional.interpolate(
+                image, size=(3000), mode="nearest"
+            )
 
         encoder_outputs = self.encoder(
             image,
@@ -123,6 +158,7 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
         vision_embedding = ModifiedWhisperModel.from_pretrained(
             whisper_model_name
         )
+        patch_size = find_nearest_n(image_size, 3000)
 
         self.vision_model = VisionRootReplacedBackbone(
             model=vision_embedding,
@@ -130,7 +166,7 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
             backbone_root_layers_to_remove=["embeddings"],
             image_size=image_size,
             num_channels=3,
-            patch_size=16,
+            patch_size=patch_size,
             source_modality=Modality.image,
             target_modality=Modality.image,
         )

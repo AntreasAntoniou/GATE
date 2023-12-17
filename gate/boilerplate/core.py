@@ -630,7 +630,7 @@ class Learner(nn.Module):
             obj=experiment_hyperparameters,
             f=ckpt_save_path / "trainer_state.pt",
         )
-        self.accelerator.save_state(ckpt_save_path)
+        self.accelerator.save_state(ckpt_save_path, safe_serialization=False)
 
         self.callback_handler.on_save_checkpoint(
             model=self.model,
