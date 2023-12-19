@@ -18,6 +18,8 @@ def check_wandb_experiments(
     experiments: Union[Dict[str, str], List[str]],
     project: str | List[str] = None,
     token: str = None,
+    print_table: bool = False,
+    filter_for_non_completed: bool = False,
 ):
     """
     Check if the given experiments exist in a Weights & Biases project and if they have completed the testing stage.
@@ -57,7 +59,7 @@ def check_wandb_experiments(
                 exp_name_to_summary_dict[exp_name].append(run.summaryMetrics)
 
     # Initialize an empty list to store experiment data
-    exp_data = []
+    exp_data = {}
     if isinstance(experiments, dict):
         experiments = list(experiments.keys())
     experiments = [exp.lower() for exp in experiments]
@@ -91,40 +93,46 @@ def check_wandb_experiments(
                 current_iter = 0
 
             # Append the data to the list
-            exp_data.append(
-                {
-                    "exp_name": exp_name,
-                    "testing_completed": testing_completed,
-                    "current_iter": current_iter,
-                }
-            )
+            exp_data[exp_name] = {
+                "testing_completed": testing_completed,
+                "current_iter": current_iter,
+            }
             pbar.update(1)
+    if print_table:
+        # Create a pandas DataFrame
+        df = pd.DataFrame(exp_data)
 
-    # Create a pandas DataFrame
-    df = pd.DataFrame(exp_data)
+        # Create a console for rich print
+        console = Console()
 
-    # Create a console for rich print
-    console = Console()
+        # Create a table
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Experiment Name", width=50)
+        table.add_column("Testing Completed", justify="right")
+        table.add_column("Current Iteration", justify="right")
 
-    # Create a table
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Experiment Name", width=50)
-    table.add_column("Testing Completed", justify="right")
-    table.add_column("Current Iteration", justify="right")
+        # Add rows to the table
+        for _, row in df.iterrows():
+            table.add_row(
+                row["exp_name"],
+                str(row["testing_completed"]),
+                str(row["current_iter"]),
+            )
 
-    # Add rows to the table
-    for _, row in df.iterrows():
-        table.add_row(
-            row["exp_name"],
-            str(row["testing_completed"]),
-            str(row["current_iter"]),
-        )
+        # Print the table
+        console.print(table)
 
-    # Print the table
-    console.print(table)
+    if filter_for_non_completed:
+        exp_data = {
+            key: value
+            for key, value in exp_data.items()
+            if not value["testing_completed"]
+        }
+
+    return exp_data
 
 
-def main():
+def main(print_table: bool = False, filter_for_non_completed: bool = False):
     # Read input from stdin
     raw_experiments = sys.stdin.read()
 
@@ -136,11 +144,16 @@ def main():
         return
 
     # Call the function
-    check_wandb_experiments(
-        experiments=experiments, project=["eidf-monitor", "gate-0-9-1"]
+    exp_dict = check_wandb_experiments(
+        experiments=experiments,
+        project=["eidf-monitor", "gate-0-9-1"],
+        print_table=print_table,
+        filter_for_non_completed=filter_for_non_completed,
     )
+
+    return json.dumps(exp_dict)
 
 
 # This exposes the function to the command line
 if __name__ == "__main__":
-    main()
+    fire.Fire(main)

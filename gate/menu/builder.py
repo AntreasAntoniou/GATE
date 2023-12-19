@@ -2,8 +2,9 @@ import json
 import logging
 import random
 import subprocess
+import sys
 from dataclasses import asdict
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import fire
 from rich import print
@@ -135,6 +136,29 @@ def generate_commands(
     return command_dict
 
 
+def parse_commands_input(input_data: str) -> Dict[str, Any]:
+    try:
+        # Attempt to parse the input as JSON
+        data = json.loads(input_data)
+
+        if isinstance(data, dict):
+            # If it's a dictionary, use it as-is
+
+            return data
+        elif isinstance(data, list):
+            # If it's a list, generate a dictionary with auto-generated names
+            return {f"exp-{i+1:03d}": cmd for i, cmd in enumerate(data)}
+    except json.JSONDecodeError:
+        # If JSON parsing fails, treat the input as a newline-separated list of commands
+        print(
+            f"Input data is not valid JSON. Attempting to parse as newline-separated list of commands."
+        )
+        return {
+            f"exp-{i+1:03d}": cmd
+            for i, cmd in enumerate(input_data.strip().split("\n"))
+        }
+
+
 def run_experiments(
     prefix: str = "debug",
     experiment_type: str = "all",
@@ -152,6 +176,7 @@ def run_experiments(
     seed_list: List[int] = [7],
     start_idx: Optional[int] = None,
     end_idx: Optional[int] = None,
+    selected_exp_name: Optional[List[str]] = None,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -169,6 +194,10 @@ def run_experiments(
     Returns:
         experiment_dict (dict): A dictionary containing the experiment names as keys and the corresponding experiment commands as values.
     """
+
+    if not sys.stdin.isatty():
+        # If data is being piped to this script, read stdin
+        selected_exp_name = parse_commands_input(sys.stdin.read())
 
     experiment_dict = {}
 
@@ -270,6 +299,16 @@ def run_experiments(
         start_idx = 0
 
     if end_idx is None:
+        end_idx = len(experiment_dict)
+
+    if selected_exp_name is not None:
+        selected_exp_name = [exp.lower() for exp in selected_exp_name.keys()]
+
+        experiment_dict = {
+            k: v
+            for k, v in experiment_dict.items()
+            if k.lower() in selected_exp_name
+        }
         end_idx = len(experiment_dict)
 
     experiment_dict = dict(list(experiment_dict.items())[start_idx:end_idx])
