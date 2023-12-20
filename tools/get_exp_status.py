@@ -5,7 +5,6 @@ from typing import Dict, List, Union
 
 import fire
 import pandas as pd
-from cv2 import exp
 from rich import print
 from rich.console import Console
 from rich.table import Table
