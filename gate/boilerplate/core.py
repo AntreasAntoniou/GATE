@@ -469,8 +469,6 @@ class Learner(nn.Module):
         if train_dataloader is None:
             train_dataloader = self.train_dataloader
 
-        last_val_step = 0
-
         if train_dataloader is not None:
             self.start_training()
 
