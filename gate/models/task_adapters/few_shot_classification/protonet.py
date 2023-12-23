@@ -87,7 +87,7 @@ class PrototypicalNetwork(BaseModule):
             labels["query_set"] if "query_set" in labels else None,
         )
 
-    def forward_features(
+    def forward_features_no_oom(
         self,
         input_dict: Optional[Dict[str, Union[torch.Tensor, Dict]]] = None,
         image: Optional[torch.Tensor] = None,
@@ -102,14 +102,35 @@ class PrototypicalNetwork(BaseModule):
         Returns:
             The output tensor after being processed by the model and the linear layer.
         """
-        x = None
 
-        if input_dict is not None:
-            x = self.encoder(**input_dict)["image"]["features"]
-        if image is not None:
-            x = self.encoder(image=image)["image"]["features"]
+        oom_error = True
+        while oom_error:
+            try:
+                x = self.forward_features(input_dict, image)
+                oom_error = False
+            except RuntimeError as e:
+                if "CUDA out of memory" in str(e):
+                    torch.cuda.empty_cache()
 
-        assert x is not None, "At least one input must be provided."
+                else:
+                    raise e
+
+    def forward_features(
+        self,
+        image: Optional[torch.Tensor],
+    ) -> Dict[str, torch.Tensor]:
+        """
+        This method takes an input dictionary and applies the model to the input.
+
+        Args:
+            input_dict: A dictionary of input data.
+            image: Optional image tensor.
+
+        Returns:
+            The output tensor after being processed by the model and the linear layer.
+        """
+
+        x = self.encoder(image=image)["image"]["features"]
 
         x = self.linear(x)
         return x

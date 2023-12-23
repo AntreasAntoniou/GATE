@@ -11,7 +11,7 @@ dataset_configs = {
     for dataset_name in DatasetName.VIDEO_CLASSIFICATION.value
 }
 
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 ENCODER_CONFIG = AdapterTypeNames.TEMPORAL_CLASSIFICATION.value
 RESNET_LR = 1e-3
 VIT_LR = 1e-5
