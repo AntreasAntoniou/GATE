@@ -34,6 +34,9 @@ from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
 from gate.menu.configs.video_classification import (
     config as video_classification_config,
 )
+from gate.menu.configs.video_regression import (
+    config as video_regression_config,
+)
 from gate.menu.utils import build_command
 
 # Logging configuration using Rich for better terminal output
@@ -212,6 +215,7 @@ def run_experiments(
         "rr": rr_config,
         "rr-mm": rr_mm_config,
         "video-class": video_classification_config,
+        "video-reg": video_regression_config,
     }
 
     if experiment_type == "all":

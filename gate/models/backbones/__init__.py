@@ -151,7 +151,7 @@ class VisionTextGATEAdapter(ABC):
 
         output = None
         batch_size = image.shape[0]
-        print(f"batch_size: {batch_size}")
+        # print(f"batch_size: {batch_size}")
         try:
             return self.vision_model(image=image)
 
