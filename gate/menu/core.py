@@ -329,90 +329,90 @@ def get_model_selection(
     mixed_precision_mode: str = MixedPrecisionMode.BF16,
 ):
     return {
-        EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.Wave2VecV2Base.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.WhisperBase.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.WhisperBase.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.MPNet.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.MPNet.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.BERT_TEXT.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.BERT_TEXT.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.BART_TEXT.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.BART_TEXT.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.CLIPViTBase16_224HF_IMAGE.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.CLIPViTBase16_224HF_TEXT.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
+        # EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.Wave2VecV2Base.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # EncoderNames.WhisperBase.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.WhisperBase.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # EncoderNames.MPNet.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.MPNet.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # EncoderNames.BERT_TEXT.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.BERT_TEXT.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # EncoderNames.BART_TEXT.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.BART_TEXT.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # EncoderNames.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.CLIPViTBase16_224HF_IMAGE.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # EncoderNames.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=EncoderNames.CLIPViTBase16_224HF_TEXT.value.update_config(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
         EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=EncoderNames.AugRegViTBase16_224.value.update_config(
@@ -428,6 +428,17 @@ def get_model_selection(
         EncoderNames.LaionViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=EncoderNames.LaionViTBase16_224.value.update_config(
+                image_size=image_size
+            ),
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        EncoderNames.CLIPViTBase16_224.value.pretty_name: ModelConfig(
+            adapter_config=adapter_config,
+            encoder_config=EncoderNames.CLIPViTBase16_224.value.update_config(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
