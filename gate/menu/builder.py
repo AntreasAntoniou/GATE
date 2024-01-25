@@ -162,6 +162,33 @@ def parse_commands_input(input_data: str) -> Dict[str, Any]:
         }
 
 
+def check_inclusion(large_string: str, small_string: str) -> bool:
+    """
+    Check if all parts of the small string exist in the large string.
+
+    Args:
+        large_string (str): The large string to search within.
+        small_string (str): The small string to search for.
+
+    Returns:
+        bool: True if all parts of the small string exist in the large string, False otherwise.
+    """
+    # Split the large string into parts using "-" as a separator
+    large_string_parts = set(large_string.split("-"))
+
+    # Split the small string into parts
+    small_string_parts = small_string.split("-")
+
+    # Iterate over each part in the small string
+    for part in small_string_parts:
+        # If the current part is not found in the large string, return False
+        if part not in large_string_parts:
+            return False
+
+    # If all parts were found in the large string, return True
+    return True
+
+
 def run_experiments(
     prefix: str = "debug",
     experiment_type: str = "all",
@@ -210,7 +237,7 @@ def run_experiments(
         "med-class": medical_image_classification_config,
         "image-seg": image_segmentation_config,
         "image-text": image_text_zero_shot_classification_config,
-        # "acdc": acdc_config,
+        "acdc": acdc_config,
         # "md": md_config,
         "rr": rr_config,
         "rr-mm": rr_mm_config,
@@ -306,12 +333,21 @@ def run_experiments(
         end_idx = len(experiment_dict)
 
     if selected_exp_name is not None:
-        selected_exp_name = [exp.lower() for exp in selected_exp_name.keys()]
+        if isinstance(selected_exp_name, dict):
+            selected_exp_name = [
+                exp.lower() for exp in selected_exp_name.keys()
+            ]
 
+        experiment_dict = {
+            key.lower(): value for key, value in experiment_dict.items()
+        }
         experiment_dict = {
             k: v
             for k, v in experiment_dict.items()
-            if k.lower() in selected_exp_name
+            if any(
+                check_inclusion(k.lower(), exp_name)
+                for exp_name in selected_exp_name
+            )
         }
         end_idx = len(experiment_dict)
 
