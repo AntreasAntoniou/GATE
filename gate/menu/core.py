@@ -554,7 +554,7 @@ def get_model_selection(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
-                default=[resnet_lr], dataset_specific={}
+                default=[vit_lr * 2], dataset_specific={}
             ),
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
@@ -565,7 +565,7 @@ def get_model_selection(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
-                default=[resnet_lr], dataset_specific={}
+                default=[vit_lr * 2], dataset_specific={}
             ),
             train_batch_size=batch_size,
             eval_batch_size=batch_size,

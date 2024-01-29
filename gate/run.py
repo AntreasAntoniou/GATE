@@ -1,4 +1,5 @@
 import os
+from copy import copy, deepcopy
 from typing import Any, Callable, Optional
 
 from accelerate import Accelerator
@@ -114,7 +115,9 @@ def run(cfg: Any) -> None:
 
     encoder = instantiate(cfg.encoder)
     task_adapted_model = instantiate(cfg.adapter, encoder=encoder)
-    transform: Optional[Callable] = task_adapted_model.adapter_transforms
+    transform: Optional[Callable] = deepcopy(
+        task_adapted_model.adapter_transforms
+    )
 
     model: GATEModel = GATEModel(
         config=task_adapted_model.modality_config, model=task_adapted_model
@@ -166,8 +169,8 @@ def run(cfg: Any) -> None:
     evaluator = instantiate(
         cfg.evaluator,
     )
-    # TODO: allow losses and task adapters to be defined at this level
 
+    # TODO: allow losses and task adapters to be defined at this level
     learner: Learner = instantiate(
         cfg.learner,
         model=model,
