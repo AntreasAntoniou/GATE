@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import pathlib
@@ -19,6 +20,17 @@ from tqdm.auto import tqdm
 
 
 def is_gpu_available(handle, memory_threshold=5, util_threshold=10):
+    """
+    Check if the GPU is available based on memory and utilization thresholds.
+
+    Args:
+        handle: The handle of the GPU to check.
+        memory_threshold: The maximum memory usage percentage that the GPU can have to be considered available.
+        util_threshold: The maximum GPU utilization percentage that the GPU can have to be considered available.
+
+    Returns:
+        True if the GPU is available, False otherwise.
+    """
     memory_info = nvmlDeviceGetMemoryInfo(handle)
     utilization = nvmlDeviceGetUtilizationRates(handle)
 
@@ -28,61 +40,104 @@ def is_gpu_available(handle, memory_threshold=5, util_threshold=10):
 
 
 def get_gpu_processes(memory_threshold=5, util_threshold=10):
+    """
+    Get the IDs of all available GPUs.
+
+    Args:
+        memory_threshold: The maximum memory usage percentage that a GPU can have to be considered available.
+        util_threshold: The maximum GPU utilization percentage that a GPU can have to be considered available.
+
+    Returns:
+        A list of the IDs of all available GPUs.
+    """
     nvmlInit()
-    gpu_processes = {}
-    for i in range(nvmlDeviceGetCount()):
-        handle = nvmlDeviceGetHandleByIndex(i)
-        if is_gpu_available(handle, memory_threshold, util_threshold):
-            gpu_processes[
-                str(i)
-            ] = None  # No process is currently using this GPU
+    available_gpus = [
+        str(i)
+        for i in range(nvmlDeviceGetCount())
+        if is_gpu_available(
+            nvmlDeviceGetHandleByIndex(i), memory_threshold, util_threshold
+        )
+    ]
     nvmlShutdown()
-    return gpu_processes
+    return available_gpus
 
 
-def run_command_on_gpu(command, gpu_id, exp_name):
-    os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+def run_command_on_gpu(command, gpu_ids, exp_name):
+    """
+    Run a command on the specified GPUs.
+
+    Args:
+        command: The command to run.
+        gpu_ids: A list of the IDs of the GPUs to run the command on.
+        exp_name: The name of the experiment.
+
+    Returns:
+        The handle of the process running the command.
+    """
+    command = command.replace(
+        f"accelerate launch",
+        "accelerate launch --gpu_ids=" + ",".join(gpu_ids),
+    )
+    command = command.replace("29012024", "30012024")
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout.log", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr.log", "w")
 
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
-    )  # Return the process handle
+    )
 
 
-def run_commands(command_dict: Dict, memory_threshold=5, util_threshold=10):
-    gpu_processes = get_gpu_processes(memory_threshold, util_threshold)
+def run_commands(
+    command_dict: Dict, num_gpus: int, memory_threshold=5, util_threshold=10
+):
+    """
+    Run multiple commands on available GPUs.
+
+    Args:
+        command_dict: A dictionary mapping command names to commands.
+        num_gpus: The number of GPUs to use for each experiment.
+        memory_threshold: The maximum memory usage percentage that a GPU can have to be considered available.
+        util_threshold: The maximum GPU utilization percentage that a GPU can have to be considered available.
+    """
+    available_gpus = get_gpu_processes(memory_threshold, util_threshold)
 
     with tqdm(total=len(command_dict), smoothing=0.0) as pbar:
         while command_dict:
-            for gpu_id, process in gpu_processes.items():
-                # If the GPU is available or the process using it has completed
-                if process is None or process.poll() is not None:
-                    if command_dict:
-                        command_name, command = command_dict.popitem()
-                        pbar.set_description(
-                            f"Running command on GPU {gpu_id}: {command}"
-                        )
-                        gpu_processes[gpu_id] = run_command_on_gpu(
-                            command=command,
-                            gpu_id=gpu_id,
-                            exp_name=command_name,
-                        )
-                        pbar.update(1)
-                    else:
-                        break  # No more commands to run
+            if len(available_gpus) >= num_gpus:
+                gpu_ids = available_gpus[:num_gpus]
+                available_gpus = available_gpus[num_gpus:]
 
-            # Sleep for a bit before checking GPU availability again
+                command_name, command = command_dict.popitem()
+                pbar.set_description(
+                    f"Running command on GPUs {gpu_ids}: {command}"
+                )
+                process = run_command_on_gpu(
+                    command=command,
+                    gpu_ids=gpu_ids,
+                    exp_name=command_name,
+                )
+                pbar.update(1)
+
+                process.wait()
+                available_gpus.extend(gpu_ids)
+
+            # Sleep for a bit before assigning more GPUs
             pbar.set_description("Waiting for GPUs to become available... 🎣")
             time.sleep(1)
 
-    # Wait for all processes to complete
-    for gpu_id, process in gpu_processes.items():
-        if process is not None:
-            process.wait()
-
 
 def parse_commands_input(input_data: str) -> Dict[str, Any]:
+    """
+    Parse the commands input.
+
+    If the input data is JSON, it is parsed as such. If it is a string, it is split by newline characters.
+
+    Args:
+        input_data: The input data containing the commands.
+
+    Returns:
+        A dictionary mapping command names to commands.
+    """
     try:
         # Attempt to parse the input as JSON
         data = json.loads(input_data)
@@ -100,14 +155,24 @@ def parse_commands_input(input_data: str) -> Dict[str, Any]:
         }
 
 
-import datetime
-
-
 def main(
+    num_gpus: int,
     memory_threshold: int = 5,
     util_threshold: int = 10,
     log_dir: Optional[Union[str, pathlib.Path]] = None,
 ):
+    """
+    The main function of the program.
+
+    This function takes in the number of GPUs to use, memory and utilization thresholds, and a log directory.
+    It parses the commands from the input, runs them on the GPUs, and logs the results.
+
+    Args:
+        num_gpus: The number of GPUs to use for the experiments.
+        memory_threshold: The maximum memory usage percentage that a GPU can have to be considered available.
+        util_threshold: The maximum GPU utilization percentage that a GPU can have to be considered available.
+        log_dir: The directory to log the results to.
+    """
     if log_dir is None:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         log_dir = f"logs/{current_time}/"
@@ -133,6 +198,7 @@ def main(
     # Now, you can pass the list of commands and other arguments to your function
     run_commands(
         command_dict,
+        num_gpus,
         memory_threshold=memory_threshold,
         util_threshold=util_threshold,
     )
