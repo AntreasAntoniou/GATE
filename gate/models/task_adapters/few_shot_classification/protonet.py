@@ -16,7 +16,7 @@ from gate.models.task_adapters.few_shot_classification.utils import (
 )
 
 
-class MyDataParallel(nn.DataParallel):
+class DataParallelWithDict(nn.DataParallel):
     def gather(self, outputs, output_device):
         return {
             key: nn.parallel.gather([d[key] for d in outputs], output_device)
@@ -89,7 +89,7 @@ class PrototypicalNetwork(BaseModule):
             self.encoder_transforms_copy = deepcopy(
                 self.encoder.get_transforms
             )
-            self.encoder = MyDataParallel(self.encoder)
+            self.encoder = DataParallelWithDict(self.encoder)
             setattr(
                 self.encoder, "get_transforms", self.encoder_transforms_copy
             )
