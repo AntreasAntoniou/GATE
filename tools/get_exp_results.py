@@ -4,15 +4,16 @@ import os
 import pathlib
 import sys
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from rich import print
-from tqdm.auto import tqdm
-
 import wandb
+from pyparsing import Opt
+from rich import print
+from torch import exp_
+from tqdm.auto import tqdm
 
 plt.style.use("ggplot")
 
@@ -55,7 +56,7 @@ def get_experiment_data(runs):
     return summary_list, config_list, name_list, all_keys
 
 
-def filter_keys(all_keys):
+def filter_keys(all_keys, include_keys=None, exclude_keys=None):
     """Filter keys based on certain conditions"""
     selected_keys = set()
     for key in sorted(all_keys):
@@ -70,6 +71,20 @@ def filter_keys(all_keys):
             and "similarities" not in key
         ):
             selected_keys.add(key)
+    if include_keys:
+        selected_keys = [
+            item
+            for item in selected_keys
+            if any(str(key) in item for key in include_keys)
+        ]
+
+    if exclude_keys:
+        selected_keys = [
+            item
+            for item in selected_keys
+            if all(str(key) not in item for key in exclude_keys)
+        ]
+
     return selected_keys
 
 
@@ -145,15 +160,39 @@ def create_csv(
             writer.writerow(row)
 
 
-def main(project_name: str, output_filename: str = "experiments_summary.csv"):
+OptListStr = Optional[List[str]]
+
+
+def main(
+    project_name: str,
+    output_filename: str = "experiments_summary.csv",
+    include_keys: OptListStr = None,
+    exclude_keys: OptListStr = None,
+    exp_name_include: OptListStr = None,
+    exp_name_exclude: OptListStr = None,
+):
     """Main function"""
     api = wandb.Api()
     runs = get_runs(api, project_name)
     summary_list, config_list, name_list, all_keys = get_experiment_data(runs)
-    selected_keys = filter_keys(all_keys)
+    selected_keys = filter_keys(
+        all_keys, include_keys=include_keys, exclude_keys=exclude_keys
+    )
     exp_dict = get_experiment_dict(
         name_list, config_list, summary_list, selected_keys
     )
+    if exp_name_include:
+        exp_dict = {
+            key: value
+            for key, value in exp_dict.items()
+            if any(str(item) in key for item in exp_name_include)
+        }
+    if exp_name_exclude:
+        exp_dict = {
+            key: value
+            for key, value in exp_dict.items()
+            if all(str(item) not in key for item in exp_name_exclude)
+        }
     aggregated_experiments = aggregate_experiments(exp_dict)
     create_csv(output_filename, aggregated_experiments)
 

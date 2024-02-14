@@ -100,7 +100,6 @@ def run_commands(
         util_threshold: The maximum GPU utilization percentage that a GPU can have to be considered available.
     """
     available_gpus = get_gpu_processes(memory_threshold, util_threshold)
-
     with tqdm(total=len(command_dict), smoothing=0.0) as pbar:
         while command_dict:
             if len(available_gpus) >= num_gpus:
@@ -108,22 +107,24 @@ def run_commands(
                 available_gpus = available_gpus[num_gpus:]
 
                 command_name, command = command_dict.popitem()
-                pbar.set_description(
-                    f"Running command on GPUs {gpu_ids}: {command}"
-                )
-                process = run_command_on_gpu(
+                command = command.replace("5022024", "6022024")
+                print(command)
+                _ = run_command_on_gpu(
                     command=command,
                     gpu_ids=gpu_ids,
                     exp_name=command_name,
                 )
                 pbar.update(1)
+                pbar.set_description(f"Running on GPUs {gpu_ids}")
 
-                process.wait()
-                available_gpus.extend(gpu_ids)
+            else:
+                time.sleep(60)
+                available_gpus = get_gpu_processes(
+                    memory_threshold, util_threshold
+                )
 
             # Sleep for a bit before assigning more GPUs
             pbar.set_description("Waiting for GPUs to become available... 🎣")
-            time.sleep(1)
 
 
 def parse_commands_input(input_data: str) -> Dict[str, Any]:

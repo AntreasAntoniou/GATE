@@ -5,12 +5,11 @@ from typing import Dict, List, Optional, Union
 
 import fire
 import pandas as pd
+import wandb
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from tqdm.auto import tqdm
-
-import wandb
 
 # 'seed': 7,
 # 'test': True,

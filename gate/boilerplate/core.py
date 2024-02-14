@@ -511,9 +511,11 @@ class Learner(nn.Module):
                         ):
                             self.save_checkpoint(
                                 checkpoint_name=f"ckpt_{self.global_step}",
-                                status=ExperimentStatus.TRAINING
-                                if self.global_step < self.train_iters
-                                else ExperimentStatus.TESTING,
+                                status=(
+                                    ExperimentStatus.TRAINING
+                                    if self.global_step < self.train_iters
+                                    else ExperimentStatus.TESTING
+                                ),
                             )
 
                         loss = torch.mean(

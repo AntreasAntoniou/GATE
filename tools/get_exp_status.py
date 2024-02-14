@@ -5,12 +5,11 @@ from typing import Dict, List, Union
 
 import fire
 import pandas as pd
+import wandb
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from tqdm.auto import tqdm
-
-import wandb
 
 
 def check_wandb_experiments(
@@ -78,6 +77,8 @@ def check_wandb_experiments(
                 ]
 
                 testing_completed = any("testing/ensemble" in k for k in keys)
+                if "fs" in exp_name:
+                    print(exp_name, list(sorted(keys)))
 
                 currently_running = any(
                     "running" == state.lower()

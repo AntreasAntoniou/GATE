@@ -118,17 +118,21 @@ class DuoModalFusionModel(BaseModule):
                 2, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
             ),
             "text": torch.randint(0, 100, (2, 10)),
-            "labels": torch.randint(0, self.num_classes, (2,))
-            if isinstance(self.num_classes, int)
-            else torch.stack(
-                [
-                    torch.randint(value, (1,))
-                    for value in list(self.num_classes.values())[:2]
-                ]
+            "labels": (
+                torch.randint(0, self.num_classes, (2,))
+                if isinstance(self.num_classes, int)
+                else torch.stack(
+                    [
+                        torch.randint(value, (1,))
+                        for value in list(self.num_classes.values())[:2]
+                    ]
+                )
             ),
-            "answer_type": list(self.num_classes.keys())[:2]
-            if not isinstance(self.num_classes, int)
-            else None,
+            "answer_type": (
+                list(self.num_classes.keys())[:2]
+                if not isinstance(self.num_classes, int)
+                else None
+            ),
         }
 
         _ = self(**dummy_batch)

@@ -1,41 +1,40 @@
 import json
 import logging
-import random
 import subprocess
 import sys
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
 import fire
+from cv2 import exp
 from rich import print
 from rich.logging import RichHandler
 
 from gate.menu.configs.few_shot_learning import (
-    config as few_shot_learning_config,
+    Config as few_shot_learning_config,
 )
 from gate.menu.configs.image_classification import (
-    config as image_classification_config,
+    Config as image_classification_config,
 )
 from gate.menu.configs.image_segmentation import (
-    config as image_segmentation_config,
+    Config as image_segmentation_config,
 )
 from gate.menu.configs.image_text_zero_shot_classification import (
-    config as image_text_zero_shot_classification_config,
+    Config as image_text_zero_shot_classification_config,
 )
 from gate.menu.configs.medical_image_classification import (
-    config as medical_image_classification_config,
+    Config as medical_image_classification_config,
 )
 from gate.menu.configs.medical_image_segmentation_acdc import (
-    config as acdc_config,
+    Config as acdc_config,
 )
-from gate.menu.configs.medical_image_segmentation_md import config as md_config
-from gate.menu.configs.relational_reasoning import config as rr_config
-from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
+from gate.menu.configs.relational_reasoning import Config as rr_config
+from gate.menu.configs.relational_reasoning_mm import Config as rr_mm_config
 from gate.menu.configs.video_classification import (
-    config as video_classification_config,
+    Config as video_classification_config,
 )
 from gate.menu.configs.video_regression import (
-    config as video_regression_config,
+    Config as video_regression_config,
 )
 from gate.menu.utils import build_command
 
@@ -45,9 +44,6 @@ logger.setLevel(logging.INFO)
 handler: RichHandler = RichHandler(markup=True)
 handler.setFormatter(logging.Formatter("%(message)s"))
 logger.addHandler(handler)
-
-# Let's adapt the experiment generator script to work with the new configuration setup.
-# We'll modify the `generate_commands` and `get_commands` functions to use the new `dataset_configs` and `model_configs`.
 
 
 def generate_commands(
@@ -60,6 +56,7 @@ def generate_commands(
     evaluate_every_n_steps: int = 250,
     accelerate_launch_path: str = "/opt/conda/envs/main/bin/accelerate-launch",
     gate_run_path: str = "/app/gate/run.py",
+    model_identifier: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Generate a dictionary of experiment commands based on the given prefix, seed list, experiment configuration, and other parameters.
@@ -83,6 +80,11 @@ def generate_commands(
 
     for dataset_key, dataset_value in dataset_dict.items():
         for model_key, model_config in model_configs.items():
+            if (
+                model_identifier is not None
+                and model_identifier.lower() not in model_key.lower()
+            ):
+                continue
             for seed in seed_list:
                 exp_name = (
                     f"{prefix}-{dataset_value}-{model_key}-{seed}".replace(
@@ -90,13 +92,16 @@ def generate_commands(
                     )
                 )
                 encoder_args = ""
-                for key, value in asdict(model_config.encoder_config).items():
+                for key, value in model_config.encoder_config.__dict__.items():
                     if "pretty_name" in key:
                         continue
                     if "encoder_name" in key:
                         continue
                     if value is None:
                         continue
+
+                    if key == "image_size":
+                        exp_name = exp_name.replace(f"224", str(value))
 
                     encoder_args += f"encoder.{key}={value} "
 
@@ -112,6 +117,7 @@ def generate_commands(
                     adapter_args += f"adapter.{key}={value} "
 
                 lr_list = model_config.learning_rate_config.get_lr()
+
                 for lr in lr_list:
                     command = build_command(
                         exp_name=exp_name,
@@ -207,6 +213,7 @@ def run_experiments(
     start_idx: Optional[int] = None,
     end_idx: Optional[int] = None,
     selected_exp_name: Optional[List[str]] = None,
+    model_identifier: Optional[str] = None,
 ) -> None:
     """
     Run selected or all experiments based on the argument 'experiment_type'.
@@ -231,18 +238,17 @@ def run_experiments(
 
     experiment_dict = {}
 
-    experiment_configs: Dict[str, Dict] = {
-        "image-class": image_classification_config,
-        "few-shot": few_shot_learning_config,
-        "med-class": medical_image_classification_config,
-        "image-seg": image_segmentation_config,
-        "image-text": image_text_zero_shot_classification_config,
-        "acdc": acdc_config,
-        # "md": md_config,
-        "rr": rr_config,
-        "rr-mm": rr_mm_config,
-        "video-class": video_classification_config,
-        "video-reg": video_regression_config,
+    experiment_configs: Dict[str, Any] = {
+        "image-class": image_classification_config(),
+        "few-shot": few_shot_learning_config(),
+        "med-class": medical_image_classification_config(),
+        "image-seg": image_segmentation_config(),
+        "image-text": image_text_zero_shot_classification_config(),
+        "acdc": acdc_config(),
+        "rr": rr_config(),
+        "rr-mm": rr_mm_config(),
+        "video-class": video_classification_config(),
+        "video-reg": video_regression_config(),
     }
 
     if experiment_type == "all":
@@ -258,6 +264,7 @@ def run_experiments(
                     gpu_ids=gpu_ids,
                     train_iters=train_iters,
                     evaluate_every_n_steps=evaluate_every_n_steps,
+                    model_identifier=model_identifier,
                 )
             )
     elif "+" in experiment_type:
@@ -275,6 +282,7 @@ def run_experiments(
                         gpu_ids=gpu_ids,
                         train_iters=train_iters,
                         evaluate_every_n_steps=evaluate_every_n_steps,
+                        model_identifier=model_identifier,
                     )
                 )
             else:
@@ -292,6 +300,7 @@ def run_experiments(
                 gpu_ids=gpu_ids,
                 train_iters=train_iters,
                 evaluate_every_n_steps=evaluate_every_n_steps,
+                model_identifier=model_identifier,
             )
         else:
             logger.error("Invalid experiment type selected.")
