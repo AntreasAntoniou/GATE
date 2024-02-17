@@ -12,7 +12,6 @@ os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
 import logging
 
 import hydra
-import wandb
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
@@ -23,6 +22,7 @@ from rich.text import Text
 from rich.traceback import install
 from torch import nn
 
+import wandb
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -65,7 +65,7 @@ def pretty_print_parameters(model: nn.Module):
     table.add_column("Shape", justify="center", style="magenta")
     table.add_column("Data Type", justify="center", style="yellow")
     table.add_column("Device", justify="center", style="green")
-
+    print(f"Model Parameters: {model.__class__.__name__}")
     for name, param in model.named_parameters():
         table.add_row(
             Text(str(name), style=Style(color="blue")),
@@ -118,6 +118,7 @@ def run(cfg: Any) -> None:
     transform: Optional[Callable] = deepcopy(
         task_adapted_model.adapter_transforms
     )
+    pretty_print_parameters(task_adapted_model)
 
     model: GATEModel = GATEModel(
         config=task_adapted_model.modality_config, model=task_adapted_model
@@ -147,6 +148,7 @@ def run(cfg: Any) -> None:
     optimizer = instantiate_optimizer(cfg, model)
     scheduler = instantiate_scheduler(cfg, optimizer)
 
+    pretty_print_parameters(model)
     model, optimizer, scheduler = accelerator.prepare(
         model, optimizer, scheduler
     )

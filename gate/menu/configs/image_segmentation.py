@@ -27,7 +27,7 @@ class Config:
             resnet_lr=self.RESNET_LR,
             vit_lr=self.VIT_LR,
             image_size=self.IMAGE_SIZE,
-            wd=0.01,
+            wd=0.0,
         )
         self.trainer = self.TRAINER_NAME
         self.evaluator = self.EVALUATOR_NAME

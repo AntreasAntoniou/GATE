@@ -409,30 +409,30 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        encoder_menu.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(
-                encoder_menu.CLIPViTBase16_224HF_IMAGE.value
-            )(image_size=image_size),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        encoder_menu.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(
-                encoder_menu.CLIPViTBase16_224HF_TEXT.value
-            )(image_size=image_size),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
+        # encoder_menu.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(
+        #         encoder_menu.CLIPViTBase16_224HF_IMAGE.value
+        #     )(image_size=image_size),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # encoder_menu.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(
+        #         encoder_menu.CLIPViTBase16_224HF_TEXT.value
+        #     )(image_size=image_size),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
         encoder_menu.AugRegViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=deepcopy(encoder_menu.AugRegViTBase16_224.value)(

@@ -104,21 +104,23 @@ def run_commands(
         while command_dict:
             if len(available_gpus) >= num_gpus:
                 gpu_ids = available_gpus[:num_gpus]
-                available_gpus = available_gpus[num_gpus:]
 
                 command_name, command = command_dict.popitem()
-                command = command.replace("5022024", "6022024")
-                print(command)
+
+                print(f"Running command {command_name} on GPUs {gpu_ids}")
                 _ = run_command_on_gpu(
                     command=command,
                     gpu_ids=gpu_ids,
                     exp_name=command_name,
                 )
+                available_gpus = [
+                    gpu for gpu in available_gpus if gpu not in gpu_ids
+                ]
                 pbar.update(1)
                 pbar.set_description(f"Running on GPUs {gpu_ids}")
 
             else:
-                time.sleep(60)
+                time.sleep(240)
                 available_gpus = get_gpu_processes(
                     memory_threshold, util_threshold
                 )

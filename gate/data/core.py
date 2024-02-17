@@ -95,11 +95,11 @@ def dataclass_collate(batch):
             return batch
         else:
             batched_dict = {
-                key: default_collate(
-                    [getattr(sample, key) for sample in batch]
+                key: (
+                    default_collate([getattr(sample, key) for sample in batch])
+                    if getattr(batch[0], key) is not None
+                    else None
                 )
-                if getattr(batch[0], key) is not None
-                else None
                 for key in batch[0].__dict__.keys()
             }
             batched_dict = {key: batched_dict[key][0] for key in batched_dict}
@@ -186,6 +186,7 @@ def retry_on_exception(func):
                 traceback.format_exc()
             )  # This gets the full traceback as a string
             logger.warning(f"Error at index {index}: {e}\n{tb}")
+            print(f"Error at index {index}: {e}\n{tb}")
 
     return wrapper
 

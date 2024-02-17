@@ -10,7 +10,7 @@ from gate.menu.core import (
 
 class Config:
     BATCH_SIZE = 1
-    ENCODER_CONFIG = Adapters.SEGMENTATION.value
+    ENCODER_CONFIG = Adapters.MD_SEGMENTATION.value
     RESNET_LR = 6e-4
     VIT_LR = 6e-6
     TRAINER_NAME = TrainerName.MEDICAL_SEMANTIC_SEGMENTATION.value
@@ -29,7 +29,7 @@ class Config:
             resnet_lr=self.RESNET_LR,
             vit_lr=self.VIT_LR,
             image_size=self.IMAGE_SIZE,
-            wd=0.01,
+            wd=0.00001,
             mixed_precision_mode=MixedPrecisionMode.FP16,
         )
         self.trainer = self.TRAINER_NAME
