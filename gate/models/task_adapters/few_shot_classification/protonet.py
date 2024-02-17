@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, Union
+from copy import deepcopy
+from typing import Any, Callable, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -13,6 +14,14 @@ from gate.models.task_adapters.few_shot_classification.utils import (
     compute_prototypical_logits,
     compute_prototypical_loss,
 )
+
+
+class DataParallelWithDict(nn.DataParallel):
+    def gather(self, outputs, output_device):
+        return {
+            key: nn.parallel.gather([d[key] for d in outputs], output_device)
+            for key in outputs[0]
+        }
 
 
 @configurable(group="adapter", name="fs-protonet")
@@ -52,6 +61,9 @@ class PrototypicalNetwork(BaseModule):
                 self.encoder.num_in_features_image, num_output_features
             )
         self.build()
+        print(
+            f"Available GPU devices and ids are: {torch.cuda.device_count()}"
+        )
 
     def build(self):
         support_set_inputs = torch.rand(
@@ -73,6 +85,14 @@ class PrototypicalNetwork(BaseModule):
             },
         }
         _ = self(**dummy_batch)
+        if torch.cuda.device_count() > 1:
+            self.encoder_transforms_copy = deepcopy(
+                self.encoder.get_transforms
+            )
+            self.encoder = DataParallelWithDict(self.encoder)
+            setattr(
+                self.encoder, "get_transforms", self.encoder_transforms_copy
+            )
 
     def init_weights(self):
         reinit(self)
@@ -87,7 +107,7 @@ class PrototypicalNetwork(BaseModule):
             labels["query_set"] if "query_set" in labels else None,
         )
 
-    def forward_features(
+    def forward_features_no_oom(
         self,
         input_dict: Optional[Dict[str, Union[torch.Tensor, Dict]]] = None,
         image: Optional[torch.Tensor] = None,
@@ -102,14 +122,39 @@ class PrototypicalNetwork(BaseModule):
         Returns:
             The output tensor after being processed by the model and the linear layer.
         """
-        x = None
 
-        if input_dict is not None:
-            x = self.encoder(**input_dict)["image"]["features"]
-        if image is not None:
-            x = self.encoder(image=image)["image"]["features"]
+        oom_error = True
+        while oom_error:
+            try:
+                x = self.forward_features(input_dict, image)
+                oom_error = False
+            except RuntimeError as e:
+                if "CUDA out of memory" in str(e):
+                    torch.cuda.empty_cache()
 
-        assert x is not None, "At least one input must be provided."
+                else:
+                    raise e
+
+    def forward_features(
+        self,
+        image: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        """
+        This method takes an input dictionary and applies the model to the input.
+
+        Args:
+            input_dict: A dictionary of input data.
+            image: Optional image tensor.
+
+        Returns:
+            The output tensor after being processed by the model and the linear layer.
+        """
+        print(image.shape)
+        output = self.encoder(image=image)
+
+        # If output is a dictionary containing the "image" key
+        if isinstance(output, dict) and "image" in output:
+            x = output["image"]["features"]
 
         x = self.linear(x)
         return x
@@ -194,6 +239,10 @@ class PrototypicalNetwork(BaseModule):
     def modality_config(self):
         return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
 
+    @property
+    def encoder_transforms(self) -> Dict[str, Callable]:
+        return self.encoder.get_transforms()
+
     def adapter_transforms(self, inputs: Union[Dict, Any]):
         inputs["image"]["support_set"] = torch.stack(
             [
@@ -210,7 +259,3 @@ class PrototypicalNetwork(BaseModule):
         )
 
         return inputs
-
-    @property
-    def encoder_transforms(self):
-        return self.encoder.get_transforms()

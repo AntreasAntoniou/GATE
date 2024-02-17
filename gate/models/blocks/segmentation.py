@@ -286,10 +286,10 @@ class ChannelMixerDecoder(nn.Module):
             )
 
             input_list = [
-                self.rescale_conv(x).permute([0, 2, 1])
-                if x.shape[1] != target_image_size * target_image_size
-                else x.permute(
-                    [0, 2, 1]
+                (
+                    self.rescale_conv(x).permute([0, 2, 1])
+                    if x.shape[1] != target_image_size * target_image_size
+                    else x.permute([0, 2, 1])
                 )  # (b, sequence, features) -> (b, features, sequence)
                 for x in input_list
             ]
@@ -404,20 +404,22 @@ class ChannelMixerDecoder(nn.Module):
 
         if len(input_list[0].shape) == 4:
             input_list = [
-                self.upsample(x)
-                if x.shape[-1] != self.target_image_size
-                else x
+                (
+                    self.upsample(x)
+                    if x.shape[-1] != self.target_image_size
+                    else x
+                )
                 for x in input_list
             ]
             input_list = torch.cat(input_list, dim=1)
 
         elif len(input_list[0].shape) == 3:
             input_list = [
-                self.rescale_conv(x).permute([0, 2, 1])
-                if x.shape[1]
-                != self.target_image_size * self.target_image_size
-                else x.permute(
-                    [0, 2, 1]
+                (
+                    self.rescale_conv(x).permute([0, 2, 1])
+                    if x.shape[1]
+                    != self.target_image_size * self.target_image_size
+                    else x.permute([0, 2, 1])
                 )  # (b, sequence, features) -> (b, features, sequence)
                 for x in input_list
             ]
@@ -509,7 +511,6 @@ class TransformerSegmentationDecoder(nn.Module):
         num_heads = self.decoder_num_heads
         target_image_size = self.target_image_size
 
-        self.pixel_wise_mlps = nn.ModuleList()
         self.upsample = nn.Upsample(
             size=self.target_image_size, mode="bilinear", align_corners=True
         )
@@ -534,10 +535,11 @@ class TransformerSegmentationDecoder(nn.Module):
             )
 
             input_list = [
-                self.rescale_conv(x).permute([0, 2, 1])
-                if x.shape[1] != target_image_size[0] * target_image_size[1]
-                else x.permute(
-                    [0, 2, 1]
+                (
+                    self.rescale_conv(x).permute([0, 2, 1])
+                    if x.shape[1]
+                    != target_image_size[0] * target_image_size[1]
+                    else x.permute([0, 2, 1])
                 )  # (b, sequence, features) -> (b, features, sequence)
                 for x in input_list
             ]
@@ -635,20 +637,22 @@ class TransformerSegmentationDecoder(nn.Module):
 
         if len(input_list[0].shape) == 4:
             input_list = [
-                self.upsample(x)
-                if x.shape[-1] != self.target_image_size[0]
-                else x
+                (
+                    self.upsample(x)
+                    if x.shape[-1] != self.target_image_size[0]
+                    else x
+                )
                 for x in input_list
             ]
             input_list = torch.cat(input_list, dim=1)
 
         elif len(input_list[0].shape) == 3:
             input_list = [
-                self.rescale_conv(x).permute([0, 2, 1])
-                if x.shape[1]
-                != self.target_image_size[0] * self.target_image_size[1]
-                else x.permute(
-                    [0, 2, 1]
+                (
+                    self.rescale_conv(x).permute([0, 2, 1])
+                    if x.shape[1]
+                    != self.target_image_size[0] * self.target_image_size[1]
+                    else x.permute([0, 2, 1])
                 )  # (b, sequence, features) -> (b, features, sequence)
                 for x in input_list
             ]

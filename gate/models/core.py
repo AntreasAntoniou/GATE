@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -54,7 +54,7 @@ class GATEModel(nn.Module):
         the transformations.
         :param model: Base model to be used for the actual processing.
         """
-        super().__init__()
+        super(GATEModel, self).__init__()
         self.model = model
         self.config = config
         self._meta_data = meta_data
@@ -84,6 +84,14 @@ class GATEModel(nn.Module):
                     self.supported_input_modalities[
                         (supported_modalities, target_modality_name)
                     ] = True
+
+    def parameters(self, recurse: bool = True) -> Iterator[torch.nn.Parameter]:
+        return self.model.parameters(recurse)
+
+    def named_parameters(
+        self, prefix: str = "", recurse: bool = True
+    ) -> Iterator[Tuple[str, torch.nn.Parameter]]:
+        return self.model.named_parameters(prefix, recurse)
 
     @property
     def meta_data(self) -> Optional[dict]:

@@ -469,8 +469,6 @@ class Learner(nn.Module):
         if train_dataloader is None:
             train_dataloader = self.train_dataloader
 
-        last_val_step = 0
-
         if train_dataloader is not None:
             self.start_training()
 
@@ -513,9 +511,11 @@ class Learner(nn.Module):
                         ):
                             self.save_checkpoint(
                                 checkpoint_name=f"ckpt_{self.global_step}",
-                                status=ExperimentStatus.TRAINING
-                                if self.global_step < self.train_iters
-                                else ExperimentStatus.TESTING,
+                                status=(
+                                    ExperimentStatus.TRAINING
+                                    if self.global_step < self.train_iters
+                                    else ExperimentStatus.TESTING
+                                ),
                             )
 
                         loss = torch.mean(

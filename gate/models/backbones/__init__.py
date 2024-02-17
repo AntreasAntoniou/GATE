@@ -1,3 +1,4 @@
+import gc
 import math
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -144,6 +145,64 @@ class VisionTextGATEAdapter(ABC):
     def init_weights(self):
         reinit(self)
 
+    def process_images(self, image: torch.Tensor) -> torch.Tensor:
+        if image is None:
+            raise ValueError("Image cannot be None.")
+
+        output = None
+        batch_size = image.shape[0]
+        # print(f"batch_size: {batch_size}")
+        try:
+            return self.vision_model(image=image)
+
+        except torch.cuda.OutOfMemoryError as e:
+            # clear cache and try again
+            self.zero_grad()
+            self.vision_model.zero_grad()
+            torch.cuda.empty_cache()
+            while batch_size >= 1:
+                print(f"batch_size: {batch_size}")
+                batches = torch.split(image, batch_size)
+                print("Before forward pass:")
+                outputs = []
+                try:
+                    print("Before Before forward pass:")
+                    for batch in batches:
+                        print(f"batch shape: {batch.shape}")
+                        output = self.vision_model(image=batch)
+                        outputs.append(output.cpu())
+                        # Print memory usage after forward pass
+                        output = output.detach().cpu()
+                        del output
+                        batch = batch.cpu()
+                        torch.cuda.empty_cache()
+                        gc.collect()
+
+                    if isinstance(outputs[0], dict):
+                        output_dict = {}
+                        for k, v in outputs[0].items():
+                            output_dict[k] = torch.cat(
+                                [output[k] for output in outputs], dim=0
+                            )
+                        return output_dict
+                    elif isinstance(outputs[0], torch.Tensor):
+                        return torch.cat(outputs, dim=0)
+
+                except torch.cuda.OutOfMemoryError as inner_e:
+                    # clear cache and try again
+                    self.zero_grad()
+                    self.vision_model.zero_grad()
+                    torch.cuda.empty_cache()
+                    gc.collect()
+                    batch_size = batch_size // 2
+                    continue
+                except Exception as inner_e:
+                    raise inner_e
+
+            raise RuntimeError(f"Even with batch size 1, still failed.")
+        except Exception as e:
+            raise e
+
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
@@ -159,7 +218,7 @@ class VisionTextGATEAdapter(ABC):
         output_dict = defaultdict(dict)
 
         if image is not None:
-            output_dict["image"] = self.vision_model(image=image)
+            output_dict["image"] = self.process_images(image=image)
             output_dict["image"]["features"] = self.visual_projection(
                 output_dict["image"]["features"]
             )
@@ -167,7 +226,7 @@ class VisionTextGATEAdapter(ABC):
         if video is not None:
             if len(video.shape) == 5:
                 b, s, c, h, w = video.shape
-                output_dict["video"] = self.vision_model.forward(
+                output_dict["video"] = self.process_images(
                     image=video.view(b * s, c, h, w)
                 )
                 for k, v in output_dict["video"].items():
@@ -177,7 +236,7 @@ class VisionTextGATEAdapter(ABC):
 
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
-                output_dict["video"] = self.vision_model.forward(image=video)
+                output_dict["video"] = self.process_images(image=video)
 
             output_dict["video"]["features"] = self.visual_projection(
                 output_dict["video"]["features"]

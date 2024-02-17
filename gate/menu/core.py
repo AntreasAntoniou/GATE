@@ -1,7 +1,11 @@
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
+from rich import print
+
+from gate.data import image
 from gate.data.few_shot import DatasetName as few_shot_dataset_name
 from gate.data.image.classification import (
     DatasetName as image_class_dataset_name,
@@ -87,27 +91,41 @@ class LearningRateConfig:
             return self.default
 
 
-@dataclass
 class EncoderConfig:
-    pretty_name: str
-    image_size: int = 224
-    pretrained: bool = True
-    encoder_name: Optional[str] = None
-    model_name: Optional[str] = None
-    timm_model_name: Optional[str] = None
-    clip_model_name: Optional[str] = None
-    bart_model_name: Optional[str] = None
-    bert_model_name: Optional[str] = None
-    wav2vec2_model_name: Optional[str] = None
-    whisper_model_name: Optional[str] = None
-    mpnet_model_name: Optional[str] = None
-    embedding_dim: Optional[int] = None
-    num_projection_features: Optional[int] = 768
+    def __init__(
+        self,
+        pretty_name: str,
+        image_size: int = 224,
+        pretrained: bool = True,
+        encoder_name: Optional[str] = None,
+        model_name: Optional[str] = None,
+        timm_model_name: Optional[str] = None,
+        clip_model_name: Optional[str] = None,
+        bart_model_name: Optional[str] = None,
+        bert_model_name: Optional[str] = None,
+        wav2vec2_model_name: Optional[str] = None,
+        whisper_model_name: Optional[str] = None,
+        mpnet_model_name: Optional[str] = None,
+        embedding_dim: Optional[int] = None,
+        num_projection_features: Optional[int] = 768,
+    ):
+        self.pretty_name = pretty_name
+        self.image_size = image_size
+        self.pretrained = pretrained
+        self.encoder_name = encoder_name
+        self.model_name = model_name
+        self.timm_model_name = timm_model_name
+        self.clip_model_name = clip_model_name
+        self.bart_model_name = bart_model_name
+        self.bert_model_name = bert_model_name
+        self.wav2vec2_model_name = wav2vec2_model_name
+        self.whisper_model_name = whisper_model_name
+        self.mpnet_model_name = mpnet_model_name
+        self.embedding_dim = embedding_dim
+        self.num_projection_features = num_projection_features
 
-    def update_config(self, **kwargs):
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+    def __call__(self, image_size: int):
+        self.image_size = image_size
         return self
 
 
@@ -118,7 +136,7 @@ class AdapterConfig:
     loss_type_id: Optional[str] = None
 
 
-class AdapterTypeNames(Enum):
+class Adapters(Enum):
     IMAGE_CLASSIFICATION = AdapterConfig(
         adapter_name="backbone-with-linear-single-classifier"
     )
@@ -154,7 +172,7 @@ class AdapterTypeNames(Enum):
 
 
 # Create an Enum to store EncoderConfigs
-class EncoderNames(Enum):
+class Encoders(Enum):
     CLIPViTBase16_224HF_IMAGE = EncoderConfig(
         pretty_name="CLIP_B16_224HF_image",
         model_name=CLIPModelPaths.openai_b_16,
@@ -324,14 +342,16 @@ def get_model_selection(
     batch_size,
     resnet_lr,
     vit_lr,
-    wd: float = 0.01,
-    image_size: int = 224,
+    wd: float,
+    image_size: int,
     mixed_precision_mode: str = MixedPrecisionMode.BF16,
 ):
-    return {
-        EncoderNames.Wave2VecV2Base.value.pretty_name: ModelConfig(
+    encoder_menu = deepcopy(Encoders)
+
+    output_dict = {
+        encoder_menu.Wave2VecV2Base.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.Wave2VecV2Base.value.update_config(
+            encoder_config=deepcopy(encoder_menu.Wave2VecV2Base.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -341,9 +361,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.WhisperBase.value.pretty_name: ModelConfig(
+        encoder_menu.WhisperBase.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.WhisperBase.value.update_config(
+            encoder_config=deepcopy(encoder_menu.WhisperBase.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -353,9 +373,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.MPNet.value.pretty_name: ModelConfig(
+        encoder_menu.MPNet.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.MPNet.value.update_config(
+            encoder_config=deepcopy(encoder_menu.MPNet.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -365,9 +385,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.BERT_TEXT.value.pretty_name: ModelConfig(
+        encoder_menu.BERT_TEXT.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.BERT_TEXT.value.update_config(
+            encoder_config=deepcopy(encoder_menu.BERT_TEXT.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -377,9 +397,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.BART_TEXT.value.pretty_name: ModelConfig(
+        encoder_menu.BART_TEXT.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.BART_TEXT.value.update_config(
+            encoder_config=deepcopy(encoder_menu.BART_TEXT.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -389,9 +409,33 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
+        # encoder_menu.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(
+        #         encoder_menu.CLIPViTBase16_224HF_IMAGE.value
+        #     )(image_size=image_size),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        # encoder_menu.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(
+        #         encoder_menu.CLIPViTBase16_224HF_TEXT.value
+        #     )(image_size=image_size),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
+        encoder_menu.AugRegViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.CLIPViTBase16_224HF_IMAGE.value.update_config(
+            encoder_config=deepcopy(encoder_menu.AugRegViTBase16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -401,33 +445,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
+        encoder_menu.LaionViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.CLIPViTBase16_224HF_TEXT.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.AugRegViTBase16_224.value.update_config(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        EncoderNames.LaionViTBase16_224.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=EncoderNames.LaionViTBase16_224.value.update_config(
+            encoder_config=deepcopy(encoder_menu.LaionViTBase16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -436,9 +456,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.SamViTBase16_224.value.pretty_name: ModelConfig(
+        encoder_menu.CLIPViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.SamViTBase16_224.value.update_config(
+            encoder_config=deepcopy(encoder_menu.CLIPViTBase16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -447,9 +467,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.AugRegViTBase16_224.value.pretty_name: ModelConfig(
+        encoder_menu.SamViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.AugRegViTBase16_224.value.update_config(
+            encoder_config=deepcopy(encoder_menu.SamViTBase16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -458,9 +478,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.DiNoViTBase16_224.value.pretty_name: ModelConfig(
+        encoder_menu.AugRegViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.DiNoViTBase16_224.value.update_config(
+            encoder_config=deepcopy(encoder_menu.AugRegViTBase16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -469,9 +489,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.DeiT3BasePatch16_224.value.pretty_name: ModelConfig(
+        encoder_menu.DiNoViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.DeiT3BasePatch16_224.value.update_config(
+            encoder_config=deepcopy(encoder_menu.DiNoViTBase16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -480,9 +500,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.FlexViTBase_1200EP.value.pretty_name: ModelConfig(
+        encoder_menu.DeiT3BasePatch16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.FlexViTBase_1200EP.value.update_config(
+            encoder_config=deepcopy(encoder_menu.DeiT3BasePatch16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -491,9 +511,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
+        encoder_menu.FlexViTBase_1200EP.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.IJEPAViTHugePatch14_224.value.update_config(
+            encoder_config=deepcopy(encoder_menu.FlexViTBase_1200EP.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -502,9 +522,20 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
+        encoder_menu.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.SIGLIPPathch16_224.value.update_config(
+            encoder_config=deepcopy(
+                encoder_menu.IJEPAViTHugePatch14_224.value
+            )(image_size=image_size),
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr], dataset_specific={}
+            ),
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        encoder_menu.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
+            adapter_config=adapter_config,
+            encoder_config=deepcopy(encoder_menu.SIGLIPPathch16_224.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -514,9 +545,9 @@ def get_model_selection(
             eval_batch_size=batch_size,
             mixed_precision_mode=mixed_precision_mode,
         ),
-        EncoderNames.EfficientFormer_s0.value.pretty_name: ModelConfig(
+        encoder_menu.EfficientFormer_s0.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.EfficientFormer_s0.value.update_config(
+            encoder_config=deepcopy(encoder_menu.EfficientFormer_s0.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -525,9 +556,9 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.EffNetV2_RW_S_RA2.value.pretty_name: ModelConfig(
+        encoder_menu.EffNetV2_RW_S_RA2.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.EffNetV2_RW_S_RA2.value.update_config(
+            encoder_config=deepcopy(encoder_menu.EffNetV2_RW_S_RA2.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
@@ -537,26 +568,27 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.ResNeXt50_32x4dA1.value.pretty_name: ModelConfig(
+        encoder_menu.ResNeXt50_32x4dA1.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.ResNeXt50_32x4dA1.value.update_config(
+            encoder_config=deepcopy(encoder_menu.ResNeXt50_32x4dA1.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
-                default=[resnet_lr], dataset_specific={}
+                default=[vit_lr * 2], dataset_specific={}
             ),
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        EncoderNames.ConvNextV2_Base.value.pretty_name: ModelConfig(
+        encoder_menu.ConvNextV2_Base.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
-            encoder_config=EncoderNames.ConvNextV2_Base.value.update_config(
+            encoder_config=deepcopy(encoder_menu.ConvNextV2_Base.value)(
                 image_size=image_size
             ),
             learning_rate_config=LearningRateConfig(
-                default=[resnet_lr], dataset_specific={}
+                default=[vit_lr * 2], dataset_specific={}
             ),
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
     }
+    return output_dict

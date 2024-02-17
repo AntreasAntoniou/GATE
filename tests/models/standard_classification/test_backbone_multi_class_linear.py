@@ -2,7 +2,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from gate.menu.core import EncoderNames
+from gate.menu.core import Encoders
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
 from gate.models.backbones.bert_text import BertAdapter, BertModelPaths
 from gate.models.backbones.clip_image import CLIPVisionAdapter
@@ -26,14 +26,14 @@ data = [
     (
         TimmCLIPAdapter,
         dict(
-            timm_model_name=EncoderNames.EffNetV2_RW_S_RA2.value.timm_model_name,
+            timm_model_name=Encoders.EffNetV2_RW_S_RA2.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
         ),
     ),
     (
         TimmCLIPAdapter,
         dict(
-            timm_model_name=EncoderNames.AugRegViTBase16_224.value.timm_model_name,
+            timm_model_name=Encoders.AugRegViTBase16_224.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
         ),
     ),

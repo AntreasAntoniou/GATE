@@ -1,3 +1,5 @@
+import gc
+import logging
 from collections import defaultdict
 from typing import List, Optional
 from urllib.request import urlopen
@@ -17,6 +19,8 @@ from gate.boilerplate.decorators import configurable
 from gate.models.backbones import GATEncoder, Modality, image_dim_reshape
 from gate.models.backbones.clip_image import TextProcessor
 from gate.models.core import reinit
+
+logger = logging.getLogger(__name__)
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
 
@@ -65,11 +69,6 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
         x = x.view(input_shape[0], input_shape[1], *x.shape[1:])
 
     return x
-
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class TimmModel(nn.Module):
@@ -146,7 +145,7 @@ class TimmModel(nn.Module):
                 norm=True,
             )
         else:
-            per_layer_raw_features = [output for output in self.model(x)]
+            per_layer_raw_features = [self.model(x)[-1]]
 
         if len(per_layer_raw_features) == 0:
             return None
@@ -204,11 +203,7 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
-@configurable(
-    group="encoder",
-    name="timm",
-)
-class TimmCLIPAdapter(GATEncoder):
+class TimmCLIPAdapterBase(GATEncoder):
     def __init__(
         self,
         timm_model_name: str,
@@ -298,6 +293,11 @@ class TimmCLIPAdapter(GATEncoder):
     def init_weights(self):
         reinit(self)
 
+    def process_images(self, image: torch.Tensor) -> torch.Tensor:
+        if image is None:
+            raise ValueError("Image cannot be None.")
+        return self.vision_model(image)
+
     def forward(
         self,
         image: Optional[torch.Tensor] = None,
@@ -313,23 +313,8 @@ class TimmCLIPAdapter(GATEncoder):
 
         output_dict = defaultdict(dict)
 
-        # self.model.forward expects
-        # input_ids: Optional[torch.LongTensor] = None,
-        # pixel_values: Optional[torch.FloatTensor] = None,
-        # attention_mask: Optional[torch.Tensor] = None,
-        # position_ids: Optional[torch.LongTensor] = None,
-        # return_loss: Optional[bool] = None,
-        # output_attentions: Optional[bool] = None,
-        # output_hidden_states: Optional[bool] = None,
-        # return_dict: Optional[bool] = None,
-
         if image is not None:
-            # if self.image_instance_norm is None:
-            #     self.image_instance_norm = nn.InstanceNorm2d(
-            #         image.shape[1], affine=True
-            #     )
-            # image = self.image_instance_norm(image)
-            output_dict["image"] = self.vision_model.forward(image)
+            output_dict["image"] = self.process_images(image)
             if self.num_projection_features:
                 output_dict["image"]["features"] = self.visual_projection(
                     output_dict["image"]["features"]
@@ -339,7 +324,7 @@ class TimmCLIPAdapter(GATEncoder):
             if len(video.shape) == 5:
                 b, s, c, h, w = video.shape
 
-                output_dict["video"] = self.vision_model.forward(
+                output_dict["video"] = self.process_images(
                     video.view(b * s, c, h, w)
                 )
                 if self.num_projection_features:
@@ -353,7 +338,7 @@ class TimmCLIPAdapter(GATEncoder):
                             v = torch.stack(v, dim=2)
                         output_dict["video"][k] = v.view(b, s, *v.shape[1:])
             else:
-                output_dict["video"] = self.vision_model.forward(video)
+                output_dict["video"] = self.process_images(video)
                 if self.num_projection_features:
                     output_dict["video"]["features"] = self.visual_projection(
                         output_dict["video"]["features"]
@@ -373,7 +358,6 @@ class TimmCLIPAdapter(GATEncoder):
     def get_transforms(self):
         def image_transforms(x):
             x = self.vision_model.transforms(x)
-
             return x
 
         def text_transforms(x):
@@ -416,3 +400,27 @@ class TimmCLIPAdapter(GATEncoder):
 
     def get_text_encoder(self):
         return self.text_model
+
+
+@configurable(
+    group="encoder",
+    name="timm",
+)
+class TimmCLIPAdapter(TimmCLIPAdapterBase, nn.Module):
+    def __init__(
+        self,
+        timm_model_name: str,
+        clip_model_name: str,
+        pretrained: bool = True,
+        image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
+    ):
+        nn.Module.__init__(self)
+        TimmCLIPAdapterBase.__init__(
+            self,
+            timm_model_name,
+            clip_model_name,
+            pretrained,
+            image_size,
+            num_projection_features,
+        )

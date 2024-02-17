@@ -1,13 +1,13 @@
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import Iterator, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
-from gate.config.variables import HYDRATED_NUM_CLASSES
+from gate.config.variables import HYDRATED_IGNORE_INDEX, HYDRATED_NUM_CLASSES
 from gate.metrics.segmentation import (
     CrossEntropyLoss,
     DiceLoss,
@@ -21,9 +21,6 @@ from gate.models.blocks.segmentation import (
 )
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters.utils import reinit
-
-# from mmseg.evaluation.metrics import IoUMetric as mmsegIoUMetric
-
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +58,7 @@ def default_optimization_loss(
 
     background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    loss = ce_loss + focal_loss
+    loss = dice_loss + 0.01 * background_dice_loss
     background_loss = background_ce_loss + background_focal_loss
 
     return {
@@ -87,7 +84,7 @@ def md_optimization_loss(
     """
 
     # start_time = time.time()
-    dice_loss_fn = DiceLoss(ignore_index=ignore_index)
+    dice_loss_fn = DiceLoss(ignore_index=0)
     dice_loss = dice_loss_fn.forward(logits, labels)
     # dice_loss_time = time.time() - start_time
     # logging.info(f"Dice loss computation time: {dice_loss_time:.6f} seconds")
@@ -166,23 +163,21 @@ class SegmentationLossOptions(Enum):
 @configurable(
     group="adapter",
     name="segmentation-adapter",
-    defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
+    defaults=dict(
+        num_classes=HYDRATED_NUM_CLASSES, ignore_index=HYDRATED_IGNORE_INDEX
+    ),
 )
 class SegmentationAdapter(nn.Module):
     def __init__(
         self,
         encoder: GATEncoder,
+        freeze_encoder: bool = False,
         num_classes: int = 100,
         background_loss_weight: float = 0.01,
         class_names: Optional[List[str]] = None,
         ignore_index: int = 0,
         output_target_image_size: int = 256,
         decoder_target_image_size: tuple = (64, 64),
-        decoder_num_blocks: int = 2,
-        decoder_num_heads: int = 8,
-        decoder_dropout_rate: float = 0.5,
-        decoder_pre_output_dropout_rate: float = 0.3,
-        decoder_layer_type: str = SegmentationAdapterOptions.TRANSFORMER.value,
         loss_type_id: str = SegmentationLossOptions.DEFAULT.value,
     ):
         super().__init__()
@@ -203,32 +198,38 @@ class SegmentationAdapter(nn.Module):
         elif loss_type_id == SegmentationLossOptions.MD.value:
             self.loss_fn = md_optimization_loss
 
-        decoder_layer_mapping = {
-            "transformer": TransformerSegmentationDecoder(
-                num_classes=num_classes,
-                target_image_size=decoder_target_image_size[0],
-                hidden_size=self.decoder_embedding_dimension,
-                pre_output_dropout_rate=0.0,
-                dropout_rate=0.0,
-                decoder_num_blocks=4,
-                decoder_num_heads=8,
-            ),
-            "simple": ChannelMixerDecoder(
-                num_classes=num_classes,
-                target_image_size=decoder_target_image_size[0],
-                hidden_size=self.decoder_embedding_dimension,
-                decoder_num_blocks=decoder_num_blocks,
-                pre_output_dropout_rate=decoder_pre_output_dropout_rate,
-                dropout_rate=decoder_dropout_rate,
-            ),
-        }
+        decoder_layer_mapping = TransformerSegmentationDecoder(
+            num_classes=num_classes,
+            target_image_size=decoder_target_image_size[0],
+            hidden_size=512,
+            pre_output_dropout_rate=0.0,
+            dropout_rate=0.0,
+            decoder_num_blocks=8,
+            decoder_num_heads=8,
+        )
+
         self.iou_metric = None
         self.iou_metric_complete = None
-        self.spatial_decoder_head = decoder_layer_mapping[decoder_layer_type]
+        self.spatial_decoder_head = decoder_layer_mapping
         self.temporal_decoder_head = None
 
         self.background_loss_weight = background_loss_weight
         self.build()
+        self.freeze_encoder = freeze_encoder
+
+    def parameters(self, recurse: bool = True) -> Iterator[torch.nn.Parameter]:
+        if self.freeze_encoder:
+            return self.spatial_decoder_head.parameters()
+
+        return super().parameters(recurse)
+
+    def named_parameters(
+        self, prefix: str = "", recurse: bool = True
+    ) -> Iterator[Tuple[str, torch.nn.Parameter]]:
+        if self.freeze_encoder:
+            return self.spatial_decoder_head.named_parameters(prefix, recurse)
+
+        return super().named_parameters(prefix, recurse)
 
     @property
     @ensemble_marker
