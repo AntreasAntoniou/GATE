@@ -49,7 +49,9 @@ class PrototypicalNetwork(BaseAdapterModule):
         freeze_encoder: bool = False,
     ) -> None:
         super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
-
+        # self.stem_instance_norm = nn.InstanceNorm2d(
+        #     num_features=3, affine=True
+        # )
         # If num_output_features is not provided, use num_clip_features and set linear layer to identity.
         if num_output_features is None:
             self.num_output_features = self.encoder.num_in_features_image
@@ -148,7 +150,7 @@ class PrototypicalNetwork(BaseAdapterModule):
         Returns:
             The output tensor after being processed by the model and the linear layer.
         """
-        print(image.shape)
+
         output = self.encoder(image=image)
 
         # If output is a dictionary containing the "image" key

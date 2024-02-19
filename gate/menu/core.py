@@ -108,6 +108,7 @@ class EncoderConfig:
         mpnet_model_name: Optional[str] = None,
         embedding_dim: Optional[int] = None,
         num_projection_features: Optional[int] = 768,
+        freeze_encoder: bool = False,
     ):
         self.pretty_name = pretty_name
         self.image_size = image_size
@@ -123,6 +124,7 @@ class EncoderConfig:
         self.mpnet_model_name = mpnet_model_name
         self.embedding_dim = embedding_dim
         self.num_projection_features = num_projection_features
+        self.freeze_encoder = freeze_encoder
 
     def __call__(self, image_size: int):
         self.image_size = image_size
@@ -194,6 +196,7 @@ class Encoders(Enum):
         model_name=CLIPModelPaths.openai_b_16,
         encoder_name="clip-text",
         num_projection_features=768,
+        freeze_encoder=True,
     )
     BART_TEXT = EncoderConfig(
         pretty_name="BART",
@@ -201,6 +204,7 @@ class Encoders(Enum):
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="bart",
         num_projection_features=768,
+        freeze_encoder=True,
     )
     BERT_TEXT = EncoderConfig(
         pretty_name="BERT",
@@ -208,6 +212,7 @@ class Encoders(Enum):
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="bert",
         num_projection_features=768,
+        freeze_encoder=True,
     )
     MPNet = EncoderConfig(
         pretty_name="MPNET",
@@ -215,6 +220,7 @@ class Encoders(Enum):
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="mpnet",
         num_projection_features=768,
+        freeze_encoder=True,
     )
     Wave2VecV2Base = EncoderConfig(
         pretty_name="W2V2",
@@ -222,6 +228,7 @@ class Encoders(Enum):
         wav2vec2_model_name=Wav2Vec2ModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         num_projection_features=768,
+        freeze_encoder=True,
     )
     WhisperBase = EncoderConfig(
         pretty_name="Whisper",
@@ -229,6 +236,7 @@ class Encoders(Enum):
         whisper_model_name=WhisperModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         num_projection_features=768,
+        freeze_encoder=True,
     )
     ResNet50A1 = EncoderConfig(
         pretty_name="R50A1",
