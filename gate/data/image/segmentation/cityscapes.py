@@ -149,7 +149,7 @@ def build_gate_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
             tuple_to_dict,

@@ -134,6 +134,10 @@ class AdapterConfig:
     adapter_name: str
     metric_type: Optional[str] = None
     loss_type_id: Optional[str] = None
+    background_loss_weight: float = 0.01
+    dice_loss_weight: float = 1.0
+    focal_loss_weight: float = 1.0
+    ce_loss_weight: float = 1.0
 
 
 class Adapters(Enum):
@@ -147,10 +151,15 @@ class Adapters(Enum):
     SEGMENTATION = AdapterConfig(
         adapter_name="segmentation-adapter",
         loss_type_id=SegmentationLossOptions.DEFAULT.value,
+        background_loss_weight=0.01,
+        dice_loss_weight=1.0,
+        focal_loss_weight=1.0,
+        ce_loss_weight=1.0,
     )
     MD_SEGMENTATION = AdapterConfig(
         adapter_name="segmentation-adapter",
         loss_type_id=SegmentationLossOptions.MD.value,
+        background_loss_weight=0.01,
     )
     TEMPORAL_CLASSIFICATION = AdapterConfig(
         adapter_name="temporal-classification",
@@ -453,6 +462,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -464,6 +474,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -475,6 +486,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -486,6 +498,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -497,6 +510,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -508,6 +522,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -519,6 +534,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -530,6 +546,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -541,6 +558,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
             mixed_precision_mode=mixed_precision_mode,
@@ -553,6 +571,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -576,6 +595,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -587,6 +607,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),

@@ -178,3 +178,7 @@ debug-*
 notebooks/*.csv
 notebooks/*.tex
 notebooks/*.txt
+*.csv
+*.html*
+*.json
+cookies.txt

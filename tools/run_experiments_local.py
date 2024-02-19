@@ -107,7 +107,7 @@ def run_commands(
 
                 command_name, command = command_dict.popitem()
 
-                print(f"Running command {command_name} on GPUs {gpu_ids}")
+                print(f"Running command {command} on GPUs {gpu_ids}")
                 _ = run_command_on_gpu(
                     command=command,
                     gpu_ids=gpu_ids,
