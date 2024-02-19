@@ -18,6 +18,7 @@ from gate.metrics.segmentation import (
 from gate.models.backbones import GATEncoder
 from gate.models.blocks.segmentation import TransformerSegmentationDecoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
+from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.utils import reinit
 
 logger = logging.getLogger(__name__)
@@ -204,7 +205,7 @@ class SegmentationLossOptions(Enum):
         num_classes=HYDRATED_NUM_CLASSES, ignore_index=HYDRATED_IGNORE_INDEX
     ),
 )
-class SegmentationAdapter(nn.Module):
+class SegmentationAdapter(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
@@ -221,9 +222,8 @@ class SegmentationAdapter(nn.Module):
         ce_loss_weight: float = 1.0,
         use_batch_level_attention: bool = False,
     ):
-        super().__init__()
+        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
 
-        self.encoder = encoder
         self.num_classes = num_classes
         self.class_names = (
             class_names

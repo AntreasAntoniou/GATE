@@ -7,7 +7,7 @@ import torch.nn as nn
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.few_shot_classification.utils import (
     compute_prototypes,
     compute_prototypical_accuracy,
@@ -25,7 +25,7 @@ class DataParallelWithDict(nn.DataParallel):
 
 
 @configurable(group="adapter", name="fs-protonet")
-class PrototypicalNetwork(BaseModule):
+class PrototypicalNetwork(BaseAdapterModule):
     """
     This is the Prototypical Network class.
 
@@ -46,10 +46,9 @@ class PrototypicalNetwork(BaseModule):
         self,
         encoder: GATEncoder,
         num_output_features: Optional[int] = None,
+        freeze_encoder: bool = False,
     ) -> None:
-        super().__init__()
-
-        self.encoder = encoder
+        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
 
         # If num_output_features is not provided, use num_clip_features and set linear layer to identity.
         if num_output_features is None:

@@ -13,12 +13,12 @@ from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 
 logger = logging.getLogger(__name__)
 
 
-class PositionalEncoding(BaseModule):
+class PositionalEncoding(nn.Module):
     def __init__(self, has_fixed_context_length: bool = False):
         super().__init__()
         self.has_fixed_context_length = has_fixed_context_length
@@ -56,7 +56,7 @@ class PositionalEncoding(BaseModule):
         return x
 
 
-class VariableSequenceTransformerEncoder(BaseModule):
+class VariableSequenceTransformerEncoder(nn.Module):
     def __init__(
         self,
         d_model: int,
@@ -247,7 +247,7 @@ class Metrics:
     name="temporal-classification",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-class BackboneWithTemporalTransformerAndLinear(BaseModule):
+class BackboneWithTemporalTransformerAndLinear(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
@@ -257,6 +257,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
         temporal_transformer_dim_feedforward: int = 2048,
         temporal_transformer_dropout: float = 0.0,
         temporal_transformer_num_layers: int = 6,
+        freeze_encoder: bool = False,
     ):
         """Initialize the BackboneWithTemporalTransformerAndLinear module.
 
@@ -266,8 +267,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseModule):
             num_classes (int): Number of classes for classification.
             metric_fn_dict (Optional[Dict], optional): Dictionary of metric functions. Defaults to None.
         """
-        super().__init__()
-        self.encoder = encoder
+        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
         self.temporal_encoder = VariableSequenceTransformerEncoder(
             d_model=encoder.num_in_features_image,
             nhead=temporal_transformer_nhead,

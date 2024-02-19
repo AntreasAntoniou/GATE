@@ -8,7 +8,7 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.utils import (
     compute_zero_shot_loss_and_metrics,
     get_similarities,
@@ -24,16 +24,16 @@ logger = logging.getLogger(__name__)
     group="adapter",
     name="duo-modal-zero-shot-classifier",
 )
-class DuoModalZeroShotModel(BaseModule):
+class DuoModalZeroShotModel(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
         projection_num_features: Optional[int] = 768,
         temperature_parameter: Optional[float] = 1.0 / 0.07,
         head_identifier: Optional[str] = "features",
+        freeze_encoder: bool = False,
     ):
-        super().__init__()
-        self.encoder = encoder
+        super().__init__(freeze_encoder=freeze_encoder, encoder=encoder)
 
         self.head_identifier = head_identifier
 
