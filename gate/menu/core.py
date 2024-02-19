@@ -134,10 +134,11 @@ class AdapterConfig:
     adapter_name: str
     metric_type: Optional[str] = None
     loss_type_id: Optional[str] = None
-    background_loss_weight: float = 0.01
-    dice_loss_weight: float = 1.0
-    focal_loss_weight: float = 1.0
-    ce_loss_weight: float = 1.0
+    background_loss_weight: Optional[float] = None
+    dice_loss_weight: Optional[float] = None
+    focal_loss_weight: Optional[float] = None
+    ce_loss_weight: Optional[float] = None
+    freeze_encoder: bool = False
 
 
 class Adapters(Enum):

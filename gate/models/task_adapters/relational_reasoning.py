@@ -15,7 +15,7 @@ from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.temporal_image_classification import (
     VariableSequenceTransformerEncoder,
 )
-from gate.models.task_adapters.utils import reinit
+from gate.models.task_adapters.utils.helpers import reinit
 
 logger = get_logger(__name__, set_rich=True)
 

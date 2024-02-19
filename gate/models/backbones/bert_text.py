@@ -19,7 +19,7 @@ from gate.models.backbones import (
     forward_dict,
 )
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import (
+from gate.models.task_adapters.utils.modality_transfer import (
     VisionRootReplacedBackbone,
 )
 

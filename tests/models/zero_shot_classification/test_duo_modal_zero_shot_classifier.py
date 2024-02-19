@@ -17,7 +17,7 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.duo_modal_zero_shot_classification import (
+from gate.models.task_adapters.zero_shot_classification import (
     DuoModalZeroShotModel,
 )
 

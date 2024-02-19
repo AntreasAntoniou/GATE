@@ -19,7 +19,7 @@ from gate.models.backbones import GATEncoder
 from gate.models.blocks.segmentation import TransformerSegmentationDecoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseAdapterModule
-from gate.models.task_adapters.utils import reinit
+from gate.models.task_adapters.utils.helpers import reinit
 
 logger = logging.getLogger(__name__)
 
