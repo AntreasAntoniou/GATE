@@ -1,17 +1,80 @@
-# ade20k.py
 import multiprocessing as mp
+from dataclasses import dataclass
 from typing import Any, Optional
 
-from datasets import load_dataset
+import torch
+from torchvision.datasets import Cityscapes
 
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.segmentation.classes import ade20_classes as CLASSES
+from gate.data.image.segmentation.label_remap import remap_tensor_values
 from gate.data.transforms.segmentation import (
     BaseDatasetTransforms,
     KeySelectorTransforms,
 )
+
+CLASSES = Cityscapes.classes
+
+
+@dataclass
+class CityscapeAnnotation:
+    name: str
+    id: int
+    train_id: int
+    category: str
+    category_id: int
+    has_instances: bool
+    ignore_in_eval: bool
+    color: tuple
+
+
+CLASSES = [
+    CityscapeAnnotation(
+        name=item[0],
+        id=item[1],
+        train_id=item[2],
+        category=item[3],
+        category_id=item[4],
+        has_instances=item[5],
+        ignore_in_eval=item[6],
+        color=item[7],
+    )
+    for item in CLASSES
+]
+
+
+class_set = set([item.train_id for item in CLASSES])
+class_set = sorted(list(class_set))
+class_set = class_set[1:-1]
+class_set.extend([255, -1])
+local_id_to_original_id = {i: item for i, item in enumerate(class_set)}
+original_id_to_local_id = {item: i for i, item in enumerate(class_set)}
+original_id_to_name = {item.train_id: item.name for item in CLASSES}
+local_id_to_name = {
+    i: original_id_to_name[local_id_to_original_id[i]]
+    for i in range(len(local_id_to_original_id))
+}
+train_id_to_eval_id = {item.id: item.train_id for item in CLASSES}
+
+
+def to_one_hot(label, num_classes):
+    return torch.nn.functional.one_hot(label, num_classes=num_classes)
+
+
+def remap_train_labels(input_dict: dict[str, torch.Tensor]):
+    labels = input_dict["labels"]
+    labels = remap_tensor_values(labels, train_id_to_eval_id)
+    input_dict["labels"] = labels
+    return input_dict
+
+
+def remap_duds(input_dict: dict[str, torch.Tensor]):
+    labels = input_dict["labels"]
+    labels[labels == 255] = original_id_to_local_id[255]
+    labels[labels == -1] = original_id_to_local_id[255]
+    input_dict["labels"] = labels
+    return input_dict
 
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
@@ -25,23 +88,17 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     Returns:
         A dictionary containing the dataset split.
     """
-    data = load_dataset(
-        "Chris1/cityscapes_segmentation",
-        "instance_segmentation",
-        cache_dir=data_dir,
-        num_proc=mp.cpu_count(),
+
+    return Cityscapes(
+        root=data_dir, split=set_name, mode="fine", target_type="semantic"
     )
-
-    dataset_dict = {
-        "train": data["train"],
-        "val": data["validation"],
-        "test": data["test"],
-    }
-
-    return dataset_dict[set_name]
 
 
 # NSD and DSC for metrics, and also ensure that the model can compute per class metrics
+
+
+def tuple_to_dict(t: tuple) -> dict:
+    return {"image": t[0], "semantic_segmentation": t[1]}
 
 
 @configurable(
@@ -50,10 +107,10 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
-    num_classes=len(CLASSES),
+    num_classes=len(class_set) - 1,
     image_size=1024,
     target_image_size=256,
-    ignore_index=0,
+    ignore_index=original_id_to_local_id[255],
 ) -> dict:
     input_transforms = KeySelectorTransforms(
         initial_size=2048,
@@ -79,23 +136,44 @@ def build_gate_dataset(
 
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
-        infinite_sampling=True,
-        transforms=[input_transforms, train_transforms, transforms],
-        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+        infinite_sampling=False,
+        transforms=[
+            tuple_to_dict,
+            input_transforms,
+            train_transforms,
+            transforms,
+            remap_train_labels,
+            remap_duds,
+        ],
+        meta_data={"class_names": class_set, "num_classes": num_classes},
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[input_transforms, eval_transforms, transforms],
-        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+        transforms=[
+            tuple_to_dict,
+            input_transforms,
+            eval_transforms,
+            transforms,
+            remap_train_labels,
+            remap_duds,
+        ],
+        meta_data={"class_names": class_set, "num_classes": num_classes},
     )
 
     test_set = GATEDataset(
-        dataset=build_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[input_transforms, eval_transforms, transforms],
-        meta_data={"class_names": CLASSES, "num_classes": num_classes},
+        transforms=[
+            tuple_to_dict,
+            input_transforms,
+            eval_transforms,
+            transforms,
+            remap_train_labels,
+            remap_duds,
+        ],
+        meta_data={"class_names": class_set, "num_classes": num_classes},
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}

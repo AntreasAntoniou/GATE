@@ -11,28 +11,28 @@ from rich import print
 from rich.logging import RichHandler
 
 from gate.menu.configs.few_shot_learning import (
-    config as few_shot_learning_config,
+    Config as few_shot_learning_config,
 )
 from gate.menu.configs.image_classification import (
-    config as image_classification_config,
+    Config as image_classification_config,
 )
 from gate.menu.configs.image_segmentation import (
-    config as image_segmentation_config,
+    Config as image_segmentation_config,
 )
 from gate.menu.configs.image_text_zero_shot_classification import (
-    config as image_text_zero_shot_classification_config,
+    Config as image_text_zero_shot_classification_config,
 )
 from gate.menu.configs.medical_image_classification import (
-    config as medical_image_classification_config,
+    Config as medical_image_classification_config,
 )
 from gate.menu.configs.medical_image_segmentation_acdc import (
-    config as acdc_config,
+    Config as acdc_config,
 )
-from gate.menu.configs.medical_image_segmentation_md import config as md_config
-from gate.menu.configs.relational_reasoning import config as rr_config
-from gate.menu.configs.relational_reasoning_mm import config as rr_mm_config
+from gate.menu.configs.medical_image_segmentation_md import Config as md_config
+from gate.menu.configs.relational_reasoning import Config as rr_config
+from gate.menu.configs.relational_reasoning_mm import Config as rr_mm_config
 from gate.menu.configs.video_classification import (
-    config as video_classification_config,
+    Config as video_classification_config,
 )
 from gate.menu.utils import build_command
 
@@ -201,17 +201,17 @@ def run_experiments(
 
     experiment_dict = {}
 
-    experiment_configs: Dict[str, Dict] = {
-        "image-class": image_classification_config,
-        "few-shot": few_shot_learning_config,
-        "med-class": medical_image_classification_config,
-        "image-seg": image_segmentation_config,
-        "image-text": image_text_zero_shot_classification_config,
+    experiment_configs: Dict[str, Any] = {
+        "image-class": image_classification_config(),
+        "few-shot": few_shot_learning_config(),
+        "med-class": medical_image_classification_config(),
+        "image-seg": image_segmentation_config(),
+        "image-text": image_text_zero_shot_classification_config(),
         # "acdc": acdc_config,
         # "md": md_config,
-        "rr": rr_config,
-        "rr-mm": rr_mm_config,
-        "video-class": video_classification_config,
+        "rr": rr_config(),
+        "rr-mm": rr_mm_config(),
+        "video-class": video_classification_config(),
     }
 
     if experiment_type == "all":

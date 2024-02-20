@@ -20,7 +20,7 @@ from gate.models.backbones import (
     forward_dict,
 )
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import (
+from gate.models.task_adapters.utils.modality_transfer import (
     VisionRootReplacedBackbone,
 )
 
@@ -115,7 +115,7 @@ class ModifiedWhisperModel(WhisperPreTrainedModel):
         return {
             "features": encoder_outputs.last_hidden_state.mean(dim=1),
             "raw_features": encoder_outputs.last_hidden_state,
-            "per_layer_raw_features": encoder_outputs.hidden_states,
+            "per_layer_raw_features": [encoder_outputs.hidden_states[-1]],
         }
 
 

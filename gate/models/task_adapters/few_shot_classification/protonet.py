@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, Union
+from copy import deepcopy
+from typing import Any, Callable, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -6,7 +7,7 @@ import torch.nn as nn
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.few_shot_classification.utils import (
     compute_prototypes,
     compute_prototypical_accuracy,
@@ -15,8 +16,16 @@ from gate.models.task_adapters.few_shot_classification.utils import (
 )
 
 
+class DataParallelWithDict(nn.DataParallel):
+    def gather(self, outputs, output_device):
+        return {
+            key: nn.parallel.gather([d[key] for d in outputs], output_device)
+            for key in outputs[0]
+        }
+
+
 @configurable(group="adapter", name="fs-protonet")
-class PrototypicalNetwork(BaseModule):
+class PrototypicalNetwork(BaseAdapterModule):
     """
     This is the Prototypical Network class.
 
@@ -37,11 +46,12 @@ class PrototypicalNetwork(BaseModule):
         self,
         encoder: GATEncoder,
         num_output_features: Optional[int] = None,
+        freeze_encoder: bool = False,
     ) -> None:
-        super().__init__()
-
-        self.encoder = encoder
-
+        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
+        # self.stem_instance_norm = nn.InstanceNorm2d(
+        #     num_features=3, affine=True
+        # )
         # If num_output_features is not provided, use num_clip_features and set linear layer to identity.
         if num_output_features is None:
             self.num_output_features = self.encoder.num_in_features_image
@@ -52,6 +62,9 @@ class PrototypicalNetwork(BaseModule):
                 self.encoder.num_in_features_image, num_output_features
             )
         self.build()
+        print(
+            f"Available GPU devices and ids are: {torch.cuda.device_count()}"
+        )
 
     def build(self):
         support_set_inputs = torch.rand(
@@ -73,6 +86,14 @@ class PrototypicalNetwork(BaseModule):
             },
         }
         _ = self(**dummy_batch)
+        if torch.cuda.device_count() > 1:
+            self.encoder_transforms_copy = deepcopy(
+                self.encoder.get_transforms
+            )
+            self.encoder = DataParallelWithDict(self.encoder)
+            setattr(
+                self.encoder, "get_transforms", self.encoder_transforms_copy
+            )
 
     def init_weights(self):
         reinit(self)
@@ -117,7 +138,7 @@ class PrototypicalNetwork(BaseModule):
 
     def forward_features(
         self,
-        image: Optional[torch.Tensor],
+        image: torch.Tensor,
     ) -> Dict[str, torch.Tensor]:
         """
         This method takes an input dictionary and applies the model to the input.
@@ -130,7 +151,11 @@ class PrototypicalNetwork(BaseModule):
             The output tensor after being processed by the model and the linear layer.
         """
 
-        x = self.encoder(image=image)["image"]["features"]
+        output = self.encoder(image=image)
+
+        # If output is a dictionary containing the "image" key
+        if isinstance(output, dict) and "image" in output:
+            x = output["image"]["features"]
 
         x = self.linear(x)
         return x
@@ -215,6 +240,10 @@ class PrototypicalNetwork(BaseModule):
     def modality_config(self):
         return TargetModalityConfig(image=[SourceModalityConfig(image=True)])
 
+    @property
+    def encoder_transforms(self) -> Dict[str, Callable]:
+        return self.encoder.get_transforms()
+
     def adapter_transforms(self, inputs: Union[Dict, Any]):
         inputs["image"]["support_set"] = torch.stack(
             [
@@ -231,7 +260,3 @@ class PrototypicalNetwork(BaseModule):
         )
 
         return inputs
-
-    @property
-    def encoder_transforms(self):
-        return self.encoder.get_transforms()

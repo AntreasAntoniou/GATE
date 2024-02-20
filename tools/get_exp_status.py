@@ -5,12 +5,11 @@ from typing import Dict, List, Union
 
 import fire
 import pandas as pd
+import wandb
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from tqdm.auto import tqdm
-
-import wandb
 
 
 def check_wandb_experiments(
@@ -19,6 +18,7 @@ def check_wandb_experiments(
     token: str = None,
     print_table: bool = False,
     filter_for_non_completed: bool = False,
+    filter_for_non_running: bool = False,
 ):
     """
     Check if the given experiments exist in a Weights & Biases project and if they have completed the testing stage.
@@ -34,7 +34,6 @@ def check_wandb_experiments(
         project = os.getenv("WANDB_PROJECT")
     if token is None:
         token = os.getenv("WANDB_API_KEY")
-
     # Set your wandb API key
     wandb.login(key=token)
 
@@ -48,17 +47,21 @@ def check_wandb_experiments(
     runs = [run for run_list in runs for run in run_list]
 
     exp_name_to_summary_dict = {}
-
+    exp_name_to_state_dict = {}
     for run in tqdm(runs):
         if "exp_name" in run.config:
             exp_name = run.config["exp_name"].lower()
+
             if exp_name not in exp_name_to_summary_dict:
                 exp_name_to_summary_dict[exp_name] = [run.summaryMetrics]
+                exp_name_to_state_dict[exp_name] = [run.state]
             else:
                 exp_name_to_summary_dict[exp_name].append(run.summaryMetrics)
+                exp_name_to_state_dict[exp_name].append(run.state)
 
     # Initialize an empty list to store experiment data
     exp_data = {}
+    exp_to_command = {key.lower(): value for key, value in experiments.items()}
     if isinstance(experiments, dict):
         experiments = list(experiments.keys())
     experiments = [exp.lower() for exp in experiments]
@@ -74,6 +77,13 @@ def check_wandb_experiments(
                 ]
 
                 testing_completed = any("testing/ensemble" in k for k in keys)
+                if "fs" in exp_name:
+                    print(exp_name, list(sorted(keys)))
+
+                currently_running = any(
+                    "running" == state.lower()
+                    for state in exp_name_to_state_dict[exp_name]
+                )
                 if "global_step" in keys:
                     current_iter = max(
                         [
@@ -89,12 +99,15 @@ def check_wandb_experiments(
 
             else:
                 testing_completed = False
+                currently_running = False
                 current_iter = 0
 
             # Append the data to the list
             exp_data[exp_name] = {
                 "testing_completed": testing_completed,
+                "currently_running": currently_running,
                 "current_iter": current_iter,
+                "command": exp_to_command[exp_name],
             }
             pbar.update(1)
 
@@ -103,6 +116,13 @@ def check_wandb_experiments(
             key: value
             for key, value in exp_data.items()
             if not value["testing_completed"]
+        }
+
+    if filter_for_non_running:
+        exp_data = {
+            key: value
+            for key, value in exp_data.items()
+            if not value["currently_running"]
         }
 
     if print_table:
@@ -120,6 +140,7 @@ def check_wandb_experiments(
         )
         table.add_column("idx", justify="right")
         table.add_column("Experiment Name", width=50)
+        table.add_column("Currently Running", justify="right")
         table.add_column("Testing Completed", justify="right")
         table.add_column("Current Iteration", justify="right")
 
@@ -128,6 +149,7 @@ def check_wandb_experiments(
             table.add_row(
                 str(idx),
                 exp_name,
+                str(row["currently_running"]),
                 str(row["testing_completed"]),
                 str(row["current_iter"]),
             )
@@ -141,8 +163,13 @@ def check_wandb_experiments(
 def main(
     print_table: bool = True,
     filter_for_non_completed: bool = False,
+    filter_for_non_running: bool = False,
     pipe_output: bool = False,
 ):
+    if print_table and pipe_output:
+        raise ValueError(
+            f"print_table={print_table} and pipe_output={pipe_output}, Cannot print table and pipe output at the same time. Please choose one."
+        )
     # Read input from stdin
     raw_experiments = sys.stdin.read()
 
@@ -156,12 +183,17 @@ def main(
     # Call the function
     exp_dict = check_wandb_experiments(
         experiments=experiments,
-        project=["eidf-monitor", "gate-0-9-1"],
+        project=["gate-0-9-1"],
         print_table=print_table,
         filter_for_non_completed=filter_for_non_completed,
+        filter_for_non_running=filter_for_non_running,
     )
 
     if pipe_output:
+        exp_dict = {
+            exp_name: exp_data["command"]
+            for exp_name, exp_data in exp_dict.items()
+        }
         return json.dumps(exp_dict)
 
 

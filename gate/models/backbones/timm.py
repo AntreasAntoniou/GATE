@@ -145,7 +145,7 @@ class TimmModel(nn.Module):
                 norm=True,
             )
         else:
-            per_layer_raw_features = [output for output in self.model(x)]
+            per_layer_raw_features = [self.model(x)[-1]]
 
         if len(per_layer_raw_features) == 0:
             return None
@@ -203,11 +203,7 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
-@configurable(
-    group="encoder",
-    name="timm",
-)
-class TimmCLIPAdapter(GATEncoder):
+class TimmCLIPAdapterBase(GATEncoder):
     def __init__(
         self,
         timm_model_name: str,
@@ -300,63 +296,7 @@ class TimmCLIPAdapter(GATEncoder):
     def process_images(self, image: torch.Tensor) -> torch.Tensor:
         if image is None:
             raise ValueError("Image cannot be None.")
-
-        output = None
-        batch_size = image.shape[0]
-        # print(f"batch_size: {batch_size}")
-
-        try:
-            return self.vision_model(image)
-
-        except torch.cuda.OutOfMemoryError as e:
-            # clear cache and try again
-            self.zero_grad()
-            self.vision_model.zero_grad()
-            torch.cuda.empty_cache()
-            gc.collect()
-            while batch_size >= 1:
-                print(f"batch_size: {batch_size}")
-                batches = torch.split(image, batch_size)
-                print("Before forward pass:")
-                outputs = []
-                try:
-                    print("Before Before forward pass:")
-                    for batch in batches:
-                        print(f"batch shape: {batch.shape}")
-                        output = self.vision_model(batch)
-                        outputs.append(output.cpu())
-
-                        # Print memory usage after forward pass
-                        output = output.detach().cpu()
-                        del output
-                        batch = batch.cpu()
-                        torch.cuda.empty_cache()
-                        gc.collect()
-
-                    if isinstance(outputs[0], dict):
-                        output_dict = {}
-                        for k, v in outputs[0].items():
-                            output_dict[k] = torch.cat(
-                                [output[k] for output in outputs], dim=0
-                            )
-                        return output_dict
-                    elif isinstance(outputs[0], torch.Tensor):
-                        return torch.cat(outputs, dim=0)
-
-                except torch.cuda.OutOfMemoryError as inner_e:
-                    # clear cache and try again
-                    self.vision_model.zero_grad()
-                    self.zero_grad()
-                    torch.cuda.empty_cache()
-                    gc.collect()
-                    batch_size = batch_size // 2
-                    continue
-                except Exception as inner_e:
-                    raise inner_e
-
-            raise RuntimeError(f"Even with batch size 1, still failed.")
-        except Exception as e:
-            raise e
+        return self.vision_model(image)
 
     def forward(
         self,
@@ -373,22 +313,7 @@ class TimmCLIPAdapter(GATEncoder):
 
         output_dict = defaultdict(dict)
 
-        # self.model.forward expects
-        # input_ids: Optional[torch.LongTensor] = None,
-        # pixel_values: Optional[torch.FloatTensor] = None,
-        # attention_mask: Optional[torch.Tensor] = None,
-        # position_ids: Optional[torch.LongTensor] = None,
-        # return_loss: Optional[bool] = None,
-        # output_attentions: Optional[bool] = None,
-        # output_hidden_states: Optional[bool] = None,
-        # return_dict: Optional[bool] = None,
-
         if image is not None:
-            # if self.image_instance_norm is None:
-            #     self.image_instance_norm = nn.InstanceNorm2d(
-            #         image.shape[1], affine=True
-            #     )
-            # image = self.image_instance_norm(image)
             output_dict["image"] = self.process_images(image)
             if self.num_projection_features:
                 output_dict["image"]["features"] = self.visual_projection(
@@ -433,7 +358,6 @@ class TimmCLIPAdapter(GATEncoder):
     def get_transforms(self):
         def image_transforms(x):
             x = self.vision_model.transforms(x)
-
             return x
 
         def text_transforms(x):
@@ -476,3 +400,27 @@ class TimmCLIPAdapter(GATEncoder):
 
     def get_text_encoder(self):
         return self.text_model
+
+
+@configurable(
+    group="encoder",
+    name="timm",
+)
+class TimmCLIPAdapter(TimmCLIPAdapterBase, nn.Module):
+    def __init__(
+        self,
+        timm_model_name: str,
+        clip_model_name: str,
+        pretrained: bool = True,
+        image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
+    ):
+        nn.Module.__init__(self)
+        TimmCLIPAdapterBase.__init__(
+            self,
+            timm_model_name,
+            clip_model_name,
+            pretrained,
+            image_size,
+            num_projection_features,
+        )

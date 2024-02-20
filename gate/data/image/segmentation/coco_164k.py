@@ -9,6 +9,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
 from gate.data.image.segmentation.classes import cocostuff_164k_dict as CLASSES
+from gate.data.image.segmentation.label_remap import remap_tensor_values
 from gate.data.transforms.segmentation import (
     BaseDatasetTransforms,
     KeySelectorTransforms,
@@ -69,22 +70,10 @@ def build_dataset(
     return data_dict[split]
 
 
-def label_remapper(input_dict: Dict[str, Any]) -> Dict[str, Any]:
-    labels_tensor = input_dict["labels"]
-    remapped_labels = torch.empty_like(labels_tensor)
-
-    # Create a tensor for the class remapping
-    max_label = max(CLASSES.keys())
-    remap_tensor = torch.arange(
-        max_label + 1, dtype=labels_tensor.dtype, device=labels_tensor.device
-    )
-    for old_label, new_label in CLASSES.items():
-        remap_tensor[old_label] = new_label
-
-    # Apply remapping to the entire tensor in one operation
-    remapped_labels = remap_tensor[labels_tensor]
-
-    input_dict["labels"] = remapped_labels
+def remap_train_labels(input_dict: dict[str, torch.Tensor]):
+    labels = input_dict["labels"]
+    labels = remap_tensor_values(labels, CLASSES)
+    input_dict["labels"] = labels
     return input_dict
 
 
@@ -97,7 +86,7 @@ def build_gate_dataset(
     num_classes=len(CLASSES),
     image_size=1024,
     target_image_size=256,
-    ignore_index=-1,
+    ignore_index=0,
 ) -> dict:
     input_transforms = KeySelectorTransforms(
         initial_size=2048, image_label="image", label_label="mask"
@@ -126,7 +115,7 @@ def build_gate_dataset(
             input_transforms,
             train_transforms,
             transforms,
-            label_remapper,
+            remap_train_labels,
         ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
@@ -138,7 +127,7 @@ def build_gate_dataset(
             input_transforms,
             eval_transforms,
             transforms,
-            label_remapper,
+            remap_train_labels,
         ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
@@ -150,7 +139,7 @@ def build_gate_dataset(
             input_transforms,
             eval_transforms,
             transforms,
-            label_remapper,
+            remap_train_labels,
         ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )

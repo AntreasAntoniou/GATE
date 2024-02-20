@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
@@ -31,7 +31,7 @@ class IoUMetric:
     def __init__(
         self,
         num_classes: int,
-        ignore_index: Optional[int] = None,
+        ignore_index: Optional[int | List[int]] = None,
         class_idx_to_name: Optional[dict] = None,
     ):
         self.num_classes = num_classes
@@ -44,7 +44,6 @@ class IoUMetric:
         self.total_area_union = torch.zeros(num_classes)
         self.total_area_pred = torch.zeros(num_classes)
         self.total_area_label = torch.zeros(num_classes)
-        logger.info(self)
 
     def __repr__(self):
         return (
@@ -53,16 +52,27 @@ class IoUMetric:
             f"class_idx_to_name={self.class_idx_to_name})"
         )
 
+    def apply_ignore_index(self, pred, labels, ignore_index: int | List[int]):
+        if isinstance(ignore_index, int):
+            ignore_index = [ignore_index]
+
+        for idx in ignore_index:
+            keep_mask = labels != idx
+
+            keep_mask = keep_mask.to(pred.device)
+            pred = pred[keep_mask]
+            labels = labels[keep_mask]
+
+        return pred, labels
+
     def update(self, pred: torch.Tensor, label: torch.Tensor):
         pred = pred.clone().cpu().view(-1)
         label = label.clone().cpu().view(-1)
 
         if self.ignore_index is not None:
-            keep_mask = label != self.ignore_index
-
-            keep_mask = keep_mask.to(pred.device)
-            pred = pred[keep_mask]
-            label = label[keep_mask]
+            pred, label = self.apply_ignore_index(
+                pred, label, self.ignore_index
+            )
 
         intersect = pred[pred == label]
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
@@ -124,6 +134,7 @@ class IoUMetric:
         per_class_iou = iou * 100.0
 
         if self.class_idx_to_name:
+
             per_class_iou = {
                 self.class_idx_to_name[i]: val.item()
                 for i, val in enumerate(per_class_iou)

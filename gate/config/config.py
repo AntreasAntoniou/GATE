@@ -191,7 +191,7 @@ def collect_config_store():
         name="linear",
         node=linear_learning_rate_scheduler_config(
             start_factor=1.0,
-            end_factor=1.0 / 10000,
+            end_factor=1.0 / 50,
             total_iters=10000,
             last_epoch=-1,
             verbose=False,
