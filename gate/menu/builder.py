@@ -102,7 +102,10 @@ def generate_commands(
                     if key == "image_size":
                         exp_name = exp_name.replace(f"224", str(value))
 
-                    encoder_args += f"encoder.{key}={value} "
+                    if "freeze_encoder" in key:
+                        encoder_args += f"adapter.{key}={value} "
+                    else:
+                        encoder_args += f"encoder.{key}={value} "
 
                 adapter_args = ""
                 for key, value in asdict(model_config.adapter_config).items():
