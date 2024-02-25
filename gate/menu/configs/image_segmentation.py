@@ -25,11 +25,11 @@ class Config:
         )
         for (dice_loss_weight, focal_loss_weight, ce_loss_weight) in [
             # (1.0, 1.0, 1.0),
-            # (0.0, 1.0, 1.0),
+            (0.0, 1.0, 1.0),
             # (1.0, 0.0, 1.0),
             # (1.0, 1.0, 0.0),
             # (0.0, 0.0, 1.0),
-            (0.0, 1.0, 0.0),
+            # (0.0, 1.0, 0.0),
             # (1.0, 0.0, 0.0),
         ]
     ]  # 7 different adapter configurations

@@ -1,5 +1,6 @@
 import pathlib
 import random
+from math import comb
 from typing import List, Tuple
 
 import fire
@@ -9,10 +10,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import wandb
 from attr import dataclass
 from sklearn.model_selection import KFold, ShuffleSplit
 from tqdm.auto import tqdm
+
+import wandb
 
 
 @dataclass
@@ -222,7 +224,8 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         combination_size (int, optional): Size of the combinations to evaluate. Defaults to 12.
     """
     run = wandb.init(
-        project=f"combination-optimization-{combination_size}",
+        project=f"combination-optimization",
+        name=f"combination-optimization-{combination_size}",
         entity="machinelearningbrewery",
     )
     df = pd.read_csv(result_csv_path)
@@ -234,9 +237,9 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
     epochs = 20
     population_size = 25
     mutation_rounds = 10
-    num_generations = 100
+    num_generations = 10
     out = get_combinations(metrics=METRICS, max_length=combination_size)
-    random_combinations = random.sample(out, min(500, len(out)))
+    random_combinations = random.sample(out, min(10, len(out)))
     score_combinations = []
     for combination in tqdm(
         random_combinations, desc="Evaluating combinations"
@@ -278,7 +281,7 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         for j, item in enumerate(top_combinations):
             print(f"Generation: {i}, Rank: {j}, Item: {item}")
 
-        wandb.log(
+        run.log(
             {
                 "generation": i,
                 "mean_score": np.mean(
@@ -294,6 +297,9 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
                     [item.avg_score for item in top_combinations]
                 ),
             }
+        )
+        print(
+            f"logging the following metrics: mean_score: {np.mean([item.avg_score for item in top_combinations])}, std_score: {np.std([item.avg_score for item in top_combinations])}, min_score: {np.min([item.avg_score for item in top_combinations])}, max_score: {np.max([item.avg_score for item in top_combinations])}"
         )
         # cast to DataFrame given that top_combinations is a list of EvaluationResult and the keys are the attributes of EvaluationResult
         top_combinations_df = pd.DataFrame(
@@ -312,12 +318,62 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         artifact = wandb.Artifact("top_combinations", type="top_combinations")
         artifact.add_file("top_combinations.csv")
         run.log_artifact(artifact)
+    remove_one_from_combo_and_reevaluate(
+        combinations=top_combinations[0],
+        df=df,
+        device=device,
+        epochs=epochs,
+    )
     run.finish()
 
 
+def remove_one_from_combo_and_reevaluate(
+    combinations: EvaluationResult, df, device, epochs
+):
+    combintions_of_one_less = [combinations.combination]
+
+    for feature in combinations.combination:
+        new_combination = list(combinations.combination)
+        new_combination.remove(feature)
+        combintions_of_one_less.append(new_combination)
+
+    for combination in tqdm(
+        combintions_of_one_less, desc="Evaluating mutated combinations"
+    ):
+        scores = evaluate_combination(
+            df=df,
+            combination=combination,
+            device=device,
+            epochs=epochs,
+        )
+        missing_feature = list(
+            set(combinations.combination) - set(combination)
+        )
+
+        missing_feature = (
+            missing_feature[0] if len(missing_feature) > 0 else "full"
+        )
+
+        run = wandb.init(
+            project=f"combination-optimization",
+            name=f"combination-optimization-loo-{len(combinations.combination)}-{missing_feature}",
+            entity="machinelearningbrewery",
+            reinit=True,
+        )
+
+        run.log(
+            {
+                "combination": combination,
+                "missing_feature": missing_feature,
+                "mean": scores.avg_score,
+                "std": scores.std_score,
+                "min": scores.min_score,
+                "max": scores.max_score,
+            }
+        )
+
+
 if __name__ == "__main__":
-    csv_path = (
-        "/disk/scratch_fast1/aantoni2/GATE/notebooks/31012024-processed.csv"
-    )
+    csv_path = "notebooks/21022024-processed.csv"
     for i in range(24):
-        main(csv_path, combination_size=i + 1)
+        main(csv_path, combination_size=i + 2)
