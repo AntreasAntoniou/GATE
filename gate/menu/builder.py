@@ -6,7 +6,6 @@ from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
 import fire
-from cv2 import exp
 from rich import print
 from rich.logging import RichHandler
 
