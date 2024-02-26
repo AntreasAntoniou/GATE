@@ -1,10 +1,14 @@
 from collections import defaultdict
+from enum import unique
+from os import name
 from typing import Optional
 
 import fire
 import pandas as pd
 import yaml
 from rich import print
+
+from gate import data
 
 ensemble_series = 1
 
@@ -310,7 +314,7 @@ def load_dataframe(source_csv_filepath: str) -> pd.DataFrame:
     check_validity(dataset_to_metrics, dataset_to_target_metrics)
 
     model_to_series_dataset_to_metrics = defaultdict(dict)
-
+    unique_dataset_names = set()
     for idx, row in df.iterrows():
         results_dict = get_non_empty_columns_and_values(df, idx)
         exp_name = results_dict["Experiment-name"]
@@ -319,18 +323,7 @@ def load_dataframe(source_csv_filepath: str) -> pd.DataFrame:
         # exp_dataset_name = (
         #     exp_dataset_name if exp_dataset_name != "happy" else "whale-dolphin"
         # )
-        exp_dataset_name = (
-            "clevr-math"
-            if "clevr-math" in exp_name
-            else "clevr" if exp_dataset_name == "clevr" else exp_dataset_name
-        )
-        exp_dataset_name = (
-            "coco-10k"
-            if "coco-10k" in exp_name
-            else (
-                "coco-164k" if exp_dataset_name == "coco" else exp_dataset_name
-            )
-        )
+        exp_dataset_name = get_dataset_name(exp_dataset_name, exp_name)
         model_name = extract_model_name(
             exp_name=exp_name, dataset_name=exp_dataset_name
         )
@@ -340,6 +333,10 @@ def load_dataframe(source_csv_filepath: str) -> pd.DataFrame:
             else exp_name.split("-")[-3:]
         )
         exp_series = f"{exp_series}-{seed}"
+        if exp_dataset_name == "medical":
+            continue
+        unique_dataset_names.add(exp_dataset_name)
+
         for metric in dataset_to_metrics[exp_dataset_name]:
             if (
                 exp_dataset_name in dataset_to_target_metrics
@@ -371,6 +368,150 @@ def load_dataframe(source_csv_filepath: str) -> pd.DataFrame:
                         value=results_dict.get(metric, None), name=exp_name
                     )
     print(model_to_series_dataset_to_metrics)
+    unique_dataset_names = sorted(unique_dataset_names)
+    clean_model_to_series_dataset_to_metrics = defaultdict(dict)
+
+    for model in model_to_series_dataset_to_metrics:
+        for series in model_to_series_dataset_to_metrics[model]:
+            for dataset in unique_dataset_names:
+                if (
+                    dataset
+                    not in model_to_series_dataset_to_metrics[model][series]
+                    and dataset
+                    not in clean_model_to_series_dataset_to_metrics[model]
+                ):
+                    clean_model_to_series_dataset_to_metrics[model][
+                        dataset
+                    ] = dict()
+                    continue
+
+                if (
+                    dataset
+                    not in model_to_series_dataset_to_metrics[model][series]
+                ):
+                    continue
+
+                if (
+                    dataset
+                    not in clean_model_to_series_dataset_to_metrics[model]
+                ):
+                    clean_model_to_series_dataset_to_metrics[model][
+                        dataset
+                    ] = model_to_series_dataset_to_metrics[model][series][
+                        dataset
+                    ]
+                else:
+                    for metric in model_to_series_dataset_to_metrics[model][
+                        series
+                    ][dataset]:
+                        if (
+                            metric
+                            not in clean_model_to_series_dataset_to_metrics[
+                                model
+                            ][dataset]
+                        ):
+                            clean_model_to_series_dataset_to_metrics[model][
+                                dataset
+                            ][metric] = model_to_series_dataset_to_metrics[
+                                model
+                            ][
+                                series
+                            ][
+                                dataset
+                            ][
+                                metric
+                            ]
+                        else:
+                            existing_value = (
+                                clean_model_to_series_dataset_to_metrics[
+                                    model
+                                ][dataset][metric]["value"]
+                            )
+                            incoming_value = (
+                                model_to_series_dataset_to_metrics[model][
+                                    series
+                                ][dataset][metric]["value"]
+                            )
+
+                            if existing_value is None:
+                                clean_model_to_series_dataset_to_metrics[
+                                    model
+                                ][dataset][
+                                    metric
+                                ] = model_to_series_dataset_to_metrics[
+                                    model
+                                ][
+                                    series
+                                ][
+                                    dataset
+                                ][
+                                    metric
+                                ]
+                            elif incoming_value is None:
+                                continue
+
+                            elif "loss" in metric:
+                                if incoming_value < existing_value:
+                                    clean_model_to_series_dataset_to_metrics[
+                                        model
+                                    ][dataset][
+                                        metric
+                                    ] = model_to_series_dataset_to_metrics[
+                                        model
+                                    ][
+                                        series
+                                    ][
+                                        dataset
+                                    ][
+                                        metric
+                                    ]
+                            elif "accuracy" in metric:
+
+                                if incoming_value > existing_value:
+                                    clean_model_to_series_dataset_to_metrics[
+                                        model
+                                    ][dataset][
+                                        metric
+                                    ] = model_to_series_dataset_to_metrics[
+                                        model
+                                    ][
+                                        series
+                                    ][
+                                        dataset
+                                    ][
+                                        metric
+                                    ]
+                            elif "macro" in metric:
+                                if incoming_value > existing_value:
+                                    clean_model_to_series_dataset_to_metrics[
+                                        model
+                                    ][dataset][
+                                        metric
+                                    ] = model_to_series_dataset_to_metrics[
+                                        model
+                                    ][
+                                        series
+                                    ][
+                                        dataset
+                                    ][
+                                        metric
+                                    ]
+                            elif "miou" in metric.lower():
+                                if incoming_value > existing_value:
+                                    clean_model_to_series_dataset_to_metrics[
+                                        model
+                                    ][dataset][
+                                        metric
+                                    ] = model_to_series_dataset_to_metrics[
+                                        model
+                                    ][
+                                        series
+                                    ][
+                                        dataset
+                                    ][
+                                        metric
+                                    ]
+    print(clean_model_to_series_dataset_to_metrics)
 
 
 def main(source_csv_filepath: str):
