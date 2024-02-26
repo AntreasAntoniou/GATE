@@ -28,8 +28,13 @@ class BackboneWithLinearClassification(BaseAdapterModule):
         num_classes: int,
         allow_on_model_metric_computation: bool = True,
         freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__(freeze_encoder=freeze_encoder, encoder=encoder)
+        super().__init__(
+            freeze_encoder=freeze_encoder,
+            encoder=encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         num_in_features = self.encoder.num_in_features_image
         logger.info(f"Building linear layer with {num_in_features} features.")
@@ -159,6 +164,8 @@ class BackboneWithLinearClassification(BaseAdapterModule):
         labels: Optional[torch.Tensor] = None,
         return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
+        if self.use_stem_instance_norm:
+            image = self.stem_instance_norm(image)
         if image is not None:
             x = self.encoder(image=image)["image"]["features"]
 

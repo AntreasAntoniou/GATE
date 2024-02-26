@@ -221,8 +221,13 @@ class SegmentationAdapter(BaseAdapterModule):
         focal_loss_weight: float = 1.0,
         ce_loss_weight: float = 1.0,
         use_batch_level_attention: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         self.num_classes = num_classes
         self.class_names = (
@@ -233,6 +238,7 @@ class SegmentationAdapter(BaseAdapterModule):
         self.ignore_index = ignore_index
         self.decoder_embedding_dimension = self.encoder.num_in_features_image
         self.output_target_image_size = output_target_image_size
+        self.use_stem_instance_norm = use_stem_instance_norm
 
         if loss_type_id == SegmentationLossOptions.DEFAULT.value:
             self.loss_fn = ImageSegmentationLoss(
@@ -347,51 +353,53 @@ class SegmentationAdapter(BaseAdapterModule):
     def forward(
         self, image: torch.Tensor, labels: Optional[torch.Tensor] = None
     ):
-        features = self.encoder(image)["image"]["per_layer_raw_features"]
+        if self.use_stem_instance_norm:
+            image = self.stem_instance_norm(image)
 
+        features = self.encoder(image)["image"]["per_layer_raw_features"]
         # feature shape is either B, C, H, W or B, (W * H), C
         mask_predictions = self.spatial_decoder_head(features)
 
-        if (
-            self.use_batch_level_attention
-            and self.batch_processing_head is None
-        ):
-            mask_predictions = rearrange(
-                "b c h w -> b (h w c)", mask_predictions
-            )
-            mask_predictions = mask_predictions.unsqueeze(0)
-            transformer_encoder_layer = nn.TransformerEncoderLayer(
-                d_model=mask_predictions.shape[-1],
-                nhead=8,
-                dim_feedforward=mask_predictions.shape[-1],
-                dropout=0.0,
-                activation="gelu",
-                batch_first=True,
-            )
+        # if (
+        #     self.use_batch_level_attention
+        #     and self.batch_processing_head is None
+        # ):
+        #     mask_predictions = rearrange(
+        #         "b c h w -> b (h w c)", mask_predictions
+        #     )
+        #     mask_predictions = mask_predictions.unsqueeze(0)
+        #     transformer_encoder_layer = nn.TransformerEncoderLayer(
+        #         d_model=mask_predictions.shape[-1],
+        #         nhead=8,
+        #         dim_feedforward=mask_predictions.shape[-1],
+        #         dropout=0.0,
+        #         activation="gelu",
+        #         batch_first=True,
+        #     )
 
-            self.batch_processing_head = nn.TransformerEncoder(
-                encoder_layer=transformer_encoder_layer,
-                num_layers=4,
-                norm=nn.LayerNorm(mask_predictions.shape[-1]),
-            )
+        #     self.batch_processing_head = nn.TransformerEncoder(
+        #         encoder_layer=transformer_encoder_layer,
+        #         num_layers=4,
+        #         norm=nn.LayerNorm(mask_predictions.shape[-1]),
+        #     )
 
-            self.final_conv = nn.Conv1d(
-                mask_predictions.shape[-1], self.num_classes, kernel_size=1
-            )
+        #     self.final_conv = nn.Conv1d(
+        #         mask_predictions.shape[-1], self.num_classes, kernel_size=1
+        #     )
 
-        if self.use_batch_level_attention and self.batch_processing_head:
-            mask_predictions = rearrange(
-                "b c h w -> b (h w c)", mask_predictions
-            )
-            mask_predictions = mask_predictions.unsqueeze(0)
-            mask_predictions = self.batch_processing_head(mask_predictions)
-            mask_predictions = rearrange(
-                "p b (h w c) -> (p b) c (h w)", mask_predictions
-            )
-            mask_predictions = self.final_conv(mask_predictions)
-            mask_predictions = rearrange(
-                "b c (h w) -> b c h w", mask_predictions
-            )
+        # if self.use_batch_level_attention and self.batch_processing_head:
+        #     mask_predictions = rearrange(
+        #         "b c h w -> b (h w c)", mask_predictions
+        #     )
+        #     mask_predictions = mask_predictions.unsqueeze(0)
+        #     mask_predictions = self.batch_processing_head(mask_predictions)
+        #     mask_predictions = rearrange(
+        #         "p b (h w c) -> (p b) c (h w)", mask_predictions
+        #     )
+        #     mask_predictions = self.final_conv(mask_predictions)
+        #     mask_predictions = rearrange(
+        #         "b c (h w) -> b c h w", mask_predictions
+        #     )
 
         logits = F.interpolate(
             input=mask_predictions,

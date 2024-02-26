@@ -243,8 +243,8 @@ class WhisperAdapter(VisionTextGATEAdapter, GATEncoder):
     def init_weights(self):
         return super().init_weights()
 
-    def get_transforms(self, image_size: int = 224):
-        return super().get_transforms(image_size=image_size)
+    def get_transforms(self):
+        return super().get_transforms(image_size=self.image_size)
 
     def get_image_encoder(self):
         return self.vision_model

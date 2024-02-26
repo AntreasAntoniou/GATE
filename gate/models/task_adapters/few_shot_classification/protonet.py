@@ -47,8 +47,13 @@ class PrototypicalNetwork(BaseAdapterModule):
         encoder: GATEncoder,
         num_output_features: Optional[int] = None,
         freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ) -> None:
-        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
         # self.stem_instance_norm = nn.InstanceNorm2d(
         #     num_features=3, affine=True
         # )
@@ -150,6 +155,8 @@ class PrototypicalNetwork(BaseAdapterModule):
         Returns:
             The output tensor after being processed by the model and the linear layer.
         """
+        if self.use_stem_instance_norm:
+            image = self.stem_instance_norm(image)
 
         output = self.encoder(image=image)
 

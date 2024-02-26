@@ -32,7 +32,9 @@ class ModifiedBartModel(BartPretrainedModel):
         super().__init__(config)
 
         padding_idx, vocab_size = config.pad_token_id, config.vocab_size
+
         self.shared = nn.Embedding(vocab_size, config.d_model, padding_idx)
+
         self.encoder = BartEncoder(config, self.shared)
 
         # Initialize weights and apply final processing
@@ -95,7 +97,15 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
         if not pretrained:
             self.clip.init_weights()
 
-        vision_embedding = ModifiedBartModel.from_pretrained(bart_model_name)
+        vision_embedding = ModifiedBartModel.from_pretrained(
+            bart_model_name,
+            max_position_embeddings=(
+                4097
+                if image_size == 1024
+                else 2049 if image_size == 512 else 1025
+            ),
+            ignore_mismatched_sizes=True,
+        )
 
         self.vision_model = VisionRootReplacedBackbone(
             model=vision_embedding,
@@ -179,8 +189,8 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
     def init_weights(self):
         return super().init_weights()
 
-    def get_transforms(self, image_size: int = 224):
-        return super().get_transforms(image_size=image_size)
+    def get_transforms(self):
+        return super().get_transforms(image_size=self.image_size)
 
     def get_image_encoder(self):
         return self.vision_model

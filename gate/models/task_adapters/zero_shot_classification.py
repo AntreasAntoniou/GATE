@@ -32,12 +32,18 @@ class DuoModalZeroShotModel(BaseAdapterModule):
         temperature_parameter: Optional[float] = 1.0 / 0.07,
         head_identifier: Optional[str] = "features",
         freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__(freeze_encoder=freeze_encoder, encoder=encoder)
+        super().__init__(
+            freeze_encoder=freeze_encoder,
+            encoder=encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         self.head_identifier = head_identifier
 
         self.projection_num_features = projection_num_features
+
         if temperature_parameter is None:
             self.temperature_parameter = nn.Parameter(torch.tensor(1.0 / 0.07))
         else:
@@ -117,6 +123,9 @@ class DuoModalZeroShotModel(BaseAdapterModule):
             is_irregular_shape = True
 
         if image is not None:
+            if self.use_stem_instance_norm:
+                image = self.stem_instance_norm(image)
+
             image_features = self.encoder(image=image)["image"][
                 self.head_identifier
             ]

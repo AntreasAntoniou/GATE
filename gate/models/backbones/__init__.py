@@ -9,6 +9,7 @@ import PIL
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
+from sympy import im
 from torch import Tensor
 
 single_to_three_channel = T.Lambda(lambda x: x.repeat(3, 1, 1))
@@ -276,7 +277,10 @@ class VisionTextGATEAdapter(ABC):
 
         return output_dict
 
-    def get_transforms(self, image_size: int = 224):
+    def get_transforms(self, image_size: Optional[int] = 224):
+        if image_size is None:
+            image_size = 224
+
         def image_transforms(x):
             return self.preprocessor(
                 images=T.Resize(size=(image_size, image_size), antialias=True)(

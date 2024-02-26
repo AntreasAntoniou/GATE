@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 import sys
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import fire
 from pynvml import (
@@ -62,7 +62,12 @@ def get_gpu_processes(memory_threshold=5, util_threshold=10):
     return available_gpus
 
 
-def run_command_on_gpu(command, gpu_ids, exp_name):
+def run_command_on_gpu(
+    command: str,
+    gpu_ids: List[str],
+    exp_name: str,
+    tags: Optional[List[str]] = None,
+):
     """
     Run a command on the specified GPUs.
 
@@ -74,11 +79,15 @@ def run_command_on_gpu(command, gpu_ids, exp_name):
     Returns:
         The handle of the process running the command.
     """
-    command = command.replace(
-        f"accelerate launch",
-        "accelerate launch --gpu_ids=" + ",".join(gpu_ids),
+    command = (
+        command.replace(
+            f"accelerate launch",
+            "accelerate launch --gpu_ids=" + ",".join(gpu_ids),
+        )
+        + f" --wandb_tags={','.join(tags)}"
+        if tags
+        else ""
     )
-    command = command.replace("29012024", "30012024")
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout.log", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr.log", "w")
 
@@ -88,7 +97,11 @@ def run_command_on_gpu(command, gpu_ids, exp_name):
 
 
 def run_commands(
-    command_dict: Dict, num_gpus: int, memory_threshold=5, util_threshold=10
+    command_dict: Dict,
+    num_gpus: int,
+    memory_threshold=5,
+    util_threshold=10,
+    tags: Optional[List[str]] = None,
 ):
     """
     Run multiple commands on available GPUs.
@@ -112,6 +125,7 @@ def run_commands(
                     command=command,
                     gpu_ids=gpu_ids,
                     exp_name=command_name,
+                    tags=tags,
                 )
                 available_gpus = [
                     gpu for gpu in available_gpus if gpu not in gpu_ids
@@ -163,6 +177,7 @@ def main(
     memory_threshold: int = 5,
     util_threshold: int = 10,
     log_dir: Optional[Union[str, pathlib.Path]] = None,
+    tags: Optional[List[str]] = None,
 ):
     """
     The main function of the program.

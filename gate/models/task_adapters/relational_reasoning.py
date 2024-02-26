@@ -56,8 +56,13 @@ class DuoModalFusionModel(BaseAdapterModule):
         num_classes: Union[List[int], int, Dict[str, int]] = 10,
         projection_num_features: int = 512,
         freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
         self.projection_num_features = projection_num_features
@@ -74,9 +79,7 @@ class DuoModalFusionModel(BaseAdapterModule):
         )
 
         self.fusion_in_features = projection_num_features
-        self.image_instance_norm = nn.InstanceNorm2d(
-            3, affine=True, track_running_stats=False
-        )
+
         self.fusion_post_processing = VariableSequenceTransformerEncoder(
             d_model=self.fusion_in_features,
             nhead=8,
@@ -196,7 +199,8 @@ class DuoModalFusionModel(BaseAdapterModule):
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
 
-        image = self.image_instance_norm(image)
+        if self.use_stem_instance_norm:
+            image = self.image_instance_norm(image)
         image_features = self.encoder(image=image)["image"]["raw_features"]
         image_features = self.image_linear(
             image_features.reshape(-1, image_features.shape[-1])

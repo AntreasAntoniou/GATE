@@ -258,6 +258,7 @@ class BackboneWithTemporalTransformerAndLinear(BaseAdapterModule):
         temporal_transformer_dropout: float = 0.0,
         temporal_transformer_num_layers: int = 6,
         freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
         """Initialize the BackboneWithTemporalTransformerAndLinear module.
 
@@ -267,7 +268,11 @@ class BackboneWithTemporalTransformerAndLinear(BaseAdapterModule):
             num_classes (int): Number of classes for classification.
             metric_fn_dict (Optional[Dict], optional): Dictionary of metric functions. Defaults to None.
         """
-        super().__init__(encoder=encoder, freeze_encoder=freeze_encoder)
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
         self.temporal_encoder = VariableSequenceTransformerEncoder(
             d_model=encoder.num_in_features_image,
             nhead=temporal_transformer_nhead,
@@ -393,6 +398,9 @@ class BackboneWithTemporalTransformerAndLinear(BaseAdapterModule):
         input_shape = x.shape
         if len(input_shape) == 5:
             x = x.view(-1, *input_shape[-3:])
+
+        if self.use_stem_instance_norm:
+            x = self.stem_instance_norm(x)
 
         x = self.encoder(video=x)["video"]
         return x["features"]
