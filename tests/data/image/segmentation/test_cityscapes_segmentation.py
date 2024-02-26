@@ -4,7 +4,7 @@ import os
 import pytest
 
 from gate.boilerplate.wandb_utils import visualize_volume
-from gate.data.image.segmentation.cityscapes import (
+from gate.data.image.segmentation.cityscapes_pytorch import (
     build_dataset,
     build_gate_dataset,
 )

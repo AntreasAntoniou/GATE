@@ -134,6 +134,7 @@ class EncoderConfig:
 @dataclass
 class AdapterConfig:
     adapter_name: str
+    use_stem_instance_norm: bool = True
     metric_type: Optional[str] = None
     loss_type_id: Optional[str] = None
     background_loss_weight: Optional[float] = None

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
-from datasets import load_dataset
 from torchvision.datasets import Cityscapes
 
 from gate.boilerplate.decorators import configurable
@@ -80,7 +79,7 @@ def remap_duds(input_dict: dict[str, torch.Tensor]):
 
 def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
-    Build a Cityscapes dataset using the Hugging Face datasets library.
+    Build a Food-101 dataset using the Hugging Face datasets library.
 
     Args:
         data_dir: The directory where the dataset cache is stored.
@@ -90,27 +89,16 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
         A dictionary containing the dataset split.
     """
 
-    data = load_dataset(
-        "Chris1/cityscapes_segmentation",
-        "instance_segmentation",
-        cache_dir=data_dir,
-        num_proc=mp.cpu_count(),
+    return Cityscapes(
+        root=data_dir, split=set_name, mode="fine", target_type="semantic"
     )
-
-    dataset_dict = {
-        "train": data["train"],
-        "val": data["validation"],
-        "test": data["test"],
-    }
-
-    return dataset_dict[set_name]
 
 
 # NSD and DSC for metrics, and also ensure that the model can compute per class metrics
 
 
-def tuple_to_dict(t: dict) -> dict:
-    return t
+def tuple_to_dict(t: tuple) -> dict:
+    return {"image": t[0], "semantic_segmentation": t[1]}
 
 
 @configurable(
