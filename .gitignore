@@ -152,6 +152,8 @@ checkpoints/*
 # Experiment logs
 *.stderr
 *.stdout
+wandb/*
+notebooks/wandb/*
 
 # Pycharm
 .idea/
