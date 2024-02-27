@@ -91,7 +91,7 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
 
     data = load_dataset(
-        "Chris1/cityscapes_segmentation",
+        "Antreas/Cityscapes",
         cache_dir=data_dir,
         num_proc=mp.cpu_count(),
     )
