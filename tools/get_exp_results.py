@@ -24,9 +24,17 @@ def convert_to_datetime(date_string):
     return date_object
 
 
-def get_runs(api, project_name):
+def get_runs(api, project_name: str | List[str]):
     """Get runs from a specific project"""
-    runs = api.runs(project_name)
+    runs = []
+
+    if isinstance(project_name, str):
+        project_name = [project_name]
+
+    for name in project_name:
+        for run in api.runs(name):
+            runs.append(run)
+
     return runs
 
 
@@ -41,6 +49,7 @@ def get_experiment_data(runs):
         config = {k: v for k, v in run.config.items() if not k.startswith("_")}
         if "exp_name" in config:
             exp_name = config["exp_name"]
+
             if exp_name in exp_name_to_time_dict:
                 if (
                     timestamp > exp_name_to_time_dict[exp_name]
@@ -65,16 +74,7 @@ def filter_keys(all_keys, include_keys=None, exclude_keys=None):
     """Filter keys based on certain conditions"""
     selected_keys = set()
     for key in sorted(all_keys):
-        if (
-            # "shape" not in key
-            # and "colour" not in key
-            "logits" not in key
-            # and "count" not in key
-            # and "material" not in key
-            # and "yes_no" not in key
-            # and "size" not in key
-            and "similarities" not in key
-        ):
+        if "logits" not in key and "similarities" not in key:
             selected_keys.add(key)
     if include_keys:
         selected_keys = [
@@ -169,7 +169,7 @@ OptListStr = Optional[List[str]]
 
 
 def main(
-    project_name: str,
+    project_name: List[str],
     output_filename: str = "experiments_summary.csv",
     include_keys: OptListStr = None,
     exclude_keys: OptListStr = None,
