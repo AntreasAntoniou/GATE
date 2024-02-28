@@ -6,9 +6,6 @@ from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
 import fire
-from rich import print
-from rich.logging import RichHandler
-
 from gate.menu.configs.few_shot_learning import (
     Config as few_shot_learning_config,
 )
@@ -36,6 +33,8 @@ from gate.menu.configs.video_regression import (
     Config as video_regression_config,
 )
 from gate.menu.utils import build_command
+from rich import print
+from rich.logging import RichHandler
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)
