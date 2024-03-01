@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from transformers import (
     BartConfig,
-    BartPretrainedModel,
+    BartPreTrainedModel,
     CLIPModel,
     CLIPProcessor,
 )
@@ -27,7 +27,7 @@ from gate.models.task_adapters.utils.modality_transfer import (
 logger = logging.getLogger(__name__)
 
 
-class ModifiedBartModel(BartPretrainedModel):
+class ModifiedBartModel(BartPreTrainedModel):
     def __init__(self, config: BartConfig):
         super().__init__(config)
 
