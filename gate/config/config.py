@@ -253,7 +253,7 @@ def collect_config_store():
             dict(learner="default"),
             dict(optimizer="adamw"),
             dict(scheduler="plateu"),
-            dict(encoder="clip-image"),
+            dict(encoder="timm"),
             dict(adapter="backbone-with-linear-single-classifier"),
             dict(dataset="cifar100"),
             dict(trainer="image_classification"),

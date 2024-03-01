@@ -11,7 +11,7 @@ from datasets import load_dataset
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
-from gate.data.image.classification.imagenet1k import StandardAugmentations
+from gate.data.image.classification.cifar100 import StandardAugmentations
 
 logger = logging.getLogger(__name__)
 

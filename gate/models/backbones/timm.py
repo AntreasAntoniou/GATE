@@ -16,8 +16,12 @@ from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import GATEncoder, Modality, image_dim_reshape
-from gate.models.backbones.clip_image import TextProcessor
+from gate.models.backbones import (
+    GATEncoder,
+    Modality,
+    TextProcessor,
+    image_dim_reshape,
+)
 from gate.models.core import reinit
 
 logger = logging.getLogger(__name__)
@@ -209,7 +213,7 @@ class TimmCLIPAdapterBase(GATEncoder):
     def __init__(
         self,
         timm_model_name: str,
-        clip_model_name: str,
+        clip_model_name: str = CLIPModelPaths.openai_b_16,
         pretrained: bool = True,
         image_size: Optional[int] = None,
         num_projection_features: Optional[int] = None,

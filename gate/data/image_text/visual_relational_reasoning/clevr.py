@@ -14,7 +14,7 @@ from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data import download_kaggle_dataset
 from gate.data.core import GATEDataset
-from gate.data.image.classification.imagenet1k import StandardAugmentations
+from gate.data.image.classification.cifar100 import StandardAugmentations
 
 FILE_COUNT_AFTER_DOWNLOAD_AND_EXTRACT = 100008
 

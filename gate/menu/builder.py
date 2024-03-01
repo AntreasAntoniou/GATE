@@ -6,35 +6,15 @@ from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
 import fire
-from gate.menu.configs.few_shot_learning import (
-    Config as few_shot_learning_config,
-)
+from rich import print
+from rich.logging import RichHandler
+
 from gate.menu.configs.image_classification import (
     Config as image_classification_config,
 )
-from gate.menu.configs.image_segmentation import (
-    Config as image_segmentation_config,
-)
-from gate.menu.configs.image_text_zero_shot_classification import (
-    Config as image_text_zero_shot_classification_config,
-)
-from gate.menu.configs.medical_image_classification import (
-    Config as medical_image_classification_config,
-)
-from gate.menu.configs.medical_image_segmentation_acdc import (
-    Config as acdc_config,
-)
 from gate.menu.configs.relational_reasoning import Config as rr_config
 from gate.menu.configs.relational_reasoning_mm import Config as rr_mm_config
-from gate.menu.configs.video_classification import (
-    Config as video_classification_config,
-)
-from gate.menu.configs.video_regression import (
-    Config as video_regression_config,
-)
 from gate.menu.utils import build_command
-from rich import print
-from rich.logging import RichHandler
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)
@@ -241,15 +221,8 @@ def run_experiments(
 
     experiment_configs: Dict[str, Any] = {
         "image-class": image_classification_config(),
-        "few-shot": few_shot_learning_config(),
-        "med-class": medical_image_classification_config(),
-        "image-seg": image_segmentation_config(),
-        "image-text": image_text_zero_shot_classification_config(),
-        "acdc": acdc_config(),
         "rr": rr_config(),
         "rr-mm": rr_mm_config(),
-        "video-class": video_classification_config(),
-        "video-reg": video_regression_config(),
     }
 
     if experiment_type == "all":

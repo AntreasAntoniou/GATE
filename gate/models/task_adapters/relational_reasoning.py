@@ -1,7 +1,11 @@
-from typing import Dict, List, Optional, Union
+import logging
+import math
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional
 import torch.nn.functional as F
 from omegaconf import DictConfig
 
@@ -10,14 +14,171 @@ from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
-from gate.models.core import SourceModalityConfig, TargetModalityConfig
+from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
 from gate.models.task_adapters import BaseAdapterModule
-from gate.models.task_adapters.temporal_image_classification import (
-    VariableSequenceTransformerEncoder,
-)
 from gate.models.task_adapters.utils.helpers import reinit
 
 logger = get_logger(__name__, set_rich=True)
+
+
+logger = logging.getLogger(__name__)
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, has_fixed_context_length: bool = False):
+        super().__init__()
+        self.has_fixed_context_length = has_fixed_context_length
+        self.register_buffer("cached_pe", None)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        max_len = x.shape[1]
+        d_model = x.shape[2]
+
+        # Check if cached positional encoding can be reused
+        if self.has_fixed_context_length and self.cached_pe is not None:
+            if (
+                self.cached_pe.shape[1] == max_len
+                and self.cached_pe.shape[2] == d_model
+            ):
+                x += self.cached_pe[:, :max_len, :]
+                return x
+
+        # Calculate positional encoding
+        position = (
+            torch.arange(max_len, dtype=torch.float).unsqueeze(1).to(x.device)
+        )
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float()
+            * (-math.log(10000.0) / d_model)
+        ).to(x.device)
+        pe = torch.zeros(1, max_len, d_model).to(x.device)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
+
+        if self.has_fixed_context_length:
+            self.cached_pe = pe.clone()
+
+        x += pe
+        return x
+
+
+class VariableSequenceTransformerEncoder(nn.Module):
+    def __init__(
+        self,
+        d_model: int,
+        nhead: int,
+        dim_feedforward: int,
+        dropout: float,
+        num_layers: int,
+        batch_first: bool = True,
+        norm_first: bool = True,
+        activation: nn.Module = nn.GELU(),
+    ):
+        super().__init__()
+        self.d_model = d_model
+        self.nhead = nhead
+        self.dim_feedforward = dim_feedforward
+        self.dropout = dropout
+        self.num_layers = num_layers
+        self.batch_first = batch_first
+        self.norm_first = norm_first
+        self.activation = activation
+
+        self.pos_encoder = PositionalEncoding()
+        transformer_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            activation=activation,
+            batch_first=batch_first,
+            norm_first=norm_first,
+        )
+        self.transformer = nn.TransformerEncoder(
+            num_layers=num_layers,
+            encoder_layer=transformer_layer,
+            norm=nn.LayerNorm(d_model),
+        )
+        self.output_norm = nn.LayerNorm(d_model)
+
+    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        x = x + self.pos_encoder(x)
+        x = self.transformer(x)[:, -1, :]  # take the last frame
+        raw_features = self.transformer(x)
+        features = self.output_norm(x)
+        return {
+            "features": features,
+            "raw_features": raw_features,
+            "features": features,
+        }
+
+
+class ClassificationMetrics:
+    """
+    A class for computing classification metrics such as accuracy and loss.
+
+    Args:
+        num_classes (int): The number of classes in the classification task.
+    """
+
+    def __init__(self, num_classes: int):
+        self.num_classes = num_classes
+
+    def accuracy_top_1(self, logits, labels):
+        """
+        Computes the top-1 accuracy given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            float: The top-1 accuracy.
+        """
+        return accuracy_top_k(logits, labels, k=1)
+
+    def accuracy_top_5(self, logits, labels):
+        """
+        Computes the top-5 accuracy given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            float: The top-5 accuracy.
+        """
+        return accuracy_top_k(logits, labels, k=min(5, self.num_classes))
+
+    def loss(self, logits, labels):
+        """
+        Computes the cross-entropy loss given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            torch.Tensor: The cross-entropy loss.
+        """
+        return F.cross_entropy(logits, labels)
+
+    def __call__(self, logits, labels):
+        """
+        Computes the classification metrics given the logits and labels.
+
+        Args:
+            logits (torch.Tensor): The predicted logits.
+            labels (torch.Tensor): The true labels.
+
+        Returns:
+            dict: A dictionary containing the computed metrics.
+        """
+        return {
+            "accuracy_top_1": self.accuracy_top_1(logits, labels),
+            "accuracy_top_5": self.accuracy_top_5(logits, labels),
+            "loss": self.loss(logits, labels),
+        }
 
 
 class SkipConnectionModule(nn.Module):
