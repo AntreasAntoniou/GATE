@@ -3,77 +3,30 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
-from gate.data import image
-from gate.data.few_shot import DatasetName as few_shot_dataset_name
+from rich import print
+
 from gate.data.image.classification import (
     DatasetName as image_class_dataset_name,
 )
-from gate.data.image.segmentation import DatasetName as image_seg_dataset_name
 from gate.data.image_text.visual_relational_reasoning import (
     DatasetName as image_rr_dataset_name,
 )
-from gate.data.image_text.zero_shot import (
-    DatasetName as image_text_dataset_name,
-)
-from gate.data.medical.classification import (
-    DatasetName as med_classification_dataset_name,
-)
-from gate.data.medical.segmentation import ACDCDatasetName as acdc_dataset_name
-from gate.data.medical.segmentation import MD_DatasetName as md_options
-from gate.data.video import DatasetName as video_dataset_name
-from gate.data.video import (
-    RegressionDatasetName as video_regression_dataset_name,
-)
-from gate.models.backbones.bart_text import BartModelPaths
-from gate.models.backbones.bert_text import BertModelPaths
-from gate.models.backbones.clip_image import CLIPModelPaths
-from gate.models.backbones.mpnet_text import MPNetModelPaths
-from gate.models.backbones.wave2vec_audio import Wav2Vec2ModelPaths
-from gate.models.backbones.whisper_audio import WhisperModelPaths
-from gate.models.task_adapters.semantic_segmentation import (
-    SegmentationLossOptions,
-)
-from gate.models.task_adapters.temporal_image_classification import Metrics
-from rich import print
+from gate.models.backbones.timm import CLIPModelPaths
 
 
 class DatasetName(Enum):
     IMAGE_CLASSIFICATION = image_class_dataset_name
-    IMAGE_SEGMENTATION = image_seg_dataset_name
-    IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION = image_text_dataset_name
-    MEDICAL_DECATHLON_SEGMENTATION = md_options
-    MEDICAL_ACDC_SEGMENTATION = acdc_dataset_name
-    MEDICAL_CLASSIFICATION = med_classification_dataset_name
     VISUAL_RELATIONAL_REASONING = image_rr_dataset_name
-    FEW_SHOT_PROTONET_CLASSIFICATION = few_shot_dataset_name
-    VIDEO_CLASSIFICATION = video_dataset_name
-    VIDEO_REGRESSION = video_regression_dataset_name
 
 
 class TrainerName(Enum):
     IMAGE_CLASSIFICATION = "image_classification"
-    MULTI_CLASS_CLASSIFICATION = "multi_class_classification"
     VISUAL_RELATIONAL_REASONING = "visual_relational_reasoning"
-    VIDEO_CLASSIFICATION = "video_classification"
-    VIDEO_REGRESSION = "video_regression"
-    IMAGE_SEMANTIC_SEGMENTATION = "image_semantic_segmentation"
-    MEDICAL_SEMANTIC_SEGMENTATION = "medical_semantic_segmentation"
-    IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION = (
-        "image_to_text_zero_shot_classification"
-    )
 
 
 class EvaluatorName(Enum):
     IMAGE_CLASSIFICATION = "image_classification"
-    MULTI_CLASS_CLASSIFICATION = "multi_class_classification"
     VISUAL_RELATIONAL_REASONING = "visual_relational_reasoning"
-    VIDEO_CLASSIFICATION = "video_classification"
-    VIDEO_REGRESSION = "video_regression"
-    IMAGE_SEMANTIC_SEGMENTATION = "image_semantic_segmentation"
-    MEDICAL_SEMANTIC_SEGMENTATION = "medical_semantic_segmentation"
-    IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION = (
-        "image_to_text_zero_shot_classification"
-    )
 
 
 @dataclass
@@ -147,30 +100,7 @@ class Adapters(Enum):
     IMAGE_CLASSIFICATION = AdapterConfig(
         adapter_name="backbone-with-linear-single-classifier"
     )
-    MULTI_CLASS_CLASSIFICATION = AdapterConfig(
-        adapter_name="backbone-with-linear-multi-classifier"
-    )
-    FEW_SHOT_PROTONET = AdapterConfig(adapter_name="fs-protonet")
-    SEGMENTATION = AdapterConfig(
-        adapter_name="segmentation-adapter",
-        loss_type_id=SegmentationLossOptions.DEFAULT.value,
-        background_loss_weight=0.01,
-        dice_loss_weight=1.0,
-        focal_loss_weight=1.0,
-        ce_loss_weight=1.0,
-    )
-    MD_SEGMENTATION = AdapterConfig(
-        adapter_name="segmentation-adapter",
-        loss_type_id=SegmentationLossOptions.MD.value,
-        background_loss_weight=0.01,
-    )
-    TEMPORAL_CLASSIFICATION = AdapterConfig(
-        adapter_name="temporal-classification",
-        metric_type=Metrics.CLASSIFICATION,
-    )
-    TEMPORAL_REGRESSION = AdapterConfig(
-        adapter_name="temporal-classification", metric_type=Metrics.REGRESSION
-    )
+
     RELATIONAL_REASONING = AdapterConfig(
         adapter_name="relational-reasoning",
     )
@@ -178,66 +108,9 @@ class Adapters(Enum):
         adapter_name="relational-reasoning",
     )
 
-    ZERO_SHOT_IMAGE_TEXT = AdapterConfig(
-        adapter_name="duo-modal-zero-shot-classifier",
-    )
-
 
 # Create an Enum to store EncoderConfigs
 class Encoders(Enum):
-    # CLIPViTBase16_224HF_IMAGE = EncoderConfig(
-    #     pretty_name="CLIP_B16_224HF_image",
-    #     model_name=CLIPModelPaths.openai_b_16,
-    #     encoder_name="clip-image",
-    #     num_projection_features=768,
-    # )
-    # CLIPViTBase16_224HF_TEXT = EncoderConfig(
-    #     pretty_name="CLIP_B16_224HF_text",
-    #     model_name=CLIPModelPaths.openai_b_16,
-    #     encoder_name="clip-text",
-    #     num_projection_features=768,
-    #     freeze_encoder=True,
-    # )
-    BART_TEXT = EncoderConfig(
-        pretty_name="BART",
-        bart_model_name=BartModelPaths.base,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="bart",
-        num_projection_features=768,
-        freeze_encoder=True,
-    )
-    BERT_TEXT = EncoderConfig(
-        pretty_name="BERT",
-        bert_model_name=BertModelPaths.base_uncased,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="bert",
-        num_projection_features=768,
-        freeze_encoder=True,
-    )
-    MPNet = EncoderConfig(
-        pretty_name="MPNET",
-        mpnet_model_name=MPNetModelPaths.base,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="mpnet",
-        num_projection_features=768,
-        freeze_encoder=True,
-    )
-    # Wave2VecV2Base = EncoderConfig(
-    #     pretty_name="W2V2",
-    #     encoder_name="wav2vecv2",
-    #     wav2vec2_model_name=Wav2Vec2ModelPaths.base,
-    #     clip_model_name=CLIPModelPaths.openai_b_16,
-    #     num_projection_features=768,
-    #     freeze_encoder=True,
-    # )
-    WhisperBase = EncoderConfig(
-        pretty_name="Whisper",
-        encoder_name="whisper",
-        whisper_model_name=WhisperModelPaths.base,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        num_projection_features=768,
-        freeze_encoder=True,
-    )
     ResNet50A1 = EncoderConfig(
         pretty_name="R50A1",
         timm_model_name="resnet50.a1_in1k",
@@ -315,20 +188,15 @@ class Encoders(Enum):
         encoder_name="timm",
         num_projection_features=768,
     )
-    FlexViTBase_1200EP = EncoderConfig(
-        pretty_name="Flex_B_1200EP",
-        timm_model_name="flexivit_base.1200ep_in1k",
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="timm",
-        num_projection_features=768,
+    FlexViTBase_1200EP = (
+        EncoderConfig(
+            pretty_name="Flex_B_1200EP",
+            timm_model_name="flexivit_base.1200ep_in1k",
+            clip_model_name=CLIPModelPaths.openai_b_16,
+            encoder_name="timm",
+            num_projection_features=768,
+        ),
     )
-    # IJEPAViTHugePatch14_224 = EncoderConfig(
-    #     pretty_name="IJEPA_Huge_P14_224",
-    #     timm_model_name="vit_huge_patch14_gap_224.in22k_ijepa",
-    #     clip_model_name=CLIPModelPaths.openai_b_16,
-    #     encoder_name="timm",
-    #     num_projection_features=768,
-    # )
     SIGLIPPathch16_224 = EncoderConfig(
         pretty_name="SIGLIP_P16_224",
         timm_model_name="vit_base_patch16_siglip_224",
@@ -367,90 +235,6 @@ def get_model_selection(
     encoder_menu = deepcopy(Encoders)
 
     output_dict = {
-        # encoder_menu.Wave2VecV2Base.value.pretty_name: ModelConfig(
-        #     adapter_config=adapter_config,
-        #     encoder_config=deepcopy(encoder_menu.Wave2VecV2Base.value)(
-        #         image_size=image_size
-        #     ),
-        #     learning_rate_config=LearningRateConfig(
-        #         default=[vit_lr], dataset_specific={}
-        #     ),
-        #     weight_decay=wd,
-        #     train_batch_size=batch_size,
-        #     eval_batch_size=batch_size,
-        # ),
-        encoder_menu.WhisperBase.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.WhisperBase.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        encoder_menu.MPNet.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.MPNet.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        encoder_menu.BERT_TEXT.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.BERT_TEXT.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        encoder_menu.BART_TEXT.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.BART_TEXT.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        # encoder_menu.CLIPViTBase16_224HF_IMAGE.value.pretty_name: ModelConfig(
-        #     adapter_config=adapter_config,
-        #     encoder_config=deepcopy(
-        #         encoder_menu.CLIPViTBase16_224HF_IMAGE.value
-        #     )(image_size=image_size),
-        #     learning_rate_config=LearningRateConfig(
-        #         default=[vit_lr], dataset_specific={}
-        #     ),
-        #     weight_decay=wd,
-        #     train_batch_size=batch_size,
-        #     eval_batch_size=batch_size,
-        # ),
-        # encoder_menu.CLIPViTBase16_224HF_TEXT.value.pretty_name: ModelConfig(
-        #     adapter_config=adapter_config,
-        #     encoder_config=deepcopy(
-        #         encoder_menu.CLIPViTBase16_224HF_TEXT.value
-        #     )(image_size=image_size),
-        #     learning_rate_config=LearningRateConfig(
-        #         default=[vit_lr], dataset_specific={}
-        #     ),
-        #     weight_decay=wd,
-        #     train_batch_size=batch_size,
-        #     eval_batch_size=batch_size,
-        # ),
         encoder_menu.AugRegViTBase16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=deepcopy(encoder_menu.AugRegViTBase16_224.value)(
@@ -535,30 +319,6 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        encoder_menu.FlexViTBase_1200EP.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.FlexViTBase_1200EP.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        # encoder_menu.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
-        #     adapter_config=adapter_config,
-        #     encoder_config=deepcopy(
-        #         encoder_menu.IJEPAViTHugePatch14_224.value
-        #     )(image_size=image_size),
-        #     learning_rate_config=LearningRateConfig(
-        #         default=[vit_lr], dataset_specific={}
-        #     ),
-        #     weight_decay=wd,
-        #     train_batch_size=batch_size,
-        #     eval_batch_size=batch_size,
-        # ),
         encoder_menu.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=deepcopy(encoder_menu.SIGLIPPathch16_224.value)(
@@ -571,18 +331,6 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
             mixed_precision_mode=mixed_precision_mode,
-        ),
-        encoder_menu.EfficientFormer_s0.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.EfficientFormer_s0.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
         ),
         encoder_menu.EffNetV2_RW_S_RA2.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
