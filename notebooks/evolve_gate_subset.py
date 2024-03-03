@@ -1,6 +1,8 @@
 import pathlib
 import random
-from typing import List, Tuple
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from math import comb
+from typing import List, Optional, Tuple
 
 import fire
 import numpy as np
@@ -9,10 +11,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import wandb
 from attr import dataclass
 from sklearn.model_selection import KFold, ShuffleSplit
 from tqdm.auto import tqdm
+
+import wandb
 
 
 @dataclass
@@ -70,16 +73,17 @@ def mutate_combination(
 
 def evaluate_combination(
     df: pd.DataFrame,
-    combination: Tuple[str, ...],
+    metric_combination: Tuple[str, ...],
     device: torch.device,
     epochs: int = 20,
+    metrics_to_leave_out: Optional[List[str]] = None,
 ) -> EvaluationResult:
     """
     Evaluate a combination of metrics on a given dataframe.
 
     Args:
         df (pd.DataFrame): The input dataframe.
-        combination (Tuple[str, ...]): The combination of metrics to evaluate.
+        metric_combination (Tuple[str, ...]): The combination of metrics to evaluate.
         device (torch.device): The device to use for computation.
         epochs (int, optional): The number of training epochs. Defaults to 20.
 
@@ -90,22 +94,28 @@ def evaluate_combination(
     input_metrics = [
         item
         for item in df.columns
-        if any(metric in item for metric in combination)
+        if any(metric in item for metric in metric_combination)
     ]
     target_metrics = list(set(df.columns) - set(input_metrics))
+    if metrics_to_leave_out is not None:
+        target_metrics = [
+            item
+            for item in target_metrics
+            if all([item != metric for metric in metrics_to_leave_out])
+        ]
     x = df[input_metrics].values
     y = df[target_metrics].values
     x = torch.tensor(x).to(device).float()
     y = torch.tensor(y).to(device).float()
+    x = (x - x.mean(axis=0)) / x.std(axis=0)
+    y = (y - y.mean(axis=0)) / y.std(axis=0)
     kf = ShuffleSplit(n_splits=10, random_state=42, test_size=0.4)
     scores = []
     for train_index, test_index in kf.split(x):
-        x = (x - x.mean(axis=0)) / x.std(axis=0)
-        y = (y - y.mean(axis=0)) / y.std(axis=0)
         x_train, x_test = x[train_index], x[test_index]
         y_train, y_test = y[train_index], y[test_index]
         model = nn.Linear(x_train.shape[1], y_train.shape[1]).to(device)
-        optimizer = optim.AdamW(model.parameters(), lr=0.1, weight_decay=0.01)
+        optimizer = optim.AdamW(model.parameters(), lr=0.01, weight_decay=0.01)
         model.reset_parameters()
         for epoch in range(epochs):
             optimizer.zero_grad()
@@ -125,7 +135,7 @@ def evaluate_combination(
         min_score=min_score,
         max_score=max_score,
         std_score=std_score,
-        combination=combination,
+        combination=metric_combination,
     )
 
 
@@ -213,7 +223,11 @@ METRICS = sorted(
 )
 
 
-def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
+def main(
+    result_csv_path: str | pathlib.Path = "notebooks/06022024-processed.csv",
+    combination_size: int = 12,
+    device: str = "cuda",
+):
     """
     Main function for combination optimization.
 
@@ -222,7 +236,8 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         combination_size (int, optional): Size of the combinations to evaluate. Defaults to 12.
     """
     run = wandb.init(
-        project=f"combination-optimization-{combination_size}",
+        project=f"combination-optimization",
+        name=f"combination-optimization-{combination_size}",
         entity="machinelearningbrewery",
     )
     df = pd.read_csv(result_csv_path)
@@ -230,23 +245,27 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
     df = df.iloc[1:, :]
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(df)
+    device = torch.device(device)
     epochs = 20
-    population_size = 25
-    mutation_rounds = 10
-    num_generations = 100
+    num_winners = 50
+    num_children = 10
+    num_generations = 10
     out = get_combinations(metrics=METRICS, max_length=combination_size)
-    random_combinations = random.sample(out, min(500, len(out)))
+    random_combinations = random.sample(out, min(1000, len(out)))
     score_combinations = []
     for combination in tqdm(
         random_combinations, desc="Evaluating combinations"
     ):
         score_combinations.append(
             evaluate_combination(
-                df=df, combination=combination, device=device, epochs=epochs
+                df=df,
+                metric_combination=combination,
+                device=device,
+                epochs=epochs,
             )
         )
-    top_combinations = sorted(score_combinations)[:population_size]
+    top_combinations = sorted(score_combinations)[:num_winners]
     for i, item in enumerate(top_combinations):
         print(f"Rank: {i}, Score: {item.avg_score}, Combination: {item}")
     for i in range(num_generations):
@@ -254,7 +273,7 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         for item in top_combinations:
             combination = item.combination
             new_combinations.add(combination)
-            for _ in range(mutation_rounds):
+            for _ in range(num_children):
                 mutated_combination = mutate_combination(combination, METRICS)
                 new_combinations.add(mutated_combination)
         score_combinations: List[EvaluationResult] = []
@@ -265,7 +284,7 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
             score_combinations.append(
                 evaluate_combination(
                     df=df,
-                    combination=combination,
+                    metric_combination=combination,
                     device=device,
                     epochs=epochs,
                 )
@@ -273,12 +292,12 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         # sort by score given that the items are of type EvaluationResult
         top_combinations = sorted(
             score_combinations, key=lambda x: x.avg_score
-        )[:population_size]
+        )[:num_winners]
 
         for j, item in enumerate(top_combinations):
             print(f"Generation: {i}, Rank: {j}, Item: {item}")
 
-        wandb.log(
+        run.log(
             {
                 "generation": i,
                 "mean_score": np.mean(
@@ -295,6 +314,9 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
                 ),
             }
         )
+        print(
+            f"logging the following metrics: mean_score: {np.mean([item.avg_score for item in top_combinations])}, std_score: {np.std([item.avg_score for item in top_combinations])}, min_score: {np.min([item.avg_score for item in top_combinations])}, max_score: {np.max([item.avg_score for item in top_combinations])}"
+        )
         # cast to DataFrame given that top_combinations is a list of EvaluationResult and the keys are the attributes of EvaluationResult
         top_combinations_df = pd.DataFrame(
             [
@@ -303,7 +325,7 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
                     "min_score": item.min_score,
                     "max_score": item.max_score,
                     "std_score": item.std_score,
-                    "combination": item.combination,
+                    "combination": ", ".join(item.combination),
                 }
                 for item in top_combinations
             ]
@@ -312,12 +334,100 @@ def main(result_csv_path: str | pathlib.Path, combination_size: int = 12):
         artifact = wandb.Artifact("top_combinations", type="top_combinations")
         artifact.add_file("top_combinations.csv")
         run.log_artifact(artifact)
+    if len(top_combinations[0].combination) > 1:
+        remove_one_from_combo_and_reevaluate(
+            combinations=top_combinations[0],
+            df=df,
+            device=device,
+            epochs=epochs,
+        )
     run.finish()
 
 
-if __name__ == "__main__":
-    csv_path = (
-        "/disk/scratch_fast1/aantoni2/GATE/notebooks/31012024-processed.csv"
+def remove_one_from_combo_and_reevaluate(
+    combinations: EvaluationResult, df, device, epochs
+):
+    combintions_of_one_less = [combinations.combination]
+
+    for feature in combinations.combination:
+        new_combination = list(combinations.combination)
+        new_combination.remove(feature)
+        combintions_of_one_less.append(new_combination)
+
+    for combination in tqdm(
+        combintions_of_one_less, desc="Evaluating mutated combinations"
+    ):
+
+        missing_feature = list(
+            set(combinations.combination) - set(combination)
+        )
+
+        missing_feature = (
+            missing_feature[0] if len(missing_feature) > 0 else "full"
+        )
+
+        scores = evaluate_combination(
+            df=df,
+            metric_combination=combination,
+            device=device,
+            epochs=epochs,
+            metrics_to_leave_out=[missing_feature],
+        )
+
+        run = wandb.init(
+            project=f"combination-optimization",
+            name=f"combination-optimization-loo-{len(combinations.combination)}-{missing_feature}",
+            entity="machinelearningbrewery",
+            reinit=True,
+        )
+
+        run.log(
+            {
+                "combination": combination,
+                "missing_feature": missing_feature,
+                "mean": scores.avg_score,
+                "std": scores.std_score,
+                "min": scores.min_score,
+                "max": scores.max_score,
+            }
+        )
+
+
+def run_job(combination_size, gpu_id):
+    csv_path = "notebooks/06022024-processed.csv"
+    device = f"cuda:{gpu_id}"
+    main(
+        result_csv_path=csv_path,
+        combination_size=combination_size,
+        device=device,
     )
-    for i in range(24):
-        main(csv_path, combination_size=i + 1)
+
+
+if __name__ == "__main__":
+    combination_sizes = [2, 3, 6, 12]  # 1 to 31
+    gpu_ids = range(4)  # 0 to 3
+    max_workers = 4  # Maximum number of parallel jobs
+
+    # Schedule jobs in a round-robin fashion across GPUs
+    jobs = [
+        (size, gpu_id)
+        for size in combination_sizes
+        for gpu_id in [size % len(gpu_ids)]
+    ]
+
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        future_to_job = {
+            executor.submit(run_job, combination_size, gpu_id): (
+                combination_size,
+                gpu_id,
+            )
+            for combination_size, gpu_id in jobs
+        }
+
+        for future in as_completed(future_to_job):
+            job = future_to_job[future]
+            try:
+                future.result()  # You can also capture the return value from `main` if needed
+                print(f"Job {job} completed successfully.")
+            except Exception as exc:
+                print(f"Job {job} generated an exception: {exc}.")

@@ -16,6 +16,7 @@ Removed the ones that assumes greyscale is optical flow (which is not true anymo
     Stack   (instead, use GroupPILImageToNDarray and np.stack)
     ToTorchFormatTensor (instead, use torch.fromarray)
 """
+
 from __future__ import annotations
 
 import math

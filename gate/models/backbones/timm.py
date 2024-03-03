@@ -10,7 +10,7 @@ import timm
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
-from timm.data import InterpolationMode, resolve_data_config
+from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
 from transformers.models.clip.modeling_clip import CLIPOutput
@@ -118,7 +118,7 @@ class TimmModel(nn.Module):
             [
                 T.Resize(
                     size=(image_size, image_size),
-                    interpolation=InterpolationMode.BICUBIC,
+                    interpolation=T.InterpolationMode.BICUBIC,
                 )
             ]
             + [
@@ -190,9 +190,11 @@ class TimmModel(nn.Module):
         )
         output_dict = self.forward(self.transforms(img).unsqueeze(0))
         shape_dict = {
-            k: v.shape
-            if isinstance(v, torch.Tensor)
-            else [item.shape for item in v]
+            k: (
+                v.shape
+                if isinstance(v, torch.Tensor)
+                else [item.shape for item in v]
+            )
             for k, v in output_dict.items()
         }
         return shape_dict

@@ -3,8 +3,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
-from rich import print
-
 from gate.data import image
 from gate.data.few_shot import DatasetName as few_shot_dataset_name
 from gate.data.image.classification import (
@@ -36,6 +34,7 @@ from gate.models.task_adapters.semantic_segmentation import (
     SegmentationLossOptions,
 )
 from gate.models.task_adapters.temporal_image_classification import Metrics
+from rich import print
 
 
 class DatasetName(Enum):
@@ -108,6 +107,7 @@ class EncoderConfig:
         mpnet_model_name: Optional[str] = None,
         embedding_dim: Optional[int] = None,
         num_projection_features: Optional[int] = 768,
+        freeze_encoder: bool = False,
     ):
         self.pretty_name = pretty_name
         self.image_size = image_size
@@ -123,6 +123,7 @@ class EncoderConfig:
         self.mpnet_model_name = mpnet_model_name
         self.embedding_dim = embedding_dim
         self.num_projection_features = num_projection_features
+        self.freeze_encoder = freeze_encoder
 
     def __call__(self, image_size: int):
         self.image_size = image_size
@@ -132,8 +133,14 @@ class EncoderConfig:
 @dataclass
 class AdapterConfig:
     adapter_name: str
+    use_stem_instance_norm: bool = True
     metric_type: Optional[str] = None
     loss_type_id: Optional[str] = None
+    background_loss_weight: Optional[float] = None
+    dice_loss_weight: Optional[float] = None
+    focal_loss_weight: Optional[float] = None
+    ce_loss_weight: Optional[float] = None
+    freeze_encoder: bool = False
 
 
 class Adapters(Enum):
@@ -147,10 +154,15 @@ class Adapters(Enum):
     SEGMENTATION = AdapterConfig(
         adapter_name="segmentation-adapter",
         loss_type_id=SegmentationLossOptions.DEFAULT.value,
+        background_loss_weight=0.01,
+        dice_loss_weight=1.0,
+        focal_loss_weight=1.0,
+        ce_loss_weight=1.0,
     )
     MD_SEGMENTATION = AdapterConfig(
         adapter_name="segmentation-adapter",
         loss_type_id=SegmentationLossOptions.MD.value,
+        background_loss_weight=0.01,
     )
     TEMPORAL_CLASSIFICATION = AdapterConfig(
         adapter_name="temporal-classification",
@@ -173,24 +185,26 @@ class Adapters(Enum):
 
 # Create an Enum to store EncoderConfigs
 class Encoders(Enum):
-    CLIPViTBase16_224HF_IMAGE = EncoderConfig(
-        pretty_name="CLIP_B16_224HF_image",
-        model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="clip-image",
-        num_projection_features=768,
-    )
-    CLIPViTBase16_224HF_TEXT = EncoderConfig(
-        pretty_name="CLIP_B16_224HF_text",
-        model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="clip-text",
-        num_projection_features=768,
-    )
+    # CLIPViTBase16_224HF_IMAGE = EncoderConfig(
+    #     pretty_name="CLIP_B16_224HF_image",
+    #     model_name=CLIPModelPaths.openai_b_16,
+    #     encoder_name="clip-image",
+    #     num_projection_features=768,
+    # )
+    # CLIPViTBase16_224HF_TEXT = EncoderConfig(
+    #     pretty_name="CLIP_B16_224HF_text",
+    #     model_name=CLIPModelPaths.openai_b_16,
+    #     encoder_name="clip-text",
+    #     num_projection_features=768,
+    #     freeze_encoder=True,
+    # )
     BART_TEXT = EncoderConfig(
         pretty_name="BART",
         bart_model_name=BartModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="bart",
         num_projection_features=768,
+        freeze_encoder=True,
     )
     BERT_TEXT = EncoderConfig(
         pretty_name="BERT",
@@ -198,6 +212,7 @@ class Encoders(Enum):
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="bert",
         num_projection_features=768,
+        freeze_encoder=True,
     )
     MPNet = EncoderConfig(
         pretty_name="MPNET",
@@ -205,20 +220,23 @@ class Encoders(Enum):
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="mpnet",
         num_projection_features=768,
+        freeze_encoder=True,
     )
-    Wave2VecV2Base = EncoderConfig(
-        pretty_name="W2V2",
-        encoder_name="wav2vecv2",
-        wav2vec2_model_name=Wav2Vec2ModelPaths.base,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        num_projection_features=768,
-    )
+    # Wave2VecV2Base = EncoderConfig(
+    #     pretty_name="W2V2",
+    #     encoder_name="wav2vecv2",
+    #     wav2vec2_model_name=Wav2Vec2ModelPaths.base,
+    #     clip_model_name=CLIPModelPaths.openai_b_16,
+    #     num_projection_features=768,
+    #     freeze_encoder=True,
+    # )
     WhisperBase = EncoderConfig(
         pretty_name="Whisper",
         encoder_name="whisper",
         whisper_model_name=WhisperModelPaths.base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         num_projection_features=768,
+        freeze_encoder=True,
     )
     ResNet50A1 = EncoderConfig(
         pretty_name="R50A1",
@@ -304,13 +322,13 @@ class Encoders(Enum):
         encoder_name="timm",
         num_projection_features=768,
     )
-    IJEPAViTHugePatch14_224 = EncoderConfig(
-        pretty_name="IJEPA_Huge_P14_224",
-        timm_model_name="vit_huge_patch14_gap_224.in22k_ijepa",
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="timm",
-        num_projection_features=768,
-    )
+    # IJEPAViTHugePatch14_224 = EncoderConfig(
+    #     pretty_name="IJEPA_Huge_P14_224",
+    #     timm_model_name="vit_huge_patch14_gap_224.in22k_ijepa",
+    #     clip_model_name=CLIPModelPaths.openai_b_16,
+    #     encoder_name="timm",
+    #     num_projection_features=768,
+    # )
     SIGLIPPathch16_224 = EncoderConfig(
         pretty_name="SIGLIP_P16_224",
         timm_model_name="vit_base_patch16_siglip_224",
@@ -349,18 +367,18 @@ def get_model_selection(
     encoder_menu = deepcopy(Encoders)
 
     output_dict = {
-        encoder_menu.Wave2VecV2Base.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.Wave2VecV2Base.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
+        # encoder_menu.Wave2VecV2Base.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(encoder_menu.Wave2VecV2Base.value)(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
         encoder_menu.WhisperBase.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=deepcopy(encoder_menu.WhisperBase.value)(
@@ -453,6 +471,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -464,6 +483,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -475,6 +495,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -486,6 +507,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -497,6 +519,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -508,6 +531,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -519,20 +543,22 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        encoder_menu.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(
-                encoder_menu.IJEPAViTHugePatch14_224.value
-            )(image_size=image_size),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr], dataset_specific={}
-            ),
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
+        # encoder_menu.IJEPAViTHugePatch14_224.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(
+        #         encoder_menu.IJEPAViTHugePatch14_224.value
+        #     )(image_size=image_size),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
         encoder_menu.SIGLIPPathch16_224.value.pretty_name: ModelConfig(
             adapter_config=adapter_config,
             encoder_config=deepcopy(encoder_menu.SIGLIPPathch16_224.value)(
@@ -541,6 +567,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
             mixed_precision_mode=mixed_precision_mode,
@@ -553,6 +580,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -576,6 +604,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
@@ -587,6 +616,7 @@ def get_model_selection(
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
             ),
+            weight_decay=wd,
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),

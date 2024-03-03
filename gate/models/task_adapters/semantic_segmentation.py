@@ -1,10 +1,11 @@
 import logging
 from enum import Enum
-from typing import Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import rearrange, reduce, repeat
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_IGNORE_INDEX, HYDRATED_NUM_CLASSES
@@ -15,131 +16,168 @@ from gate.metrics.segmentation import (
     IoUMetric,
 )
 from gate.models.backbones import GATEncoder
-from gate.models.blocks.segmentation import (
-    ChannelMixerDecoder,
-    TransformerSegmentationDecoder,
-)
+from gate.models.blocks.segmentation import TransformerSegmentationDecoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters.utils import reinit
+from gate.models.task_adapters import BaseAdapterModule
+from gate.models.task_adapters.utils.helpers import reinit
 
 logger = logging.getLogger(__name__)
 
 
-def default_optimization_loss(
-    logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.01
-):
-    """
-    📝 Optimization Loss
-    Args:
-        logits: (B, C, H, W)
-        labels: (B, 1, H, W)
-    """
-    dice_loss_fn = DiceLoss(ignore_index=ignore_index)
+class ImageSegmentationLoss:
+    def __init__(
+        self,
+        ignore_index: int = 0,
+        background_loss_weight: float = 0.01,
+        dice_loss_weight: float = 1.0,
+        focal_loss_weight: float = 1.0,
+        ce_loss_weight: float = 1.0,
+    ) -> None:
+        self.ignore_index = ignore_index
+        self.background_loss_weight = background_loss_weight
+        self.dice_loss_weight = dice_loss_weight
+        self.focal_loss_weight = focal_loss_weight
+        self.ce_loss_weight = ce_loss_weight
 
-    dice_loss = dice_loss_fn.forward(logits, labels)
+    def __call__(self, logits: torch.Tensor, labels: torch.Tensor) -> dict:
+        """
+        📝 Optimization Loss
+        Args:
+            logits: (B, C, H, W)
+            labels: (B, 1, H, W)
+        """
+        dice_loss_fn = DiceLoss(ignore_index=self.ignore_index)
 
-    focal_loss_fn = FocalLoss(ignore_index=ignore_index)
+        dice_loss = dice_loss_fn.forward(logits, labels)
 
-    focal_loss = focal_loss_fn.forward(logits, labels)
+        focal_loss_fn = FocalLoss(ignore_index=self.ignore_index)
 
-    ce_loss_fn = CrossEntropyLoss(ignore_index=ignore_index)
+        focal_loss = focal_loss_fn.forward(logits, labels)
 
-    ce_loss = ce_loss_fn.forward(logits, labels)
+        ce_loss_fn = CrossEntropyLoss(ignore_index=self.ignore_index)
 
-    background_dice_loss_fn = DiceLoss()
+        ce_loss = ce_loss_fn.forward(logits, labels)
 
-    background_dice_loss = background_dice_loss_fn.forward(logits, labels)
+        background_dice_loss_fn = DiceLoss()
 
-    background_focal_loss_fn = FocalLoss()
+        background_dice_loss = background_dice_loss_fn.forward(logits, labels)
 
-    background_focal_loss = background_focal_loss_fn.forward(logits, labels)
+        background_focal_loss_fn = FocalLoss()
 
-    background_ce_loss_fn = CrossEntropyLoss()
+        background_focal_loss = background_focal_loss_fn.forward(
+            logits, labels
+        )
 
-    background_ce_loss = background_ce_loss_fn.forward(logits, labels)
+        background_ce_loss_fn = CrossEntropyLoss()
 
-    loss = dice_loss + 0.01 * background_dice_loss
-    background_loss = background_ce_loss + background_focal_loss
+        background_ce_loss = background_ce_loss_fn.forward(logits, labels)
 
-    return {
-        "loss": loss + 0.1 * background_loss,
-        "ce_loss": ce_loss,
-        "dice_loss": dice_loss,
-        "focal_loss": focal_loss,
-        "background_loss": background_loss,
-        "background_dice_loss": background_dice_loss,
-        "background_focal_loss": background_focal_loss,
-        "background_ce_loss": background_ce_loss,
-    }
+        loss = torch.mean(
+            torch.stack(
+                [
+                    weight * loss_item
+                    for weight, loss_item in zip(
+                        [
+                            self.dice_loss_weight,
+                            self.focal_loss_weight,
+                            self.ce_loss_weight,
+                        ],
+                        [dice_loss, focal_loss, ce_loss],
+                    )
+                    if weight > 0
+                ]
+            )
+        )
+        background_loss = torch.mean(
+            torch.stack(
+                [
+                    weight * loss_item
+                    for weight, loss_item in zip(
+                        [
+                            self.dice_loss_weight,
+                            self.focal_loss_weight,
+                            self.ce_loss_weight,
+                        ],
+                        [
+                            background_dice_loss,
+                            background_focal_loss,
+                            background_ce_loss,
+                        ],
+                    )
+                    if weight > 0
+                ]
+            )
+        )
+
+        return {
+            "loss": loss + self.background_loss_weight * background_loss,
+            "ce_loss": ce_loss,
+            "dice_loss": dice_loss,
+            "focal_loss": focal_loss,
+            "background_loss": background_loss,
+            "background_dice_loss": background_dice_loss,
+            "background_focal_loss": background_focal_loss,
+            "background_ce_loss": background_ce_loss,
+        }
 
 
-def md_optimization_loss(
-    logits, labels, ignore_index: int = 0, background_loss_weight: float = 0.01
-):
-    """
-    📝 MD Optimization Loss
-    Args:
-        logits: (B, C, H, W)
-        labels: (B, 1, H, W)
-    """
+def test_image_segmentation_loss():
+    loss_fn = ImageSegmentationLoss()
+    logits = torch.randn(1, 3, 256, 256, requires_grad=True)
+    labels = torch.randint(0, 3, (1, 1, 256, 256))
+    loss: Dict[str, torch.Tensor] = loss_fn(logits, labels)
+    assert isinstance(loss, dict)
+    assert "loss" in loss
+    assert "ce_loss" in loss
+    assert "dice_loss" in loss
+    assert "focal_loss" in loss
+    assert "background_loss" in loss
+    assert "background_dice_loss" in loss
+    assert "background_focal_loss" in loss
+    assert "background_ce_loss" in loss
+    assert loss["loss"] > 0
+    assert loss["ce_loss"] > 0
+    assert loss["dice_loss"] > 0
+    assert loss["focal_loss"] > 0
+    assert loss["background_loss"] > 0
+    assert loss["background_dice_loss"] > 0
+    assert loss["background_focal_loss"] > 0
+    assert loss["background_ce_loss"] > 0
+    print(loss["loss"])
+    loss["loss"].backward()
 
-    # start_time = time.time()
-    dice_loss_fn = DiceLoss(ignore_index=0)
-    dice_loss = dice_loss_fn.forward(logits, labels)
-    # dice_loss_time = time.time() - start_time
-    # logging.info(f"Dice loss computation time: {dice_loss_time:.6f} seconds")
 
-    # start_time = time.time()
-    # focal_loss_fn = FocalLoss(ignore_index=ignore_index)
-    # focal_loss = focal_loss_fn.forward(logits, labels)
-    # focal_loss_time = time.time() - start_time
-    # logging.info(f"Focal loss computation time: {focal_loss_time:.6f} seconds")
+class MedicalImageSegmentationLoss:
+    def __init__(
+        self,
+        ignore_index: int = 0,
+        background_loss_weight: float = 0.01,
+    ) -> None:
+        self.ignore_index = ignore_index
+        self.background_loss_weight = background_loss_weight
 
-    # start_time = time.time()
-    ce_loss_fn = CrossEntropyLoss(ignore_index=ignore_index)
-    ce_loss = ce_loss_fn.forward(logits, labels)
-    # ce_loss_time = time.time() - start_time
-    # logging.info(
-    #     f"Cross entropy loss computation time: {ce_loss_time:.6f} seconds"
-    # )
+    def __call__(self, logits: torch.Tensor, labels: torch.Tensor) -> dict:
+        """
+        📝 Optimization Loss
+        Args:
+            logits: (B, C, H, W)
+            labels: (B, 1, H, W)
+        """
+        dice_loss_fn = DiceLoss(ignore_index=self.ignore_index)
+        dice_loss = dice_loss_fn.forward(logits, labels)
 
-    # start_time = time.time()
-    background_dice_loss_fn = DiceLoss()
-    background_dice_loss = background_dice_loss_fn.forward(logits, labels)
-    # background_dice_loss_time = time.time() - start_time
-    # logging.info(
-    #     f"Background dice loss computation time: {background_dice_loss_time:.6f} seconds"
-    # )
+        background_dice_loss_fn = DiceLoss()
+        background_dice_loss = background_dice_loss_fn.forward(logits, labels)
 
-    # start_time = time.time()
-    # background_focal_loss_fn = FocalLoss()
-    # background_focal_loss = background_focal_loss_fn.forward(logits, labels)
-    # background_focal_loss_time = time.time() - start_time
-    # logging.info(
-    #     f"Background focal loss computation time: {background_focal_loss_time:.6f} seconds"
-    # )
+        loss = dice_loss + self.background_loss_weight * background_dice_loss
+        background_loss = background_dice_loss
 
-    # start_time = time.time()
-    background_ce_loss_fn = CrossEntropyLoss()
-    background_ce_loss = background_ce_loss_fn.forward(logits, labels)
-    # background_ce_loss_time = time.time() - start_time
-    # logging.info(
-    #     f"Background cross entropy loss computation time: {background_ce_loss_time:.6f} seconds"
-    # )
-
-    loss = dice_loss + 0.01 * background_dice_loss
-    background_loss = background_dice_loss + background_ce_loss
-
-    return {
-        "loss": loss,
-        "ce_loss": ce_loss,
-        "dice_loss": dice_loss,
-        # "focal_loss": focal_loss,
-        "background_loss": background_loss * background_loss_weight,
-        "background_dice_loss": background_dice_loss,
-        # "background_focal_loss": background_focal_loss,
-        "background_ce_loss": background_ce_loss,
-    }
+        return {
+            "loss": loss,
+            "dice_loss": dice_loss,
+            "background_loss": background_loss,
+            "background_dice_loss": background_dice_loss,
+        }
 
 
 class SegmentationAdapterOptions(Enum):
@@ -167,22 +205,30 @@ class SegmentationLossOptions(Enum):
         num_classes=HYDRATED_NUM_CLASSES, ignore_index=HYDRATED_IGNORE_INDEX
     ),
 )
-class SegmentationAdapter(nn.Module):
+class SegmentationAdapter(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
         freeze_encoder: bool = False,
         num_classes: int = 100,
-        background_loss_weight: float = 0.01,
         class_names: Optional[List[str]] = None,
-        ignore_index: int = 0,
         output_target_image_size: int = 256,
         decoder_target_image_size: tuple = (64, 64),
         loss_type_id: str = SegmentationLossOptions.DEFAULT.value,
+        ignore_index: int = 0,
+        background_loss_weight: float = 0.01,
+        dice_loss_weight: float = 1.0,
+        focal_loss_weight: float = 1.0,
+        ce_loss_weight: float = 1.0,
+        use_batch_level_attention: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__()
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
-        self.encoder = encoder
         self.num_classes = num_classes
         self.class_names = (
             class_names
@@ -192,26 +238,37 @@ class SegmentationAdapter(nn.Module):
         self.ignore_index = ignore_index
         self.decoder_embedding_dimension = self.encoder.num_in_features_image
         self.output_target_image_size = output_target_image_size
+        self.use_stem_instance_norm = use_stem_instance_norm
 
         if loss_type_id == SegmentationLossOptions.DEFAULT.value:
-            self.loss_fn = default_optimization_loss
+            self.loss_fn = ImageSegmentationLoss(
+                ignore_index=ignore_index,
+                background_loss_weight=background_loss_weight,
+                dice_loss_weight=dice_loss_weight,
+                focal_loss_weight=focal_loss_weight,
+                ce_loss_weight=ce_loss_weight,
+            )
         elif loss_type_id == SegmentationLossOptions.MD.value:
-            self.loss_fn = md_optimization_loss
+            self.loss_fn = MedicalImageSegmentationLoss(
+                ignore_index=ignore_index,
+                background_loss_weight=background_loss_weight,
+            )
 
         decoder_layer_mapping = TransformerSegmentationDecoder(
             num_classes=num_classes,
             target_image_size=decoder_target_image_size[0],
-            hidden_size=512,
+            hidden_size=1024,
             pre_output_dropout_rate=0.0,
             dropout_rate=0.0,
             decoder_num_blocks=8,
             decoder_num_heads=8,
         )
+        self.use_batch_level_attention = use_batch_level_attention
 
         self.iou_metric = None
         self.iou_metric_complete = None
         self.spatial_decoder_head = decoder_layer_mapping
-        self.temporal_decoder_head = None
+        self.batch_processing_head = None
 
         self.background_loss_weight = background_loss_weight
         self.build()
@@ -293,40 +350,56 @@ class SegmentationAdapter(nn.Module):
 
         return metrics_with_ignore | metrics_complete
 
-    def forward(self, image, labels: Optional[torch.Tensor] = None):
+    def forward(
+        self, image: torch.Tensor, labels: Optional[torch.Tensor] = None
+    ):
+        if self.use_stem_instance_norm:
+            image = self.stem_instance_norm(image)
+
         features = self.encoder(image)["image"]["per_layer_raw_features"]
         # feature shape is either B, C, H, W or B, (W * H), C
         mask_predictions = self.spatial_decoder_head(features)
-        # b, c, h, w = mask_predictions.shape
-        # if self.temporal_decoder_head is None:
+
+        # if (
+        #     self.use_batch_level_attention
+        #     and self.batch_processing_head is None
+        # ):
+        #     mask_predictions = rearrange(
+        #         "b c h w -> b (h w c)", mask_predictions
+        #     )
+        #     mask_predictions = mask_predictions.unsqueeze(0)
         #     transformer_encoder_layer = nn.TransformerEncoderLayer(
-        #         d_model=c,
-        #         nhead=1,
-        #         dim_feedforward=c * 4,
+        #         d_model=mask_predictions.shape[-1],
+        #         nhead=8,
+        #         dim_feedforward=mask_predictions.shape[-1],
         #         dropout=0.0,
         #         activation="gelu",
         #         batch_first=True,
         #     )
 
-        #     self.segmentation_temporal_processing_head = nn.TransformerEncoder(
+        #     self.batch_processing_head = nn.TransformerEncoder(
         #         encoder_layer=transformer_encoder_layer,
         #         num_layers=4,
-        #         norm=nn.LayerNorm(c),
+        #         norm=nn.LayerNorm(mask_predictions.shape[-1]),
         #     )
 
-        #     self.final_conv = nn.Conv1d(c, self.num_classes, kernel_size=1)
-        #     self.to(device=image.device)
+        #     self.final_conv = nn.Conv1d(
+        #         mask_predictions.shape[-1], self.num_classes, kernel_size=1
+        #     )
 
-        # mask_predictions = mask_predictions.permute(0, 2, 3, 1).reshape(
-        #     b, h * w, c
-        # )
-
-        # mask_predictions = self.segmentation_temporal_processing_head(
-        #     mask_predictions
-        # )
-        # mask_predictions = self.final_conv(mask_predictions.permute(0, 2, 1))
-
-        # mask_predictions = mask_predictions.reshape(b, self.num_classes, h, w)
+        # if self.use_batch_level_attention and self.batch_processing_head:
+        #     mask_predictions = rearrange(
+        #         "b c h w -> b (h w c)", mask_predictions
+        #     )
+        #     mask_predictions = mask_predictions.unsqueeze(0)
+        #     mask_predictions = self.batch_processing_head(mask_predictions)
+        #     mask_predictions = rearrange(
+        #         "p b (h w c) -> (p b) c (h w)", mask_predictions
+        #     )
+        #     mask_predictions = self.final_conv(mask_predictions)
+        #     mask_predictions = rearrange(
+        #         "b c (h w) -> b c h w", mask_predictions
+        #     )
 
         logits = F.interpolate(
             input=mask_predictions,
@@ -347,12 +420,7 @@ class SegmentationAdapter(nn.Module):
 
     @ensemble_marker
     def compute_loss_and_metrics(self, logits, labels):
-        loss_and_metrics = self.loss_fn(
-            logits,
-            labels,
-            ignore_index=self.ignore_index,
-            background_loss_weight=self.background_loss_weight,
-        )
+        loss_and_metrics = self.loss_fn(logits, labels)
 
         if not self.training:
             preds = torch.argmax(logits, dim=1)

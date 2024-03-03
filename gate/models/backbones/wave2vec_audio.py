@@ -22,7 +22,7 @@ from gate.models.backbones import (
     forward_dict,
 )
 from gate.models.core import reinit
-from gate.models.task_adapters.modality_transfer_classification import (
+from gate.models.task_adapters.utils.modality_transfer import (
     VisionRootReplacedBackbone,
 )
 
@@ -111,7 +111,13 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
             self.clip.init_weights()
 
         vision_embedding = ModifiedWav2Vec2Model.from_pretrained(
-            wav2vec2_model_name
+            wav2vec2_model_name,
+            # max_position_embeddings=(
+            #     4097
+            #     if image_size == 1024
+            #     else 2049 if image_size == 512 else 1025
+            # ),
+            ignore_mismatched_sizes=True,
         )
 
         self.vision_model = VisionRootReplacedBackbone(
@@ -198,8 +204,8 @@ class Wav2VecV2Adapter(VisionTextGATEAdapter, GATEncoder):
     def init_weights(self):
         return super().init_weights()
 
-    def get_transforms(self, image_size: int = 224):
-        return super().get_transforms(image_size=image_size)
+    def get_transforms(self):
+        return super().get_transforms(image_size=self.image_size)
 
     def get_image_encoder(self):
         return self.vision_model

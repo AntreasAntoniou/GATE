@@ -118,7 +118,6 @@ def run(cfg: Any) -> None:
     transform: Optional[Callable] = deepcopy(
         task_adapted_model.adapter_transforms
     )
-    pretty_print_parameters(task_adapted_model)
 
     model: GATEModel = GATEModel(
         config=task_adapted_model.modality_config, model=task_adapted_model
@@ -148,7 +147,6 @@ def run(cfg: Any) -> None:
     optimizer = instantiate_optimizer(cfg, model)
     scheduler = instantiate_scheduler(cfg, optimizer)
 
-    pretty_print_parameters(model)
     model, optimizer, scheduler = accelerator.prepare(
         model, optimizer, scheduler
     )

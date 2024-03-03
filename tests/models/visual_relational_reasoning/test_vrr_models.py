@@ -20,7 +20,7 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.visual_relational_reasoning_classification import (
+from gate.models.task_adapters.relational_reasoning import (
     DuoModalFusionModel,
 )
 

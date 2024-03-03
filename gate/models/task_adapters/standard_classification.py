@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -11,7 +11,7 @@ from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 
 logger = logging.getLogger(__name__)
 
@@ -21,15 +21,20 @@ logger = logging.getLogger(__name__)
     name="backbone-with-linear-single-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-class BackboneWithLinearClassification(BaseModule):
+class BackboneWithLinearClassification(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
         num_classes: int,
         allow_on_model_metric_computation: bool = True,
+        freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__()
-        self.encoder = encoder
+        super().__init__(
+            freeze_encoder=freeze_encoder,
+            encoder=encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         num_in_features = self.encoder.num_in_features_image
         logger.info(f"Building linear layer with {num_in_features} features.")
@@ -69,12 +74,14 @@ class BackboneWithLinearClassification(BaseModule):
             "image": torch.randn(
                 1, 3, self.encoder.image_shape[0], self.encoder.image_shape[1]
             ),
-            "labels": torch.randint(0, self.num_classes, (1,))
-            if isinstance(self.num_classes, int)
-            else {
-                key: torch.randint(0, n, (1,))
-                for key, n in self.num_classes.items()
-            },
+            "labels": (
+                torch.randint(0, self.num_classes, (1,))
+                if isinstance(self.num_classes, int)
+                else {
+                    key: torch.randint(0, n, (1,))
+                    for key, n in self.num_classes.items()
+                }
+            ),
         }
         _ = self(**dummy_batch)
 
@@ -157,6 +164,8 @@ class BackboneWithLinearClassification(BaseModule):
         labels: Optional[torch.Tensor] = None,
         return_loss_and_metrics: bool = True,
     ) -> Dict[str, torch.Tensor]:
+        if self.use_stem_instance_norm:
+            image = self.stem_instance_norm(image)
         if image is not None:
             x = self.encoder(image=image)["image"]["features"]
 

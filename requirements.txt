@@ -10,6 +10,7 @@ torchmetrics
 # High-level Libraries built on Torch
 accelerate
 transformers
+monai
 
 # Dataset and Model Hub
 h5py
@@ -45,8 +46,6 @@ kaggle
 # Natural Sorting
 natsort
 
-# Evaluation
-evaluate
 
 # Operations
 einops

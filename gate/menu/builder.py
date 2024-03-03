@@ -6,10 +6,6 @@ from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
 import fire
-from cv2 import exp
-from rich import print
-from rich.logging import RichHandler
-
 from gate.menu.configs.few_shot_learning import (
     Config as few_shot_learning_config,
 )
@@ -37,6 +33,8 @@ from gate.menu.configs.video_regression import (
     Config as video_regression_config,
 )
 from gate.menu.utils import build_command
+from rich import print
+from rich.logging import RichHandler
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)
@@ -103,7 +101,10 @@ def generate_commands(
                     if key == "image_size":
                         exp_name = exp_name.replace(f"224", str(value))
 
-                    encoder_args += f"encoder.{key}={value} "
+                    if "freeze_encoder" in key:
+                        encoder_args += f"adapter.{key}={value} "
+                    else:
+                        encoder_args += f"encoder.{key}={value} "
 
                 adapter_args = ""
                 for key, value in asdict(model_config.adapter_config).items():

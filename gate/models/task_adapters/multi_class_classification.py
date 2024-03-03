@@ -8,7 +8,7 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 
 
 @configurable(
@@ -16,14 +16,19 @@ from gate.models.task_adapters import BaseModule
     name="backbone-with-linear-multi-classifier",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-class MultiClassBackboneWithLinear(BaseModule):
+class MultiClassBackboneWithLinear(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
         num_classes: int,
+        freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__()
-        self.encoder = encoder
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
         self.num_classes = num_classes
         self.linear = nn.Linear(encoder.num_in_features_image, num_classes)
         self.classes = [f"class{idx}" for idx in range(num_classes)]
@@ -77,6 +82,8 @@ class MultiClassBackboneWithLinear(BaseModule):
         return_loss_and_metrics: bool = False,
     ) -> Dict[str, torch.Tensor]:
         if image is not None:
+            if self.use_stem_instance_norm:
+                image = self.stem_instance_norm(image)
             x = self.encoder(image=image)["image"]["features"]
 
         if text is not None:

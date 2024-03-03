@@ -8,8 +8,8 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseModule
-from gate.models.task_adapters.utils import (
+from gate.models.task_adapters import BaseAdapterModule
+from gate.models.task_adapters.utils.helpers import (
     compute_zero_shot_loss_and_metrics,
     get_similarities,
 )
@@ -24,20 +24,26 @@ logger = logging.getLogger(__name__)
     group="adapter",
     name="duo-modal-zero-shot-classifier",
 )
-class DuoModalZeroShotModel(BaseModule):
+class DuoModalZeroShotModel(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
         projection_num_features: Optional[int] = 768,
         temperature_parameter: Optional[float] = 1.0 / 0.07,
         head_identifier: Optional[str] = "features",
+        freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__()
-        self.encoder = encoder
+        super().__init__(
+            freeze_encoder=freeze_encoder,
+            encoder=encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         self.head_identifier = head_identifier
 
         self.projection_num_features = projection_num_features
+
         if temperature_parameter is None:
             self.temperature_parameter = nn.Parameter(torch.tensor(1.0 / 0.07))
         else:
@@ -117,6 +123,9 @@ class DuoModalZeroShotModel(BaseModule):
             is_irregular_shape = True
 
         if image is not None:
+            if self.use_stem_instance_norm:
+                image = self.stem_instance_norm(image)
+
             image_features = self.encoder(image=image)["image"][
                 self.head_identifier
             ]

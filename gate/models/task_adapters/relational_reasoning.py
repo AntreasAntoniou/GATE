@@ -11,11 +11,11 @@ from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseModule
+from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.temporal_image_classification import (
     VariableSequenceTransformerEncoder,
 )
-from gate.models.task_adapters.utils import reinit
+from gate.models.task_adapters.utils.helpers import reinit
 
 logger = get_logger(__name__, set_rich=True)
 
@@ -48,16 +48,21 @@ class SkipConnectionModule(nn.Module):
     name="relational-reasoning",
     defaults=dict(num_classes=HYDRATED_NUM_CLASSES),
 )
-class DuoModalFusionModel(BaseModule):
+class DuoModalFusionModel(BaseAdapterModule):
     def __init__(
         self,
         encoder: GATEncoder,
         dropout_fusion_prob: float = 0.0,
         num_classes: Union[List[int], int, Dict[str, int]] = 10,
         projection_num_features: int = 512,
+        freeze_encoder: bool = False,
+        use_stem_instance_norm: bool = False,
     ):
-        super().__init__()
-        self.encoder = encoder
+        super().__init__(
+            encoder=encoder,
+            freeze_encoder=freeze_encoder,
+            use_stem_instance_norm=use_stem_instance_norm,
+        )
 
         self.temperature_parameter = nn.Parameter(torch.tensor(1.0))
         self.projection_num_features = projection_num_features
@@ -74,9 +79,7 @@ class DuoModalFusionModel(BaseModule):
         )
 
         self.fusion_in_features = projection_num_features
-        self.image_instance_norm = nn.InstanceNorm2d(
-            3, affine=True, track_running_stats=False
-        )
+
         self.fusion_post_processing = VariableSequenceTransformerEncoder(
             d_model=self.fusion_in_features,
             nhead=8,
@@ -196,7 +199,8 @@ class DuoModalFusionModel(BaseModule):
     ) -> Dict[str, torch.Tensor]:
         # check that only two modalities are passed
 
-        image = self.image_instance_norm(image)
+        if self.use_stem_instance_norm:
+            image = self.image_instance_norm(image)
         image_features = self.encoder(image=image)["image"]["raw_features"]
         image_features = self.image_linear(
             image_features.reshape(-1, image_features.shape[-1])
