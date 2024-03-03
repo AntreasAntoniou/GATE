@@ -12,9 +12,9 @@ GATE is a comprehensive benchmarking suite that aims to fill a gap in the evalua
 
 You can install GATE using pip:
 
-\`\`\`bash
+```bash
 pip install gate
-\`\`\`
+```
 
 To install from source, clone the repository and use the provided requirements file:
 
@@ -43,29 +43,29 @@ GATE can be used as a template for your research project. It provides full Hydra
 
 GATE can be used as a library in your Python projects. Here is a basic example:
 
-\`\`\`python
+```python
 import gate.data.image.classification.stl10 as stl
 data = stl.build_stl10_dataset("train", data_dir=os.environ.get("PYTEST_DIR"))
 
 import gate.models.classification.clip as clip
 model = clip.build_clip_model("RN50x4", pretrained=True)
-\`\`\`
+```
 
 #### Use GATE as a library, as a source of experiment generation
 
 GATE can be used as a library to generate experiments. Here is an example:
 
-\`\`\`python
+```python
 builder = gate.build_experiments(model=GATEModel(), gate_flavour="foundation")
 experiments = builder.generate_experiments()
 builder.run_experiments()
-\`\`\`
+```
 
 ## Project Structure
 
 A high-level overview of the project's structure is given below:
 
-\`\`\`
+```
 .
 ├── boilerplate/
 │   ├── callbacks.py
@@ -109,6 +109,6 @@ A high-level overview of the project's structure is given below:
 │   └── utils/
 ├── dummy_module.py
 └── run.py
-\`\`\`
+```
 
 For a more detailed description of the individual files and directories, please refer to the comments in the respective files.
