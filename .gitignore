@@ -154,6 +154,7 @@ checkpoints/*
 *.stdout
 wandb/*
 notebooks/wandb/*
+notebooks/*
 
 # Pycharm
 .idea/
