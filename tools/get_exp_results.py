@@ -9,10 +9,11 @@ from typing import Dict, List, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import wandb
 from pyparsing import Opt
 from rich import print
 from tqdm.auto import tqdm
+
+import wandb
 
 plt.style.use("ggplot")
 
