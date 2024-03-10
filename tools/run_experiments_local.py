@@ -79,14 +79,9 @@ def run_command_on_gpu(
     Returns:
         The handle of the process running the command.
     """
-    command = (
-        command.replace(
-            f"accelerate launch",
-            "accelerate launch --gpu_ids=" + ",".join(gpu_ids),
-        )
-        + f" --wandb_tags={','.join(tags)}"
-        if tags
-        else ""
+    command = command.replace(
+        f"accelerate launch",
+        "accelerate launch --gpu_ids=" + ",".join(gpu_ids),
     )
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout.log", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr.log", "w")

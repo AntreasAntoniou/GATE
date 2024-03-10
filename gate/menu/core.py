@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
+from rich import print
+
 from gate.data import image
 from gate.data.few_shot import DatasetName as few_shot_dataset_name
 from gate.data.image.classification import (
@@ -34,7 +36,6 @@ from gate.models.task_adapters.semantic_segmentation import (
     SegmentationLossOptions,
 )
 from gate.models.task_adapters.temporal_image_classification import Metrics
-from rich import print
 
 
 class DatasetName(Enum):
