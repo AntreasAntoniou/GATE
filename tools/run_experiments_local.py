@@ -66,7 +66,6 @@ def run_command_on_gpu(
     command: str,
     gpu_ids: List[str],
     exp_name: str,
-    tags: Optional[List[str]] = None,
 ):
     """
     Run a command on the specified GPUs.
@@ -79,13 +78,13 @@ def run_command_on_gpu(
     Returns:
         The handle of the process running the command.
     """
+    gpu_string = ",".join(gpu_ids)
     command = command.replace(
         f"accelerate launch",
-        "accelerate launch --gpu_ids=" + ",".join(gpu_ids),
+        f"accelerate launch --gpu_ids={gpu_string}",
     )
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout.log", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr.log", "w")
-
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )
@@ -96,7 +95,6 @@ def run_commands(
     num_gpus: int,
     memory_threshold=5,
     util_threshold=10,
-    tags: Optional[List[str]] = None,
 ):
     """
     Run multiple commands on available GPUs.
@@ -120,7 +118,6 @@ def run_commands(
                     command=command,
                     gpu_ids=gpu_ids,
                     exp_name=command_name,
-                    tags=tags,
                 )
                 available_gpus = [
                     gpu for gpu in available_gpus if gpu not in gpu_ids
@@ -172,7 +169,6 @@ def main(
     memory_threshold: int = 5,
     util_threshold: int = 10,
     log_dir: Optional[Union[str, pathlib.Path]] = None,
-    tags: Optional[List[str]] = None,
 ):
     """
     The main function of the program.
