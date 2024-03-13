@@ -10,11 +10,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import wandb
 from attr import dataclass
 from sklearn.model_selection import ShuffleSplit
 from tqdm.auto import tqdm
-
-import wandb
 
 
 @dataclass
@@ -437,7 +436,7 @@ def run_job(combination_size, gpu_id):
 
 
 if __name__ == "__main__":
-    combination_sizes = [9, 15, 21, 28]  # 1 to 31
+    combination_sizes = [12]  # 1 to 31
     gpu_ids = range(1)  # 0 to 3
     max_workers = 1  # Maximum number of parallel jobs
 
