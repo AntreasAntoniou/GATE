@@ -40,7 +40,7 @@ def compute_loss(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The computed loss.
     """
-    return F.mse_loss(logits, labels) + F.l1_loss(logits, labels)
+    return F.mse_loss(logits, labels)
 
 
 def mutate_combination(
@@ -71,7 +71,8 @@ def mutate_combination(
 
 def evaluate_combination(
     df: pd.DataFrame,
-    metric_combination: Tuple[str, ...],
+    input_metrics: Tuple[str, ...],
+    target_metrics: Optional[List[str]] = None,
     device: torch.device,
     epochs: int = 20,
     metrics_to_leave_out: Optional[List[str]] = None,
@@ -92,17 +93,24 @@ def evaluate_combination(
     input_metrics = [
         item
         for item in df.columns
-        if any(metric in item for metric in metric_combination)
+        if any(metric in item for metric in input_metrics)
     ]
-    target_metrics = list(set(df.columns))
+    if target_metrics is None:
+        target_metrics = list(set(df.columns))
+    else:
+        target_metrics = [
+            item
+            for item in df.columns
+            if any(metric in item for metric in target_metrics)
+        ]
     if metrics_to_leave_out is not None:
         target_metrics = [
             item
             for item in target_metrics
             if all([item != metric for metric in metrics_to_leave_out])
         ]
-    x = df[input_metrics].values
-    y = df[target_metrics].values
+    x = df[input_metrics].values # num_models, k
+    y = df[target_metrics].values # num_models, all_metrics
     x = torch.tensor(x).to(device).float()
     y = torch.tensor(y).to(device).float()
     x = (x - x.mean(axis=0)) / x.std(axis=0)
@@ -115,6 +123,7 @@ def evaluate_combination(
         model = nn.Linear(x_train.shape[1], y_train.shape[1]).to(device)
         optimizer = optim.AdamW(model.parameters(), lr=0.01, weight_decay=0.01)
         model.reset_parameters()
+        # try lasso regression
         for epoch in range(epochs):
             optimizer.zero_grad()
             outputs = model(x_train)
@@ -133,7 +142,7 @@ def evaluate_combination(
         min_score=min_score,
         max_score=max_score,
         std_score=std_score,
-        combination=metric_combination,
+        combination=input_metrics,
     )
 
 
@@ -258,7 +267,7 @@ def main(
         score_combinations.append(
             evaluate_combination(
                 df=df,
-                metric_combination=combination,
+                input_metrics=combination,
                 device=device,
                 epochs=epochs,
             )
@@ -315,7 +324,7 @@ def main(
                 score_combinations.append(
                     evaluate_combination(
                         df=df,
-                        metric_combination=combination,
+                        input_metrics=combination,
                         device=device,
                         epochs=epochs,
                     )
@@ -406,7 +415,7 @@ def remove_one_from_combo_and_reevaluate(
 
         scores = evaluate_combination(
             df=df,
-            metric_combination=combination,
+            input_metrics=combination,
             device=device,
             epochs=epochs,
             metrics_to_leave_out=[missing_feature],
