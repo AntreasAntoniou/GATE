@@ -375,7 +375,7 @@ class TextProcessor:
         return transformed_text
 
 
-class GATEEncoder(ABC, nn.Module):
+class GATEncoder(ABC, nn.Module):
     @abstractmethod
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -485,3 +485,167 @@ class GATETextEncoder(ABC, nn.Module):
     @abstractmethod
     def transforms(self, x):
         pass
+
+
+from transformers.models.clip.modeling_clip import CLIPOutput
+
+from gate.models.core import simple_init
+
+
+class ImageTextEncoder(GATEncoder):
+    def __init__(
+        self,
+        image_embedding: GATEImageEncoder,
+        text_embedding: GATETextEncoder,
+        image_size: Optional[int] = None,
+        num_projection_features: Optional[int] = None,
+    ):
+        super().__init__()
+        self.image_embedding = image_embedding
+        self.text_embedding = text_embedding
+        self.image_size = image_size
+        self.num_projection_features = num_projection_features
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
+
+    @property
+    def num_in_features_image(self):
+        return self.image_embedding.num_features
+
+    @property
+    def num_in_features_text(self):
+        return self.text_embedding.num_features
+
+    @property
+    def num_raw_features_image(self):
+        return self.image_embedding.num_raw_features
+
+    @property
+    def num_raw_features_text(self):
+        return self.text_embedding.num_raw_features
+
+    @property
+    def num_in_features_video(self):
+        raise NotImplementedError(f"TimmCLIP does not have a video backbone")
+
+    def init_weights(self):
+        simple_init(self)
+
+    def process_images(self, image: torch.Tensor) -> torch.Tensor:
+        if image is None:
+            raise ValueError("Image cannot be None.")
+        return self.image_embedding(image)
+
+    def forward(
+        self,
+        image: Optional[torch.Tensor] = None,
+        text: Optional[torch.Tensor] = None,
+        video: Optional[torch.Tensor] = None,
+        **kwargs,
+    ):
+        if image is None and text is None and video is None:
+            raise ValueError(
+                f"Must provide at least one input modality"
+                f"to {self.__class__.__name__}"
+            )
+
+        output_dict = defaultdict(dict)
+
+        if image is not None:
+            output_dict["image"] = self.process_images(image)
+            if self.num_projection_features:
+                output_dict["image"]["features"] = (
+                    self.image_embedding.projection_layer(
+                        output_dict["image"]["features"]
+                    )
+                )
+
+        if video is not None:
+            if len(video.shape) == 5:
+                b, s, c, h, w = video.shape
+
+                output_dict["video"] = self.process_images(
+                    video.view(b * s, c, h, w)
+                )
+                if self.num_projection_features:
+                    output_dict["video"]["features"] = (
+                        self.image_embedding.projection_layer(
+                            output_dict["video"]["features"]
+                        )
+                    )
+
+                for k, v in output_dict["video"].items():
+                    if v is not None:
+                        if isinstance(v, list) or isinstance(v, tuple):
+                            v = torch.stack(v, dim=2)
+                        output_dict["video"][k] = v.view(b, s, *v.shape[1:])
+            else:
+                output_dict["video"] = self.process_images(video)
+                if self.num_projection_features:
+                    output_dict["video"]["features"] = (
+                        self.image_embedding.projection_layer(
+                            output_dict["video"]["features"]
+                        )
+                    )
+
+        if text is not None:
+            text: CLIPOutput = self.text_embedding(input_ids=text)
+            output_dict["text"]["features"] = text.pooler_output
+            output_dict["text"]["raw_features"] = text.last_hidden_state
+            if self.num_projection_features:
+                output_dict["text"]["features"] = (
+                    self.text_embedding.projection_layer(
+                        output_dict["text"]["features"]
+                    )
+                )
+
+        return output_dict
+
+    def get_transforms(self):
+        def image_transforms(x):
+            x = self.image_embedding.transforms(x)
+            return x
+
+        def text_transforms(x):
+            return self.text_embedding.transforms(x)
+
+        def image_transforms_process_multi_type(x):
+            if isinstance(x, List):
+                return [
+                    apply_preprocessing_transforms(
+                        x=item,
+                        transforms=image_transforms,
+                        modality=Modality.image,
+                    )
+                    for item in x
+                ]
+            else:
+                return apply_preprocessing_transforms(
+                    x=x, transforms=image_transforms, modality=Modality.image
+                )
+
+        def text_transforms_process_multi_type(x):
+            return apply_preprocessing_transforms(
+                x=x, transforms=text_transforms, modality=Modality.text
+            )
+
+        def video_transforms_process_multi_type(x):
+            return torch.stack(
+                [image_transforms_process_multi_type(item) for item in x],
+                dim=0,
+            )
+
+        return {
+            "image": lambda x: image_transforms_process_multi_type(x),
+            "text": lambda x: text_transforms_process_multi_type(x),
+            "video": lambda x: video_transforms_process_multi_type(x),
+        }
+
+    def get_image_encoder(self):
+        return self.image_embedding
+
+    def get_text_encoder(self):
+        return self.text_embedding
+        return self.text_embedding
