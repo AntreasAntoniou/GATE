@@ -280,7 +280,6 @@ class GATECLIPTextEncoder(GATETextEncoder):
     def __init__(
         self,
         model_name: str,
-        pretrained: bool = True,
         num_projection_features: Optional[int] = None,
     ):
         super().__init__()
@@ -357,7 +356,6 @@ class TimmCLIPEncoder(GATEImageTextEncoder, nn.Module):
         )
         text_embedding = GATECLIPTextEncoder(
             model_name=clip_model_name,
-            pretrained=pretrained,
             num_projection_features=num_projection_features,
         )
         GATEImageTextEncoder.__init__(
