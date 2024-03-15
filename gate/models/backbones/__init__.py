@@ -492,7 +492,7 @@ from transformers.models.clip.modeling_clip import CLIPOutput
 from gate.models.core import simple_init
 
 
-class ImageTextEncoder(GATEncoder):
+class GATEImageTextEncoder(GATEncoder):
     def __init__(
         self,
         image_embedding: GATEImageEncoder,

@@ -15,8 +15,8 @@ from transformers import CLIPModel, CLIPProcessor
 from gate.boilerplate.decorators import configurable
 from gate.models.backbones import (
     GATEImageEncoder,
+    GATEImageTextEncoder,
     GATETextEncoder,
-    ImageTextEncoder,
     Modality,
     TextProcessor,
     image_dim_reshape,
@@ -339,7 +339,7 @@ class GATECLIPTextEncoder(GATETextEncoder):
     group="encoder",
     name="timm",
 )
-class TimmCLIPEncoder(ImageTextEncoder, nn.Module):
+class TimmCLIPEncoder(GATEImageTextEncoder, nn.Module):
     def __init__(
         self,
         timm_model_name: str = TimmModelPaths.clip_vit_base_patch16,
@@ -360,7 +360,7 @@ class TimmCLIPEncoder(ImageTextEncoder, nn.Module):
             pretrained=pretrained,
             num_projection_features=num_projection_features,
         )
-        ImageTextEncoder.__init__(
+        GATEImageTextEncoder.__init__(
             self,
             image_embedding,
             text_embedding,
