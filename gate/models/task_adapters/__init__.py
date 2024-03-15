@@ -3,13 +3,13 @@ from typing import Iterator, Tuple
 import torch
 import torch.nn as nn
 
-from gate.models.backbones import GATEncoder
+from gate.models.backbones import GATEEncoder
 
 
 class BaseAdapterModule(nn.Module):
     def __init__(
         self,
-        encoder: GATEncoder,
+        encoder: GATEEncoder,
         freeze_encoder: bool = False,
         use_stem_instance_norm: bool = False,
     ):

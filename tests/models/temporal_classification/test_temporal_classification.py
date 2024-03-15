@@ -7,7 +7,7 @@ from gate.models.backbones.bert_text import BertAdapter, BertModelPaths
 from gate.models.backbones.clip_image import CLIPVisionAdapter
 from gate.models.backbones.clip_text import CLIPTextAdapter
 from gate.models.backbones.mpnet_text import MPNetAdapter, MPNetModelPaths
-from gate.models.backbones.timm import CLIPModelPaths, TimmCLIPAdapter
+from gate.models.backbones.timm import CLIPModelPaths, TimmCLIPEncoder
 from gate.models.backbones.wave2vec_audio import (
     Wav2Vec2ModelPaths,
     Wav2VecV2Adapter,
@@ -24,7 +24,7 @@ from gate.models.task_adapters.temporal_image_classification import (
 
 data = [
     (
-        TimmCLIPAdapter,
+        TimmCLIPEncoder,
         dict(
             timm_model_name=Encoders.EffNetV2_RW_S_RA2.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,
@@ -32,7 +32,7 @@ data = [
         ),
     ),
     (
-        TimmCLIPAdapter,
+        TimmCLIPEncoder,
         dict(
             timm_model_name=Encoders.AugRegViTBase16_224.value.timm_model_name,
             clip_model_name=CLIPModelPaths.openai_b_16,

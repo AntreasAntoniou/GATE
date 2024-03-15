@@ -194,7 +194,7 @@ class GATEModel(nn.Module):
         return output_dict
 
 
-def reinit(input_module: nn.Module):
+def simple_init(input_module: nn.Module):
     for name, module in input_module.named_modules():
         if isinstance(module, torch.nn.Linear):
             torch.nn.init.normal_(module.weight, std=0.02)

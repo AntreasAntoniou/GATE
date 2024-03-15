@@ -2,15 +2,15 @@ import pytest
 import torch
 
 from gate.models.backbones.clip_image import CLIPModelPaths
-from gate.models.backbones.timm import (
-    TimmCLIPAdapter,
-)  # replace 'your_module' with the module where you have defined CLIPAdapter
+from gate.models.backbones.timm import (  # replace 'your_module' with the module where you have defined CLIPAdapter
+    TimmCLIPEncoder,
+)
 
 
 @pytest.fixture
 def clip_adapter():
     # You can use a real model name here or mock the CLIPModel and CLIPProcessor as needed
-    return TimmCLIPAdapter(
+    return TimmCLIPEncoder(
         clip_model_name=CLIPModelPaths.openai_b_16,
         timm_model_name="vit_base_patch16_224",
         image_size=224,

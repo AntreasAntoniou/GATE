@@ -9,7 +9,7 @@ from omegaconf import DictConfig
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
-from gate.models.backbones import GATEncoder
+from gate.models.backbones import GATEEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseAdapterModule
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class BackboneWithLinearClassification(BaseAdapterModule):
     def __init__(
         self,
-        encoder: GATEncoder,
+        encoder: GATEEncoder,
         num_classes: int,
         allow_on_model_metric_computation: bool = True,
         freeze_encoder: bool = False,

@@ -375,7 +375,7 @@ class TextProcessor:
         return transformed_text
 
 
-class GATEncoder(ABC, nn.Module):
+class GATEEncoder(ABC, nn.Module):
     @abstractmethod
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -419,4 +419,69 @@ class GATEncoder(ABC, nn.Module):
         pass
 
     def get_transforms(self):
+        pass
+
+
+class GATEImageEncoder(ABC, nn.Module):
+    @property
+    @abstractmethod
+    def projection_layer(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_projection_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_raw_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def image_shape(self):
+        pass
+
+    @abstractmethod
+    def forward(self, args, **kwargs):
+        pass
+
+    @abstractmethod
+    def transforms(self, x):
+        pass
+
+
+class GATETextEncoder(ABC, nn.Module):
+    @property
+    @abstractmethod
+    def projection_layer(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_projection_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_features(self):
+        pass
+
+    @property
+    @abstractmethod
+    def num_raw_features(self):
+        pass
+
+    @abstractmethod
+    def forward(self, args, **kwargs):
+        pass
+
+    @abstractmethod
+    def transforms(self, x):
         pass

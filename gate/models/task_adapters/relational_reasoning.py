@@ -13,8 +13,12 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
-from gate.models.backbones import GATEncoder
-from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
+from gate.models.backbones import GATEEncoder
+from gate.models.core import (
+    SourceModalityConfig,
+    TargetModalityConfig,
+    simple_init,
+)
 from gate.models.task_adapters import BaseAdapterModule
 from gate.models.task_adapters.utils.helpers import reinit
 
@@ -212,7 +216,7 @@ class SkipConnectionModule(nn.Module):
 class DuoModalFusionModel(BaseAdapterModule):
     def __init__(
         self,
-        encoder: GATEncoder,
+        encoder: GATEEncoder,
         dropout_fusion_prob: float = 0.0,
         num_classes: Union[List[int], int, Dict[str, int]] = 10,
         projection_num_features: int = 512,
@@ -435,7 +439,7 @@ class DuoModalFusionModel(BaseAdapterModule):
     def init_weights(self):
         """Initialize the weights of the model."""
         # Assuming `reinit` is a function that initializes the weights
-        reinit(self)
+        simple_init(self)
 
     def adapter_transforms(self, inputs: dict):
         if "image" in inputs:
