@@ -13,7 +13,7 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
-from gate.models.backbones import GATEEncoder
+from gate.models.backbones import GATEncoder
 from gate.models.core import (
     SourceModalityConfig,
     TargetModalityConfig,
@@ -216,7 +216,7 @@ class SkipConnectionModule(nn.Module):
 class DuoModalFusionModel(BaseAdapterModule):
     def __init__(
         self,
-        encoder: GATEEncoder,
+        encoder: GATEncoder,
         dropout_fusion_prob: float = 0.0,
         num_classes: Union[List[int], int, Dict[str, int]] = 10,
         projection_num_features: int = 512,
