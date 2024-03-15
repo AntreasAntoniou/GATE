@@ -10,6 +10,7 @@ import timm
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
+from numpy import clip
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
@@ -209,11 +210,15 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
+class TimmModelPaths:
+    clip_vit_base_patch16: str = "vit_base_patch16_siglip_224"
+
+
 class TimmCLIPAdapterBase(GATEncoder):
     def __init__(
         self,
         timm_model_name: str,
-        clip_model_name: str = CLIPModelPaths.openai_b_16,
+        clip_model_name: str,
         pretrained: bool = True,
         image_size: Optional[int] = None,
         num_projection_features: Optional[int] = None,
@@ -415,10 +420,10 @@ class TimmCLIPAdapterBase(GATEncoder):
 class TimmCLIPAdapter(TimmCLIPAdapterBase, nn.Module):
     def __init__(
         self,
-        timm_model_name: str,
-        clip_model_name: str,
+        timm_model_name: str = TimmModelPaths.clip_vit_base_patch16,
+        clip_model_name: str = CLIPModelPaths.openai_b_16,
         pretrained: bool = True,
-        image_size: Optional[int] = None,
+        image_size: Optional[int] = 224,
         num_projection_features: Optional[int] = None,
     ):
         nn.Module.__init__(self)

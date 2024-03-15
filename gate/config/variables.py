@@ -26,7 +26,7 @@ PREFETCH_FACTOR = get_env_var("PREFETCH_FACTOR", 2)
 PERSISTENT_WORKERS = get_env_var("PERSISTENT_WORKERS", False)
 PIN_MEMORY = get_env_var("PIN_MEMORY", True)
 
-TRAIN_ITERS = get_env_var("TRAIN_ITERS", 10000)
+TRAIN_ITERS = get_env_var("TRAIN_ITERS", 2500)
 SEED = get_env_var("SEED", 42)
 RESUME = get_env_var("RESUME", True)
 LOGGER_LEVEL = get_env_var("LOGGER_LEVEL", "INFO")
