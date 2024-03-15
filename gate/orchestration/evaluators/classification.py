@@ -2,14 +2,10 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from accelerate import Accelerator
 
-from gate.boilerplate.decorators import collect_metrics_mark, configurable
-from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
+from gate.boilerplate.decorators import configurable
 from gate.orchestration.evaluators import Evaluator, EvaluatorOutput
 
 logger = logging.getLogger(__name__)

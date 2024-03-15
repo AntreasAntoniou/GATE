@@ -2,8 +2,6 @@ import os
 from copy import deepcopy
 from typing import Any, Callable, Optional
 
-from accelerate import Accelerator
-
 # Set environmental variables for better debugging
 os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
@@ -12,6 +10,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 import logging
 
 import hydra
+from accelerate import Accelerator
 from hydra_zen import instantiate
 from omegaconf import OmegaConf
 from rich import print
@@ -90,7 +89,7 @@ def run(cfg: Any) -> None:
     # Pretty print the configuration
     print(pretty_config(cfg, resolve=True))
 
-    os.environ["HF_REPO_PATH"] = cfg.hf_repo_path
+    os.environ["HF_REPO_PATH"] = cfg.hf_repo_path  # make this optional
     os.environ["HF_CACHE_DIR"] = cfg.hf_cache_dir
     os.environ["CURRENT_EXPERIMENT_DIR"] = cfg.current_experiment_dir
 
@@ -170,7 +169,6 @@ def run(cfg: Any) -> None:
         cfg.evaluator,
     )
 
-    # TODO: allow losses and task adapters to be defined at this level
     learner: Learner = instantiate(
         cfg.learner,
         model=model,

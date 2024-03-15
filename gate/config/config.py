@@ -146,18 +146,6 @@ def collect_config_store():
     ##########################################################################
     # Scheduler configs
 
-    cosine_learning_rate_scheduler_config = builds(
-        CosineLRScheduler,
-        populate_full_signature=True,
-        zen_partial=True,
-    )
-
-    config_store.store(
-        group="scheduler",
-        name="cosine-annealing",
-        node=cosine_learning_rate_scheduler_config(),
-    )
-
     plateu_learning_rate_scheduler_config = builds(
         torch.optim.lr_scheduler.ReduceLROnPlateau,
         populate_full_signature=True,
@@ -176,24 +164,6 @@ def collect_config_store():
             cooldown=0,
             min_lr=0,
             eps=1e-8,
-            verbose=False,
-        ),
-    )
-
-    linear_learning_rate_scheduler_config = builds(
-        torch.optim.lr_scheduler.LinearLR,
-        populate_full_signature=True,
-        zen_partial=True,
-    )
-
-    config_store.store(
-        group="scheduler",
-        name="linear",
-        node=linear_learning_rate_scheduler_config(
-            start_factor=1.0,
-            end_factor=1.0 / 50,
-            total_iters=10000,
-            last_epoch=-1,
             verbose=False,
         ),
     )
