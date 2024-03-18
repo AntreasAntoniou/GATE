@@ -1,16 +1,13 @@
 import math
-from typing import Optional, Tuple
+from collections import OrderedDict
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+import yaml
 from einops import rearrange, reduce
 from einops.layers.torch import Reduce
-from einspace.compiler import Compiler
-from einspace.search_spaces import EinSpace
-from einspace.utils import millify
-from rich import print
-
 from gate.boilerplate.decorators import configurable
 from gate.data import image
 from gate.models.backbones import (
@@ -19,6 +16,11 @@ from gate.models.backbones import (
     GATETextEncoder,
 )
 from gate.models.backbones.timm import CLIPModelPaths, GATECLIPTextEncoder
+from rich import print
+
+from einspace.compiler import Compiler
+from einspace.search_spaces import EinSpace
+from einspace.utils import millify
 
 
 class ImageEincoder(GATEImageEncoder):
@@ -105,6 +107,31 @@ class ImageEincoder(GATEImageEncoder):
         return transform_fused(x)
 
 
+def represent_dict_order(dumper, data):
+    return dumper.represent_dict(data.items())
+
+
+def construct_ordered_dict(loader, node):
+    return OrderedDict(loader.construct_pairs(node))
+
+
+def fancy_yaml_dump(data, filename):
+    yaml.add_representer(OrderedDict, represent_dict_order)
+    with open(filename, "w") as file:
+        yaml.dump(data, file, default_flow_style=False)
+
+
+def fancy_yaml_load(filename):
+    # Add the custom constructor for mapping nodes (YAML dictionaries)
+    yaml.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_ordered_dict
+    )
+
+    # Load the YAML string into an OrderedDict
+    loaded_dict = yaml.load(filename, Loader=yaml.Loader)
+    return loaded_dict
+
+
 @configurable(
     group="encoder",
     name="eincoder",
@@ -112,7 +139,7 @@ class ImageEincoder(GATEImageEncoder):
 class ImageTextEincoder(GATEImageTextEncoder, nn.Module):
     def __init__(
         self,
-        architecture_dict: Optional[dict] = None,
+        architecture_dict: Optional[Any] = None,
         clip_model_name: str = CLIPModelPaths.openai_b_16,
         image_size: Optional[int] = 224,
         num_projection_features: Optional[int] = 512,
@@ -127,7 +154,22 @@ class ImageTextEincoder(GATEImageTextEncoder, nn.Module):
                 computation_module_prob=0.5,
             )
             architecture_dict = einspace.sample()
+            print(f"Sampled architecture: {architecture_dict}")
 
+            fancy_yaml_dump(architecture_dict, "eincoder_architecture.yaml")
+
+            architecture_dict = fancy_yaml_load(
+                open("eincoder_architecture.yaml", "r")
+            )
+            print(f"Loaded architecture: {architecture_dict}")
+        else:
+            if architecture_dict.endswith(".yaml"):
+                # Load the YAML file into a dictionary
+                print(f"Loading architecture from {architecture_dict}")
+                with open(architecture_dict, "r") as file:
+                    architecture_dict = fancy_yaml_load(file)
+                # Update the configuration with the loaded dictionary
+        print(architecture_dict)
         image_embedding = ImageEincoder(
             architecture_dict=architecture_dict,
             full_image_shape=(3, image_size, image_size),

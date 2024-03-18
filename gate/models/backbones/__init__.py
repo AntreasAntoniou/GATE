@@ -487,9 +487,8 @@ class GATETextEncoder(ABC, nn.Module):
         pass
 
 
-from transformers.models.clip.modeling_clip import CLIPOutput
-
 from gate.models.core import simple_init
+from transformers.models.clip.modeling_clip import CLIPOutput
 
 
 class GATEImageTextEncoder(GATEncoder):
@@ -556,7 +555,6 @@ class GATEImageTextEncoder(GATEncoder):
         if image is not None:
             output_dict["image"] = self.process_images(image)
             if self.num_projection_features:
-                print(f"In here {self.image_embedding.projection_layer}")
                 output_dict["image"]["features"] = (
                     self.image_embedding.projection_layer(
                         output_dict["image"]["features"]

@@ -2,6 +2,9 @@ import os
 from copy import deepcopy
 from typing import Any, Callable, Optional
 
+import yaml
+from gate.models.backbones.einspace import fancy_yaml_load
+
 # Set environmental variables for better debugging
 os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
@@ -10,18 +13,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "False"
 import logging
 
 import hydra
-from accelerate import Accelerator
-from hydra_zen import instantiate
-from omegaconf import OmegaConf
-from rich import print
-from rich.console import Console
-from rich.style import Style
-from rich.table import Table
-from rich.text import Text
-from rich.traceback import install
-from torch import nn
-
 import wandb
+from accelerate import Accelerator
 from gate.boilerplate.callbacks import instantiate_callbacks
 from gate.boilerplate.convenience import (
     count_model_parameters,
@@ -42,6 +35,15 @@ from gate.boilerplate.utils import (
 from gate.config.config import collect_config_store
 from gate.data.core import GATEDataset
 from gate.models.core import GATEModel
+from hydra_zen import instantiate
+from omegaconf import OmegaConf
+from rich import print
+from rich.console import Console
+from rich.style import Style
+from rich.table import Table
+from rich.text import Text
+from rich.traceback import install
+from torch import nn
 
 # Install rich tracebacks for better visibility during debugging
 install(width=150, word_wrap=True)
@@ -85,6 +87,7 @@ def run(cfg: Any) -> None:
     Args:
         cfg (Any): The configuration parameters
     """
+
     accelerator = Accelerator()
     # Pretty print the configuration
     print(pretty_config(cfg, resolve=True))
