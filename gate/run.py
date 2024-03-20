@@ -119,6 +119,7 @@ def run(cfg: Any) -> None:
     global_step = setup(ckpt_path, cfg)
 
     encoder = instantiate(cfg.encoder)
+    log_wandb_properties({"model/encoder_compiled": True}, global_step)
     log_wandb_properties(encoder.properties, global_step)
     task_adapted_model = instantiate(cfg.adapter, encoder=encoder)
     transform: Optional[Callable] = deepcopy(
@@ -128,6 +129,7 @@ def run(cfg: Any) -> None:
     model: GATEModel = GATEModel(
         config=task_adapted_model.modality_config, model=task_adapted_model
     )
+    log_wandb_properties({"model/adapter_compiled": True}, global_step)
 
     wandb.init()
     config_dict = OmegaConf.to_container(cfg, resolve=True)
