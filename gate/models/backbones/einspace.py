@@ -8,6 +8,11 @@ import torchvision.transforms as transforms
 import yaml
 from einops import rearrange, reduce
 from einops.layers.torch import Reduce
+from einspace.compiler import Compiler
+from einspace.search_spaces import EinSpace
+from einspace.utils import millify
+from rich import print
+
 from gate.boilerplate.decorators import configurable
 from gate.data import image
 from gate.models.backbones import (
@@ -16,11 +21,6 @@ from gate.models.backbones import (
     GATETextEncoder,
 )
 from gate.models.backbones.timm import CLIPModelPaths, GATECLIPTextEncoder
-from rich import print
-
-from einspace.compiler import Compiler
-from einspace.search_spaces import EinSpace
-from einspace.utils import millify
 
 
 class ImageEincoder(GATEImageEncoder):
@@ -36,6 +36,9 @@ class ImageEincoder(GATEImageEncoder):
         self._num_projection_features = num_projection_features
 
         self.build()
+
+    def properties(self):
+        return self.backbone.properties()
 
     def build(self):
         x_dummy = torch.zeros((1, *self.full_image_shape))
@@ -187,3 +190,7 @@ class ImageTextEincoder(GATEImageTextEncoder, nn.Module):
             image_size,
             num_projection_features,
         )
+
+    @property
+    def properties(self) -> dict:
+        return self.image_embedding.properties()

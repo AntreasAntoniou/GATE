@@ -5,10 +5,10 @@ from typing import Any, Dict, Optional
 import torch
 import torch.nn as nn
 import transformers
+import wandb
 from hydra_zen import instantiate
 from torch.utils.data import Subset
 
-import wandb
 from gate.data.core import GATEDataset
 from gate.models.core import GATEModel
 
@@ -62,6 +62,18 @@ def log_wandb_parameters(config_dict: dict, global_step: int) -> None:
         global_step (int): The global step
     """
     wandb.config.update(config_dict)
+    wandb.config.update({"init_global_step": global_step})
+
+
+def log_wandb_properties(properties_dict: dict, global_step: int) -> None:
+    """
+    Log parameters to Weights & Biases.
+
+    Args:
+        config_dict (dict): The configuration dictionary
+        global_step (int): The global step
+    """
+    wandb.config.update(properties_dict)
     wandb.config.update({"init_global_step": global_step})
 
 
