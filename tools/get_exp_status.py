@@ -1,16 +1,15 @@
 import json
 import os
 import sys
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import fire
 import pandas as pd
+import wandb
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from tqdm.auto import tqdm
-
-import wandb
 
 
 def check_wandb_experiments(
@@ -164,6 +163,7 @@ def main(
     filter_for_non_completed: bool = False,
     filter_for_non_running: bool = False,
     pipe_output: bool = False,
+    raw_experiments: Optional[Dict] = None,
 ):
     if print_table and pipe_output:
         raise ValueError(

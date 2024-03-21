@@ -52,5 +52,5 @@ einops
 fire
 
 # Git Repositories
-git+https://github.com/huggingface/pytorch-image-models.git
+timm
 git+https://github.com/kiyoon/GulpIO2#egg=gulpio2
