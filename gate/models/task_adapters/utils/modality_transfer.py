@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 import torch
 import torch.nn as nn
 
-from gate.models.adapters import BaseAdapterModule
+from gate.models.task_adapters import BaseAdapterModule
 
 # Possibilities:
 

@@ -8,7 +8,7 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.adapters import BaseAdapterModule
+from gate.models.task_adapters import BaseAdapterModule
 
 
 @configurable(

@@ -9,13 +9,13 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
-from gate.models.adapters import BaseAdapterModule
-from gate.models.adapters.temporal_image_classification import (
-    VariableSequenceTransformerEncoder,
-)
-from gate.models.adapters.utils.helpers import reinit
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
+from gate.models.task_adapters import BaseAdapterModule
+from gate.models.task_adapters.temporal_image_classification import (
+    VariableSequenceTransformerEncoder,
+)
+from gate.models.task_adapters.utils.helpers import reinit
 
 logger = get_logger(__name__, set_rich=True)
 
