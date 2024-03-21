@@ -1,19 +1,24 @@
 import pathlib
 import random
+from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List, Optional, Tuple
 
-import fire
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import wandb
+import yaml
 from attr import dataclass
+from rich import print
 from sklearn.model_selection import ShuffleSplit
 from tqdm.auto import tqdm
+
+import wandb
+
+task_to_dataset_map = yaml.safe_load(open("notebooks/task_mapping.yaml"))
 
 
 @dataclass
@@ -29,7 +34,9 @@ class EvaluationResult:
     combination: Tuple[str, ...]
 
 
-def compute_loss(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+def compute_loss(
+    logits: torch.Tensor, labels: torch.Tensor, metrics: List[str]
+) -> torch.Tensor:
     """
     Compute the loss function.
 
@@ -40,7 +47,32 @@ def compute_loss(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: The computed loss.
     """
-    return F.mse_loss(logits, labels)
+    metric_dict = defaultdict(list)
+    reverse_value_key_dict = {
+        item.replace("txt", "text").replace("img", "image"): k
+        for k, v in task_to_dataset_map.items()
+        for item in v
+    }
+
+    # Compute the MSE loss for each pair of logit and label
+    mse_losses = F.mse_loss(logits, labels, reduction="none")
+
+    # Initialize a dictionary to store metrics and their corresponding losses
+    metric_dict = defaultdict(list)
+
+    # Append losses to corresponding metrics
+    for mse_loss, metric in zip(mse_losses, metrics):
+        metric_dict[reverse_value_key_dict[metric]].append(mse_loss)
+
+    # Compute mean per task
+    loss_dict = {
+        key: torch.stack(value).mean() for key, value in metric_dict.items()
+    }
+
+    # Compute overall loss as the mean of all task losses
+    loss = torch.stack(list(loss_dict.values())).mean()
+
+    return loss
 
 
 def mutate_combination(
@@ -69,12 +101,27 @@ def mutate_combination(
     return tuple(new_combination)
 
 
+def reset_parameters(model: nn.Module) -> nn.Module:
+    """
+    Reset the parameters of a model.
+
+    Args:
+        model (nn.Module): The model to reset.
+    """
+    for layer in model.children():
+        if hasattr(layer, "reset_parameters"):
+            layer.reset_parameters()
+        else:
+            reset_parameters(layer)
+    return model
+
+
 def evaluate_combination(
     df: pd.DataFrame,
-    input_metrics: Tuple[str, ...],
-    target_metrics: Optional[List[str]] = None,
-    device: torch.device,
+    input_datasets: Tuple[str, ...],
     epochs: int = 20,
+    device: Optional[torch.device] = None,
+    target_datasets: Optional[List[str]] = None,
     metrics_to_leave_out: Optional[List[str]] = None,
 ) -> EvaluationResult:
     """
@@ -90,18 +137,23 @@ def evaluate_combination(
         EvaluationResult: The evaluation result containing average, minimum,
         maximum, and standard deviation scores.
     """
+    if device is None:
+        device = torch.device(
+            torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
+        )
+
     input_metrics = [
         item
         for item in df.columns
-        if any(metric in item for metric in input_metrics)
+        if any(metric in item for metric in input_datasets)
     ]
-    if target_metrics is None:
+    if target_datasets is None:
         target_metrics = list(set(df.columns))
     else:
         target_metrics = [
             item
             for item in df.columns
-            if any(metric in item for metric in target_metrics)
+            if any(metric in item for metric in target_datasets)
         ]
     if metrics_to_leave_out is not None:
         target_metrics = [
@@ -109,29 +161,38 @@ def evaluate_combination(
             for item in target_metrics
             if all([item != metric for metric in metrics_to_leave_out])
         ]
-    x = df[input_metrics].values # num_models, k
-    y = df[target_metrics].values # num_models, all_metrics
+    x = df[input_metrics].values  # num_models, k
+    y = df[target_metrics].values  # num_models, all_metrics
     x = torch.tensor(x).to(device).float()
+
     y = torch.tensor(y).to(device).float()
     x = (x - x.mean(axis=0)) / x.std(axis=0)
     y = (y - y.mean(axis=0)) / y.std(axis=0)
-    kf = ShuffleSplit(n_splits=10, random_state=42, test_size=0.5)
+    kf = ShuffleSplit(n_splits=25, random_state=42, test_size=0.5)
     scores = []
     for train_index, test_index in kf.split(x):
         x_train, x_test = x[train_index], x[test_index]
         y_train, y_test = y[train_index], y[test_index]
-        model = nn.Linear(x_train.shape[1], y_train.shape[1]).to(device)
+        torch.manual_seed(42)
+        model = nn.Sequential(
+            nn.Linear(x_train.shape[1], 100),
+            nn.LeakyReLU(),
+            nn.LayerNorm(normalized_shape=(100)),
+            nn.Linear(100, y_train.shape[1]),
+        ).to(device)
+        model = reset_parameters(model)
         optimizer = optim.AdamW(model.parameters(), lr=0.01, weight_decay=0.01)
-        model.reset_parameters()
+
         # try lasso regression
         for epoch in range(epochs):
             optimizer.zero_grad()
             outputs = model(x_train)
-            loss = compute_loss(outputs, y_train)
+            loss = compute_loss(outputs, y_train, metrics=input_metrics)
             loss.backward()
             optimizer.step()
             y_pred = model(x_test)
-            score = compute_loss(y_pred, y_test)
+            score = compute_loss(y_pred, y_test, metrics=input_metrics)
+
         scores.append(score.cpu().detach().numpy())
     avg_score = np.mean(scores)
     min_score = np.min(scores)
@@ -142,7 +203,7 @@ def evaluate_combination(
         min_score=min_score,
         max_score=max_score,
         std_score=std_score,
-        combination=input_metrics,
+        combination=input_datasets,
     )
 
 
@@ -230,6 +291,40 @@ METRICS = sorted(
 )
 
 
+def load_data_as_df(filepath):
+    df = pd.read_csv(filepath)
+
+    # Concatenating the header with the first row
+    new_headers = [
+        f"{col.split('.')[0]}.{df.iloc[0][idx]}"
+        for idx, col in enumerate(df.columns)
+    ]
+
+    # Setting the new concatenated values as column names
+    df.columns = new_headers
+
+    # Removing the first row from the DataFrame
+    df = df.drop(df.index[0])
+
+    # Resetting the DataFrame index
+    df.reset_index(drop=True, inplace=True)
+
+    columns = df.columns.tolist()[1:]
+    model_names = df.columns.tolist()[0]
+    # remove all datapoints with less than 50% on imagenet1k.1
+
+    # model_names = df[model_names][1:]
+    df = df.fillna(5)
+    # Convert all columns (except the first) to numeric
+    for col in df.columns[1:]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Drop first column
+    df = df.drop(columns=[model_names])
+
+    return df
+
+
 def main(
     result_csv_path: str | pathlib.Path = "notebooks/03032024-full.csv",
     combination_size: int = 12,
@@ -243,16 +338,12 @@ def main(
         combination_size (int, optional): Size of the combinations to evaluate. Defaults to 12.
     """
     run = wandb.init(
-        project=f"gate-evolve",
-        name=f"gate-evolve-k={combination_size}",
+        project=f"gate-evolve-nn",
+        name=f"gate-evolve-nn-k={combination_size}",
         entity="machinelearningbrewery",
     )
-    df = pd.read_csv(result_csv_path)
-    df = df.iloc[:, 1:]
-    df = df.iloc[1:, :]
-    for col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    print(df)
+    df = load_data_as_df(result_csv_path)
+    # replace NaNs with 1000
     device = torch.device(device)
     epochs = 20
     num_winners = 50
@@ -267,7 +358,7 @@ def main(
         score_combinations.append(
             evaluate_combination(
                 df=df,
-                input_metrics=combination,
+                input_datasets=combination,
                 device=device,
                 epochs=epochs,
             )
@@ -310,12 +401,14 @@ def main(
             new_combinations = set()
             for item in top_combinations:
                 combination = item.combination
+                # make list hashable
+                combination = tuple(combination)
                 new_combinations.add(combination)
                 for _ in range(num_children):
                     mutated_combination = mutate_combination(
                         combination, METRICS
                     )
-                    new_combinations.add(mutated_combination)
+                    new_combinations.add(tuple(mutated_combination))
             score_combinations: List[EvaluationResult] = []
             new_combinations = list(set(new_combinations))
             for combination in tqdm(
@@ -324,7 +417,7 @@ def main(
                 score_combinations.append(
                     evaluate_combination(
                         df=df,
-                        input_metrics=combination,
+                        input_datasets=combination,
                         device=device,
                         epochs=epochs,
                     )
@@ -415,12 +508,12 @@ def remove_one_from_combo_and_reevaluate(
 
         scores = evaluate_combination(
             df=df,
-            input_metrics=combination,
+            input_datasets=combination,
             device=device,
             epochs=epochs,
             metrics_to_leave_out=[missing_feature],
         )
-        exp_name = f"gate-evolve-k={len(combinations.combination)}-loo-{missing_feature}"
+        exp_name = f"gate-evolve-nn-k={len(combinations.combination)}-loo-{missing_feature}"
 
         results_dict[exp_name] = {
             "combination": combination,
@@ -445,7 +538,7 @@ def run_job(combination_size, gpu_id):
 
 
 if __name__ == "__main__":
-    combination_sizes = [12]  # 1 to 31
+    combination_sizes = [14]  # 1 to 31
     gpu_ids = range(1)  # 0 to 3
     max_workers = 1  # Maximum number of parallel jobs
 
