@@ -5,15 +5,15 @@ import torch
 import torch.nn as nn
 
 from gate.boilerplate.decorators import configurable, ensemble_marker
-from gate.models.backbones import GATEncoder
-from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
-from gate.models.task_adapters import BaseAdapterModule
-from gate.models.task_adapters.few_shot_classification.utils import (
+from gate.models.adapters import BaseAdapterModule
+from gate.models.adapters.few_shot_classification.utils import (
     compute_prototypes,
     compute_prototypical_accuracy,
     compute_prototypical_logits,
     compute_prototypical_loss,
 )
+from gate.models.backbones import GATEncoder
+from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
 
 
 class DataParallelWithDict(nn.DataParallel):

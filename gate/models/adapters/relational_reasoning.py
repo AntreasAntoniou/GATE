@@ -9,13 +9,13 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.boilerplate.utils import get_logger
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
-from gate.models.backbones import GATEncoder
-from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseAdapterModule
-from gate.models.task_adapters.temporal_image_classification import (
+from gate.models.adapters import BaseAdapterModule
+from gate.models.adapters.temporal_image_classification import (
     VariableSequenceTransformerEncoder,
 )
-from gate.models.task_adapters.utils.helpers import reinit
+from gate.models.adapters.utils.helpers import reinit
+from gate.models.backbones import GATEncoder
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
 
 logger = get_logger(__name__, set_rich=True)
 
@@ -200,7 +200,7 @@ class DuoModalFusionModel(BaseAdapterModule):
         # check that only two modalities are passed
 
         if self.use_stem_instance_norm:
-            image = self.image_instance_norm(image)
+            image = self.stem_instance_norm(image)
         image_features = self.encoder(image=image)["image"]["raw_features"]
         image_features = self.image_linear(
             image_features.reshape(-1, image_features.shape[-1])
