@@ -200,7 +200,7 @@ class DuoModalFusionModel(BaseAdapterModule):
         # check that only two modalities are passed
 
         if self.use_stem_instance_norm:
-            image = self.image_instance_norm(image)
+            image = self.stem_instance_norm(image)
         image_features = self.encoder(image=image)["image"]["raw_features"]
         image_features = self.image_linear(
             image_features.reshape(-1, image_features.shape[-1])
