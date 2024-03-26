@@ -170,6 +170,7 @@ def collate_fn_with_token_pad(data):
             return value
 
     batch = {}
+    data = [d for d in data if d is not None]
     for key, values in zip(data[0].keys(), zip(*[d.values() for d in data])):
         batch[key] = process_value(values)
 
