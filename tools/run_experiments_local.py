@@ -85,6 +85,7 @@ def run_command_on_gpu(
     )
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout.log", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr.log", "w")
+    command = command.replace("9032024", "10032024")
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )

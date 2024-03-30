@@ -191,13 +191,9 @@ class VisionRootReplacedBackbone(nn.Module):
 
     def forward(
         self,
-        input_dict: Optional[Dict] = None,
         image: Optional[torch.Tensor] = None,
         text: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
-        if input_dict is not None:
-            x = self.root_layer(**input_dict)
-            x = self.model(x)[self.target_modality]
 
         if image is not None:
             x = self.root_layer(image=image)

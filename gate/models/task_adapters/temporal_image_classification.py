@@ -12,7 +12,7 @@ from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
-from gate.models.core import SourceModalityConfig, TargetModalityConfig, reinit
+from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseAdapterModule
 
 logger = logging.getLogger(__name__)
@@ -300,6 +300,21 @@ class BackboneWithTemporalTransformerAndLinear(BaseAdapterModule):
             ),
             "labels": torch.randint(0, self.num_classes, (1,)),
         }
+        if torch.cuda.device_count() > 1:
+            self.linear = self.linear.to(torch.cuda.current_device())
+            self.temporal_encoder = self.temporal_encoder.to(
+                torch.cuda.current_device()
+            )
+            dummy_batch = {
+                k: v.to(torch.cuda.current_device())
+                for k, v in dummy_batch.items()
+            }
+
+            if hasattr(self, "stem_instance_norm"):
+                self.stem_instance_norm = self.stem_instance_norm.to(
+                    torch.cuda.current_device()
+                )
+
         _ = self(**dummy_batch)
 
     @property

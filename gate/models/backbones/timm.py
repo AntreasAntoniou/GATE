@@ -1,6 +1,4 @@
-import gc
 import logging
-from collections import defaultdict
 from typing import List, Optional
 from urllib.request import urlopen
 
@@ -13,12 +11,16 @@ import torchvision.transforms as T
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPOutput
 
 from gate.boilerplate.decorators import configurable
-from gate.models.backbones import GATEncoder, Modality, image_dim_reshape
-from gate.models.backbones.clip_image import TextProcessor
-from gate.models.core import reinit
+from gate.models.backbones import (
+    GATEImageEncoder,
+    GATEImageTextEncoder,
+    GATETextEncoder,
+    Modality,
+    TextProcessor,
+    image_dim_reshape,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +31,10 @@ def apply_preprocessing_transforms(transforms, x, modality=Modality.image):
     input_shape = None
     is_5d_tensor = False
 
-    if isinstance(x, PIL.Image.Image) and modality == Modality.image:
+    if isinstance(x, Image.Image) and modality == Modality.image:
         x = x.convert("RGB")
 
-    if isinstance(x, PIL.Image.Image) and modality == Modality.image:
+    if isinstance(x, Image.Image) and modality == Modality.image:
         x = T.ToTensor()(x)
         if x.shape[0] == 1:
             x = single_to_three_channel(x)
@@ -205,55 +207,97 @@ class CLIPModelPaths:
     openai_b_16: str = "openai/clip-vit-base-patch16"
 
 
-class TimmCLIPAdapterBase(GATEncoder):
+class TimmModelPaths:
+    clip_vit_base_patch16: str = "vit_base_patch16_siglip_224"
+
+
+class GATETimmImageEncoder(GATEImageEncoder):
     def __init__(
         self,
-        timm_model_name: str,
-        clip_model_name: str,
+        model_name: str,
         pretrained: bool = True,
-        image_size: Optional[int] = None,
+        image_size: int = 224,
         num_projection_features: Optional[int] = None,
     ):
         super().__init__()
         self.image_size = image_size if image_size is not None else 224
-        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
-            clip_model_name
-        )
-
-        self.clip = CLIPModel.from_pretrained(clip_model_name)
-        self.text_transforms = TextProcessor(self.preprocessor)
 
         self.vision_model = TimmModel(
-            model_identifier=timm_model_name,
+            model_identifier=model_name,
             pretrained=pretrained,
             image_size=self.image_size,
         )
-        self.text_model = self.clip.text_model
 
-        self.vision_model_output_shape = self.vision_model.get_output_shape()[
+        self.image_num_raw_features = self.vision_model.get_output_shape()[
             "raw_features"
-        ]
+        ][2]
+
         self.image_num_features = (
-            self.vision_model_output_shape[2]
+            self.image_num_raw_features
             if num_projection_features is None
             else num_projection_features
         )
-        self.text_num_features = (
-            self.clip.text_embed_dim
-            if num_projection_features is None
-            else num_projection_features
-        )
-        self.num_projection_features = num_projection_features
+        self._num_projection_features = num_projection_features
 
         self.visual_projection = (
             nn.Linear(
-                self.vision_model_output_shape[2],
+                self.image_num_raw_features,
                 num_projection_features,
                 bias=False,
             )
             if num_projection_features is not None
             else nn.Identity()
         )
+
+    @property
+    def projection_layer(self):
+        return self.visual_projection
+
+    @property
+    def num_projection_features(self):
+        return self._num_projection_features
+
+    @property
+    def num_features(self):
+        return self.image_num_features
+
+    @property
+    def num_raw_features(self):
+        return self.image_num_raw_features
+
+    @property
+    def image_shape(self):
+        return (self.image_size, self.image_size)
+
+    def forward(self, x):
+        return self.vision_model(x)
+
+    def transforms(self, x):
+        return self.vision_model.transforms(x)
+
+
+class GATECLIPTextEncoder(GATETextEncoder):
+    def __init__(
+        self,
+        model_name: str,
+        num_projection_features: Optional[int] = None,
+    ):
+        super().__init__()
+        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
+            model_name
+        )
+
+        self.clip = CLIPModel.from_pretrained(model_name)
+        self.text_transforms = TextProcessor(self.preprocessor)
+
+        self.text_model = self.clip.text_model
+
+        self.text_num_features = (
+            self.clip.text_embed_dim
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self._num_projection_features = num_projection_features
 
         self.text_model = self.clip.text_model
         self.text_projection = (
@@ -266,163 +310,58 @@ class TimmCLIPAdapterBase(GATEncoder):
         )
 
         self.text_num_raw_features = self.text_model.config.hidden_size
-        self.image_num_raw_features = self.vision_model_output_shape[2]
 
     @property
-    def image_shape(self):
-        return (self.image_size, self.image_size)
+    def projection_layer(self):
+        return self.text_projection
 
     @property
-    def num_in_features_image(self):
-        return self.image_num_features
+    def num_projection_features(self):
+        return self._num_projection_features
 
     @property
-    def num_in_features_text(self):
+    def num_features(self):
         return self.text_num_features
 
     @property
-    def num_raw_features_image(self):
-        return self.image_num_raw_features
-
-    @property
-    def num_raw_features_text(self):
+    def num_raw_features(self):
         return self.text_num_raw_features
 
-    @property
-    def num_in_features_video(self):
-        raise NotImplementedError(f"TimmCLIP does not have a video backbone")
+    def forward(self, input_ids: torch.Tensor):
+        return self.text_model(input_ids=input_ids)
 
-    def init_weights(self):
-        reinit(self)
-
-    def process_images(self, image: torch.Tensor) -> torch.Tensor:
-        if image is None:
-            raise ValueError("Image cannot be None.")
-        return self.vision_model(image)
-
-    def forward(
-        self,
-        image: Optional[torch.Tensor] = None,
-        text: Optional[torch.Tensor] = None,
-        video: Optional[torch.Tensor] = None,
-        **kwargs,
-    ):
-        if image is None and text is None and video is None:
-            raise ValueError(
-                f"Must provide at least one input modality"
-                f"to {self.__class__.__name__}"
-            )
-
-        output_dict = defaultdict(dict)
-
-        if image is not None:
-            output_dict["image"] = self.process_images(image)
-            if self.num_projection_features:
-                output_dict["image"]["features"] = self.visual_projection(
-                    output_dict["image"]["features"]
-                )
-
-        if video is not None:
-            if len(video.shape) == 5:
-                b, s, c, h, w = video.shape
-
-                output_dict["video"] = self.process_images(
-                    video.view(b * s, c, h, w)
-                )
-                if self.num_projection_features:
-                    output_dict["video"]["features"] = self.visual_projection(
-                        output_dict["video"]["features"]
-                    )
-
-                for k, v in output_dict["video"].items():
-                    if v is not None:
-                        if isinstance(v, list) or isinstance(v, tuple):
-                            v = torch.stack(v, dim=2)
-                        output_dict["video"][k] = v.view(b, s, *v.shape[1:])
-            else:
-                output_dict["video"] = self.process_images(video)
-                if self.num_projection_features:
-                    output_dict["video"]["features"] = self.visual_projection(
-                        output_dict["video"]["features"]
-                    )
-
-        if text is not None:
-            text: CLIPOutput = self.text_model(input_ids=text)
-            output_dict["text"]["features"] = text.pooler_output
-            output_dict["text"]["raw_features"] = text.last_hidden_state
-            if self.num_projection_features:
-                output_dict["text"]["features"] = self.text_projection(
-                    output_dict["text"]["features"]
-                )
-
-        return output_dict
-
-    def get_transforms(self):
-        def image_transforms(x):
-            x = self.vision_model.transforms(x)
-            return x
-
-        def text_transforms(x):
-            return self.text_transforms.apply_transform(x)
-
-        def image_transforms_process_multi_type(x):
-            if isinstance(x, List):
-                return [
-                    apply_preprocessing_transforms(
-                        x=item,
-                        transforms=image_transforms,
-                        modality=Modality.image,
-                    )
-                    for item in x
-                ]
-            else:
-                return apply_preprocessing_transforms(
-                    x=x, transforms=image_transforms, modality=Modality.image
-                )
-
-        def text_transforms_process_multi_type(x):
-            return apply_preprocessing_transforms(
-                x=x, transforms=text_transforms, modality=Modality.text
-            )
-
-        def video_transforms_process_multi_type(x):
-            return torch.stack(
-                [image_transforms_process_multi_type(item) for item in x],
-                dim=0,
-            )
-
-        return {
-            "image": lambda x: image_transforms_process_multi_type(x),
-            "text": lambda x: text_transforms_process_multi_type(x),
-            "video": lambda x: video_transforms_process_multi_type(x),
-        }
-
-    def get_image_encoder(self):
-        return self.vision_model
-
-    def get_text_encoder(self):
-        return self.text_model
+    def transforms(self, x):
+        return self.text_transforms.apply_transform(x)
 
 
 @configurable(
     group="encoder",
     name="timm",
 )
-class TimmCLIPAdapter(TimmCLIPAdapterBase, nn.Module):
+class TimmCLIPEncoder(GATEImageTextEncoder, nn.Module):
     def __init__(
         self,
-        timm_model_name: str,
-        clip_model_name: str,
+        timm_model_name: str = TimmModelPaths.clip_vit_base_patch16,
+        clip_model_name: str = CLIPModelPaths.openai_b_16,
         pretrained: bool = True,
-        image_size: Optional[int] = None,
+        image_size: Optional[int] = 224,
         num_projection_features: Optional[int] = None,
     ):
         nn.Module.__init__(self)
-        TimmCLIPAdapterBase.__init__(
+        image_embedding = GATETimmImageEncoder(
+            model_name=timm_model_name,
+            pretrained=pretrained,
+            image_size=image_size,
+            num_projection_features=num_projection_features,
+        )
+        text_embedding = GATECLIPTextEncoder(
+            model_name=clip_model_name,
+            num_projection_features=num_projection_features,
+        )
+        GATEImageTextEncoder.__init__(
             self,
-            timm_model_name,
-            clip_model_name,
-            pretrained,
+            image_embedding,
+            text_embedding,
             image_size,
             num_projection_features,
         )

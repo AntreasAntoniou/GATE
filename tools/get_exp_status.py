@@ -51,6 +51,7 @@ def check_wandb_experiments(
     for run in tqdm(runs):
         if "exp_name" in run.config:
             exp_name = run.config["exp_name"].lower()
+            exp_name = exp_name.replace("9032024", "10032024")
 
             if exp_name not in exp_name_to_summary_dict:
                 exp_name_to_summary_dict[exp_name] = [run.summaryMetrics]
@@ -61,10 +62,16 @@ def check_wandb_experiments(
 
     # Initialize an empty list to store experiment data
     exp_data = {}
-    exp_to_command = {key.lower(): value for key, value in experiments.items()}
+    exp_to_command = {
+        key.lower().replace("9032024", "10032024"): value
+        for key, value in experiments.items()
+    }
     if isinstance(experiments, dict):
         experiments = list(experiments.keys())
     experiments = [exp.lower() for exp in experiments]
+    experiments = [
+        exp.lower().replace("9032024", "10032024") for exp in experiments
+    ]
     # Iterate through the given experiments
     with tqdm(total=len(experiments), desc="Checking experiments") as pbar:
         for exp_name in experiments:

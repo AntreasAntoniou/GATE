@@ -19,10 +19,9 @@ class BaseAdapterModule(nn.Module):
         self.use_stem_instance_norm = use_stem_instance_norm
 
         if self.use_stem_instance_norm:
-            if self.use_stem_instance_norm:
-                self.stem_instance_norm = nn.InstanceNorm2d(
-                    num_features=3, affine=True
-                )
+            self.stem_instance_norm = nn.InstanceNorm2d(
+                num_features=3, affine=True
+            )
 
     def encoder_parameters(self) -> Iterator[torch.nn.Parameter]:
         return self.encoder.parameters()

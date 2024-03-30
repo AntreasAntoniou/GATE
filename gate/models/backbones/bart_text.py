@@ -3,23 +3,16 @@ from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
-from transformers import (
-    BartConfig,
-    BartPreTrainedModel,
-    CLIPModel,
-    CLIPProcessor,
-)
+from transformers import BartConfig, BartPreTrainedModel
 from transformers.models.bart.modeling_bart import BartEncoder
 
 from gate.boilerplate.decorators import configurable
 from gate.models.backbones import (
-    GATEncoder,
+    GATEImageEncoder,
+    GATEImageTextEncoder,
     Modality,
-    TextProcessor,
-    VisionTextGATEAdapter,
-    forward_dict,
 )
-from gate.models.core import reinit
+from gate.models.backbones.timm import CLIPModelPaths, GATECLIPTextEncoder
 from gate.models.task_adapters.utils.modality_transfer import (
     VisionRootReplacedBackbone,
 )
@@ -63,42 +56,23 @@ class ModifiedBartModel(BartPreTrainedModel):
         }
 
 
-class CLIPModelPaths:
-    laion_b_16: str = "laion/CLIP-ViT-B-16-laion2B-s34B-b88K"
-    openai_b_16: str = "openai/clip-vit-base-patch16"
-
-
 class BartModelPaths:
     base: str = "facebook/bart-base"
 
 
-@configurable(
-    group="encoder",
-    name="bart",
-)
-class BartAdapter(VisionTextGATEAdapter, GATEncoder):
+class GATEBARTImageEncoder(GATEImageEncoder):
     def __init__(
         self,
-        clip_model_name: str = CLIPModelPaths.openai_b_16,
-        bart_model_name: str = BartModelPaths.base,
+        model_name: str = BartModelPaths.base,
         pretrained: bool = True,
-        image_size: Optional[int] = None,
+        image_size: int = 224,
         num_projection_features: Optional[int] = None,
     ):
-        VisionTextGATEAdapter.__init__(self)
-        nn.Module.__init__(self)
-        self.image_size = image_size
-        self.preprocessor: CLIPProcessor = CLIPProcessor.from_pretrained(
-            clip_model_name
-        )
-        self.clip = CLIPModel.from_pretrained(clip_model_name)
-        self.text_transforms = TextProcessor(self.preprocessor)
-
-        if not pretrained:
-            self.clip.init_weights()
+        super().__init__()
+        self.image_size = image_size if image_size is not None else 224
 
         vision_embedding = ModifiedBartModel.from_pretrained(
-            bart_model_name,
+            model_name,
             max_position_embeddings=(
                 4097
                 if image_size == 1024
@@ -117,9 +91,22 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
             source_modality=Modality.image,
             target_modality=Modality.image,
         )
+
+        if not pretrained:
+            self.vision_model.init_weights()
+
+        self.image_num_raw_features = vision_embedding.config.hidden_size
+
+        self.image_num_features = (
+            self.image_num_raw_features
+            if num_projection_features is None
+            else num_projection_features
+        )
+        self._num_projection_features = num_projection_features
+
         self.visual_projection = (
             nn.Linear(
-                vision_embedding.config.hidden_size,
+                self.image_num_raw_features,
                 num_projection_features,
                 bias=False,
             )
@@ -127,73 +114,61 @@ class BartAdapter(VisionTextGATEAdapter, GATEncoder):
             else nn.Identity()
         )
 
-        self.text_model = self.clip.text_model
-        self.text_projection = (
-            nn.Linear(
-                self.text_model.config.hidden_size,
-                num_projection_features,
-            )
-            if num_projection_features is not None
-            else nn.Identity()
-        )
-        self.text_num_raw_features = self.text_model.config.hidden_size
-        self.image_num_raw_features = vision_embedding.config.hidden_size
+    @property
+    def projection_layer(self):
+        return self.visual_projection
 
-        # setattr signature: setattr(object, name, value)
+    @property
+    def num_projection_features(self):
+        return self._num_projection_features
 
-        setattr(self.vision_model, "legacy_forward", self.text_model.forward)
-        setattr(self.text_model, "legacy_forward", self.text_model.forward)
+    @property
+    def num_features(self):
+        return self.image_num_features
 
-        setattr(
-            self.text_model, "forward", forward_dict.__get__(self.text_model)
-        )
-
-        self.image_num_features = (
-            self.clip.vision_embed_dim
-            if num_projection_features is None
-            else num_projection_features
-        )
-        self.text_num_features = (
-            self.clip.text_embed_dim
-            if num_projection_features is None
-            else num_projection_features
-        )
+    @property
+    def num_raw_features(self):
+        return self.image_num_raw_features
 
     @property
     def image_shape(self):
         return (self.image_size, self.image_size)
 
-    def init_weights(self):
-        reinit(self)
+    def forward(self, x):
+        return self.vision_model(image=x)
 
-    @property
-    def num_in_features_image(self):
-        return self.image_num_features
+    def transforms(self, x):
+        return self.vision_model.transforms(x)
 
-    @property
-    def num_raw_features_image(self):
-        return self.image_num_raw_features
 
-    @property
-    def num_raw_features_text(self):
-        return self.text_num_raw_features
-
-    @property
-    def num_in_features_text(self):
-        return self.text_num_features
-
-    @property
-    def num_in_features_video(self):
-        raise NotImplementedError("BART does not have a video backbone")
-
-    def init_weights(self):
-        return super().init_weights()
-
-    def get_transforms(self):
-        return super().get_transforms(image_size=self.image_size)
-
-    def get_image_encoder(self):
-        return self.vision_model
-
-    def get_text_encoder(self):
-        return self.text_model
+@configurable(
+    group="encoder",
+    name="bart",
+)
+class BARTCLIPEncoder(GATEImageTextEncoder, nn.Module):
+    def __init__(
+        self,
+        bart_model_name: str = BartModelPaths.base,
+        clip_model_name: str = CLIPModelPaths.openai_b_16,
+        pretrained: bool = True,
+        image_size: Optional[int] = 224,
+        num_projection_features: Optional[int] = None,
+    ):
+        nn.Module.__init__(self)
+        image_embedding = GATEBARTImageEncoder(
+            model_name=bart_model_name,
+            pretrained=pretrained,
+            image_size=image_size,
+            num_projection_features=num_projection_features,
+        )
+        text_embedding = GATECLIPTextEncoder(
+            model_name=clip_model_name,
+            num_projection_features=num_projection_features,
+        )
+        GATEImageTextEncoder.__init__(
+            self,
+            image_embedding,
+            text_embedding,
+            image_size,
+            num_projection_features,
+        )
