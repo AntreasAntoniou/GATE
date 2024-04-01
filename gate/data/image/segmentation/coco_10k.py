@@ -105,7 +105,7 @@ def build_gate_dataset(
         transforms=[
             input_transforms,
             train_transforms,
-            transforms,
+            # transforms,
             remap_train_labels,
         ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
@@ -117,7 +117,7 @@ def build_gate_dataset(
         transforms=[
             input_transforms,
             eval_transforms,
-            transforms,
+            # transforms,
             remap_train_labels,
         ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
@@ -129,7 +129,7 @@ def build_gate_dataset(
         transforms=[
             input_transforms,
             eval_transforms,
-            transforms,
+            # transforms,
             remap_train_labels,
         ],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},

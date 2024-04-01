@@ -156,9 +156,9 @@ def build_specific_dataset(
     need_subsets = (
         False  # Flag to check if subsets from the training set are needed
     )
-    train_subset = (
-        val_subset
-    ) = test_subset = None  # Initialize subsets to None
+    train_subset = val_subset = test_subset = (
+        None  # Initialize subsets to None
+    )
 
     try:
         dataset["train"] = GulpSparsesampleDataset(
@@ -279,21 +279,21 @@ def build_gate_dataset(
         dataset_dict["train"] = GATEDataset(
             dataset=datasets["train"],
             infinite_sampling=True,
-            transforms=[key_selector, TrainVideoTransform(), transforms],
+            transforms=[key_selector, TrainVideoTransform()],
         )
 
     if "val" in datasets:
         dataset_dict["val"] = GATEDataset(
             dataset=datasets["val"],
             infinite_sampling=False,
-            transforms=[key_selector, BaseVideoTransform(), transforms],
+            transforms=[key_selector, BaseVideoTransform()],
         )
 
     if "test" in datasets:
         dataset_dict["test"] = GATEDataset(
             dataset=datasets["test"],
             infinite_sampling=False,
-            transforms=[key_selector, BaseVideoTransform(), transforms],
+            transforms=[key_selector, BaseVideoTransform()],
         )
 
     return dataset_dict

@@ -78,21 +78,21 @@ def build_gate_dataset(
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[input_transforms, train_transforms, transforms],
+        transforms=[input_transforms, train_transforms],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[input_transforms, eval_transforms, transforms],
+        transforms=[input_transforms, eval_transforms],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[input_transforms, eval_transforms, transforms],
+        transforms=[input_transforms, eval_transforms],
         meta_data={"class_names": CLASSES, "num_classes": num_classes},
     )
 

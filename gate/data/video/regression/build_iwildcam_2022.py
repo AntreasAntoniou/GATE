@@ -94,7 +94,6 @@ def build_gate_dataset(
                     contrast=contrast,
                     jitter_strength=jitter_strength,
                 ),
-                transforms,
             ],
         )
 
@@ -105,7 +104,6 @@ def build_gate_dataset(
             transforms=[
                 key_selector,
                 BaseVideoTransform(scale_factor=crop_size),
-                transforms,
             ],
         )
 
@@ -116,7 +114,6 @@ def build_gate_dataset(
             transforms=[
                 key_selector,
                 BaseVideoTransform(scale_factor=crop_size),
-                transforms,
             ],
         )
 

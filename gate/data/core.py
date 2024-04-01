@@ -151,8 +151,6 @@ def pad_and_stack_tensors(tensor_list):
 
 
 def collate_fn_with_token_pad(data):
-    batch = defaultdict(lambda: defaultdict(dict))
-
     def process_value(value):
         if isinstance(value[0], torch.Tensor):
             if value[0].dim() == 0 and value[-1].dim() == 0:
@@ -170,7 +168,12 @@ def collate_fn_with_token_pad(data):
             return value
 
     batch = {}
+
     data = [d for d in data if d is not None]
+
+    if len(data) == 0:
+        return None
+
     for key, values in zip(data[0].keys(), zip(*[d.values() for d in data])):
         batch[key] = process_value(values)
 

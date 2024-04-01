@@ -97,6 +97,10 @@ def sub_batch_generator(batch_dict, sub_batch_size):
 
     # Validate input and get original batch size
     for key, value in batch_dict.items():
+        if isinstance(value, list):
+
+            value = torch.stack(value)
+
         logger.debug(
             f"batch size: {value.shape[0] * value.shape[1]}, stored batch size: {batch_size}"
         )
