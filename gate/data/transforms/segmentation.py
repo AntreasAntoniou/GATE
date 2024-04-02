@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
+import PIL
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as TF
@@ -440,7 +441,6 @@ class BaseDatasetTransforms:
             image = self.photo_metric_distortion(image)
 
         annotation = torch.from_numpy(np.array(annotation))
-        # logger.info(f"annotation max: {annotation.max()}")
 
         if len(annotation.shape) == 2:
             annotation = annotation.unsqueeze(0)
@@ -451,8 +451,8 @@ class BaseDatasetTransforms:
         else:
             raise ValueError("Unsupported annotation shape")
 
-        if not isinstance(image, torch.Tensor):
-            image = T.ToTensor()(image)
+        if not isinstance(image, Image.Image):
+            image = T.ToPILImage()(image)
 
         image = T.Resize(
             (self.input_size[0], self.input_size[1]),
