@@ -1,0 +1,80 @@
+
+
+
+Image Classification:
+- cifar100
+- food101
+- happy
+- imagenet1k
+- places365
+
+Few Shot Image Classification:
+- aircraft
+- cubirds
+- dtextures
+- fungi
+- mini
+- omniglot
+- vgg
+
+Image Segmentation:
+- ade20k
+- cityscapes
+- coco
+- nyu
+- pascal
+
+Image Relational Reasoning:
+- clevr
+- clevr-math
+
+Medical Classification:
+- chexpert
+- diabetic
+- ham10k
+
+Medical Segmentation:
+- acdc
+
+Image to Text Zero Shot Learning:
+- flickr30k
+- newyorkercaptioncontest
+- pokemonblipcaptions
+- winoground
+
+Video Classification:
+- hmdb51
+- kinetics
+- ucf
+Video Regression:
+- iwildcam
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
