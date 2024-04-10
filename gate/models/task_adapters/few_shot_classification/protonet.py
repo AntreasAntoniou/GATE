@@ -50,9 +50,7 @@ class PrototypicalNetwork(BaseAdapterModule):
             freeze_encoder=freeze_encoder,
             use_stem_instance_norm=use_stem_instance_norm,
         )
-        # self.stem_instance_norm = nn.InstanceNorm2d(
-        #     num_features=3, affine=True
-        # )
+
         # If num_output_features is not provided, use num_clip_features and set linear layer to identity.
         if num_output_features is None:
             self.num_output_features = self.encoder.num_in_features_image
@@ -76,7 +74,7 @@ class PrototypicalNetwork(BaseAdapterModule):
         )
         support_set_labels = torch.randint(0, 1, (2, 2))
         query_set_labels: torch.Tensor = torch.randint(0, 1, (2, 2))
-        
+
         dummy_batch = {
             "image": {
                 "support_set": support_set_inputs,
@@ -87,6 +85,23 @@ class PrototypicalNetwork(BaseAdapterModule):
                 "query_set": query_set_labels,
             },
         }
+
+        if torch.cuda.device_count() > 1:
+            self.linear = self.linear.to(torch.cuda.current_device())
+            # cast the dummy batch to the current device
+            dummy_batch = {
+                key: {
+                    k: v.to(torch.cuda.current_device())
+                    for k, v in value.items()
+                }
+                for key, value in dummy_batch.items()
+            }
+
+            if hasattr(self, "stem_instance_norm"):
+                self.stem_instance_norm = self.stem_instance_norm.to(
+                    torch.cuda.current_device()
+                )
+
         _ = self(**dummy_batch)
 
     def init_weights(self):

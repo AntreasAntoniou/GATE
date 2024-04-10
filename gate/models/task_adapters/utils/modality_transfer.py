@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
+import torchvision.transforms as T
 
 from gate.models.task_adapters import BaseAdapterModule
 
@@ -204,3 +205,6 @@ class VisionRootReplacedBackbone(nn.Module):
             x = self.model(text=x)
 
         return x
+
+    def transforms(self, x):
+        return T.ToTensor()(x)
