@@ -503,6 +503,7 @@ class TransformerSegmentationDecoder(nn.Module):
         self.built = False
 
     def build(self, input_list):
+        device = input_list[0].device
         hidden_size = self.hidden_size
         num_classes = self.num_classes
         pre_output_dropout_rate = self.pre_output_dropout_rate
@@ -518,7 +519,7 @@ class TransformerSegmentationDecoder(nn.Module):
         self.spatial_mixer = None
         self.closest_square_root = None
         self.num_blocks = len(input_list)
-        logger.info(f"target image size: {target_image_size}")
+        logger.debug(f"target image size: {target_image_size}")
         if len(input_list[0].shape) == 4:
             input_list = [
                 self.upsample(x) if x.shape[-1] != target_image_size[0] else x
@@ -533,6 +534,7 @@ class TransformerSegmentationDecoder(nn.Module):
                 kernel_size=1,
                 stride=1,
             )
+            self.rescale_conv.to(device)
 
             input_list = [
                 (
@@ -621,6 +623,7 @@ class TransformerSegmentationDecoder(nn.Module):
             self.final_conv = nn.Conv1d(
                 hidden_size, num_classes, kernel_size=1
             )
+        self.to(device)
         self.built = True
 
     def forward(self, input_list: list):

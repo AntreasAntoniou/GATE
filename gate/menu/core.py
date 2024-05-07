@@ -28,8 +28,8 @@ from gate.data.video import (
 )
 from gate.models.backbones.bart_text import BartModelPaths
 from gate.models.backbones.bert_text import BertModelPaths
-from gate.models.backbones.clip_image import CLIPModelPaths
 from gate.models.backbones.mpnet_text import MPNetModelPaths
+from gate.models.backbones.timm import CLIPModelPaths
 from gate.models.backbones.wave2vec_audio import Wav2Vec2ModelPaths
 from gate.models.backbones.whisper_audio import WhisperModelPaths
 from gate.models.task_adapters.semantic_segmentation import (

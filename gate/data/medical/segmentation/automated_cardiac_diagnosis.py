@@ -145,8 +145,6 @@ class DatasetTransforms:
             antialias=True,
         )(annotation)
 
-        image_list = []
-        annotation_list = []
         image = image.reshape(-1, image.shape[-2], image.shape[-1]).unsqueeze(
             1
         )
@@ -176,10 +174,20 @@ class DatasetTransforms:
         image = patient_normalization(image)
         annotation = annotation.long()
 
+        image = [T.ToPILImage()(i) for i in image]
+
         return {
             "image": image,
             "labels": annotation,
         }
+
+
+def stack_slices(item: Dict) -> Dict:
+    image = item["image"]
+    image_stack = torch.stack(image)
+
+    labels = item["labels"]
+    return {"image": image_stack, "labels": labels}
 
 
 @configurable(
@@ -205,10 +213,11 @@ def build_gate_dataset(
         crop_size=image_size,
         photometric_config=None,
     )
+
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
-        transforms=[train_transforms, transforms],
+        transforms=[train_transforms, transforms, stack_slices],
         meta_data={
             "class_names": CLASSES,
             "num_classes": num_classes,
@@ -218,7 +227,7 @@ def build_gate_dataset(
     val_set = GATEDataset(
         dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[eval_transforms, transforms],
+        transforms=[eval_transforms, transforms, stack_slices],
         meta_data={
             "class_names": CLASSES,
             "num_classes": num_classes,
@@ -228,7 +237,7 @@ def build_gate_dataset(
     test_set = GATEDataset(
         dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
-        transforms=[eval_transforms, transforms],
+        transforms=[eval_transforms, transforms, stack_slices],
         meta_data={
             "class_names": CLASSES,
             "num_classes": num_classes,

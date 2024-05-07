@@ -322,6 +322,21 @@ class SegmentationAdapter(BaseAdapterModule):
             ),
             "labels": torch.randint(0, self.num_classes, (1, 1, 256, 256)),
         }
+
+        if torch.cuda.device_count() > 1:
+            self.spatial_decoder_head = self.spatial_decoder_head.to(
+                torch.cuda.current_device()
+            )
+            dummy_batch = {
+                k: v.to(torch.cuda.current_device())
+                for k, v in dummy_batch.items()
+            }
+
+            if hasattr(self, "stem_instance_norm"):
+                self.stem_instance_norm = self.stem_instance_norm.to(
+                    torch.cuda.current_device()
+                )
+
         _ = self(**dummy_batch)
 
     @ensemble_marker

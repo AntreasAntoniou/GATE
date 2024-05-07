@@ -71,6 +71,23 @@ class DuoModalZeroShotModel(BaseAdapterModule):
             ),
             "text": torch.randint(0, 100, (2, 10)),
         }
+        if torch.cuda.device_count() > 1:
+            self.image_linear_projection = self.image_linear_projection.to(
+                torch.cuda.current_device()
+            )
+            self.temperature_parameter = self.temperature_parameter.to(
+                torch.cuda.current_device()
+            )
+            dummy_batch = {
+                k: v.to(torch.cuda.current_device())
+                for k, v in dummy_batch.items()
+            }
+
+            if hasattr(self, "stem_instance_norm"):
+                self.stem_instance_norm = self.stem_instance_norm.to(
+                    torch.cuda.current_device()
+                )
+
         _ = self(**dummy_batch)
 
     @ensemble_marker

@@ -85,6 +85,7 @@ def run_command_on_gpu(
     )
     stdout_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stdout.log", "w")
     stderr_file = open(f"{os.environ['LOG_DIR']}/{exp_name}.stderr.log", "w")
+    command = command.replace("9032024", "10032024")
     return subprocess.Popen(
         command, shell=True, stdout=stdout_file, stderr=stderr_file
     )
@@ -200,9 +201,8 @@ def main(
         # If data is being piped to this script, read stdin
         command_dict = parse_commands_input(sys.stdin.read())
 
-    with open(f"{os.environ['LOG_DIR']}/commands.txt", "w") as f:
-        for command_name, command in command_dict.items():
-            f.write(f"{command_name}: {command}\n")
+    with open(f"{os.environ['LOG_DIR']}/commands.json", "w") as f:
+        json.dump(command_dict, f, indent=4)
 
     # Now, you can pass the list of commands and other arguments to your function
     run_commands(

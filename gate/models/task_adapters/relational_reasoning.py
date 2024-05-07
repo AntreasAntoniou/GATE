@@ -138,6 +138,18 @@ class DuoModalFusionModel(BaseAdapterModule):
             ),
         }
 
+        if torch.cuda.device_count() > 1:
+            self.classifier = self.classifier.to(torch.cuda.current_device())
+            dummy_batch = {
+                k: v.to(torch.cuda.current_device())
+                for k, v in dummy_batch.items()
+            }
+
+            if hasattr(self, "stem_instance_norm"):
+                self.stem_instance_norm = self.stem_instance_norm.to(
+                    torch.cuda.current_device()
+                )
+
         _ = self(**dummy_batch)
 
     @ensemble_marker
@@ -200,7 +212,7 @@ class DuoModalFusionModel(BaseAdapterModule):
         # check that only two modalities are passed
 
         if self.use_stem_instance_norm:
-            image = self.image_instance_norm(image)
+            image = self.stem_instance_norm(image)
         image_features = self.encoder(image=image)["image"]["raw_features"]
         image_features = self.image_linear(
             image_features.reshape(-1, image_features.shape[-1])

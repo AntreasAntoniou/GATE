@@ -702,6 +702,15 @@ class Learner(nn.Module):
             "per_epoch_metrics",
             loaded_evaluator_per_epoch_metrics,
         )
+        # renamed_model_state = {}
+        # for name, param in torch.load(
+        #     checkpoint_path / "pytorch_model.bin"
+        # ).items():
+        #     print(name)
+        #     if ".module." in name:
+        #         name = name.replace(".module.", ".")
+        #     renamed_model_state[name] = param
+        # torch.save(renamed_model_state, checkpoint_path / "pytorch_model.bin")
 
         self.accelerator.load_state(checkpoint_path)
 

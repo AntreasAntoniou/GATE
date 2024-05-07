@@ -4,6 +4,8 @@ from typing import Any, Callable, Optional
 
 from accelerate import Accelerator
 
+import wandb
+
 # Set environmental variables for better debugging
 os.environ["HYDRA_FULL_ERROR"] = "1"
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
