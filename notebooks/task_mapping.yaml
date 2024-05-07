@@ -11,7 +11,6 @@ Image Classification:
 - places365.loss
 - places365.acc@5
 - places365.acc@1
-Few Shot Image Classification:
 - fungi.acc@1
 - mini.acc@1
 - omniglot.acc@1
@@ -19,6 +18,8 @@ Few Shot Image Classification:
 - aircraft.acc@1
 - dtextures.acc@1
 - cubirds.acc@1
+# Few Shot Image Classification:
+
 Image Segmentation:
 - ade20k.dice-loss
 - ade20k.mIoU
@@ -36,10 +37,11 @@ Image Relational Reasoning:
 - clevr.acc@1
 - clevr-math.acc@5
 - clevr-math.acc@1
-Medical Classification/Segmentation:
+Medical Classification:
 - ham10k.auc
 - chexpert.auc
 - diabetic.auc
+Medical Segmentation:
 - acdc.dice-loss
 Image to Text Zero Shot Learning:
 - flickr30k.txt-to-img-acc@5

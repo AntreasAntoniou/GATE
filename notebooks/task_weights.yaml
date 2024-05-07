@@ -1,0 +1,17 @@
+Image Classification:
+- 0.125
+Few Shot Image Classification:
+- 0.125
+Image Segmentation:
+- 0.125
+Image Relational Reasoning:
+- 0.125
+Medical Classification/Segmentation:
+- 0.125
+Image to Text Zero Shot Learning:
+- 0.125
+Video Classification:
+- 0.125
+Video Regression:
+- 0.125
+
