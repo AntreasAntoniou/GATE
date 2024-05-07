@@ -1,7 +1,7 @@
 # Importing the necessary libraries
 import torch
 
-from gate.models.task_adapters.few_shot_classification.utils import (
+from gate.models.adapters.few_shot_classification.utils import (
     compute_prototypical_logits,
     compute_prototypical_loss,
 )

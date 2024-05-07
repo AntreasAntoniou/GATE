@@ -10,15 +10,15 @@ from transformers.models.bert.modeling_bert import (
 )
 
 from gate.boilerplate.decorators import configurable
+from gate.models.adapters.utils.modality_transfer import (
+    VisionRootReplacedBackbone,
+)
 from gate.models.backbones import (
     GATEImageEncoder,
     GATEImageTextEncoder,
     Modality,
 )
 from gate.models.backbones.timm import CLIPModelPaths, GATECLIPTextEncoder
-from gate.models.task_adapters.utils.modality_transfer import (
-    VisionRootReplacedBackbone,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class ModifiedBertEncoder(BertPreTrainedModel):
             return_dict=return_dict,
         )
         sequence_output = encoder_outputs[0]
-        pooled_output = sequence_output.mean(dim=1)
+        pooled_output = sequence_output[:, 0]
 
         return {
             "features": pooled_output,
@@ -118,6 +118,7 @@ class GATEBERTImageEncoder(GATEImageEncoder):
             source_modality=Modality.image,
             target_modality=Modality.image,
         )
+
         if not pretrained:
             self.vision_model.init_weights()
 

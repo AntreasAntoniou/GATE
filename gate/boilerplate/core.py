@@ -3,16 +3,11 @@ import logging
 import pathlib
 import time
 from enum import Enum
-from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
 from accelerate import Accelerator
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-from zmq import has
-
 from gate.boilerplate.callbacks import Callback, CallbackHandler
 from gate.boilerplate.decorators import configurable
 from gate.boilerplate.utils import download_model_with_name
@@ -28,6 +23,8 @@ from gate.config.variables import (
 from gate.models.core import Ensemble, GATEModel
 from gate.orchestration.evaluators.classification import Evaluator
 from gate.orchestration.trainers.classification import Trainer
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -62,28 +59,28 @@ class ExperimentStatus(Enum):
 )
 class Learner(nn.Module):
     def __init__(
-        self,
-        experiment_name: str,
-        accelerator: Accelerator,
-        root_dir: Union[str, Path],
-        model: torch.nn.Module,
-        trainer: Trainer,
-        evaluator: Evaluator,
-        resume: Union[bool, str] = False,
-        evaluate_every_n_steps: Optional[int] = None,
-        checkpoint_every_n_steps: Optional[int] = None,
-        checkpoint_after_validation: Optional[bool] = False,
-        train_iters: Optional[int] = None,
-        train_dataloader: Optional[DataLoader] = None,
-        limit_train_iters: Optional[int] = None,
-        val_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
-        limit_val_iters: Optional[int] = None,
-        test_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
-        callbacks: Optional[Union[List[Callback], Callback]] = None,
-        print_model_parameters: Optional[bool] = False,
-        hf_cache_dir: Optional[str] = None,
-        hf_repo_path: Optional[str] = None,
-        dummy_batch_mode: Optional[bool] = False,
+            self,
+            experiment_name: str,
+            accelerator: Accelerator,
+            root_dir: Union[str, Path],
+            model: torch.nn.Module,
+            trainer: Trainer,
+            evaluator: Evaluator,
+            resume: Union[bool, str] = False,
+            evaluate_every_n_steps: Optional[int] = None,
+            checkpoint_every_n_steps: Optional[int] = None,
+            checkpoint_after_validation: Optional[bool] = False,
+            train_iters: Optional[int] = None,
+            train_dataloader: Optional[DataLoader] = None,
+            limit_train_iters: Optional[int] = None,
+            val_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
+            limit_val_iters: Optional[int] = None,
+            test_dataloader: Optional[Union[List[DataLoader], DataLoader]] = None,
+            callbacks: Optional[Union[List[Callback], Callback]] = None,
+            print_model_parameters: Optional[bool] = False,
+            hf_cache_dir: Optional[str] = None,
+            hf_repo_path: Optional[str] = None,
+            dummy_batch_mode: Optional[bool] = False,
     ):
         """
         Initialize the Learner class.
@@ -398,7 +395,7 @@ class Learner(nn.Module):
         self._training_loop(train_dataloader=self.train_dataloader)
 
     def validate(
-        self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
+            self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
     ):
         if val_dataloader is not None:
             val_dataloader = self.accelerator.prepare(val_dataloader)
@@ -408,11 +405,11 @@ class Learner(nn.Module):
         self._validation_loop(val_dataloader=self.val_dataloader, model=model)
 
     def test(
-        self,
-        test_dataloader: List[DataLoader] = None,
-        model: nn.Module = None,
-        prefix: Optional[str] = None,
-        force: Optional[bool] = False,
+            self,
+            test_dataloader: List[DataLoader] = None,
+            model: nn.Module = None,
+            prefix: Optional[str] = None,
+            force: Optional[bool] = False,
     ):
         if self.status == ExperimentStatus.COMPLETED and not force:
             return
@@ -461,8 +458,8 @@ class Learner(nn.Module):
 
     def _training_loop(self, train_dataloader: DataLoader = None):
         if (
-            self.status == ExperimentStatus.TESTING
-            or self.status == ExperimentStatus.COMPLETED
+                self.status == ExperimentStatus.TESTING
+                or self.status == ExperimentStatus.COMPLETED
         ) and self.global_step >= self.train_iters:
             return self._finalize_training()
 
@@ -481,7 +478,7 @@ class Learner(nn.Module):
                 )
 
             with tqdm(
-                initial=self.global_step, total=self.train_iters, smoothing=0.0
+                    initial=self.global_step, total=self.train_iters, smoothing=0.0
             ) as pbar_steps:
                 while self.global_step <= self.train_iters:
                     tqdm_iter = self.global_step
@@ -490,8 +487,8 @@ class Learner(nn.Module):
                         if self.global_step > self.train_iters:
                             break
                         if (
-                            self.global_step % self.evaluate_every_n_steps == 0
-                            or self.global_step == 0
+                                self.global_step % self.evaluate_every_n_steps == 0
+                                or self.global_step == 0
                         ):
                             self._validation_loop()
 
@@ -501,13 +498,13 @@ class Learner(nn.Module):
                         )
 
                         if (
-                            self.checkpoint_every_n_steps is not None
-                            and (
+                                self.checkpoint_every_n_steps is not None
+                                and (
                                 self.global_step
                                 % self.checkpoint_every_n_steps
                                 == 0
-                            )
-                            and self.global_step > 0
+                        )
+                                and self.global_step > 0
                         ):
                             self.save_checkpoint(
                                 checkpoint_name=f"ckpt_{self.global_step}",
@@ -540,7 +537,7 @@ class Learner(nn.Module):
         return self._finalize_training()
 
     def _validation_loop(
-        self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
+            self, val_dataloader: List[DataLoader] = None, model: nn.Module = None
     ):
         if val_dataloader is None:
             val_dataloader = self.val_dataloader
@@ -554,7 +551,7 @@ class Learner(nn.Module):
             self.start_validation()
 
             with tqdm(
-                total=len(val_dataloader), smoothing=0.0
+                    total=len(val_dataloader), smoothing=0.0
             ) as pbar_dataloaders:
                 pre_batch_time = time.time()
                 for batch_idx, batch in enumerate(val_dataloader):
@@ -575,10 +572,10 @@ class Learner(nn.Module):
             self.end_validation()
 
     def _testing_loop(
-        self,
-        test_dataloader: List[DataLoader] = None,
-        model: nn.Module = None,
-        prefix: Optional[str] = None,
+            self,
+            test_dataloader: List[DataLoader] = None,
+            model: nn.Module = None,
+            prefix: Optional[str] = None,
     ):
         if test_dataloader is None:
             test_dataloader = self.test_dataloader
@@ -591,7 +588,7 @@ class Learner(nn.Module):
             self.start_testing(prefix=prefix)
 
             with tqdm(
-                total=len(test_dataloader), smoothing=0.0
+                    total=len(test_dataloader), smoothing=0.0
             ) as pbar_dataloaders:
                 for batch_idx, batch in enumerate(test_dataloader):
                     self.testing_step(
@@ -604,9 +601,9 @@ class Learner(nn.Module):
             self.end_testing(prefix=prefix, model=model)
 
     def save_checkpoint(
-        self,
-        checkpoint_name: str,
-        status: ExperimentStatus = ExperimentStatus.TRAINING,
+            self,
+            checkpoint_name: str,
+            status: ExperimentStatus = ExperimentStatus.TRAINING,
     ):
         ckpt_save_path = self.checkpoints_dir / checkpoint_name
 
@@ -643,8 +640,8 @@ class Learner(nn.Module):
         return ckpt_save_path
 
     def load_checkpoint(
-        self,
-        checkpoint_path: Union[str, Path],
+            self,
+            checkpoint_path: Union[str, Path],
     ):
         checkpoint_path = (
             checkpoint_path
@@ -724,12 +721,12 @@ class Learner(nn.Module):
         return self.status
 
     def load_best_model(
-        self,
-        metric_name: str,
-        higher_is_better: bool,
-        kth_best: int,
-        base_model: nn.Module,
-        evaluator: Evaluator = None,
+            self,
+            metric_name: str,
+            higher_is_better: bool,
+            kth_best: int,
+            base_model: nn.Module,
+            evaluator: Evaluator = None,
     ):
         (
             best_global_step,

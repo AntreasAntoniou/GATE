@@ -9,7 +9,7 @@ console = Console()
 
 
 def ask_user(
-    question: str, default: Optional[str] = None, advice: Optional[str] = None
+        question: str, default: Optional[str] = None, advice: Optional[str] = None
 ) -> str:
     if advice:
         console.print(Markdown(advice))
@@ -23,13 +23,20 @@ def assistance():
     console.print(
         Markdown(
             """
-    This script will guide you to set up the environment variables needed for your machine learning project. Here's an overview of the services we'll be setting up:
+    This script will guide you to set up the environment variables needed for your machine learning project. 
+    Here's an overview of the services we'll be setting up:
 
-    - **Weights & Biases (wandb)**: It's a tool for experiment tracking, dataset versioning, and model management. It helps to keep track of your experiments in your machine learning projects. It logs your hyperparameters and metrics, and allows you to visualize them in a web dashboard.
+    - **Weights & Biases (wandb)**: It's a tool for experiment tracking, dataset versioning, and model management. 
+    It helps to keep track of your experiments in your machine learning projects. 
+    It logs your hyperparameters and metrics, and allows you to visualize them in a web dashboard.
 
-    - **Hugging Face**: It's a platform to host transformer models and datasets. It has a vast array of pre-trained models contributed by the community. It's used to store model checkpoints to retrieve them later, making the model training code fully stateless.
+    - **Hugging Face**: It's a platform to host transformer models and datasets. It has a vast array of 
+    pre-trained models contributed by the community. It's used to store model checkpoints to retrieve them later, 
+    making the model training code fully stateless.
 
-    - **Kaggle**: It's a platform for predictive modelling and analytics competitions. It allows users to find and publish datasets, explore and build models. The Kaggle API is used here to fetch various key datasets for our experiments.
+    - **Kaggle**: It's a platform for predictive modelling and analytics competitions. 
+    It allows users to find and publish datasets, explore and build models. 
+    The Kaggle API is used here to fetch various key datasets for our experiments.
     """
         )
     )
@@ -37,7 +44,8 @@ def assistance():
     api_details = {
         "WANDB_API_KEY": {
             "question": "What's your Weights & Biases API key?",
-            "advice": "You can find this in your Weights & Biases settings: [link=https://wandb.ai/settings#api](https://wandb.ai/settings#api)",
+            "advice": "You can find this in your Weights & Biases settings: "
+                      "[link=https://wandb.ai/settings#api](https://wandb.ai/settings#api)",
         },
         "KAGGLE_USERNAME": {
             "question": "What's your Kaggle username?",
@@ -53,7 +61,8 @@ def assistance():
         },
         "HF_TOKEN": {
             "question": "What's your Hugging Face token?",
-            "advice": "You can generate this from your Hugging Face account settings: [link=https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)",
+            "advice": "You can generate this from your Hugging Face account settings: "
+                      "[link=https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)",
         },
     }
 

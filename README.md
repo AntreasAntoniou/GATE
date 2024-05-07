@@ -101,7 +101,7 @@ A high-level overview of the project's structure is given below:
 ├── models/
 │   ├── backbones/
 │   ├── blocks/
-│   ├── task_adapters/
+│   ├── adapters/
 │   └── core.py
 ├── orchestration/
 │   ├── evaluators/

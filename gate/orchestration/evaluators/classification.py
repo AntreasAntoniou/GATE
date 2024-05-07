@@ -10,7 +10,7 @@ from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics_mark, configurable
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
-from gate.metrics.multi_class_classification import (
+from gate.metrics.multi_class import (
     average_precision_score,
     brier_score_loss,
     roc_auc_score,

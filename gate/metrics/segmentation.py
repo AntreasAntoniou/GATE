@@ -29,10 +29,10 @@ def one_hot_encoding(tensor, num_classes, dim):
 
 class IoUMetric:
     def __init__(
-        self,
-        num_classes: int,
-        ignore_index: Optional[int | List[int]] = None,
-        class_idx_to_name: Optional[dict] = None,
+            self,
+            num_classes: int,
+            ignore_index: Optional[int | List[int]] = None,
+            class_idx_to_name: Optional[dict] = None,
     ):
         self.num_classes = num_classes
         self.ignore_index = ignore_index
@@ -78,9 +78,9 @@ class IoUMetric:
         area_intersect = torch.bincount(intersect, minlength=self.num_classes)
 
         area_union = (
-            torch.bincount(pred, minlength=self.num_classes)
-            + torch.bincount(label, minlength=self.num_classes)
-            - area_intersect
+                torch.bincount(pred, minlength=self.num_classes)
+                + torch.bincount(label, minlength=self.num_classes)
+                - area_intersect
         )
 
         area_label = torch.bincount(label, minlength=self.num_classes)
@@ -101,8 +101,8 @@ class IoUMetric:
         iou = torch.zeros_like(self.total_area_union)
         non_zero_union_mask = self.total_area_union > 0
         iou[non_zero_union_mask] = self.total_area_intersect[
-            non_zero_union_mask
-        ] / (self.total_area_union[non_zero_union_mask] + 1e-6)
+                                       non_zero_union_mask
+                                   ] / (self.total_area_union[non_zero_union_mask] + 1e-6)
         iou[~non_zero_union_mask] = torch.tensor(float("nan"))
 
         valid_iou = iou[~torch.isnan(iou)]
@@ -112,9 +112,9 @@ class IoUMetric:
         per_class_acc = torch.zeros_like(self.total_area_label)
         valid_label_mask = self.total_area_label > 0
         per_class_acc[valid_label_mask] = (
-            self.total_area_intersect[valid_label_mask]
-            / (self.total_area_label[valid_label_mask] + 1e-6)
-        ) * 100.0
+                                                  self.total_area_intersect[valid_label_mask]
+                                                  / (self.total_area_label[valid_label_mask] + 1e-6)
+                                          ) * 100.0
         per_class_acc[~valid_label_mask] = torch.tensor(float("nan"))
 
         # Overall Accuracy
@@ -134,7 +134,6 @@ class IoUMetric:
         per_class_iou = iou * 100.0
 
         if self.class_idx_to_name:
-
             per_class_iou = {
                 self.class_idx_to_name[i]: val.item()
                 for i, val in enumerate(per_class_iou)
@@ -203,7 +202,7 @@ def one_hot(labels: torch.Tensor, num_classes: int):
 
 class FocalLoss(nn.Module):
     def __init__(
-        self, alpha=0.25, gamma=2.0, reduction="mean", ignore_index=None
+            self, alpha=0.25, gamma=2.0, reduction="mean", ignore_index=None
     ):
         super(FocalLoss, self).__init__()
         self.alpha = alpha
@@ -271,7 +270,7 @@ class DiceLoss(nn.Module):
         )
 
         dice_scores = (2.0 * intersection + self.smooth) / (
-            union + self.smooth
+                union + self.smooth
         )
         dice_loss = 1.0 - dice_scores
 
@@ -305,9 +304,9 @@ def compute_class_weights(labels, num_classes):
 
 class WeightedCrossEntropyLoss(nn.Module):
     def __init__(
-        self,
-        reduction="mean",
-        ignore_index: int = -1,
+            self,
+            reduction="mean",
+            ignore_index: int = -1,
     ):
         super(WeightedCrossEntropyLoss, self).__init__()
         self.reduction = reduction
@@ -332,7 +331,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         return class_weights
 
     def forward(
-        self, logits: torch.Tensor, labels: torch.Tensor
+            self, logits: torch.Tensor, labels: torch.Tensor
     ) -> torch.Tensor:
         """
         Compute the weighted cross-entropy loss.
@@ -358,16 +357,16 @@ class WeightedCrossEntropyLoss(nn.Module):
 
 class CrossEntropyLoss(nn.Module):
     def __init__(
-        self,
-        reduction="mean",
-        ignore_index: int = -1,
+            self,
+            reduction="mean",
+            ignore_index: int = -1,
     ):
         super(CrossEntropyLoss, self).__init__()
         self.reduction = reduction
         self.ignore_index = ignore_index
 
     def forward(
-        self, logits: torch.Tensor, labels: torch.Tensor
+            self, logits: torch.Tensor, labels: torch.Tensor
     ) -> torch.Tensor:
         """
         Compute the weighted cross-entropy loss.

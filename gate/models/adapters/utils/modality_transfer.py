@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 
-from gate.models.task_adapters import BaseAdapterModule
+from gate.models.adapters import BaseAdapterModule
+from gate.models.backbones import reinit
 
 # Possibilities:
 
@@ -40,8 +41,9 @@ class BaseVisionRootLayer(nn.Module):
             out_channels=self.embed_dim,
             kernel_size=self.patch_size,
             stride=self.patch_size,
-            bias=False,
+            bias=True,
         )
+        self.layer_norm = nn.LayerNorm(self.embed_dim)
 
         self.num_patches = (self.image_size // self.patch_size) ** 2
         self.num_positions = self.num_patches + 1
@@ -58,6 +60,7 @@ class BaseVisionRootLayer(nn.Module):
             image
         )  # shape = [*, width, grid, grid]
         patch_embeds = patch_embeds.flatten(2).transpose(1, 2)
+        patch_embeds = self.layer_norm(patch_embeds)
 
         class_embeds = self.class_embedding.expand(batch_size, 1, -1)
         embeddings = torch.cat([class_embeds, patch_embeds], dim=1)
@@ -208,3 +211,6 @@ class VisionRootReplacedBackbone(nn.Module):
 
     def transforms(self, x):
         return T.ToTensor()(x)
+
+    def init_weights(self):
+        reinit(self)

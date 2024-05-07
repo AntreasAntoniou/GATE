@@ -9,15 +9,15 @@ from transformers.models.mpnet.modeling_mpnet import (
 )
 
 from gate.boilerplate.decorators import configurable
+from gate.models.adapters.utils.modality_transfer import (
+    VisionRootReplacedBackbone,
+)
 from gate.models.backbones import (
     GATEImageEncoder,
     GATEImageTextEncoder,
     Modality,
 )
 from gate.models.backbones.timm import GATECLIPTextEncoder
-from gate.models.task_adapters.utils.modality_transfer import (
-    VisionRootReplacedBackbone,
-)
 
 logger = logging.getLogger(__name__)
 

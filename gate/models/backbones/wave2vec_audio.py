@@ -19,7 +19,7 @@ from gate.models.backbones import (
     Modality,
 )
 from gate.models.backbones.timm import CLIPModelPaths, GATECLIPTextEncoder
-from gate.models.task_adapters.utils.modality_transfer import (
+from gate.models.adapters.utils.modality_transfer import (
     VisionRootReplacedBackbone,
 )
 

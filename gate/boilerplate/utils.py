@@ -27,9 +27,9 @@ int_or_str = Union[int, str]
 
 
 def get_logger(
-    name=__name__,
-    logging_level: Optional[int_or_str] = None,
-    set_rich: bool = False,
+        name=__name__,
+        logging_level: Optional[int_or_str] = None,
+        set_rich: bool = False,
 ) -> logging.Logger:
     """Initializes a python command line logger with nice defaults."""
 
@@ -155,8 +155,8 @@ def set_seed(seed: int):
 
 
 def pretty_config(
-    config: DictConfig,
-    resolve: bool = True,
+        config: DictConfig,
+        resolve: bool = True,
 ):
     """Prints content of DictConfig using Rich library and its tree structure.
 
@@ -198,7 +198,7 @@ def pretty_print_dictionary(dictionary: Dict[str, Any]) -> None:
 
 
 def save_json(
-    filepath: Union[str, pathlib.Path], dict_to_store: Dict, overwrite=True
+        filepath: Union[str, pathlib.Path], dict_to_store: Dict, overwrite=True
 ):
     """
     Saves a metrics .json file with the metrics
@@ -241,11 +241,11 @@ def load_json(filepath: Union[str, pathlib.Path]):
 
 
 def download_model_with_name(
-    hf_repo_path: str,
-    hf_cache_dir: str,
-    model_name: str,
-    download_only_if_finished: bool = False,
-    local_checkpoint_store_dir: Optional[str] = None,
+        hf_repo_path: str,
+        hf_cache_dir: str,
+        model_name: str,
+        download_only_if_finished: bool = False,
+        local_checkpoint_store_dir: Optional[str] = None,
 ) -> Dict[str, pathlib.Path]:
     """
     Download model checkpoint files given the model name from Hugging Face hub.
@@ -265,7 +265,7 @@ def download_model_with_name(
                 "trainer_state_filepath": ckpt_dir / "trainer_state.pt",
                 "optimizer_filepath": ckpt_dir / "optimizer.bin",
                 "model_filepath": ckpt_dir
-                / "pytorch_model.bin",  # ckpt_dir / "model.safetensors",
+                                  / "pytorch_model.bin",  # ckpt_dir / "model.safetensors",
                 "random_states_filepath": ckpt_dir / "random_states_0.pkl",
                 "root_filepath": ckpt_dir,
                 "validation_passed": True,
@@ -289,9 +289,9 @@ def download_model_with_name(
     if not HF_OFFLINE_MODE:
 
         def download_and_copy(
-            filename: str,
-            target_path: pathlib.Path,
-            subfolder: str = f"checkpoints/{model_name}",
+                filename: str,
+                target_path: pathlib.Path,
+                subfolder: str = f"checkpoints/{model_name}",
         ) -> None:
             file_path = huggingface_hub.hf_hub_download(
                 repo_id=hf_repo_path,
@@ -304,7 +304,7 @@ def download_model_with_name(
             shutil.copy(pathlib.Path(file_path), target_path)
 
         checkpoint_dir = (
-            pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
+                pathlib.Path(hf_cache_dir) / "checkpoints" / model_name
         )
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
@@ -372,8 +372,8 @@ def create_directories(hf_cache_dir: str) -> None:
 
 
 def store_config_yaml(
-    cfg: Any,
-    hf_cache_dir: str,
+        cfg: Any,
+        hf_cache_dir: str,
 ):
     config_dict = OmegaConf.to_container(cfg, resolve=True)
     config_yaml_path = pathlib.Path(hf_cache_dir) / "config.yaml"
@@ -403,10 +403,10 @@ def get_checkpoint_dict(files: Dict) -> Dict[int, str]:
 
 
 def download_checkpoint(
-    hf_repo_path: str,
-    ckpt_identifier: str,
-    hf_cache_dir: str,
-    local_checkpoint_store_dir: Optional[str] = None,
+        hf_repo_path: str,
+        ckpt_identifier: str,
+        hf_cache_dir: str,
+        local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[pathlib.Path, str]:
     logger.info(
         f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging Face hub 👨🏻‍💻"
@@ -425,11 +425,11 @@ def download_checkpoint(
 
 
 def create_hf_model_repo_and_download_maybe(
-    cfg: Any,
-    hf_cache_dir: str,
-    hf_repo_path: str,
-    resume_from_checkpoint: str,
-    resume: bool,
+        cfg: Any,
+        hf_cache_dir: str,
+        hf_repo_path: str,
+        resume_from_checkpoint: str,
+        resume: bool,
 ) -> Tuple[Optional[pathlib.Path], str]:
     if not HF_OFFLINE_MODE:
         create_hf_model_repo(hf_repo_path)
@@ -443,7 +443,7 @@ def create_hf_model_repo_and_download_maybe(
         )
 
     checkpoint_store_dir = (
-        pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
+            pathlib.Path(cfg.current_experiment_dir) / cfg.exp_name / "checkpoints"
     )
 
     if not HF_OFFLINE_MODE:
@@ -504,11 +504,11 @@ def create_hf_model_repo_and_download_maybe(
 
 
 def download_model_checkpoint_from_hub(
-    hf_repo_path: str,
-    hf_cache_dir: str,
-    checkpoint_identifier: Optional[str] = None,
-    get_latest: bool = False,
-    local_checkpoint_store_dir: Optional[str] = None,
+        hf_repo_path: str,
+        hf_cache_dir: str,
+        checkpoint_identifier: Optional[str] = None,
+        get_latest: bool = False,
+        local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[Optional[pathlib.Path], str]:
     if get_latest and checkpoint_identifier is not None:
         raise ValueError(

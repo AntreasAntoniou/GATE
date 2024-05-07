@@ -16,7 +16,7 @@ import wandb
 # 'test': True,
 # 'train': True,
 # 'resume': True,
-# 'adapter': {'encoder': '???', '_target_': 'gate.models.task_adapters.classification.BackboneWithLinearClassification', 'num_classes': 5, 'allow_on_model_metric_computation': True},
+# 'adapter': {'encoder': '???', '_target_': 'gate.models.adapters.classification.BackboneWithLinearClassification', 'num_classes': 5, 'allow_on_model_metric_computation': True},
 # 'dataset': {
 #     '_target_': 'gate.data.medical.classification.chexpert.build_gate_dataset',
 #     'data_dir': '/disk/scratch_fast1/data/',

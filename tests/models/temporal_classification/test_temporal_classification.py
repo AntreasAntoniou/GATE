@@ -17,7 +17,7 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.temporal_image_classification import (
+from gate.models.adapters.temporal_image_classification import (
     BackboneWithTemporalTransformerAndLinear,
     Metrics,
 )

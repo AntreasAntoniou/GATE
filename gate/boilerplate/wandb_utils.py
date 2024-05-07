@@ -3,6 +3,8 @@ import math
 from typing import Dict, List, Optional, Union
 
 import numpy as np
+import plotly.graph_objects as go
+import plotly.io as pio
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -210,6 +212,33 @@ def log_wandb_masks(
     return {f"{prefix}/segmentation_episode": mask_list}
 
 
+def log_scatter_wandb(
+    x_values: list, y_values: list, filename: str = "scatter_plot.png"
+) -> wandb.Image:
+    """
+    Creates a scatter plot with a logarithmic y-axis using given data, saves it as a PNG,
+    and returns a wandb.Image object.
+
+    Args:
+        x_values (list): List of x-values.
+        y_values (list): List of y-values.
+        filename (str): Filename and path where the image is to be saved.
+
+    Returns:
+        wandb.Image: A wandb.Image object.
+    """
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=x_values, y=y_values, mode="markers"))
+
+    fig.update_layout(yaxis=dict(type="log", autorange=True))
+
+    pio.write_image(fig, filename)
+
+    return wandb.Image(filename)
+
+
 def log_wandb_images(
     images: torch.Tensor,
     reconstructions: torch.Tensor,
@@ -228,14 +257,6 @@ def log_wandb_images(
         episode_list.append(ae_episode)
 
     return {f"{prefix}/autoencoder_episode": episode_list}
-
-
-from typing import Dict, List, Union
-
-import torch
-import torchvision.transforms as T
-import wandb
-from PIL import Image
 
 
 def log_wandb_image_classification(
@@ -354,13 +375,13 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             if idx < s:
                 if c is not None:
                     if isinstance(arr, torch.Tensor):
-                        montage[
-                            i * h : (i + 1) * h, j * w : (j + 1) * w
-                        ] = arr[idx].permute(1, 2, 0)
+                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                            arr[idx].permute(1, 2, 0)
+                        )
                     else:
-                        montage[
-                            i * h : (i + 1) * h, j * w : (j + 1) * w
-                        ] = arr[idx].transpose(1, 2, 0)
+                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                            arr[idx].transpose(1, 2, 0)
+                        )
                 else:
                     montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
                         idx

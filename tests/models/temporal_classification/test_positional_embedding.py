@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from gate.models.task_adapters.temporal_image_classification import (
+from gate.models.adapters.temporal_image_classification import (
     PositionalEncoding,
 )
 

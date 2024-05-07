@@ -4,11 +4,6 @@ from typing import Any, Optional
 
 import hydra
 import torch
-from hydra.core.config_store import ConfigStore
-from hydra_zen import MISSING, ZenField, builds, make_config
-from timm.scheduler import CosineLRScheduler
-from torch.utils.data import DataLoader
-
 from gate.boilerplate.callbacks import UploadCheckpointsToHuggingFace
 from gate.boilerplate.decorators import register_configurables
 from gate.boilerplate.utils import get_hydra_config, pretty_config
@@ -31,6 +26,10 @@ from gate.config.variables import (
     TRAIN_ITERS,
 )
 from gate.data.core import collate_fn_with_token_pad
+from hydra.core.config_store import ConfigStore
+from hydra_zen import MISSING, ZenField, builds, make_config
+from timm.scheduler import CosineLRScheduler
+from torch.utils.data import DataLoader
 
 hydra_logger = logging.getLogger("hydra")
 

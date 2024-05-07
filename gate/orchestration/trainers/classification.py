@@ -5,12 +5,13 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from accelerate import Accelerator
 
 from gate.boilerplate.decorators import collect_metrics_mark, configurable
 from gate.config.variables import HYDRATED_LABEL_IDX_TO_CLASS_NAME
-from gate.metrics.multi_class_classification import (
+from gate.metrics.multi_class import (
     average_precision_score,
     brier_score_loss,
     roc_auc_score,
@@ -27,6 +28,33 @@ def get_dict_shapes(x):
         key: value.shape if isinstance(value, torch.Tensor) else len(value)
         for key, value in x.items()
     }
+
+
+def get_grad_info(module: nn.Module) -> dict:
+    """
+    Obtain the detached mean absolute gradient of each trainable layer in a PyTorch nn.Module.
+
+    Args:
+        module (nn.Module): The PyTorch model or layer.
+
+    Returns:
+        dict: A dictionary containing the mean absolute gradients of each trainable layer.
+    """
+    grad_info = {}
+
+    for idx, (name, layer) in enumerate(module.named_parameters()):
+        if layer.requires_grad and layer.grad is not None:
+            grad_info[f"gradients/{idx}-{name}"] = (
+                layer.grad.detach().abs().mean().item()
+            )
+
+    per_layer_grads = list(grad_info.values())
+    grad_info["gradients/wandb_plot_overview"] = {
+        "x": [i for i in range(1, len(per_layer_grads) + 1)],
+        "y": per_layer_grads,
+    }
+
+    return grad_info
 
 
 @dataclass
@@ -74,6 +102,7 @@ class ClassificationTrainer(Trainer):
         global_step,
         accelerator: Accelerator,
     ) -> TrainerOutput:
+        metrics = {}
         model.train()
         self.optimizer.zero_grad()
 
@@ -83,11 +112,14 @@ class ClassificationTrainer(Trainer):
             global_step=global_step,
             accelerator=accelerator,
         )
+        if global_step % 100 == 0:
+            metrics.update(get_grad_info(model))
 
         self.optimizer.step()
         self.scheduler.step(step_output.loss)
 
-        metrics = step_output.output_metrics_dict
+        metrics.update(step_output.output_metrics_dict)
+
         metrics["lr"] = self.optimizer.param_groups[0]["lr"]
 
         return TrainerOutput(

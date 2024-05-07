@@ -4,11 +4,9 @@ import pathlib
 from dataclasses import dataclass
 from typing import Any, Optional, Tuple, Union
 
-import datasets
 import PIL
+import datasets
 import torch
-from torchvision import transforms as T
-
 from gate.boilerplate.decorators import configurable
 from gate.config.variables import DATASET_DIR
 from gate.data.core import GATEDataset
@@ -16,29 +14,30 @@ from gate.data.few_shot.core import (
     FewShotClassificationMetaDataset,
     key_mapper,
 )
+from torchvision import transforms as T
 
 logger = logging.getLogger(__name__)
 
 
 class AircraftFewShotClassificationDataset(FewShotClassificationMetaDataset):
     def __init__(
-        self,
-        dataset_root: Union[str, pathlib.Path],
-        split_name: str,
-        download: bool,
-        num_episodes: int,
-        min_num_classes_per_set: int,
-        min_num_samples_per_class: int,
-        min_num_queries_per_class: int,
-        num_classes_per_set: int,  # n_way
-        num_samples_per_class: int,  # n_shot
-        num_queries_per_class: int,
-        variable_num_samples_per_class: bool,
-        variable_num_classes_per_set: bool,
-        support_set_input_transform: Optional[Any],
-        query_set_input_transform: Optional[Any],
-        support_set_target_transform: Optional[Any] = None,
-        query_set_target_transform: Optional[Any] = None,
+            self,
+            dataset_root: Union[str, pathlib.Path],
+            split_name: str,
+            download: bool,
+            num_episodes: int,
+            min_num_classes_per_set: int,
+            min_num_samples_per_class: int,
+            min_num_queries_per_class: int,
+            num_classes_per_set: int,  # n_way
+            num_samples_per_class: int,  # n_shot
+            num_queries_per_class: int,
+            variable_num_samples_per_class: bool,
+            variable_num_classes_per_set: bool,
+            support_set_input_transform: Optional[Any],
+            query_set_input_transform: Optional[Any],
+            support_set_target_transform: Optional[Any] = None,
+            query_set_target_transform: Optional[Any] = None,
     ):
         DATASET_NAME = "metadataset/aircraft"
         super(AircraftFewShotClassificationDataset, self).__init__(
@@ -130,8 +129,8 @@ def build_dataset(set_name: str, num_episodes: int, data_dir: str) -> dict:
     defaults=dict(data_dir=DATASET_DIR),
 )
 def build_gate_dataset(
-    data_dir: str,
-    transforms: Optional[Any] = None,
+        data_dir: str,
+        transforms: Optional[Any] = None,
 ) -> dict:
     train_set = GATEDataset(
         dataset=build_dataset("train", data_dir=data_dir, num_episodes=10000),

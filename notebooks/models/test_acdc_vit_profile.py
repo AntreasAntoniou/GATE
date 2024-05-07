@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 import gate.data.medical.segmentation.automated_cardiac_diagnosis as acd
 import gate.data.medical.segmentation.medical_decathlon as md
-from gate.models.task_adapters.medical_semantic_segmentation import logger
+from gate.models.adapters.medical_semantic_segmentation import logger
 from gate.models.task_specific_models.semantic_segmentation.timm import (
     build_gate_model,
 )

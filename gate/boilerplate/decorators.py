@@ -8,26 +8,26 @@ from typing import Any, Callable, Dict, Optional
 
 import torch
 import wandb
-from hydra.core.config_store import ConfigStore
-from hydra_zen import builds
-
 from gate.boilerplate.wandb_utils import (
+    log_scatter_wandb,
     log_wandb_3d_volumes_and_masks,
     log_wandb_images,
     log_wandb_masks,
     visualize_video_with_labels,
 )
+from hydra.core.config_store import ConfigStore
+from hydra_zen import builds
 
 logger = logging.getLogger(__name__)
 
 
 class BackgroundLogging(threading.Thread):
     def __init__(
-        self,
-        experiment_tracker: wandb,
-        global_step: int,
-        phase_name: str,
-        metrics_dict: Dict,
+            self,
+            experiment_tracker: wandb,
+            global_step: int,
+            phase_name: str,
+            metrics_dict: Dict,
     ):
         super().__init__()
         self.experiment_tracker = experiment_tracker  # Experiment tracker
@@ -48,10 +48,7 @@ class BackgroundLogging(threading.Thread):
                     else computed_value
                 )
 
-                log_dict = {
-                    f"{phase_name}/{metric_key}": value,
-                    "global_step": global_step,
-                }
+                log_dict = {"global_step": global_step}
 
                 # if "image_class_episode" in metric_key:
                 #     image_dict = log_wandb_image_classification(
@@ -61,6 +58,11 @@ class BackgroundLogging(threading.Thread):
                 #         prefix=phase_name,
                 #     )
                 #     log_dict.update(image_dict)
+                if "wandb_plot" in metric_key:
+                    plot = log_scatter_wandb(
+                        x_values=value["x"], y_values=value["y"]
+                    )
+                    log_dict.update({f"{phase_name}/{metric_key}": plot})
 
                 if "seg_episode" in metric_key:
                     mask_dict = log_wandb_masks(
@@ -100,13 +102,16 @@ class BackgroundLogging(threading.Thread):
                     )
                     log_dict.update(video_dict)
 
+                if f"{phase_name}/{metric_key}" not in log_dict:
+                    log_dict[f"{phase_name}/{metric_key}"] = value
+
                 self.experiment_tracker.log(log_dict)
 
 
 def configurable(
-    group: str,
-    name: str,
-    defaults: Optional[Dict[str, Any]] = None,
+        group: str,
+        name: str,
+        defaults: Optional[Dict[str, Any]] = None,
 ) -> Callable:
     """
     A decorator for making functions configurable and setting default values for their arguments.
@@ -151,7 +156,7 @@ def register_configurables(package_name: str) -> ConfigStore:
 
         for name, obj in inspect.getmembers(module):
             if not (
-                inspect.isfunction(obj) or inspect.isclass(obj)
+                    inspect.isfunction(obj) or inspect.isclass(obj)
             ):  # Skip if not a function or class
                 continue
             if hasattr(obj, "__configurable__") and obj.__configurable__:
@@ -181,10 +186,10 @@ def ensemble_marker(func):
 
 
 def collect_metrics(
-    metrics_dict: dict(),
-    phase_name: str,
-    experiment_tracker: Any,
-    global_step: int,
+        metrics_dict: dict,
+        phase_name: str,
+        experiment_tracker: Any,
+        global_step: int,
 ) -> None:
     if experiment_tracker is None:
         experiment_tracker = wandb

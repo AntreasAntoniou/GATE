@@ -8,8 +8,8 @@ from accelerate import Accelerator
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseAdapterModule
-from gate.models.task_adapters.utils.helpers import (
+from gate.models.adapters import BaseAdapterModule
+from gate.models.adapters.utils.helpers import (
     compute_zero_shot_loss_and_metrics,
     get_similarities,
 )

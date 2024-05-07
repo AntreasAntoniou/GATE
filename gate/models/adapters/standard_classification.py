@@ -11,7 +11,7 @@ from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
 from gate.models.backbones import GATEncoder
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
-from gate.models.task_adapters import BaseAdapterModule
+from gate.models.adapters import BaseAdapterModule
 
 logger = logging.getLogger(__name__)
 

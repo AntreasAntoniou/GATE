@@ -7,7 +7,7 @@ from gate.menu.core import (
     TrainerName,
     get_model_selection,
 )
-from gate.models.task_adapters.semantic_segmentation import (
+from gate.models.adapters.semantic_segmentation import (
     SegmentationLossOptions,
 )
 

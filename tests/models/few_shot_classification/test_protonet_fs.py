@@ -17,7 +17,7 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.few_shot_classification.protonet import (
+from gate.models.adapters.few_shot_classification.protonet import (
     PrototypicalNetwork,
 )
 

@@ -18,7 +18,7 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.multi_class_classification import (
+from gate.models.adapters.multi_class_classification import (
     MultiClassBackboneWithLinear,
 )
 

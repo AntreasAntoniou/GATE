@@ -17,7 +17,7 @@ from gate.models.backbones.whisper_audio import (
     WhisperModelPaths,
 )
 from gate.models.core import GATEModel
-from gate.models.task_adapters.semantic_segmentation import SegmentationAdapter
+from gate.models.adapters.semantic_segmentation import SegmentationAdapter
 
 data = [
     (
