@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import PIL
 import torch
@@ -496,6 +496,28 @@ class DataParallelWithDict(nn.DataParallel):
             key: nn.parallel.gather([d[key] for d in outputs], output_device)
             for key in outputs[0]
         }
+
+    def named_modules(
+        self,
+        memo: Optional[Set[torch.nn.Module]] = None,
+        prefix: str = "",
+        remove_duplicate: bool = True,
+    ):
+        for name, module in self.module.named_modules(
+            memo=memo, prefix=prefix, remove_duplicate=remove_duplicate
+        ):
+            yield name.replace(".module.", "."), module
+
+    def named_parameters(
+        self,
+        prefix: str = "",
+        recurse: bool = True,
+        remove_duplicate: bool = True,
+    ):
+        for name, param in self.module.named_parameters(
+            prefix=prefix, recurse=recurse, remove_duplicate=remove_duplicate
+        ):
+            yield name.replace(".module.", "."), param
 
 
 class GATEImageTextEncoder(GATEncoder):

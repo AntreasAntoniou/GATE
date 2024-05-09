@@ -630,6 +630,7 @@ class Learner(nn.Module):
             obj=experiment_hyperparameters,
             f=ckpt_save_path / "trainer_state.pt",
         )
+
         self.accelerator.save_state(ckpt_save_path, safe_serialization=False)
 
         self.callback_handler.on_save_checkpoint(
@@ -711,6 +712,8 @@ class Learner(nn.Module):
         #         name = name.replace(".module.", ".")
         #     renamed_model_state[name] = param
         # torch.save(renamed_model_state, checkpoint_path / "pytorch_model.bin")
+        # Load pytorch weights and remove the prefix "module.", then backup the original weights and overwrite the weights
+        # with the new weights
 
         self.accelerator.load_state(checkpoint_path)
 

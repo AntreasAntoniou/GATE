@@ -8,6 +8,7 @@ import timm
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
+from sklearn.feature_extraction import img_to_graph
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor
@@ -83,10 +84,12 @@ class TimmModel(nn.Module):
         super().__init__()
 
         try:
+            # Loading efficientformer style models that require img_size and features_only
             self.model = timm.create_model(
                 model_name=model_identifier,
                 pretrained=pretrained,
                 features_only=True,
+                img_size=image_size,
             )
 
         except RuntimeError as e:
@@ -96,11 +99,24 @@ class TimmModel(nn.Module):
             logger.info(
                 f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {image_size}"
             )
+            # Loading vision transformer style models that require img_size and not features_only
             self.model = timm.create_model(
                 model_name=model_identifier,
                 img_size=image_size,
                 pretrained=pretrained,
             )
+        except TypeError as e:
+            # Loading convnet style models that do not require img_size or features_only
+            logger.info(
+                f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
+            )
+
+            self.model = timm.create_model(
+                model_name=model_identifier,
+                pretrained=pretrained,
+                features_only=True,
+            )
+
         logger.info(f"Loaded Model {self.model}")
         if image_size is None:
             image_size = self.model.default_cfg["input_size"][-1]
@@ -190,7 +206,9 @@ class TimmModel(nn.Module):
                 "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/beignets-task-guide.png"
             )
         )
-        output_dict = self.forward(self.transforms(img).unsqueeze(0))
+        image = self.transforms(img).unsqueeze(0)
+
+        output_dict = self.forward(image)
         shape_dict = {
             k: (
                 v.shape
