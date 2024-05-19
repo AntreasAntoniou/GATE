@@ -20,7 +20,7 @@ import wandb
 
 task_to_dataset_map = yaml.safe_load(open("notebooks/task_mapping.yaml"))
 
-WANDB_PROJECT_NAME = "gate-evolve-nn-v7"
+WANDB_PROJECT_NAME = "gate-evolve-nn-v11"
 
 
 @dataclass
@@ -197,7 +197,7 @@ def evaluate_combination(
     x = (x - x.mean(axis=0)) / x.std(axis=0)
     y = (y - y.mean(axis=0)) / y.std(axis=0)
 
-    kf = ShuffleSplit(n_splits=25, random_state=42, test_size=0.5)
+    kf = ShuffleSplit(n_splits=10, random_state=42, test_size=0.5)
     scores = []
     for train_index, test_index in kf.split(x):
         x_train, x_test = x[train_index], x[test_index]
@@ -275,6 +275,7 @@ METRICS = sorted(
             "flickr30k",
             "food101",
             "fungi",
+            "happy",
             "ham10k",
             "hmdb51",
             "imagenet1k",
@@ -286,7 +287,6 @@ METRICS = sorted(
             "omniglot",
             "pascal",
             "places365",
-            "pokemonblipcaptions",
             "ucf",
             "vgg",
             "winoground",
@@ -297,15 +297,6 @@ METRICS = sorted(
 
 def load_data_as_df(filepath):
     df = pd.read_csv(filepath)
-
-    # Concatenating the header with the first row
-    new_headers = [
-        f"{col.split('.')[0]}.{df.iloc[0][idx]}"
-        for idx, col in enumerate(df.columns)
-    ]
-
-    # Setting the new concatenated values as column names
-    df.columns = new_headers
 
     # Removing the first row from the DataFrame
     df = df.drop(df.index[0])
@@ -330,7 +321,7 @@ def load_data_as_df(filepath):
 
 
 def main(
-    result_csv_path: str | pathlib.Path = "notebooks/03032024-full.csv",
+    result_csv_path: str | pathlib.Path,
     combination_size: int = 12,
     device: str = "cuda",
 ):
@@ -346,8 +337,6 @@ def main(
         name=f"{WANDB_PROJECT_NAME}-k={combination_size}",
         entity="machinelearningbrewery",
     )
-    df = load_data_as_df(result_csv_path)
-    # replace NaNs with 1000
     df = load_data_as_df(result_csv_path)
     # replace NaNs with 1000
     device = torch.device(device)
@@ -536,7 +525,7 @@ def remove_one_from_combo_and_reevaluate(
 
 
 def run_job(combination_size, gpu_id):
-    csv_path = "notebooks/03032024-full.csv"
+    csv_path = "notebooks/08052024.csv"
     device = f"cuda:{gpu_id}"
     main(
         result_csv_path=csv_path,
@@ -548,7 +537,7 @@ def run_job(combination_size, gpu_id):
 if __name__ == "__main__":
     combination_sizes = [i for i in range(1, 31)]  # 1 to 31
     gpu_ids = range(4)  # 0 to 3
-    max_workers = 4  # Maximum number of parallel jobs
+    max_workers = 12  # Maximum number of parallel jobs
 
     # Schedule jobs in a round-robin fashion across GPUs
     jobs = [

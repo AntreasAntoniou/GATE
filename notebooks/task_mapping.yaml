@@ -18,6 +18,12 @@ Image Classification:
 - aircraft.acc@1
 - dtextures.acc@1
 - cubirds.acc@1
+- happy.loss_species                                                                                                            
+- happy.loss_individual                                                                                                         
+- happy.accuracy_top_1_species                                                                                                  
+- happy.accuracy_top_1_individual                                                                                               
+- happy.accuracy_top_5_individual 
+- happy.accuracy_top_5_species
 # Few Shot Image Classification:
 
 Image Segmentation:
