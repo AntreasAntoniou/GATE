@@ -1,4 +1,4 @@
-from gate.menu.core import (
+from gate.tiers.core import (
     Adapters,
     DatasetName,
     EvaluatorName,
@@ -8,18 +8,18 @@ from gate.menu.core import (
 
 
 class Config:
-    BATCH_SIZE = 1
-    ENCODER_CONFIG = Adapters.MD_SEGMENTATION.value
-    RESNET_LR = 6e-4
-    VIT_LR = 6e-6
-    TRAINER_NAME = TrainerName.MEDICAL_SEMANTIC_SEGMENTATION.value
-    EVALUATOR_NAME = EvaluatorName.MEDICAL_SEMANTIC_SEGMENTATION.value
-    IMAGE_SIZE = 512
+    BATCH_SIZE = 8
+    ENCODER_CONFIG = Adapters.TEMPORAL_CLASSIFICATION.value
+    RESNET_LR = 1e-3
+    VIT_LR = 1e-5
+    TRAINER_NAME = TrainerName.VIDEO_CLASSIFICATION.value
+    EVALUATOR_NAME = EvaluatorName.VIDEO_CLASSIFICATION.value
+    IMAGE_SIZE = 224
 
     def __init__(self):
         self.dataset = {
             dataset_name: dataset_name.value
-            for dataset_name in DatasetName.MEDICAL_DECATHLON_SEGMENTATION.value
+            for dataset_name in DatasetName.VIDEO_CLASSIFICATION.value
         }
 
         self.model = get_model_selection(

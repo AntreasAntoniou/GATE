@@ -4,7 +4,7 @@ import torch
 from gate.data.image_text.visual_relational_reasoning.clevr import (
     num_classes as rr_num_classes,
 )
-from gate.menu.core import Encoders
+from gate.tiers.core import Encoders
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
 from gate.models.backbones.bert_text import BertAdapter, BertModelPaths
 from gate.models.backbones.clip_image import CLIPVisionAdapter

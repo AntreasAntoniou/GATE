@@ -10,31 +10,33 @@ import fire
 from rich import print
 from rich.logging import RichHandler
 
-from gate.menu.configs.few_shot_learning import (
+from gate.tiers.configs.few_shot_learning import (
     Config as few_shot_learning_config,
 )
-from gate.menu.configs.image_classification import (
+from gate.tiers.configs.image_classification import (
     Config as image_classification_config,
 )
-from gate.menu.configs.image_segmentation import (
+from gate.tiers.configs.image_segmentation import (
     Config as image_segmentation_config,
 )
-from gate.menu.configs.image_text_zero_shot_classification import (
+from gate.tiers.configs.image_text_zero_shot_classification import (
     Config as image_text_zero_shot_classification_config,
 )
-from gate.menu.configs.medical_image_classification import (
+from gate.tiers.configs.medical_image_classification import (
     Config as medical_image_classification_config,
 )
-from gate.menu.configs.medical_image_segmentation_acdc import (
+from gate.tiers.configs.medical_image_segmentation_acdc import (
     Config as acdc_config,
 )
-from gate.menu.configs.medical_image_segmentation_md import Config as md_config
-from gate.menu.configs.relational_reasoning import Config as rr_config
-from gate.menu.configs.relational_reasoning_mm import Config as rr_mm_config
-from gate.menu.configs.video_classification import (
+from gate.tiers.configs.medical_image_segmentation_md import (
+    Config as md_config,
+)
+from gate.tiers.configs.relational_reasoning import Config as rr_config
+from gate.tiers.configs.relational_reasoning_mm import Config as rr_mm_config
+from gate.tiers.configs.video_classification import (
     Config as video_classification_config,
 )
-from gate.menu.utils import build_command
+from gate.tiers.utils import build_command
 
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)

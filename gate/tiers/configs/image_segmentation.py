@@ -1,6 +1,6 @@
 from rich import print
 
-from gate.menu.core import (
+from gate.tiers.core import (
     AdapterConfig,
     DatasetName,
     EvaluatorName,
