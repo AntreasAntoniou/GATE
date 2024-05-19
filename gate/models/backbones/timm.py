@@ -4,11 +4,9 @@ from urllib.request import urlopen
 
 import PIL
 import PIL.Image as Image
-import timm
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
-from sklearn.feature_extraction import img_to_graph
 from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 from transformers import CLIPModel, CLIPProcessor

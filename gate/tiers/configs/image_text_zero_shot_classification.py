@@ -1,4 +1,4 @@
-from gate.menu.core import (
+from gate.tiers.core import (
     Adapters,
     DatasetName,
     EvaluatorName,
@@ -8,18 +8,18 @@ from gate.menu.core import (
 
 
 class Config:
-    BATCH_SIZE = 8
-    ENCODER_CONFIG = Adapters.TEMPORAL_REGRESSION.value
+    BATCH_SIZE = 64
+    ENCODER_CONFIG = Adapters.ZERO_SHOT_IMAGE_TEXT.value
     RESNET_LR = 1e-3
     VIT_LR = 1e-5
-    TRAINER_NAME = TrainerName.VIDEO_REGRESSION.value
-    EVALUATOR_NAME = EvaluatorName.VIDEO_REGRESSION.value
+    TRAINER_NAME = TrainerName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
+    EVALUATOR_NAME = EvaluatorName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
     IMAGE_SIZE = 224
 
     def __init__(self):
         self.dataset = {
             dataset_name: dataset_name.value
-            for dataset_name in DatasetName.VIDEO_REGRESSION.value
+            for dataset_name in DatasetName.IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION.value
         }
 
         self.model = get_model_selection(

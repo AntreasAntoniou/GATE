@@ -1,4 +1,4 @@
-from gate.menu.core import (
+from gate.tiers.core import (
     Adapters,
     DatasetName,
     EvaluatorName,
@@ -8,22 +8,22 @@ from gate.menu.core import (
 
 
 class Config:
-    BATCH_SIZE = 64
-    ENCODER_CONFIG = Adapters.ZERO_SHOT_IMAGE_TEXT.value
+    BATCH_SIZE = 1
+    ADAPTER_CONFIG = Adapters.FEW_SHOT_PROTONET.value
     RESNET_LR = 1e-3
     VIT_LR = 1e-5
-    TRAINER_NAME = TrainerName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
-    EVALUATOR_NAME = EvaluatorName.IMAGE_TO_TEXT_ZERO_SHOT_CLASSIFICATION.value
+    TRAINER_NAME = TrainerName.IMAGE_CLASSIFICATION.value
+    EVALUATOR_NAME = EvaluatorName.IMAGE_CLASSIFICATION.value
     IMAGE_SIZE = 224
 
     def __init__(self):
         self.dataset = {
             dataset_name: dataset_name.value
-            for dataset_name in DatasetName.IMAGE_TEXT_ZERO_SHOT_CLASSIFICATION.value
+            for dataset_name in DatasetName.FEW_SHOT_PROTONET_CLASSIFICATION.value
         }
 
         self.model = get_model_selection(
-            adapter_config=self.ENCODER_CONFIG,
+            adapter_config=self.ADAPTER_CONFIG,
             batch_size=self.BATCH_SIZE,
             resnet_lr=self.RESNET_LR,
             vit_lr=self.VIT_LR,

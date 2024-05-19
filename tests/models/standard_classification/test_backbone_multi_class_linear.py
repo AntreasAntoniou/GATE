@@ -2,7 +2,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from gate.menu.core import Encoders
+from gate.tiers.core import Encoders
 from gate.models.backbones.bart_text import BartAdapter, BartModelPaths
 from gate.models.backbones.bert_text import BertAdapter, BertModelPaths
 from gate.models.backbones.clip_image import CLIPVisionAdapter
