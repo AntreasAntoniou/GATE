@@ -3,6 +3,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 from huggingface_hub import PyTorchModelHubMixin
+from sympy import per
 from torchvision import transforms as T
 from transformers import CLIPModel, CLIPProcessor
 
@@ -110,30 +111,41 @@ class PreTrainedLiouna(nn.Module, PyTorchModelHubMixin):
     def forward(self, x):
 
         per_layer_raw_features = []
-        first_layer_feature_height = None
-        first_layer_feature_width = None
+
         for block in self.children():
             shape = (
                 x.shape
                 if isinstance(x, torch.Tensor)
                 else [item.shape for item in x]
             )
-
             x = block(x)
 
             current_feature = nn.functional.interpolate(
                 x,
                 size=(
-                    8,
-                    8,
+                    64,
+                    64,
                 ),
                 mode="bilinear",
             )
 
             per_layer_raw_features.append(current_feature)
-        per_layer_raw_features = [torch.cat(per_layer_raw_features, dim=1)]
-        raw_features = x
-        features = x.view(x.size(0), -1)
+        per_layer_raw_features = torch.cat(per_layer_raw_features, dim=1)
+        per_layer_raw_features = per_layer_raw_features.permute(
+            0, 2, 3, 1
+        ).reshape(
+            per_layer_raw_features.shape[0],
+            -1,
+            per_layer_raw_features.shape[1],
+        )
+        per_layer_raw_features = [per_layer_raw_features]
+        raw_features = x.permute(0, 2, 3, 1).reshape(
+            x.shape[0], -1, x.shape[1]
+        )
+        features = x.permute(0, 2, 3, 1).reshape(x.shape[0], -1)
+        # print(
+        #     raw_features.shape, features.shape, per_layer_raw_features[0].shape
+        # )
 
         return {
             "classifier": features,
@@ -171,10 +183,11 @@ class GATELiounaImageEncoder(GATEImageEncoder):
         if not pretrained:
             self.vision_model.init_weights()
 
-        self.image_num_raw_features = self.get_output_shape()["features"][-1]
+        output_shape = self.get_output_shape()
+        self.image_num_raw_features = output_shape["raw_features"][-1]
 
         self.image_num_features = (
-            self.image_num_raw_features
+            output_shape["features"][-1]
             if num_projection_features is None
             else num_projection_features
         )
@@ -182,7 +195,7 @@ class GATELiounaImageEncoder(GATEImageEncoder):
 
         self.visual_projection = (
             nn.Linear(
-                self.image_num_raw_features,
+                output_shape["features"][-1],
                 num_projection_features,
                 bias=False,
             )

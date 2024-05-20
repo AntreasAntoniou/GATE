@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from gate.boilerplate.decorators import configurable, ensemble_marker
 from gate.config.variables import HYDRATED_NUM_CLASSES
 from gate.metrics.core import accuracy_top_k
-from gate.models.backbones import GATEncoder
+from gate.models.backbones import GATEncoder, reinit
 from gate.models.core import SourceModalityConfig, TargetModalityConfig
 from gate.models.task_adapters import BaseAdapterModule
 
@@ -97,8 +97,9 @@ class VariableSequenceTransformerEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
         x = x + self.pos_encoder(x)
+
         x = self.transformer(x)[:, -1, :]  # take the last frame
-        raw_features = self.transformer(x)
+        raw_features = x
         features = self.output_norm(x)
         return {
             "features": features,

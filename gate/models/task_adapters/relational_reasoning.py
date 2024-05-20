@@ -141,7 +141,11 @@ class DuoModalFusionModel(BaseAdapterModule):
         if torch.cuda.device_count() > 1:
             self.classifier = self.classifier.to(torch.cuda.current_device())
             dummy_batch = {
-                k: v.to(torch.cuda.current_device())
+                k: (
+                    v.to(torch.cuda.current_device())
+                    if isinstance(v, torch.Tensor)
+                    else v
+                )
                 for k, v in dummy_batch.items()
             }
 

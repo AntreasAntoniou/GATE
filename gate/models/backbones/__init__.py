@@ -613,6 +613,7 @@ class GATEImageTextEncoder(GATEncoder):
         if image is not None:
             output_dict["image"] = self.process_images(image)
             if self.num_projection_features:
+
                 output_dict["image"]["features"] = (
                     self.image_embedding.projection_layer(
                         output_dict["image"]["features"]

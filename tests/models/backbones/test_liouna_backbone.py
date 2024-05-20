@@ -47,7 +47,7 @@ def test_forward_pass_text(encoder):
 
 def test_forward_pass_video(encoder):
     # You will need to mock or create a sample video tensor here
-    video_tensor = torch.rand((1, 10, 3, 224, 224))  # Mocking a video tensor
+    video_tensor = torch.rand((1, 2, 3, 224, 224))  # Mocking a video tensor
     result = encoder.forward(video=video_tensor)
     assert "video" in result
     assert "features" in result["video"]

@@ -5,11 +5,12 @@ from typing import Dict, List, Optional, Union
 
 import fire
 import pandas as pd
-import wandb
 from rich import print
 from rich.console import Console
 from rich.table import Table
 from tqdm.auto import tqdm
+
+import wandb
 
 
 def check_wandb_experiments(
@@ -189,7 +190,7 @@ def main(
     # Call the function
     exp_dict = check_wandb_experiments(
         experiments=experiments,
-        project=["gate-0-9-1"],
+        project=["gate-liouna-0-9-4"],
         print_table=print_table,
         filter_for_non_completed=filter_for_non_completed,
         filter_for_non_running=filter_for_non_running,
