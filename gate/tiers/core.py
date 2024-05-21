@@ -110,7 +110,6 @@ class EncoderConfig:
         mpnet_model_name: Optional[str] = None,
         embedding_dim: Optional[int] = None,
         num_projection_features: Optional[int] = 768,
-        freeze_encoder: bool = False,
     ):
         self.pretty_name = pretty_name
         self.image_size = image_size
@@ -126,24 +125,43 @@ class EncoderConfig:
         self.mpnet_model_name = mpnet_model_name
         self.embedding_dim = embedding_dim
         self.num_projection_features = num_projection_features
-        self.freeze_encoder = freeze_encoder
+        self.liouna_model_name = liouna_model_name
 
-    def __call__(self, image_size: int):
-        self.image_size = image_size
+    def __call__(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
         return self
 
 
-@dataclass
 class AdapterConfig:
-    adapter_name: str
-    use_stem_instance_norm: bool = True
-    metric_type: Optional[str] = None
-    loss_type_id: Optional[str] = None
-    background_loss_weight: Optional[float] = None
-    dice_loss_weight: Optional[float] = None
-    focal_loss_weight: Optional[float] = None
-    ce_loss_weight: Optional[float] = None
-    freeze_encoder: bool = False
+    def __init__(
+        self,
+        adapter_name: str,
+        use_stem_instance_norm: bool = True,
+        metric_type: Optional[str] = None,
+        loss_type_id: Optional[str] = None,
+        background_loss_weight: Optional[float] = None,
+        dice_loss_weight: Optional[float] = None,
+        focal_loss_weight: Optional[float] = None,
+        ce_loss_weight: Optional[float] = None,
+        freeze_encoder: bool = False,
+    ):
+        self.adapter_name = adapter_name
+        self.use_stem_instance_norm = use_stem_instance_norm
+        self.metric_type = metric_type
+        self.loss_type_id = loss_type_id
+        self.background_loss_weight = background_loss_weight
+        self.dice_loss_weight = dice_loss_weight
+        self.focal_loss_weight = focal_loss_weight
+        self.ce_loss_weight = ce_loss_weight
+        self.freeze_encoder = freeze_encoder
+
+    def __call__(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        return self
 
 
 class Adapters(Enum):
@@ -339,38 +357,19 @@ class Encoders(Enum):
     #     encoder_name="timm",
     #     num_projection_features=768,
     # )
-    FROZEN_LIOUNA_IMAGE = EncoderConfig(
+    LIOUNA_IMAGE = EncoderConfig(
         pretty_name="liouna",
         liouna_model_name=LiounaModelPaths.liouna_base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="liouna",
         num_projection_features=768,
-        freeze_encoder=True,
     )
-    FROZEN_LIOUNA_IMAGE_SCRATCH = EncoderConfig(
+    LIOUNA_IMAGE_SCRATCH = EncoderConfig(
         pretty_name="sliouna",
         liouna_model_name=LiounaModelPaths.liouna_base,
         clip_model_name=CLIPModelPaths.openai_b_16,
         encoder_name="liouna",
         num_projection_features=768,
-        freeze_encoder=True,
-        pretrained=False,
-    )
-    LIOUNA_IMAGE = EncoderConfig(
-        pretty_name="ftliouna",
-        liouna_model_name=LiounaModelPaths.liouna_base,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="liouna",
-        num_projection_features=768,
-        freeze_encoder=False,
-    )
-    LIOUNA_IMAGE_SCRATCH = EncoderConfig(
-        pretty_name="sftliouna",
-        liouna_model_name=LiounaModelPaths.liouna_base,
-        clip_model_name=CLIPModelPaths.openai_b_16,
-        encoder_name="liouna",
-        num_projection_features=768,
-        freeze_encoder=False,
         pretrained=False,
     )
 
@@ -669,10 +668,34 @@ def get_model_selection(
         #     train_batch_size=batch_size,
         #     eval_batch_size=batch_size,
         # ),
+        encoder_menu.LIOUNA_IMAGE.value.pretty_name: ModelConfig(
+            adapter_config=deepcopy(adapter_config)(freeze_encoder=True),
+            encoder_config=deepcopy(encoder_menu.LIOUNA_IMAGE.value)(
+                image_size=image_size, pretty_name="probe-liouna"
+            ),
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr * 2], dataset_specific={}
+            ),
+            weight_decay=wd,
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        # encoder_menu.LIOUNA_IMAGE.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(encoder_menu.LIOUNA_IMAGE.value)(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr * 2], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
         encoder_menu.LIOUNA_IMAGE_SCRATCH.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
+            adapter_config=deepcopy(adapter_config)(freeze_encoder=True),
             encoder_config=deepcopy(encoder_menu.LIOUNA_IMAGE_SCRATCH.value)(
-                image_size=image_size
+                image_size=image_size, pretty_name="probe-sliouna"
             ),
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
@@ -681,29 +704,17 @@ def get_model_selection(
             train_batch_size=batch_size,
             eval_batch_size=batch_size,
         ),
-        encoder_menu.FROZEN_LIOUNA_IMAGE.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(encoder_menu.FROZEN_LIOUNA_IMAGE.value)(
-                image_size=image_size
-            ),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr * 2], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
-        encoder_menu.FROZEN_LIOUNA_IMAGE_SCRATCH.value.pretty_name: ModelConfig(
-            adapter_config=adapter_config,
-            encoder_config=deepcopy(
-                encoder_menu.FROZEN_LIOUNA_IMAGE_SCRATCH.value
-            )(image_size=image_size),
-            learning_rate_config=LearningRateConfig(
-                default=[vit_lr * 2], dataset_specific={}
-            ),
-            weight_decay=wd,
-            train_batch_size=batch_size,
-            eval_batch_size=batch_size,
-        ),
+        # encoder_menu.LIOUNA_IMAGE_SCRATCH.value.pretty_name: ModelConfig(
+        #     adapter_config=adapter_config,
+        #     encoder_config=deepcopy(encoder_menu.LIOUNA_IMAGE_SCRATCH.value)(
+        #         image_size=image_size
+        #     ),
+        #     learning_rate_config=LearningRateConfig(
+        #         default=[vit_lr * 2], dataset_specific={}
+        #     ),
+        #     weight_decay=wd,
+        #     train_batch_size=batch_size,
+        #     eval_batch_size=batch_size,
+        # ),
     }
     return output_dict

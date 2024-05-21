@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Union
 import fire
 from rich import print
 from rich.logging import RichHandler
+from rich.traceback import install
 
 from gate.tiers.configs.few_shot_learning import (
     Config as few_shot_learning_config,
@@ -37,6 +38,7 @@ from gate.tiers.configs.video_regression import (
 )
 from gate.tiers.utils import build_command
 
+install()
 # Logging configuration using Rich for better terminal output
 logger: logging.Logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -108,7 +110,7 @@ def generate_commands(
                         encoder_args += f"encoder.{key}={value} "
 
                 adapter_args = ""
-                for key, value in asdict(model_config.adapter_config).items():
+                for key, value in vars(model_config.adapter_config).items():
                     if "pretty_name" in key:
                         continue
                     if "adapter_name" in key:
