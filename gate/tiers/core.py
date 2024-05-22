@@ -372,6 +372,13 @@ class Encoders(Enum):
         num_projection_features=768,
         pretrained=False,
     )
+    SOFTHEBB_IMAGE = EncoderConfig(
+        pretty_name="softhebb",
+        liouna_model_name=LiounaModelPaths.softhebb_base,
+        clip_model_name=CLIPModelPaths.openai_b_16,
+        encoder_name="liouna",
+        num_projection_features=768,
+    )
 
 
 @dataclass
@@ -668,10 +675,12 @@ def get_model_selection(
         #     train_batch_size=batch_size,
         #     eval_batch_size=batch_size,
         # ),
-        encoder_menu.LIOUNA_IMAGE.value.pretty_name: ModelConfig(
-            adapter_config=deepcopy(adapter_config)(freeze_encoder=True),
+        deepcopy(encoder_menu.LIOUNA_IMAGE.value)(
+            image_size=image_size, pretty_name="ftliouna"
+        ).pretty_name: ModelConfig(
+            adapter_config=deepcopy(adapter_config)(freeze_encoder=False),
             encoder_config=deepcopy(encoder_menu.LIOUNA_IMAGE.value)(
-                image_size=image_size, pretty_name="probe-liouna"
+                image_size=image_size, pretty_name="ftliouna"
             ),
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
@@ -692,10 +701,40 @@ def get_model_selection(
         #     train_batch_size=batch_size,
         #     eval_batch_size=batch_size,
         # ),
-        encoder_menu.LIOUNA_IMAGE_SCRATCH.value.pretty_name: ModelConfig(
-            adapter_config=deepcopy(adapter_config)(freeze_encoder=True),
+        deepcopy(encoder_menu.LIOUNA_IMAGE_SCRATCH.value)(
+            image_size=image_size, pretty_name="sftliouna"
+        ).pretty_name: ModelConfig(
+            adapter_config=deepcopy(adapter_config)(freeze_encoder=False),
             encoder_config=deepcopy(encoder_menu.LIOUNA_IMAGE_SCRATCH.value)(
-                image_size=image_size, pretty_name="probe-sliouna"
+                image_size=image_size, pretty_name="sftliouna"
+            ),
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr * 2], dataset_specific={}
+            ),
+            weight_decay=wd,
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        deepcopy(encoder_menu.SOFTHEBB_IMAGE.value)(
+            image_size=image_size, pretty_name="ftsofthebb"
+        ).pretty_name: ModelConfig(
+            adapter_config=deepcopy(adapter_config)(freeze_encoder=False),
+            encoder_config=deepcopy(encoder_menu.SOFTHEBB_IMAGE.value)(
+                image_size=image_size, pretty_name="ftsofthebb"
+            ),
+            learning_rate_config=LearningRateConfig(
+                default=[vit_lr * 2], dataset_specific={}
+            ),
+            weight_decay=wd,
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
+        ),
+        deepcopy(encoder_menu.SOFTHEBB_IMAGE.value)(
+            image_size=image_size, pretty_name="probe-softhebb"
+        ).pretty_name: ModelConfig(
+            adapter_config=deepcopy(adapter_config)(freeze_encoder=True),
+            encoder_config=deepcopy(encoder_menu.SOFTHEBB_IMAGE.value)(
+                image_size=image_size, pretty_name="probe-softhebb"
             ),
             learning_rate_config=LearningRateConfig(
                 default=[vit_lr * 2], dataset_specific={}
