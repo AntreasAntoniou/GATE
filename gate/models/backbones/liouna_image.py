@@ -164,6 +164,7 @@ class PreTrainedLiouna(nn.Module, PyTorchModelHubMixin):
 class LiounaModelPaths:
     liouna_base = "FadyRezk/Liouna"
     softhebb_base = "FadyRezk/SoftHebb"
+    simclr_base = "FadyRezk/SimCLR"
 
 
 class GATELiounaImageEncoder(GATEImageEncoder):
