@@ -247,11 +247,11 @@ def run_experiments(
         "few-shot": few_shot_learning_config(),
         "med-class": medical_image_classification_config(),
         "image-seg": image_segmentation_config(),
-        "image-text": image_text_zero_shot_classification_config(),
+        # "image-text": image_text_zero_shot_classification_config(),
         "acdc": acdc_config(),
-        "rr": rr_config(),
-        "rr-mm": rr_mm_config(),
-        "video-class": video_classification_config(),
+        # "rr": rr_config(),
+        # "rr-mm": rr_mm_config(),
+        # "video-class": video_classification_config(),
         "video-reg": video_regression_config(),
     }
 

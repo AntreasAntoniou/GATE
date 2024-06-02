@@ -20,7 +20,7 @@ import wandb
 
 task_to_dataset_map = yaml.safe_load(open("notebooks/task_mapping.yaml"))
 
-WANDB_PROJECT_NAME = "gate-evolve-nn-v11"
+WANDB_PROJECT_NAME = "gate-evolve-nn-v19"
 
 
 @dataclass
@@ -136,6 +136,83 @@ def reset_parameters(model: nn.Module) -> nn.Module:
     return model
 
 
+class SmallTransformer(nn.Module):
+    def __init__(
+        self,
+        output_dim,
+        seq_length,
+        num_heads=2,
+        dim_feedforward=128,
+        dropout=0.0,
+    ):
+        super(SmallTransformer, self).__init__()
+        self.embedding = nn.Linear(1, dim_feedforward)
+        self.positional_embedding = nn.Parameter(
+            torch.zeros(1, seq_length, dim_feedforward)
+        )
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=dim_feedforward,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            activation="gelu",
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer, num_layers=1
+        )
+        self.layer_norm = nn.LayerNorm(dim_feedforward)
+        self.fc_out = nn.Linear(dim_feedforward, output_dim)
+
+    def forward(self, x):
+        # Assuming x has shape (batch_size, seq_length, input_dim)
+        x = x.unsqueeze(-1)
+        x = self.embedding(
+            x
+        )  # Transform to (batch_size, seq_length, dim_feedforward)
+        x += self.positional_embedding  # Add positional embedding
+        x = self.layer_norm(x)
+        x = x.permute(
+            1, 0, 2
+        )  # Transformer expects (seq_length, batch_size, dim_feedforward)
+        x = self.transformer_encoder(x)
+        x = x.permute(
+            1, 0, 2
+        )  # Back to (batch_size, seq_length, dim_feedforward)
+        x = self.layer_norm(x)
+        x = x.mean(dim=1)  # Global average pooling over sequence length
+        x = self.fc_out(x)  # Final output
+        return x
+
+
+class SmallMLP(nn.Module):
+    def __init__(self, input_dim, output_dim, hidden_dim=64, dropout=0.0):
+        super(SmallMLP, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        # self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, output_dim)
+        self.dropout = nn.Dropout(dropout)
+        self.layer_norm1 = nn.LayerNorm(hidden_dim)
+        self.layer_norm2 = nn.LayerNorm(hidden_dim)
+
+    def forward(self, x):
+        # Assuming x has shape (batch_size, input_dim)
+        x = F.gelu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.layer_norm1(x)
+
+        # x = F.gelu(self.fc2(x))
+        # x = self.dropout(x)
+        # x = self.layer_norm2(x)
+
+        x = self.fc3(x)
+
+        return x
+
+
+torch.set_float32_matmul_precision("high")
+
+
 def evaluate_combination(
     df: pd.DataFrame,
     input_datasets: Tuple[str, ...],
@@ -197,33 +274,47 @@ def evaluate_combination(
     x = (x - x.mean(axis=0)) / x.std(axis=0)
     y = (y - y.mean(axis=0)) / y.std(axis=0)
 
-    kf = ShuffleSplit(n_splits=10, random_state=42, test_size=0.5)
+    random.seed(42)
+    torch.manual_seed(42)
+    np.random.seed(42)
+
+    kf = ShuffleSplit(n_splits=20, random_state=42, test_size=0.3)
     scores = []
     for train_index, test_index in kf.split(x):
         x_train, x_test = x[train_index], x[test_index]
         y_train, y_test = y[train_index], y[test_index]
-        model = nn.Sequential(
-            nn.Linear(x_train.shape[1], 100),
-            nn.LeakyReLU(),
-            # nn.LayerNorm(normalized_shape=(100)),
-            # nn.Linear(100, 100),
-            # nn.LeakyReLU(),
-            nn.LayerNorm(normalized_shape=(100)),
-            nn.Linear(100, y_train.shape[1]),
+        # Split the training set into training and validation sets
+        kf_val = ShuffleSplit(n_splits=1, random_state=42, test_size=0.3)
+        train_index, val_index = next(kf_val.split(x_train))
+        x_train, x_val = x_train[train_index], x_train[val_index]
+        y_train, y_val = y_train[train_index], y_train[val_index]
+
+        model = SmallMLP(
+            output_dim=y_train.shape[1], input_dim=x_train.shape[1]
         ).to(device)
         model = reset_parameters(model)
         optimizer = optim.AdamW(model.parameters(), lr=0.01, weight_decay=0.01)
-
         # try lasso regression
+        models = dict()
+        # with tqdm(range(epochs), desc="Training") as pbar:
         for epoch in range(epochs):
             optimizer.zero_grad()
             outputs = model(x_train)
             loss = compute_loss(outputs, y_train, metrics=target_metrics)
             loss.backward()
             optimizer.step()
-            y_pred = model(x_test)
-            score = compute_loss(y_pred, y_test, metrics=target_metrics)
+            with torch.no_grad():
+                y_pred = model(x_val)
+                score = compute_loss(y_pred, y_val, metrics=target_metrics)
+                models[score] = model.state_dict()
+                # pbar.set_description(
+                #     f"Epoch: {epoch}, Loss: {loss}, Score: {score}"
+                # )
+                # pbar.update(1)
 
+        model.load_state_dict(models[min(models.keys())])
+        with torch.no_grad():
+            score = compute_loss(model(x_test), y_test, metrics=target_metrics)
         scores.append(score.cpu().detach().numpy())
     avg_score = np.mean(scores)
     min_score = np.min(scores)
@@ -344,20 +435,77 @@ def main(
     num_winners = 50
     num_children = 10
     num_generations = 10
-    out = get_combinations(metrics=METRICS, max_length=combination_size)
-    random_combinations = random.sample(out, min(1000, len(out)))
-    score_combinations = []
-    for combination in tqdm(
-        random_combinations, desc="Evaluating combinations"
-    ):
-        score_combinations.append(
-            evaluate_combination(
-                df=df,
-                input_datasets=combination,
-                device=device,
-                epochs=epochs,
-            )
+    num_init_samples = 1000
+
+    previous_k_top_combination_file = (
+        f"top_combinations_k={combination_size-1}.csv"
+    )
+
+    previous_k_top_combination_file = pathlib.Path(
+        previous_k_top_combination_file
+    )
+    out = []
+    if previous_k_top_combination_file.exists():
+        # Load the previous top combinations from combination column
+        top_combinations_df = pd.read_csv(previous_k_top_combination_file)
+        # Get the top combinations
+        top_combinations = [
+            tuple(combination.split(", "))
+            for combination in top_combinations_df["combination"]
+        ]
+
+        # add one metric NOT already in a combination to each combination to make it k+1
+        top_combinations = [
+            set(combination + (metric,))
+            for metric in METRICS
+            for combination in top_combinations
+        ]
+        # keep only combinations of length k+1
+        top_combinations = [
+            combination
+            for combination in top_combinations
+            if len(combination) == combination_size
+        ]
+        out = top_combinations
+        print("Loaded previous top combinations", out)
+    unique_combinations = get_combinations(
+        metrics=METRICS, max_length=combination_size
+    )
+
+    out = [tuple(sorted(item)) for item in out]
+    out = list(set(sorted(out)))
+    num_of_random_samples = min(
+        num_init_samples - len(out), len(unique_combinations) - len(out)
+    )
+    if len(out) < num_init_samples:
+        random_combinations = random.sample(
+            unique_combinations, num_of_random_samples
         )
+
+        out += random_combinations
+        out = [tuple(sorted(item)) for item in out]
+        out = list(set(sorted(out)))
+        num_of_random_samples = min(
+            num_init_samples - len(out), len(unique_combinations) - len(out)
+        )
+
+    print(
+        f"num of random samples: {num_of_random_samples}, "
+        f"num of init samples: {num_init_samples}, "
+        f"len of out: {len(out)}, "
+        f"num unique combinations: {len(unique_combinations)}"
+    )
+
+    score_combinations = []
+    for combination in tqdm(out, desc="Evaluating combinations"):
+        score = evaluate_combination(
+            df=df,
+            input_datasets=combination,
+            device=device,
+            epochs=epochs,
+        )
+        score_combinations.append(score)
+        print(f"Combination: {combination}, Score: {score}")
 
     top_combinations = sorted(score_combinations)[:num_winners]
     run.log(
@@ -385,6 +533,14 @@ def main(
         ]
     )
     top_combinations_df.to_csv("top_combinations.csv")
+    previous_k_top_combination_file = (
+        f"top_combinations_k={combination_size}.csv"
+    )
+
+    previous_k_top_combination_file = pathlib.Path(
+        previous_k_top_combination_file
+    )
+    top_combinations_df.to_csv(previous_k_top_combination_file)
     artifact = wandb.Artifact("top_combinations", type="top_combinations")
     artifact.add_file("top_combinations.csv")
     run.log_artifact(artifact)
@@ -392,7 +548,7 @@ def main(
     for i, item in enumerate(top_combinations):
         print(f"Rank: {i}, Score: {item.avg_score}, Combination: {item}")
 
-    if len(score_combinations) == 1000:
+    if len(score_combinations) >= num_init_samples:
         for i in range(1, num_generations):
             new_combinations = set()
             for item in top_combinations:
@@ -467,6 +623,14 @@ def main(
                 "top_combinations", type="top_combinations"
             )
             artifact.add_file("top_combinations.csv")
+            previous_k_top_combination_file = (
+                f"top_combinations_k={combination_size}.csv"
+            )
+
+            previous_k_top_combination_file = pathlib.Path(
+                previous_k_top_combination_file
+            )
+            top_combinations_df.to_csv(previous_k_top_combination_file)
             run.log_artifact(artifact)
     if len(top_combinations[0].combination) > 1:
         remove_one_from_combo_and_reevaluate(
@@ -535,16 +699,34 @@ def run_job(combination_size, gpu_id):
 
 
 if __name__ == "__main__":
-    combination_sizes = [i for i in range(1, 31)]  # 1 to 31
-    gpu_ids = range(4)  # 0 to 3
-    max_workers = 12  # Maximum number of parallel jobs
 
-    # Schedule jobs in a round-robin fashion across GPUs
-    jobs = [
-        (size, gpu_id)
-        for size in combination_sizes
-        for gpu_id in [size % len(gpu_ids)]
-    ]
+    combination_sizes = [16, 17, 22]  # 1 to 31
+    gpu_ids = list(range(3))  # Adjust this based on available GPUs
+    max_workers = 3  # Maximum number of parallel jobs
+    jobs_per_worker = int(len(combination_sizes) / max_workers)
+    per_worker_combinations_sizes = defaultdict(list)
+
+    for worker_id in range(max_workers):
+        start_idx = worker_id * jobs_per_worker
+        end_idx = (
+            (worker_id + 1) * jobs_per_worker
+            if worker_id != max_workers - 1
+            else len(combination_sizes)
+        )
+        jobs = combination_sizes[start_idx:end_idx]
+        print(f"Worker {worker_id} will run jobs {jobs}.")
+        per_worker_combinations_sizes[worker_id] = jobs
+
+    jobs = []
+    for i in range(len(combination_sizes) // max_workers):
+        for key, value in per_worker_combinations_sizes.items():
+            jobs.append(
+                (
+                    combination_sizes.pop(0),
+                    gpu_ids[np.random.randint(0, len(gpu_ids))],
+                )
+            )
+
     if max_workers == 1:
         for combination_size, gpu_id in jobs:
             run_job(combination_size, gpu_id)
