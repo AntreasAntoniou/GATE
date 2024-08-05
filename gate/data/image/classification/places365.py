@@ -31,10 +31,12 @@ def build_places365_dataset(
 
     try:
         data = torchvision.datasets.Places365(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser(
-                "~/.cache/torch/datasets/places365-train/"
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/places365-train/"
+                )
             ),
             split="train-standard",
             small=True,
@@ -42,10 +44,12 @@ def build_places365_dataset(
         )
     except RuntimeError:
         data = torchvision.datasets.Places365(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser(
-                "~/.cache/torch/datasets/places365-train/"
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/places365-train/"
+                )
             ),
             split="train-standard",
             small=True,
@@ -65,18 +69,26 @@ def build_places365_dataset(
     )
     try:
         test_data = torchvision.datasets.Places365(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/places365-val/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/places365-val/"
+                )
+            ),
             split="val",
             small=True,
             download=True,
         )
     except RuntimeError:
         test_data = torchvision.datasets.Places365(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/places365-val/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/places365-val/"
+                )
+            ),
             split="val",
             small=True,
             download=False,

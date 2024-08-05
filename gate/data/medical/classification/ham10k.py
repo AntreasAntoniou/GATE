@@ -131,7 +131,10 @@ def build_dataset(
 
 
 idx_to_class = {
-    0: "Actinic Keratoses and Intraepithelial Carcinoma / Bowen's Disease (akiec)",
+    0: (
+        "Actinic Keratoses and Intraepithelial Carcinoma / Bowen's Disease"
+        " (akiec)"
+    ),
     1: "Basal Cell Carcinoma (bcc)",
     2: "Benign Keratosis (bkl)",
     3: "Dermatofibroma (df)",

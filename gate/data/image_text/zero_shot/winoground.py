@@ -34,7 +34,8 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
 
     logger.info(
-        f"Loading Winoground dataset, will download to {data_dir} if necessary."
+        f"Loading Winoground dataset, will download to {data_dir} if"
+        " necessary."
     )
 
     dataset = load_dataset(

@@ -186,7 +186,9 @@ class GATEModel(nn.Module):
                 ] = output
             except NotImplementedError:
                 logger.warning(
-                    f"Ignoring processing modality pair: target: {target_modality_name}, supported_ {supported_modalities}"
+                    "Ignoring processing modality pair: target:"
+                    f" {target_modality_name}, supported_"
+                    f" {supported_modalities}"
                 )
                 pass  # 🛑 Handle unsupported cases, or do nothing
                 # if no action is needed for unsupported cases
@@ -242,7 +244,8 @@ def recursive_mean(tensor_dict):
         return tensor_dict
     else:
         raise ValueError(
-            f"Unsupported data type for recursive_mean, data type is {type(tensor_dict)}"
+            "Unsupported data type for recursive_mean, data type is"
+            f" {type(tensor_dict)}"
         )
 
 

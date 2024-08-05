@@ -106,7 +106,7 @@ def dataclass_collate(batch):
             return batch[0].__class__(**batched_dict)
     except Exception as e:
         logger.error(
-            f"Current batch we botched up on "
+            "Current batch we botched up on "
             f"{json.dumps(dict_to_summary(batch), indent=4)}"
         )
         raise e

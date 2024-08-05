@@ -268,7 +268,8 @@ def strided_frame_indices(
             else sample_span // num_video_frames + 1
         )
         logger.debug(
-            f"Cannot sample {sample_span:d} frames from {num_video_frames:d}. Duplicating the frames {num_repeats} times."
+            f"Cannot sample {sample_span:d} frames from {num_video_frames:d}."
+            f" Duplicating the frames {num_repeats} times."
         )
         video_frame_indices = list(
             itertools.chain.from_iterable(
@@ -324,7 +325,8 @@ def dense_frame_indices(
             else sample_span // num_video_frames + 1
         )
         logger.debug(
-            f"Cannot sample {sample_span:d} frames from {num_video_frames:d}. Duplicating the frames {num_repeats} times."
+            f"Cannot sample {sample_span:d} frames from {num_video_frames:d}."
+            f" Duplicating the frames {num_repeats} times."
         )
         video_frame_indices = list(
             itertools.chain.from_iterable(
@@ -386,7 +388,9 @@ def sparse_frame_indices(
             else num_output_frames // num_input_frames_wo_neighbour_length + 1
         )
         logger.debug(
-            f"Cannot sample {num_output_frames:d} frames with {num_neighbours} neighbouring frames from {num_input_frames:d}. Duplicating frames {num_repeats} times."
+            f"Cannot sample {num_output_frames:d} frames with"
+            f" {num_neighbours} neighbouring frames from {num_input_frames:d}."
+            f" Duplicating frames {num_repeats} times."
         )
         video_frame_indices = list(
             itertools.chain.from_iterable(
@@ -622,7 +626,8 @@ def TDN_sample_indices(
         )
     else:
         raise ValueError(
-            f"Not supported mode {mode}. Use train, test, dense_train, dense_test."
+            f"Not supported mode {mode}. Use train, test, dense_train,"
+            " dense_test."
         )
 
     """from function TDN.ops.dataset.get

@@ -110,7 +110,8 @@ class DuoModalFusionModel(BaseAdapterModule):
             )
         else:
             raise ValueError(
-                f"num_classes must be either int, list or dict. You provided {type(num_classes)}"
+                "num_classes must be either int, list or dict. You provided"
+                f" {type(num_classes)}"
             )
 
         self.build()

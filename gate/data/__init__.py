@@ -60,7 +60,8 @@ def download_kaggle_dataset(
 
     if is_competition:
         logger.info(
-            f"Check if path {dataset_download_path / f'{dataset_path}.zip'} exists"
+            "Check if path"
+            f" {dataset_download_path / f'{dataset_path}.zip'} exists"
         )
         if not pathlib.Path(
             dataset_download_path / f"{dataset_path}.zip"

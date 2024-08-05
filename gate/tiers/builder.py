@@ -162,7 +162,8 @@ def parse_commands_input(input_data: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         # If JSON parsing fails, treat the input as a newline-separated list of commands
         print(
-            f"Input data is not valid JSON. Attempting to parse as newline-separated list of commands."
+            f"Input data is not valid JSON. Attempting to parse as"
+            f" newline-separated list of commands."
         )
         return {
             f"exp-{i+1:03d}": cmd
@@ -334,7 +335,8 @@ def run_experiments(
 
                 if exit_code != 0:
                     logger.error(
-                        f"Error executing {experiment_name}. Continuing with the next command."
+                        f"Error executing {experiment_name}. Continuing with"
+                        " the next command."
                     )
 
     if start_idx is None:

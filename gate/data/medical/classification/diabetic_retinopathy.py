@@ -84,7 +84,8 @@ def build_dataset(
     """
 
     logger.info(
-        f"Loading Diabetic retinopathy dataset, will download to {data_dir} if necessary."
+        f"Loading Diabetic retinopathy dataset, will download to {data_dir} if"
+        " necessary."
     )
 
     dataset = DiabeticRetinopathyClassification(dataset_path=data_dir)

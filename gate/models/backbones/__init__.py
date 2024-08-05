@@ -242,7 +242,7 @@ class VisionTextGATEAdapter(ABC):
     ):
         if image is None and text is None and video is None:
             raise ValueError(
-                f"Must provide at least one input modality"
+                "Must provide at least one input modality"
                 f"to {self.__class__.__name__}"
             )
         output_dict = defaultdict(dict)
@@ -341,7 +341,7 @@ def forward_dict(
         x = text
     else:
         raise ValueError(
-            f"Must provide at least one input modality"
+            "Must provide at least one input modality"
             f"to {self.__class__.__name__}"
         )
 
@@ -604,7 +604,7 @@ class GATEImageTextEncoder(GATEncoder):
     ):
         if image is None and text is None and video is None:
             raise ValueError(
-                f"Must provide at least one input modality"
+                "Must provide at least one input modality"
                 f"to {self.__class__.__name__}"
             )
 

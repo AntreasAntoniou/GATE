@@ -123,7 +123,8 @@ class DuoModalZeroShotModel(BaseAdapterModule):
 
         if len(non_none_modalities) != 2:
             raise ValueError(
-                f"Exactly two modalities must be provided. You provided {len(non_none_modalities)}"
+                "Exactly two modalities must be provided. You provided"
+                f" {len(non_none_modalities)}"
             )
 
         image_features = None

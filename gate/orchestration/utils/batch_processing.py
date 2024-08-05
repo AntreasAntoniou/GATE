@@ -17,7 +17,8 @@ def sub_batch_generator(batch_dict, sub_batch_size):
             batch_size = value.shape[0] * value.shape[1]
         elif batch_size != value.shape[0] * value.shape[1]:
             raise ValueError(
-                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}"
+                "Batch sizes for different keys in batch_dict must be the"
+                f" same. Mismatch at key: {key}"
             )
 
     # Generate and yield sub-batches

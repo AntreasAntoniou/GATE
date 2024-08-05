@@ -155,9 +155,10 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             assert (
                 not greyscale
             ), "For optical flow data, it is impossible to use greyscale."
-            assert (
-                not bgr
-            ), "For optical flow data, it is impossible to use BGR channel ordering."
+            assert not bgr, (
+                "For optical flow data, it is impossible to use BGR channel"
+                " ordering."
+            )
         else:
             self.flow = None
             self.frame_neighbours = frame_neighbours
@@ -165,7 +166,8 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         self.video_id_to_label = video_id_to_label
         if video_id_to_label is not None:
             logger.info(
-                "video_id_to_label is provided. It will replace the labels in the CSV file."
+                "video_id_to_label is provided. It will replace the labels in"
+                " the CSV file."
             )
 
         # For training mode, one single clip is sampled from every
@@ -181,7 +183,10 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             1,
             5,
             10,
-        ], "1 for centre, 5 for centre and four corners, 10 for their horizontal flips"
+        ], (
+            "1 for centre, 5 for centre and four corners, 10 for their"
+            " horizontal flips"
+        )
         self.test_num_spatial_crops = test_num_spatial_crops
 
         logger.info(f"Constructing gulp video dataset {mode=}...")
@@ -268,7 +273,8 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
         ), f"Failed to load gulp video loader from {self._csv_file}"
 
         logger.info(
-            f"Constructing gulp video dataloader (size: {len(self)}) from {self._csv_file}"
+            f"Constructing gulp video dataloader (size: {len(self)}) from"
+            f" {self._csv_file}"
         )
 
     def __getitem__(self, index):
@@ -329,7 +335,8 @@ class GulpSparsesampleTubeDataset(torch.utils.data.Dataset):
             )
         else:
             raise ValueError(
-                f"Wrong self.sample_index_code: {self.sample_index_code}. Should be pyvideoai, TSN, TDN"
+                f"Wrong self.sample_index_code: {self.sample_index_code}."
+                " Should be pyvideoai, TSN, TDN"
             )
 
         frame_indices = [

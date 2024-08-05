@@ -102,13 +102,16 @@ def sub_batch_generator(batch_dict, sub_batch_size):
             value = torch.stack(value)
 
         logger.debug(
-            f"batch size: {value.shape[0] * value.shape[1]}, stored batch size: {batch_size}"
+            f"batch size: {value.shape[0] * value.shape[1]}, stored batch"
+            f" size: {batch_size}"
         )
         if batch_size is None:
             batch_size = value.shape[0] * value.shape[1]
         elif batch_size != value.shape[0] * value.shape[1]:
             raise ValueError(
-                f"Batch sizes for different keys in batch_dict must be the same. Mismatch at key: {key}, batch_size: {batch_size}, value shape: {value.shape}"
+                "Batch sizes for different keys in batch_dict must be the"
+                f" same. Mismatch at key: {key}, batch_size: {batch_size},"
+                f" value shape: {value.shape}"
             )
 
     # Generate and yield sub-batches

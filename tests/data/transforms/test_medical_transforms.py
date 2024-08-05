@@ -28,22 +28,27 @@ def test_MedicalImageSegmentationTransforms():
     assert isinstance(
         transformed_img, torch.Tensor
     ), f"Expected output to be a torch.Tensor, but got {type(transformed_img)}"
-    assert isinstance(
-        transformed_mask, torch.Tensor
-    ), f"Expected output to be a torch.Tensor, but got {type(transformed_mask)}"
+    assert isinstance(transformed_mask, torch.Tensor), (
+        "Expected output to be a torch.Tensor, but got"
+        f" {type(transformed_mask)}"
+    )
 
     # Validate the output range for image
-    assert (
-        transformed_img.min() >= 0
-    ), f"Minimum value in transformed image is less than 0: {transformed_img.min()}"
-    assert (
-        transformed_img.max() <= 1
-    ), f"Maximum value in transformed image is greater than 1: {transformed_img.max()}"
+    assert transformed_img.min() >= 0, (
+        "Minimum value in transformed image is less than 0:"
+        f" {transformed_img.min()}"
+    )
+    assert transformed_img.max() <= 1, (
+        "Maximum value in transformed image is greater than 1:"
+        f" {transformed_img.max()}"
+    )
 
     # Validate the output range for mask
-    assert (
-        transformed_mask.min() >= 0
-    ), f"Minimum value in transformed mask is less than 0: {transformed_mask.min()}"
-    assert (
-        transformed_mask.max() <= 1
-    ), f"Maximum value in transformed mask is greater than 1: {transformed_mask.max()}"
+    assert transformed_mask.min() >= 0, (
+        "Minimum value in transformed mask is less than 0:"
+        f" {transformed_mask.min()}"
+    )
+    assert transformed_mask.max() <= 1, (
+        "Maximum value in transformed mask is greater than 1:"
+        f" {transformed_mask.max()}"
+    )

@@ -29,7 +29,8 @@ def build_dataset(
     """
 
     logger.info(
-        f"Loading Happy Whale and Dolphin dataset, will download to {data_dir} if necessary."
+        "Loading Happy Whale and Dolphin dataset, will download to"
+        f" {data_dir} if necessary."
     )
 
     logger.info(

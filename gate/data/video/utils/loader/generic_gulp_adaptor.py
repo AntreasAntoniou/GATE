@@ -223,7 +223,10 @@ class GenericGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
             assert (
                 basenames[self.flow_direction_x]
                 == basenames[self.flow_direction_y]
-            ), f"{folder} does not contain the same frames for {self.flow_direction_x} and {self.flow_direction_y}."
+            ), (
+                f"{folder} does not contain the same frames for"
+                f" {self.flow_direction_x} and {self.flow_direction_y}."
+            )
 
             frames = {}
             if self.frame_size > 0:
@@ -239,9 +242,11 @@ class GenericGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
                 with open(str(paths[self.flow_direction_x][0]), "rb") as f:
                     first_frame_jpeg = f.read()
                 h, w, colour, _ = decode_jpeg_header(first_frame_jpeg)
-                assert (
-                    colour == "Gray"
-                ), f'The colourspace of the image {paths[self.flow_direction_x][0]} is {colour}, but it needs to be "gray"'
+                assert colour == "Gray", (
+                    "The colourspace of the image"
+                    f" {paths[self.flow_direction_x][0]} is {colour}, but it"
+                    ' needs to be "gray"'
+                )
                 meta["frame_size"] = (h, w)
 
             meta["num_frames"] = len(frames[self.flow_direction_x])
@@ -335,9 +340,10 @@ class GlobPatternGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
                 for axis in ["x", "y"]
             }
 
-            assert len(basenames["x"]) == len(
-                basenames["y"]
-            ), f"{folder} does not contain the same number of frames for x and y."
+            assert len(basenames["x"]) == len(basenames["y"]), (
+                f"{folder} does not contain the same number of frames for x"
+                " and y."
+            )
 
             frames = {}
             if self.frame_size > 0:
@@ -353,9 +359,10 @@ class GlobPatternGreyFlowDatasetAdapter(GenericJpegDatasetAdapter):
                 with open(str(paths["x"][0]), "rb") as f:
                     first_frame_jpeg = f.read()
                 h, w, colour, _ = decode_jpeg_header(first_frame_jpeg)
-                assert (
-                    colour == "Gray"
-                ), f'The colourspace of the image {paths["x"][0]} is {colour}, but it needs to be "gray"'
+                assert colour == "Gray", (
+                    f'The colourspace of the image {paths["x"][0]} is'
+                    f' {colour}, but it needs to be "gray"'
+                )
                 meta["frame_size"] = (h, w)
 
             meta["num_frames"] = len(frames["x"])

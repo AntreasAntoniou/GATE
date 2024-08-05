@@ -28,7 +28,8 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
 
     logger.info(
-        f"Loading NewYorker Caption Contest dataset, will download to {data_dir} if necessary."
+        "Loading NewYorker Caption Contest dataset, will download to"
+        f" {data_dir} if necessary."
     )
 
     dataset = load_dataset(

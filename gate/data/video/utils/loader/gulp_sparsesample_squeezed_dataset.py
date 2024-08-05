@@ -162,7 +162,8 @@ class GulpSparsesampleSqueezedDataset(torch.utils.data.Dataset):
         ), f"Failed to load gulp video loader from {self._csv_file}"
 
         logger.info(
-            f"Constructing gulp video dataloader (size: {len(self)}) from {self._csv_file}"
+            f"Constructing gulp video dataloader (size: {len(self)}) from"
+            f" {self._csv_file}"
         )
 
     def __getitem__(self, index):

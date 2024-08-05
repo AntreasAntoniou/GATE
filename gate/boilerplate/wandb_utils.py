@@ -25,7 +25,9 @@ def visualize_video_with_labels(video, logits, labels, name):
         labels = labels.cpu()
 
     logger.info(
-        f"name: {name}, mean: {video_data.mean()}, std: {video_data.std()}, min: {video_data.min()}, max: {video_data.max()}, dtype: {video_data.dtype}"
+        f"name: {name}, mean: {video_data.mean()}, std: {video_data.std()},"
+        f" min: {video_data.min()}, max: {video_data.max()}, dtype:"
+        f" {video_data.dtype}"
     )
 
     # Log the video and labels to wandb
@@ -52,13 +54,22 @@ def visualize_volume(item, prefix: str):
     # label_volumes[label_volumes == -1] = 10
 
     logger.info(
-        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
+        f"Input volumes shape: {input_volumes.shape}, dtype:"
+        f" {input_volumes.dtype}, min: {input_volumes.min()}, max:"
+        f" {input_volumes.max()}, mean: {input_volumes.mean()}, std:"
+        f" {input_volumes.std()}"
     )
     logger.info(
-        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype:"
+        f" {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max:"
+        f" {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std:"
+        f" {predicted_volumes.std()}"
     )
     logger.info(
-        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+        f"Label volumes shape: {label_volumes.shape}, dtype:"
+        f" {label_volumes.dtype}, min: {label_volumes.min()}, max:"
+        f" {label_volumes.max()}, mean: {label_volumes.mean()}, std:"
+        f" {label_volumes.std()}"
     )
 
     # Start a Weights & Biases run
@@ -138,7 +149,8 @@ def log_wandb_3d_volumes_and_masks(
         }
 
     logger.debug(
-        f"unique labels: {torch.unique(label_volumes)}, frequency: {torch.bincount(label_volumes.flatten())}"
+        f"unique labels: {torch.unique(label_volumes)}, frequency:"
+        f" {torch.bincount(label_volumes.flatten())}"
     )
 
     # Define a helper function to create a wandb.Image with masks
@@ -325,7 +337,10 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
         3,
         4,
         5,
-    ], "Input array should be 3D in the shape of (s, h, w) or 4D in the shape of (s, c, h, w)"
+    ], (
+        "Input array should be 3D in the shape of (s, h, w) or 4D in the shape"
+        " of (s, c, h, w)"
+    )
 
     # Get the shape of the input array
     if len(arr.shape) == 3:
@@ -354,13 +369,13 @@ def create_montage(arr: np.ndarray) -> np.ndarray:
             if idx < s:
                 if c is not None:
                     if isinstance(arr, torch.Tensor):
-                        montage[
-                            i * h : (i + 1) * h, j * w : (j + 1) * w
-                        ] = arr[idx].permute(1, 2, 0)
+                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                            arr[idx].permute(1, 2, 0)
+                        )
                     else:
-                        montage[
-                            i * h : (i + 1) * h, j * w : (j + 1) * w
-                        ] = arr[idx].transpose(1, 2, 0)
+                        montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = (
+                            arr[idx].transpose(1, 2, 0)
+                        )
                 else:
                     montage[i * h : (i + 1) * h, j * w : (j + 1) * w] = arr[
                         idx
@@ -385,13 +400,22 @@ def visualize_volume(item, prefix: str, target_size: int = 384):
     # label_volumes[label_volumes == -1] = 10
 
     logger.info(
-        f"Input volumes shape: {input_volumes.shape}, dtype: {input_volumes.dtype}, min: {input_volumes.min()}, max: {input_volumes.max()}, mean: {input_volumes.mean()}, std: {input_volumes.std()}"
+        f"Input volumes shape: {input_volumes.shape}, dtype:"
+        f" {input_volumes.dtype}, min: {input_volumes.min()}, max:"
+        f" {input_volumes.max()}, mean: {input_volumes.mean()}, std:"
+        f" {input_volumes.std()}"
     )
     logger.info(
-        f"Predicted volumes shape: {predicted_volumes.shape}, dtype: {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max: {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std: {predicted_volumes.std()}"
+        f"Predicted volumes shape: {predicted_volumes.shape}, dtype:"
+        f" {predicted_volumes.dtype}, min: {predicted_volumes.min()}, max:"
+        f" {predicted_volumes.max()}, mean: {predicted_volumes.mean()}, std:"
+        f" {predicted_volumes.std()}"
     )
     logger.info(
-        f"Label volumes shape: {label_volumes.shape}, dtype: {label_volumes.dtype}, min: {label_volumes.min()}, max: {label_volumes.max()}, mean: {label_volumes.mean()}, std: {label_volumes.std()}"
+        f"Label volumes shape: {label_volumes.shape}, dtype:"
+        f" {label_volumes.dtype}, min: {label_volumes.min()}, max:"
+        f" {label_volumes.max()}, mean: {label_volumes.mean()}, std:"
+        f" {label_volumes.std()}"
     )
 
     # Start a Weights & Biases run

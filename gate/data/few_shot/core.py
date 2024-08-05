@@ -307,13 +307,13 @@ class FewShotClassificationMetaDataset(Dataset):
         """Validate the number of samples and classes per set."""
         assert min_num_samples_per_class < num_samples_per_class, (
             f"min_num_samples_per_class {min_num_samples_per_class} "
-            f"must be less than "
+            "must be less than "
             f"num_samples_per_class {num_samples_per_class}"
         )
 
         assert min_num_classes_per_set < num_classes_per_set, (
             f"min_num_classes_per_set {min_num_classes_per_set} "
-            f"must be less than "
+            "must be less than "
             f"num_classes_per_set {num_classes_per_set}"
         )
 
@@ -479,11 +479,15 @@ class FewShotClassificationMetaDataset(Dataset):
                 num_support_samples_per_class = self.num_samples_per_class
         except Exception as e:
             logger.debug(
-                f"Exception: {e}, {class_name}, min_num_classes_per_set: {self.min_num_classes_per_set}, "
-                f"class_to_num_available_samples: {self.class_to_num_available_samples[class_name]}, "
-                f"available_support_set_size: {available_support_set_size}, "
-                f"max_per_class_support_set_size: {max_per_class_support_set_size}, "
-                f"num_query_samples_per_class: {num_query_samples_per_class}, "
+                f"Exception: {e}, {class_name}, min_num_classes_per_set:"
+                f" {self.min_num_classes_per_set},"
+                " class_to_num_available_samples:"
+                f" {self.class_to_num_available_samples[class_name]},"
+                f" available_support_set_size: {available_support_set_size},"
+                " max_per_class_support_set_size:"
+                f" {max_per_class_support_set_size},"
+                " num_query_samples_per_class:"
+                f" {num_query_samples_per_class}, "
             )
             return None, None
 
@@ -596,13 +600,19 @@ class FewShotClassificationMetaDataset(Dataset):
     def _convert_to_tensor(self, inputs, labels):
         """Convert input data and labels to tensors."""
         inputs = [
-            torch.tensor(input_)
-            if isinstance(input_, np.ndarray)
-            else T.ToTensor()(Image.open(input_))
-            if isinstance(input_, str)
-            else input_
-            if isinstance(input_, torch.Tensor)
-            else T.ToTensor()(input_)
+            (
+                torch.tensor(input_)
+                if isinstance(input_, np.ndarray)
+                else (
+                    T.ToTensor()(Image.open(input_))
+                    if isinstance(input_, str)
+                    else (
+                        input_
+                        if isinstance(input_, torch.Tensor)
+                        else T.ToTensor()(input_)
+                    )
+                )
+            )
             for input_ in inputs
         ]
         inputs = (
@@ -700,7 +710,8 @@ class FewShotClassificationMetaDataset(Dataset):
             self._prepare_for_sample_selection(selected_classes_for_set)
         )
         logger.debug(
-            f"Class to number of available samples: {self.class_to_num_available_samples}"
+            "Class to number of available samples:"
+            f" {self.class_to_num_available_samples}"
         )
 
         # Determine the number of query samples per class

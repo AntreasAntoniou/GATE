@@ -28,9 +28,10 @@ def test_photo_metric_distortion():
         img = generate_test_image(img_type)
         transformed_img = transformer(img)
 
-        assert isinstance(
-            transformed_img, torch.Tensor
-        ), f"Output should be a torch.Tensor, got {type(transformed_img)} instead."
+        assert isinstance(transformed_img, torch.Tensor), (
+            "Output should be a torch.Tensor, got"
+            f" {type(transformed_img)} instead."
+        )
         assert transformed_img.shape == torch.Size(
             [3, 224, 224]
         ), f"Unexpected output shape {transformed_img.shape}."

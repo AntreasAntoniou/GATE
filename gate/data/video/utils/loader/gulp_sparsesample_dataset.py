@@ -95,7 +95,8 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         self.video_id_to_label = video_id_to_label
         if video_id_to_label is not None:
             logger.info(
-                "video_id_to_label is provided. It will replace the labels in the CSV file."
+                "video_id_to_label is provided. It will replace the labels in"
+                " the CSV file."
             )
 
         # For training mode, one single clip is sampled from every
@@ -172,7 +173,8 @@ class GulpSparsesampleDataset(torch.utils.data.Dataset):
         ), f"Failed to load gulp video loader from {self._csv_file}"
 
         logger.info(
-            f"Constructing gulp video dataloader (size: {len(self)}) from {self._csv_file}"
+            f"Constructing gulp video dataloader (size: {len(self)}) from"
+            f" {self._csv_file}"
         )
 
     def filter_samples(self, video_ids: list):

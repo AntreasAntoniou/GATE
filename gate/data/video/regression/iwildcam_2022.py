@@ -123,9 +123,9 @@ def filter_metadata_with_counts(
         per_image_annotations,
     ) in seq_id_to_per_image_annotations.items():
         if seq_id in seq_id_to_counts:
-            seq_id_to_per_image_annotations_filtered[
-                seq_id
-            ] = per_image_annotations
+            seq_id_to_per_image_annotations_filtered[seq_id] = (
+                per_image_annotations
+            )
     return seq_id_to_per_image_annotations_filtered
 
 
@@ -165,7 +165,8 @@ def count_num_files(dataset_rootdir: str | Path):
 
 def prepare_iwildcam_2022(dataset_rootdir: str | Path):
     logger.info(
-        "Preparing iWildCam 2022 dataset. NOTE: you need to have kaggle API key configured and join the competition."
+        "Preparing iWildCam 2022 dataset. NOTE: you need to have kaggle API"
+        " key configured and join the competition."
     )
     dataset_rootdir = Path(dataset_rootdir)
     if dataset_rootdir.name != "iwildcam2022":
@@ -192,7 +193,9 @@ def prepare_iwildcam_2022(dataset_rootdir: str | Path):
         disk_space = shutil.disk_usage(dataset_rootdir).free
         if disk_space < (DOWNLOAD_GB + EXTRACT_GB) * 1024 * 1024 * 1024:
             raise RuntimeError(
-                f"Insufficient disk space. At least {DOWNLOAD_GB + EXTRACT_GB} GB is required, but only {disk_space / 1024 / 1024 / 1024:.1f} GB available"
+                "Insufficient disk space. At least"
+                f" {DOWNLOAD_GB + EXTRACT_GB} GB is required, but only"
+                f" {disk_space / 1024 / 1024 / 1024:.1f} GB available"
             )
 
         subprocess.call(

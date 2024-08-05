@@ -29,17 +29,25 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     rng = torch.Generator().manual_seed(42)
     try:
         data = torchvision.datasets.CIFAR100(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/cifar100-train/"
+                )
+            ),
             train=True,
             download=True,
         )
     except RuntimeError:
         data = torchvision.datasets.CIFAR100(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/cifar100-train/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/cifar100-train/"
+                )
+            ),
             train=True,
             download=False,
         )
@@ -58,17 +66,25 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
 
     try:
         test_data = torchvision.datasets.CIFAR100(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/cifar100-test/"
+                )
+            ),
             train=False,
             download=True,
         )
     except RuntimeError:
         test_data = torchvision.datasets.CIFAR100(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/cifar100-test/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser(
+                    "~/.cache/torch/datasets/cifar100-test/"
+                )
+            ),
             train=False,
             download=False,
         )

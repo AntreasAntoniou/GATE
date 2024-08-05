@@ -2,6 +2,7 @@
 Download and extract kinetics-400 dataset.
 Original code and hosting from https://github.com/cvdfoundation/kinetics-dataset, but re-written in Python.
 """
+
 import logging
 import multiprocessing as mp
 import shutil
@@ -84,7 +85,8 @@ def _check_disk_space(required_gb: int, path: Path) -> None:
     disk_space = shutil.disk_usage(path).free
     if disk_space < required_gb * 1024**3:
         raise RuntimeError(
-            f"Insufficient disk space. At least {required_gb}GB is required, but only {disk_space / 1024 ** 3:.1f} GB available."
+            f"Insufficient disk space. At least {required_gb}GB is required,"
+            f" but only {disk_space / 1024 ** 3:.1f} GB available."
         )
 
 
@@ -362,7 +364,9 @@ def check_num_files_each_class(
         for label, count in num_files_each_class.items():
             if count != expected_file_counts[split].get(label, 0):
                 logger.warning(
-                    f"Mismatch in file count for label {label} in {split}. Expected {expected_file_counts[split].get(label, 0)}, got {count}."
+                    f"Mismatch in file count for label {label} in {split}."
+                    f" Expected {expected_file_counts[split].get(label, 0)},"
+                    f" got {count}."
                 )
                 return False
 
@@ -383,9 +387,11 @@ def prepare_kinetics_400(
 
     # Check if everything is already prepared
     is_prepared = check_num_files_each_class(
-        extract_dataset_rootdir
-        if extract_dataset_rootdir
-        else download_dataset_rootdir,
+        (
+            extract_dataset_rootdir
+            if extract_dataset_rootdir
+            else download_dataset_rootdir
+        ),
         CLASSES,
     )
 
@@ -411,9 +417,11 @@ def prepare_kinetics_400(
 
     # Final verification
     is_prepared = check_num_files_each_class(
-        extract_dataset_rootdir
-        if extract_dataset_rootdir
-        else download_dataset_rootdir,
+        (
+            extract_dataset_rootdir
+            if extract_dataset_rootdir
+            else download_dataset_rootdir
+        ),
         CLASSES,
     )
     if not is_prepared:

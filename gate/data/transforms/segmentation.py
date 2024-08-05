@@ -54,7 +54,8 @@ class DualImageRandomFlip:
 
         else:
             raise TypeError(
-                "Unsupported type for img1 and/or img2, or the types do not match"
+                "Unsupported type for img1 and/or img2, or the types do not"
+                " match"
             )
 
         return img1, img2
@@ -334,7 +335,8 @@ def is_grayscale(image):
         )
     else:
         raise TypeError(
-            "Input type not supported. Expected one of [PIL.Image, np.ndarray, torch.Tensor]."
+            "Input type not supported. Expected one of [PIL.Image, np.ndarray,"
+            " torch.Tensor]."
         )
 
 
@@ -364,7 +366,8 @@ def grayscale_to_rgb(image: Union[Image.Image, np.ndarray, torch.Tensor]):
         return image.repeat((3, 1, 1))
     else:
         raise TypeError(
-            "Input type not supported. Expected one of [PIL.Image, np.ndarray, torch.Tensor]."
+            "Input type not supported. Expected one of [PIL.Image, np.ndarray,"
+            " torch.Tensor]."
         )
 
 

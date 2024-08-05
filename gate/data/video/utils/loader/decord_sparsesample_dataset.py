@@ -34,7 +34,8 @@ def get_next_on_error(func: Callable[..., Any]) -> Callable[..., Any]:
             return func(*args, **kwargs)
         except Exception as e:
             logger.info(
-                f"Error occurred at idx {args[1]} {e}, getting the next item instead."
+                f"Error occurred at idx {args[1]} {e}, getting the next item"
+                " instead."
             )
             args = list(args)
             args[1] = args[1] + 1
@@ -212,7 +213,8 @@ class DecordSparsesampleDataset(torch.utils.data.Dataset):
             )
         else:
             raise ValueError(
-                f"Wrong self.sample_index_code: {self.sample_index_code}. Should be pyvideoai"
+                f"Wrong self.sample_index_code: {self.sample_index_code}."
+                " Should be pyvideoai"
             )
         frame_indices = [
             idx + self._start_frames[index] for idx in frame_indices

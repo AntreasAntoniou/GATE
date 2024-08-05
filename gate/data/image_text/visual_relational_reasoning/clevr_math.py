@@ -31,7 +31,8 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     np.random.RandomState(42)
 
     logger.info(
-        f"Loading CLEVR Math dataset, will download to {data_dir} if necessary."
+        f"Loading CLEVR Math dataset, will download to {data_dir} if"
+        " necessary."
     )
 
     if set_name not in ["train", "val", "test"]:

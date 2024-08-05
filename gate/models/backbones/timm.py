@@ -92,10 +92,12 @@ class TimmModel(nn.Module):
 
         except RuntimeError as e:
             logger.info(
-                f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
+                f"Could not load model {model_identifier} because {e}, trying"
+                " to load as vision transformer"
             )
             logger.info(
-                f"model_identifier: {model_identifier}, pretrained: {pretrained}, img_size: {image_size}"
+                f"model_identifier: {model_identifier}, pretrained:"
+                f" {pretrained}, img_size: {image_size}"
             )
             # Loading vision transformer style models that require img_size and not features_only
             self.model = timm.create_model(
@@ -106,7 +108,8 @@ class TimmModel(nn.Module):
         except TypeError as e:
             # Loading convnet style models that do not require img_size or features_only
             logger.info(
-                f"Could not load model {model_identifier} because {e}, trying to load as vision transformer"
+                f"Could not load model {model_identifier} because {e}, trying"
+                " to load as vision transformer"
             )
 
             self.model = timm.create_model(

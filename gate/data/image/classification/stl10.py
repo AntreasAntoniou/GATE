@@ -29,17 +29,21 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     rng = torch.Generator().manual_seed(42)
     try:
         data = torchvision.datasets.STL10(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/stl10-train/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser("~/.cache/torch/datasets/stl10-train/")
+            ),
             split="train",
             download=True,
         )
     except RuntimeError:
         data = torchvision.datasets.STL10(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/stl10-train/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser("~/.cache/torch/datasets/stl10-train/")
+            ),
             split="train",
             download=False,
         )
@@ -57,17 +61,21 @@ def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     )
     try:
         test_data = torchvision.datasets.STL10(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/stl10-test/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser("~/.cache/torch/datasets/stl10-test/")
+            ),
             split="test",
             download=True,
         )
     except RuntimeError:
         test_data = torchvision.datasets.STL10(
-            root=data_dir
-            if data_dir is not None
-            else os.path.expanduser("~/.cache/torch/datasets/stl10-test/"),
+            root=(
+                data_dir
+                if data_dir is not None
+                else os.path.expanduser("~/.cache/torch/datasets/stl10-test/")
+            ),
             split="test",
             download=False,
         )

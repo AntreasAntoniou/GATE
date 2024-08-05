@@ -37,7 +37,10 @@ def assistance():
     api_details = {
         "WANDB_API_KEY": {
             "question": "What's your Weights & Biases API key?",
-            "advice": "You can find this in your Weights & Biases settings: [link=https://wandb.ai/settings#api](https://wandb.ai/settings#api)",
+            "advice": (
+                "You can find this in your Weights & Biases settings:"
+                " [link=https://wandb.ai/settings#api](https://wandb.ai/settings#api)"
+            ),
         },
         "KAGGLE_USERNAME": {
             "question": "What's your Kaggle username?",
@@ -45,7 +48,9 @@ def assistance():
         },
         "KAGGLE_KEY": {
             "question": "What's your Kaggle API key?",
-            "advice": "You can generate this from your Kaggle account settings.",
+            "advice": (
+                "You can generate this from your Kaggle account settings."
+            ),
         },
         "HF_USERNAME": {
             "question": "What's your Hugging Face username?",
@@ -53,14 +58,21 @@ def assistance():
         },
         "HF_TOKEN": {
             "question": "What's your Hugging Face token?",
-            "advice": "You can generate this from your Hugging Face account settings: [link=https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)",
+            "advice": (
+                "You can generate this from your Hugging Face account"
+                " settings:"
+                " [link=https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)"
+            ),
         },
     }
 
     wandb_details = {
         "WANDB_ENTITY": {
             "question": "What's your Weights & Biases entity?",
-            "advice": "This is the team name in Weights & Biases under which your project resides.",
+            "advice": (
+                "This is the team name in Weights & Biases under which your"
+                " project resides."
+            ),
         },
         "WANDB_PROJECT": {
             "question": "What's your Weights & Biases project?",
@@ -68,42 +80,67 @@ def assistance():
         },
         "EXPERIMENT_NAME": {
             "question": "What's the name of your experiment?",
-            "advice": "Choose a name that reflects the focus of your experiment.",
+            "advice": (
+                "Choose a name that reflects the focus of your experiment."
+            ),
         },
     }
 
     directories = {
         "DATASET_DIR": {
             "question": "Where is your dataset directory located?",
-            "advice": "Please provide the full path to the directory where your datasets are stored.",
+            "advice": (
+                "Please provide the full path to the directory where your"
+                " datasets are stored."
+            ),
         },
         "PROJECT_DIR": {
             "question": "Where is your project directory located?",
-            "advice": "Please provide the full path to your main project directory.",
+            "advice": (
+                "Please provide the full path to your main project directory."
+            ),
         },
         "CODE_DIR": {
             "question": "Where is your code directory located?",
-            "advice": "Please provide the full path to the directory where your code files are stored.",
+            "advice": (
+                "Please provide the full path to the directory where your code"
+                " files are stored."
+            ),
         },
         "EXPERIMENTS_ROOT_DIR": {
             "question": "Where is your experiments root directory located?",
-            "advice": "Please provide the full path to the root directory for your experiments.",
+            "advice": (
+                "Please provide the full path to the root directory for your"
+                " experiments."
+            ),
         },
         "EXPERIMENTS_DIR": {
             "question": "Where is your experiments directory located?",
-            "advice": "Please provide the full path to the directory where you keep your experiment files.",
+            "advice": (
+                "Please provide the full path to the directory where you keep"
+                " your experiment files."
+            ),
         },
         "MODEL_DIR": {
             "question": "Where is your model directory located?",
-            "advice": "Please provide the full path to the directory where your model files are stored.",
+            "advice": (
+                "Please provide the full path to the directory where your"
+                " model files are stored."
+            ),
         },
         "PYTEST_DIR": {
             "question": "Where is your pytest directory located?",
-            "advice": "Please provide the full path to the directory where your pytest files are stored.",
+            "advice": (
+                "Please provide the full path to the directory where your"
+                " pytest files are stored."
+            ),
         },
         "HF_CACHE_DIR": {
             "question": "Where is your Hugging Face cache directory located?",
-            "advice": "Please provide the full path to the directory where your Hugging Face cache files are stored.",
+            "advice": (
+                "Please provide the full path to the directory where your"
+                " Hugging Face cache files are stored."
+            ),
         },
     }
 
@@ -132,10 +169,12 @@ def assistance():
 
     if config_path.exists():
         console.print(
-            f"[bold yellow]Warning![/bold yellow] A configuration file already exists at {config_path}."
+            "[bold yellow]Warning![/bold yellow] A configuration file already"
+            f" exists at {config_path}."
         )
         overwrite = console.input(
-            "Would you like to overwrite the existing configuration? (yes/no): "
+            "Would you like to overwrite the existing configuration?"
+            " (yes/no): "
         )
         if overwrite.lower() != "yes":
             # source from the file to make the changes effective
@@ -159,5 +198,6 @@ def assistance():
     os.system(f"source {config_path}")  # does not work
 
     console.print(
-        f"[bold green]Done![/bold green] Your settings have been saved to {config_path}"
+        "[bold green]Done![/bold green] Your settings have been saved to"
+        f" {config_path}"
     )

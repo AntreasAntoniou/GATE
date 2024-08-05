@@ -96,7 +96,8 @@ def build_dataset(
     import monai
 
     logger.info(
-        f"Loading Medical Decathlon {task_name} dataset, will download to {data_dir} if necessary."
+        f"Loading Medical Decathlon {task_name} dataset, will download to"
+        f" {data_dir} if necessary."
     )
 
     train_dataset = monai.apps.DecathlonDataset(
@@ -166,7 +167,8 @@ def convert_to_b3hw(image):
         image = image.unsqueeze(1).expand(-1, 3, -1, -1)
     else:  # Case of (b, 3, h, w). Leave as is if already in the desired format
         raise ValueError(
-            f"Invalid image shape {image.shape}, should be one of (b, 4, h, w), (b, 1, h, w), (b, h, w), (b, 3, h, w)"
+            f"Invalid image shape {image.shape}, should be one of (b, 4, h,"
+            " w), (b, 1, h, w), (b, h, w), (b, 3, h, w)"
         )
 
     return image
@@ -278,7 +280,8 @@ class DatasetTransforms:
         annotation = annotation.long()
 
         logger.debug(
-            f"unique annotation values {torch.unique(annotation)}, frequency {torch.bincount(annotation.flatten())}",
+            f"unique annotation values {torch.unique(annotation)}, frequency"
+            f" {torch.bincount(annotation.flatten())}",
         )
 
         logger.debug(f"post norm shapes {image.shape}, {annotation.shape}")

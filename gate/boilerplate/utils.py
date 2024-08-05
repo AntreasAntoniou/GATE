@@ -110,7 +110,9 @@ def get_hydra_config(logger_level: str = "INFO"):
             disable_existing_loggers=False,
         ),
         run={
-            "dir": "${current_experiment_dir}/hydra-run/${now:%Y-%m-%d_%H-%M-%S}"
+            "dir": (
+                "${current_experiment_dir}/hydra-run/${now:%Y-%m-%d_%H-%M-%S}"
+            )
         },
         sweep={
             "dir": "${current_experiment_dir}/hydra-multirun/${now:%Y-%m-%d_%H-%M-%S}",
@@ -330,8 +332,10 @@ def download_model_with_name(
                 logger.info(f"Error downloading {filename}: {e}")
                 if filename == "scaler.pt":
                     logger.info(
-                        f"Skipping scaler.pt -- However if your model uses fp16, this will cause an error. "
-                        f"Please initialize a scaler manually or download a relevant scaler.pt file."
+                        f"Skipping scaler.pt -- However if your model uses"
+                        f" fp16, this will cause an error. Please initialize a"
+                        f" scaler manually or download a relevant scaler.pt"
+                        f" file."
                     )
         # Handle config.yaml separately
         config_target_path = pathlib.Path(hf_cache_dir) / "config.yaml"
@@ -409,7 +413,8 @@ def download_checkpoint(
     local_checkpoint_store_dir: Optional[str] = None,
 ) -> Tuple[pathlib.Path, str]:
     logger.info(
-        f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging Face hub 👨🏻‍💻"
+        f"Downloading checkpoint {hf_repo_path}/{ckpt_identifier} from Hugging"
+        " Face hub 👨🏻‍💻"
     )
     if isinstance(ckpt_identifier, int):
         ckpt_identifier = f"ckpt_{ckpt_identifier}"
@@ -452,7 +457,8 @@ def create_hf_model_repo_and_download_maybe(
         remote_ckpt_dict = get_checkpoint_dict(remote_files)
         remote_ckpt_names = sorted(list(remote_ckpt_dict.keys()), reverse=True)
         logger.info(
-            f"remote ckpt dict: {remote_ckpt_dict}, remote ckpt names: {remote_ckpt_names}"
+            f"remote ckpt dict: {remote_ckpt_dict}, remote ckpt names:"
+            f" {remote_ckpt_names}"
         )
     else:
         remote_ckpt_names = []
@@ -464,7 +470,8 @@ def create_hf_model_repo_and_download_maybe(
     local_ckpt_names = sorted(list(local_ckpt_dict.keys()), reverse=True)
 
     logger.info(
-        f"local ckpt dict: {local_ckpt_dict}, local ckpt names: {local_ckpt_names}"
+        f"local ckpt dict: {local_ckpt_dict}, local ckpt names:"
+        f" {local_ckpt_names}"
     )
 
     mixed_ckpt_list = remote_ckpt_names + local_ckpt_names
@@ -512,7 +519,8 @@ def download_model_checkpoint_from_hub(
 ) -> Tuple[Optional[pathlib.Path], str]:
     if get_latest and checkpoint_identifier is not None:
         raise ValueError(
-            "Only one of `get_latest` and `checkpoint_identifier` can be set to True"
+            "Only one of `get_latest` and `checkpoint_identifier` can be set"
+            " to True"
         )
 
     hf_api = huggingface_hub.HfApi(token=os.environ["HF_TOKEN"])

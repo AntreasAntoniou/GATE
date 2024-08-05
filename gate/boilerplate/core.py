@@ -179,7 +179,8 @@ class Learner(nn.Module):
             checkpoint_path = Path(resume)
             if not checkpoint_path.exists():
                 raise ValueError(
-                    f"Checkpoint path {checkpoint_path} does not exist, please check your resume= argument"
+                    f"Checkpoint path {checkpoint_path} does not exist, please"
+                    " check your resume= argument"
                 )
             self.load_checkpoint(checkpoint_path=checkpoint_path)
 
@@ -189,7 +190,8 @@ class Learner(nn.Module):
         if print_model_parameters:
             for key, value in self.named_parameters():
                 logger.debug(
-                    f"Parameter {key} -> {value.shape} requires grad {value.requires_grad}"
+                    f"Parameter {key} -> {value.shape} requires grad"
+                    f" {value.requires_grad}"
                 )
 
     def run(self):
@@ -300,7 +302,8 @@ class Learner(nn.Module):
                     elapsed_time = time.time() - thread.start_time
                     if elapsed_time > TIME_LIMIT:
                         logger.info(
-                            f"Thread {thread} has been running for too long. Stopping it."
+                            f"Thread {thread} has been running for too long."
+                            " Stopping it."
                         )
                         setattr(thread, STOP_THREAD_FLAG, True)
                         setattr(thread, "done", True)
@@ -326,7 +329,8 @@ class Learner(nn.Module):
                         elapsed_time = time.time() - thread.start_time
                         if elapsed_time > TIME_LIMIT:
                             logger.info(
-                                f"Thread {thread} has been running for too long. Stopping it."
+                                f"Thread {thread} has been running for too"
+                                " long. Stopping it."
                             )
                             setattr(thread, STOP_THREAD_FLAG, True)
                             setattr(thread, "done", True)
@@ -563,7 +567,8 @@ class Learner(nn.Module):
                             break
                     post_batch_time = time.time()
                     logger.debug(
-                        f"Batch {batch_idx} loaded in {post_batch_time - pre_batch_time} seconds"
+                        f"Batch {batch_idx} loaded in"
+                        f" {post_batch_time - pre_batch_time} seconds"
                     )
                     self.validation_step(
                         model=model,
@@ -741,10 +746,12 @@ class Learner(nn.Module):
             metric_name, higher_is_better, kth_best=10
         )
         logger.info(
-            f"Best {metric_name}: {best_metric} at step {best_global_step}, downloading model..."
+            f"Best {metric_name}: {best_metric} at step {best_global_step},"
+            " downloading model..."
         )
         logger.info(
-            f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir: {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
+            f"hf_repo_path: {self.hf_repo_path}, hf_cache_dir:"
+            f" {self.hf_cache_dir}, model_name: ckpt_{best_global_step}"
         )
 
         download_dict_list = []
