@@ -19,9 +19,7 @@ from gate.data.image.classification.imagenet1k import (
 logger = logging.getLogger(__name__)
 
 
-def build_food101_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a Food-101 dataset using the Hugging Face datasets library.
 
@@ -86,7 +84,7 @@ def build_gate_dataset(
         return input_dict
 
     train_set = GATEDataset(
-        dataset=build_food101_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[
             KeyMapper(),
@@ -96,7 +94,7 @@ def build_gate_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_food101_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
             KeyMapper(),
@@ -105,7 +103,7 @@ def build_gate_dataset(
     )
 
     test_set = GATEDataset(
-        dataset=build_food101_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[
             KeyMapper(),
@@ -115,11 +113,6 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_food101_dataset(transforms: Optional[Any] = None) -> dict:
-    # Create a dummy dataset that emulates food-101's shape and modality
-    pass
 
 
 @dataclass

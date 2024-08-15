@@ -125,9 +125,6 @@ class PascalContextDataset(Dataset):
         return sample
 
 
-from torch.utils.data import random_split
-
-
 def build_dataset(
     set_name: str, data_dir: Optional[str] = None, download: bool = False
 ):

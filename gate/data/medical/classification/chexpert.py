@@ -155,11 +155,6 @@ def build_gate_dataset(
     return dataset_dict
 
 
-def build_dummy_imagenet1k_dataset(transforms: Optional[Any] = None) -> dict:
-    # Create a dummy dataset that emulates food-101's shape and modality
-    pass
-
-
 @dataclass
 class DefaultHyperparameters:
     train_batch_size: int = 256

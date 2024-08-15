@@ -5,6 +5,7 @@ from ast import Dict
 from dataclasses import dataclass
 from typing import Any, Optional
 
+import numpy as np
 from datasets import load_dataset
 
 from gate.boilerplate.decorators import configurable
@@ -52,9 +53,6 @@ def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
 
     return dataset_dict[set_name]
-
-
-import numpy as np
 
 
 def dataset_format_transform(sample: Dict) -> Dict:

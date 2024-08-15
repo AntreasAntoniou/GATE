@@ -99,8 +99,3 @@ def build_gate_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_stl10_dataset(transforms: Optional[Any] = None) -> dict:
-    # Create a dummy dataset that emulates food-101's shape and modality
-    pass

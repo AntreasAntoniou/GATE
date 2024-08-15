@@ -104,7 +104,7 @@ def transform_wrapper(inputs: Tuple, target_size=224):
 @configurable(
     group="dataset", name="cifar100", defaults=dict(data_dir=DATASET_DIR)
 )
-def build_gate_cifar100_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=100,
@@ -130,10 +130,6 @@ def build_gate_cifar100_dataset(
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_cifar100_dataset(transforms: Optional[Any] = None):
-    pass
 
 
 @dataclass

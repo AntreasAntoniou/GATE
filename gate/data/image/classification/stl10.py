@@ -13,7 +13,7 @@ from gate.data.image.classification.imagenet1k import StandardAugmentations
 from gate.data.transforms.image import pad_image
 
 
-def build_stl10_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a Food-101 dataset using the Hugging Face datasets library.
 
@@ -95,13 +95,13 @@ def transform_wrapper(inputs: Tuple, target_size=224):
 @configurable(
     group="dataset", name="stl10", defaults=dict(data_dir=DATASET_DIR)
 )
-def build_gate_stl10_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=10,
 ) -> dict:
     train_set = GATEDataset(
-        dataset=build_stl10_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[
             transform_wrapper,
@@ -111,21 +111,16 @@ def build_gate_stl10_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_stl10_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[transform_wrapper, transforms],
     )
 
     test_set = GATEDataset(
-        dataset=build_stl10_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[transform_wrapper, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_stl10_dataset(transforms: Optional[Any] = None) -> dict:
-    # Create a dummy dataset that emulates food-101's shape and modality
-    pass

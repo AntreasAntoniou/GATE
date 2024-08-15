@@ -45,7 +45,7 @@ GATE can be used as a library in your Python projects. Here is a basic example:
 
 ```python
 import gate.data.image.classification.stl10 as stl
-data = stl.build_stl10_dataset("train", data_dir=os.environ.get("PYTEST_DIR"))
+data = stl.build_("train", data_dir=os.environ.get("PYTEST_DIR"))
 
 import gate.models.classification.clip as clip
 model = clip.build_clip_model("RN50x4", pretrained=True)
@@ -56,7 +56,7 @@ model = clip.build_clip_model("RN50x4", pretrained=True)
 GATE can be used as a library to generate experiments. Here is an example:
 
 ```python
-builder = gate.build_experiments(model=GATEModel(), gate_flavour="foundation")
+builder = gate.build_experiments(model=GATEModel(), gate_flavour="base")
 experiments = builder.generate_experiments()
 builder.run_experiments()
 ```

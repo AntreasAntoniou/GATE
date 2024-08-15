@@ -2,6 +2,9 @@ import logging
 import multiprocessing as mp
 import pathlib
 from collections import defaultdict
+
+# logger.setLevel("DEBUG")
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Counter, Dict, Optional
 
 import datasets
@@ -20,11 +23,6 @@ from gate.data.few_shot.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-# logger.setLevel("DEBUG")
-from concurrent.futures import ThreadPoolExecutor
-
-from torch.utils.data import Dataset
 
 
 def save_dict_to_yaml(filepath, dict_to_store):

@@ -13,9 +13,7 @@ from gate.data.core import GATEDataset
 from gate.data.image.classification.imagenet1k import StandardAugmentations
 
 
-def build_places365_dataset(
-    set_name: str, data_dir: Optional[str] = None
-) -> dict:
+def build_dataset(set_name: str, data_dir: Optional[str] = None) -> dict:
     """
     Build a Food-101 dataset using the Hugging Face datasets library.
 
@@ -106,13 +104,13 @@ def data_format_transform(inputs):
 @configurable(
     group="dataset", name="places365", defaults=dict(data_dir=DATASET_DIR)
 )
-def build_gate_places365_dataset(
+def build_gate_dataset(
     data_dir: Optional[str] = None,
     transforms: Optional[Any] = None,
     num_classes=365,
 ) -> dict:
     train_set = GATEDataset(
-        dataset=build_places365_dataset("train", data_dir=data_dir),
+        dataset=build_dataset("train", data_dir=data_dir),
         infinite_sampling=True,
         transforms=[
             data_format_transform,
@@ -122,24 +120,19 @@ def build_gate_places365_dataset(
     )
 
     val_set = GATEDataset(
-        dataset=build_places365_dataset("val", data_dir=data_dir),
+        dataset=build_dataset("val", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[data_format_transform, transforms],
     )
 
     test_set = GATEDataset(
-        dataset=build_places365_dataset("test", data_dir=data_dir),
+        dataset=build_dataset("test", data_dir=data_dir),
         infinite_sampling=False,
         transforms=[data_format_transform, transforms],
     )
 
     dataset_dict = {"train": train_set, "val": val_set, "test": test_set}
     return dataset_dict
-
-
-def build_dummy_places365_dataset(transforms: Optional[Any] = None) -> dict:
-    # Create a dummy dataset that emulates food-101's shape and modality
-    pass
 
 
 @dataclass
