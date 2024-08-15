@@ -10,17 +10,9 @@ GATE is a comprehensive benchmarking suite that aims to fill a gap in the evalua
 
 ## Installation
 
-You can install GATE using pip:
-
 ```bash
-pip install git+https://github.com/AntreasAntoniou/GATE
-```
-
-To install from source, clone the repository and use the provided requirements file:
-
-```bash
-git clone 
-cd gate
+git clone https://github.com/AntreasAntoniou/GATE.git
+cd GATE
 pip install -r requirements.txt
 pip install -e . # for local dev editable mode
 or 
