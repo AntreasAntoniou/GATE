@@ -54,9 +54,8 @@ GATE can be used as a library in your Python projects. Here is a basic example:
 ```python
 ## Importing the Dataset
 
-To import and use the Happywhale dataset, you can use the `build_dataset` and `build_gate_dataset` functions from the GATE library. Here's how to do it:
+# To import and use the Happywhale dataset, you can use the `build_dataset` and `build_gate_dataset` functions from the GATE library. Here's how to do it:
 
-```python
 import os
 import torch
 import torchvision.transforms as T
