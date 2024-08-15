@@ -96,7 +96,7 @@ for item in gate_dataloader:
     break  # Remove this line to process all batches
 ```
 
-```python
+
 # GATE Models Usage
 
 This section demonstrates how to use various models provided by the GATE library for different modalities and tasks.
