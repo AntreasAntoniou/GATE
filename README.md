@@ -33,6 +33,14 @@ For development purposes, use the requirements_dev.txt file:
 pip install -r requirements_dev.txt
 ```
 
+Once you install gate, you should configure it using
+
+```bash
+gate config
+```
+
+Follow the onscreen instructions to acquire all necessary API keys and set them up. 😸
+
 ## Usage
 
 #### Use GATE as a template for your research project
@@ -44,11 +52,125 @@ GATE can be used as a template for your research project. It provides full Hydra
 GATE can be used as a library in your Python projects. Here is a basic example:
 
 ```python
-import gate.data.image.classification.stl10 as stl
-data = stl.build_("train", data_dir=os.environ.get("PYTEST_DIR"))
+## Importing the Dataset
 
-import gate.models.classification.clip as clip
-model = clip.build_clip_model("RN50x4", pretrained=True)
+To import and use the Happywhale dataset, you can use the `build_dataset` and `build_gate_dataset` functions from the GATE library. Here's how to do it:
+
+```python
+import os
+import torch
+import torchvision.transforms as T
+from gate.data.image.classification.happywhale import build_dataset, build_gate_dataset
+
+# Set the data directory
+data_dir = "path/to/your/data"
+
+# Build the main dataset
+main_dataset = build_dataset(data_dir=data_dir)
+
+# Check if the train set is available
+assert main_dataset["train"] is not None, "Train set should be available"
+
+# Define a transform function
+def default_transforms(input_dict):
+    input_dict["image"] = T.ToTensor()(input_dict["image"])
+    return input_dict
+
+# Build the GATE dataset with transforms
+gate_dataset = build_gate_dataset(
+    data_dir=data_dir,
+    transforms=default_transforms,
+)
+
+# Create a DataLoader for the training set
+gate_dataloader = torch.utils.data.DataLoader(
+    gate_dataset["train"], batch_size=64, shuffle=True, num_workers=24
+)
+
+# Verify the dataset splits
+assert gate_dataset["train"] is not None, "Train set should be available"
+assert gate_dataset["val"] is not None, "Validation set should be available"
+assert gate_dataset["test"] is not None, "Test set should be available"
+
+# Iterate through the dataset
+for item in gate_dataloader:
+    # Access the data
+    images = item["image"]
+    individual_labels = item["labels"]["individual"]
+    species_labels = item["labels"]["species"]
+    
+    # Your processing code here
+    ...
+
+    break  # Remove this line to process all batches
+```
+
+```python
+# GATE Models Usage
+
+This section demonstrates how to use various models provided by the GATE library for different modalities and tasks.
+
+## Available Models
+
+GATE provides a variety of model adapters for different modalities:
+
+- Image: TimmCLIPAdapter, CLIPVisionAdapter
+- Text: CLIPTextAdapter, BertAdapter, MPNetAdapter, BartAdapter
+- Audio: WhisperAdapter, Wav2VecV2Adapter
+
+## Example Usage
+
+Here's an example of how to use these models with a Prototypical Network for few-shot classification:
+
+```python
+import torch
+from gate.models.backbones.timm import CLIPModelPaths, TimmCLIPAdapter
+from gate.models.task_adapters.few_shot_classification.protonet import PrototypicalNetwork
+from gate.models.core import GATEModel
+
+# Initialize the encoder
+encoder = TimmCLIPAdapter(
+    timm_model_name="tf_efficientnetv2_s_in21ft1k",
+    clip_model_name=CLIPModelPaths.openai_b_16,
+    num_projection_features=64
+)
+
+# Create the Prototypical Network model
+model = PrototypicalNetwork(encoder=encoder, num_output_features=512)
+
+# Wrap the model with GATEModel
+gate_model = GATEModel(config=model.modality_config, model=model)
+
+# Prepare input data
+support_set_inputs = torch.rand(2, 2, 3, 224, 224)
+query_set_inputs = torch.rand(2, 2, 3, 224, 224)
+support_set_labels = torch.randint(0, 2, (2, 2))
+query_set_labels = torch.randint(0, 2, (2, 2))
+
+# Create input dictionary
+input_dict = {
+    "image": {
+        "support_set": support_set_inputs,
+        "query_set": query_set_inputs,
+    },
+    "labels": {
+        "support_set": support_set_labels,
+        "query_set": query_set_labels,
+    },
+}
+
+# Apply transforms
+input_dict = model.adapter_transforms(input_dict)
+
+# Forward pass
+output = gate_model.forward(input_dict)
+
+# Access results
+logits = output["image"]["image"]["logits"]
+loss = output["image"]["image"]["loss"]
+
+# Backward pass
+loss.backward()
 ```
 
 #### Use GATE as a library, as a source of experiment generation
