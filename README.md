@@ -34,12 +34,28 @@ gate config
 Follow the onscreen instructions to acquire all necessary API keys and set them up. 😸
 
 ## Usage
+#### 1. Run the GATE tiers on the models presented in the original paper
 
-#### Use GATE as a template for your research project
+```bash
+python gate/tiers/builder.py --experiment_type=all | python gate/tiers/run_experiments.py 1;
+```
+Which will build the full GATE tier and run it on one GPU. Small, Base And Big GATE will be added very shortly as an explicit option.
+
+#### 2. Run single experiment using the gate/run.py entry point
+
+```bash
+accelerate launch gate/run.py exp_name=beta-coco-10k-BART-123 encoder=bart encoder.image_size=224 encoder.pretrained=True encoder.clip_model_name=openai/clip-vit-base-patch16 encoder.bart_model_name=facebook/bart-base encoder.num_projection_features=768 adapter=segmentation-adapter adapter.loss_type_id=default dataset=coco_10k optimizer.lr=6e-06 optimizer.weight_decay=0.01 trainer=image_semantic_segmentation evaluator=image_semantic_segmentation num_workers=24 seed=123 train_batch_size=8 eval_batch_size=8 train_iters=10000 learner.evaluate_every_n_steps=500#### 1. Run the GATE tiers on the models presented in the original paper
+```
+
+#### 2. Run the GATE tiers on custom encoder models
+Section under construction.
+
+
+#### 3. Use GATE as a template for your research project
 
 GATE can be used as a template for your research project. It provides full Hydra integration and includes boilerplate, models, datasets, trackers, and more. Note that using GATE as a template may involve a lot of overhead and time to learn, and may be complex.
 
-#### Use GATE as a library
+#### 4. Use GATE as a library
 
 GATE can be used as a library in your Python projects. Here is a basic example:
 
