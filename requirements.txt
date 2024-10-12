@@ -37,9 +37,6 @@ opencv-python
 scipy
 scikit-learn
 
-# Video Decoding
-decord
-
 # Data Science Competition
 kaggle
 
