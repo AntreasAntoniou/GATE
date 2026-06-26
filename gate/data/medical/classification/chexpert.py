@@ -90,6 +90,7 @@ class_descriptions = {
     14: "unknown",
 }
 
+
 class_description_main = {
     2: "cardiomegaly",
     5: "edema",
@@ -110,6 +111,9 @@ class_map = {2: 0, 5: 1, 6: 2, 8: 3, 10: 4}
 
 
 def dataset_format_transform(sample: Dict) -> Dict:
+    """
+    Transform the sample to the format expected by the model.
+    """
     input_dict = {}
     input_dict["image"] = sample["image"]
     sample["labels"] = [class_map[label] for label in sample["labels"]]
